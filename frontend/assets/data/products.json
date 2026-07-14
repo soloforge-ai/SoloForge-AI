@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "name": "aaaaaaaaaaaaaaaaaaa",
+    "price": 89,
+    "commission": 10,
+    "rating": 4.9,
+    "category": "Squishy",
+    "shop": "Mini Shop"
+  },
+  {
+    "id": 2,
+    "name": "Donut Squishy",
+    "price": 99,
+    "commission": 12,
+    "rating": 4.8,
+    "category": "Squishy",
+    "shop": "Cute Shop"
+  },
+  {
+    "id": 3,
+    "name": "Bread Squishy",
+    "price": 129,
+    "commission": 15,
+    "rating": 5.0,
+    "category": "Squishy",
+    "shop": "MiniBoss Shop"
+  }
+]
