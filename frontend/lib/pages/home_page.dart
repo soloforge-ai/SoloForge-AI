@@ -5,6 +5,7 @@ import '../models/product.dart';
 import '../services/product_service.dart';
 import '../widgets/category_filter.dart';
 import '../widgets/product_card.dart';
+import '../widgets/sort_selector.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,6 +20,7 @@ class _HomePageState extends State<HomePage> {
 
   String selectedCategory = "All";
   String keyword = "";
+  SortType sortType = SortType.score;
 
   @override
   void initState() {
@@ -53,6 +55,27 @@ setState(() {
         return p.name.toLowerCase().contains(keyword.toLowerCase());
       }).toList();
     }
+
+    switch (sortType) {
+  case SortType.score:
+    result.sort((a, b) =>
+        MiniBossEngine.analyze(b).score.compareTo(
+              MiniBossEngine.analyze(a).score,
+            ));
+    break;
+
+  case SortType.commission:
+    result.sort((a, b) => b.commission.compareTo(a.commission));
+    break;
+
+  case SortType.rating:
+    result.sort((a, b) => b.rating.compareTo(a.rating));
+    break;
+
+  case SortType.price:
+    result.sort((a, b) => a.price.compareTo(b.price));
+    break;
+}
 
     setState(() {
       products = result;
@@ -206,7 +229,20 @@ setState(() {
               },
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+
+SortSelector(
+  value: sortType,
+  onChanged: (value) {
+  setState(() {
+    sortType = value;
+  });
+
+  filterProducts();
+  },
+),
+
+const SizedBox(height: 12),
 
             TextField(
               onChanged: (value) {
