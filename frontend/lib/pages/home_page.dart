@@ -29,10 +29,16 @@ class _HomePageState extends State<HomePage> {
   Future<void> loadProducts() async {
     final data = await ProductService.loadProducts();
 
-    setState(() {
-      allProducts = data;
-      filterProducts();
-    });
+data.sort((a, b) {
+  final scoreA = MiniBossEngine.analyze(a).score;
+  final scoreB = MiniBossEngine.analyze(b).score;
+  return scoreB.compareTo(scoreA);
+});
+
+setState(() {
+  allProducts = data;
+  filterProducts();
+});
   }
 
   void filterProducts() {
