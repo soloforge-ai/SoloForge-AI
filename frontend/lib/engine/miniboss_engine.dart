@@ -40,6 +40,10 @@ class MiniBossEngine {
       score += 25;
       reasons.add("💵 Good Commission");
     }
+    if (product.giftable) {
+      score += 3;
+      reasons.add("Great Gift Item");
+    }
 
     //------------------------
     // Rating
@@ -55,7 +59,10 @@ class MiniBossEngine {
       score += 20;
       reasons.add("👍 Good Rating");
     }
-
+    if (product.evergreen) {
+      score += 5;
+      reasons.add("Evergreen Product");
+    }
     //------------------------
     // Price
     //------------------------

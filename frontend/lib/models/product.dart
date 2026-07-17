@@ -6,6 +6,11 @@ class Product {
   final double rating;
   final String category;
   final String shop;
+  final String? brand;
+  final String? subCategory;
+  final String? targetAudience;
+  final bool evergreen;
+  final bool giftable;
 
   Product({
     required this.id,
@@ -15,6 +20,11 @@ class Product {
     required this.rating,
     required this.category,
     required this.shop,
+    this.brand,
+    this.subCategory,
+    this.targetAudience,
+    this.evergreen = false,
+    this.giftable = false,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -26,6 +36,11 @@ class Product {
       rating: (json["rating"] as num).toDouble(),
       category: json["category"],
       shop: json["shop"],
+      brand: json["brand"],
+      subCategory: json["subCategory"],
+      targetAudience: json["targetAudience"],
+      evergreen: json["evergreen"] ?? false,
+      giftable: json["giftable"] ?? false,
     );
   }
 }
