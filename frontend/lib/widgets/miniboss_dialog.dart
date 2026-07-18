@@ -148,11 +148,29 @@ if (_generatedContent != null) ...[
 
   const SizedBox(height: 12),
 
-  Text(
-    'Hook',
-    style: Theme.of(context).textTheme.titleSmall,
+  Card(
+  margin: const EdgeInsets.only(bottom: 12),
+  child: Padding(
+    padding: const EdgeInsets.all(12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.campaign, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              'Hook',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(_generatedContent!.hook),
+      ],
+    ),
   ),
-  Text(_generatedContent!.hook),
+),
 
   const SizedBox(height: 12),
 
@@ -165,10 +183,19 @@ if (_generatedContent != null) ...[
   const SizedBox(height: 12),
 
   Text(
-    'Hashtags',
-    style: Theme.of(context).textTheme.titleSmall,
-  ),
-  Text(_generatedContent!.hashtags.join(' ')),
+  'Hashtags',
+  style: Theme.of(context).textTheme.titleSmall,
+),
+const SizedBox(height: 8),
+Wrap(
+  spacing: 8,
+  runSpacing: 8,
+  children: _generatedContent!.hashtags.map((tag) {
+    return Chip(
+      label: Text(tag),
+    );
+  }).toList(),
+),
 
   const SizedBox(height: 12),
 
