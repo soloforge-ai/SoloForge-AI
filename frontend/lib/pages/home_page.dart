@@ -6,6 +6,7 @@ import '../services/product_service.dart';
 import '../widgets/category_filter.dart';
 import '../widgets/product_card.dart';
 import '../widgets/sort_selector.dart';
+import '../widgets/miniboss_dialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -81,123 +82,6 @@ setState(() {
       products = result;
     });
   }
-
-  void showMiniBoss(Product product) {
-  final result = MiniBossEngine.analyze(product);
-
-  showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: Row(
-        children: [
-          const Icon(Icons.smart_toy),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              product.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            Center(
-              child: Column(
-                children: [
-                  const Text(
-                    "MiniBoss Score",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "${result.score}/100",
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            const Divider(),
-
-            const Text(
-              "Reasons",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            ...result.reasons.map(
-              (reason) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(reason),
-              ),
-            ),
-
-            const Divider(),
-
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.speed),
-              title: const Text("Difficulty"),
-              subtitle: Text(result.difficulty),
-            ),
-
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.groups),
-              title: const Text("Competition"),
-              subtitle: Text(result.competition),
-            ),
-
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.local_fire_department),
-              title: const Text("Viral Chance"),
-              subtitle: Text(result.viralChance),
-            ),
-
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.workspace_premium),
-              title: const Text("Recommendation"),
-              subtitle: Text(result.recommendation),
-            ),
-
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.bolt),
-              title: const Text("Action"),
-              subtitle: Text(result.action),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        FilledButton.icon(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.check),
-          label: const Text("Close"),
-        ),
-      ],
-    ),
-  );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -274,11 +158,17 @@ const SizedBox(height: 12),
                 itemCount: products.length,
                 itemBuilder: (context, index) {
                   final p = products[index];
-                  final result = MiniBossEngine.analyze(p);
 
                   return ProductCard(
                     product: p,
-                    onForge: () => showMiniBoss(p),
+                    onForge: () {
+  showDialog(
+    context: context,
+    builder: (_) => MiniBossDialog(
+      product: p,
+    ),
+  );
+},
                   );
                 },
               ),
