@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-
-import '../engine/miniboss_engine.dart';
-import '../models/generated_content.dart';
-import '../models/product.dart';
+import 'package:flutter/services.dart';
 
 import '../ai/content_engine.dart';
 import '../ai/platforms.dart';
+import '../engine/miniboss_engine.dart';
+import '../models/generated_content.dart';
+import '../models/product.dart';
 
 class MiniBossDialog extends StatefulWidget {
   final Product product;
@@ -24,26 +24,46 @@ class _MiniBossDialogState extends State<MiniBossDialog> {
   GeneratedContent? _generatedContent;
 
   Future<void> _generateContent() async {
-  setState(() {
-    _loading = true;
-  });
+    setState(() {
+      _loading = true;
+    });
 
-  final result = await ContentEngine.generateContent(
-    product: widget.product,
-    platform: PlatformType.tiktok,
-  );
+    final result = await ContentEngine.generateContent(
+      product: widget.product,
+      platform: PlatformType.tiktok,
+    );
 
-  if (!mounted) return;
+    if (!mounted) return;
 
-  setState(() {
-    _generatedContent = result;
-    _loading = false;
-  });
-}
+    setState(() {
+      _generatedContent = result;
+      _loading = false;
+    });
+  }
+
+  Future<void> _copyText(String text, String message) async {
+    await Clipboard.setData(ClipboardData(text: text));
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  String _buildPostText(GeneratedContent content) {
+    return [
+      content.hook,
+      content.caption,
+      content.hashtags.join(' '),
+      content.callToAction,
+    ].where((section) => section.trim().isNotEmpty).join('\n\n');
+  }
 
   @override
   Widget build(BuildContext context) {
     final result = MiniBossEngine.analyze(widget.product);
+    final generatedContent = _generatedContent;
 
     return AlertDialog(
       title: Row(
@@ -69,14 +89,14 @@ class _MiniBossDialogState extends State<MiniBossDialog> {
               child: Column(
                 children: [
                   const Text(
-                    "MiniBoss Score",
+                    'MiniBoss Score',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "${result.score}/100",
+                    '${result.score}/100',
                     style: const TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
@@ -89,7 +109,7 @@ class _MiniBossDialogState extends State<MiniBossDialog> {
             const SizedBox(height: 20),
             const Divider(),
             const Text(
-              "Reasons",
+              'Reasons',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
               ),
@@ -105,134 +125,154 @@ class _MiniBossDialogState extends State<MiniBossDialog> {
             ListTile(
               dense: true,
               leading: const Icon(Icons.speed),
-              title: const Text("Difficulty"),
+              title: const Text('Difficulty'),
               subtitle: Text(result.difficulty),
             ),
             ListTile(
               dense: true,
               leading: const Icon(Icons.groups),
-              title: const Text("Competition"),
+              title: const Text('Competition'),
               subtitle: Text(result.competition),
             ),
             ListTile(
               dense: true,
               leading: const Icon(Icons.local_fire_department),
-              title: const Text("Viral Chance"),
+              title: const Text('Viral Chance'),
               subtitle: Text(result.viralChance),
             ),
             ListTile(
               dense: true,
               leading: const Icon(Icons.workspace_premium),
-              title: const Text("Recommendation"),
+              title: const Text('Recommendation'),
               subtitle: Text(result.recommendation),
             ),
             ListTile(
               dense: true,
               leading: const Icon(Icons.bolt),
-              title: const Text("Action"),
+              title: const Text('Action'),
               subtitle: Text(result.action),
             ),
-
-// 👇 วางตรงนี้
-if (_generatedContent != null) ...[
-  const Divider(),
-  const SizedBox(height: 8),
-
-  const Text(
-    '✨ AI Generated Content',
-    style: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.bold,
-    ),
-  ),
-
-  const SizedBox(height: 12),
-
-  Card(
-  margin: const EdgeInsets.only(bottom: 12),
-  child: Padding(
-    padding: const EdgeInsets.all(12),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.campaign, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              'Hook',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(_generatedContent!.hook),
-      ],
-    ),
-  ),
-),
-
-  const SizedBox(height: 12),
-
-  Text(
-    'Caption',
-    style: Theme.of(context).textTheme.titleSmall,
-  ),
-  Text(_generatedContent!.caption),
-
-  const SizedBox(height: 12),
-
-  Text(
-  'Hashtags',
-  style: Theme.of(context).textTheme.titleSmall,
-),
-const SizedBox(height: 8),
-Wrap(
-  spacing: 8,
-  runSpacing: 8,
-  children: _generatedContent!.hashtags.map((tag) {
-    return Chip(
-      label: Text(tag),
-    );
-  }).toList(),
-),
-
-  const SizedBox(height: 12),
-
-  Text(
-    'Call To Action',
-    style: Theme.of(context).textTheme.titleSmall,
-  ),
-  Text(_generatedContent!.callToAction),
-],    
+            if (generatedContent != null) ...[
+              const Divider(),
+              const SizedBox(height: 8),
+              Text(
+                '✨ AI Preview',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              _ContentCard(
+                icon: Icons.campaign,
+                title: 'Hook',
+                child: Text(generatedContent.hook),
+              ),
+              _ContentCard(
+                icon: Icons.notes,
+                title: 'Caption',
+                action: TextButton.icon(
+                  onPressed: () => _copyText(
+                    generatedContent.caption,
+                    'Caption copied',
+                  ),
+                  icon: const Icon(Icons.copy),
+                  label: const Text('Copy Caption'),
+                ),
+                child: Text(generatedContent.caption),
+              ),
+              _ContentCard(
+                icon: Icons.tag,
+                title: 'Hashtags',
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: generatedContent.hashtags.map((tag) {
+                    return Chip(label: Text(tag));
+                  }).toList(),
+                ),
+              ),
+              _ContentCard(
+                icon: Icons.call_made,
+                title: 'Call To Action',
+                child: Text(generatedContent.callToAction),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton.tonalIcon(
+                  onPressed: () => _copyText(
+                    _buildPostText(generatedContent),
+                    'Post copied',
+                  ),
+                  icon: const Icon(Icons.copy_all),
+                  label: const Text('Copy Post'),
+                ),
+              ),
+            ],
           ],
         ),
       ),
       actions: [
         FilledButton.icon(
-            onPressed: _loading ? null : _generateContent,
-            icon: _loading
-                ? const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-            ),
-          )
-        : const Icon(Icons.auto_awesome),
-    label: Text(
-      _loading
-          ? "Generating..."
-          : "Generate AI",
-    ),
-  ),
+          onPressed: _loading ? null : _generateContent,
+          icon: _loading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.auto_awesome),
+          label: Text(_loading ? 'Generating...' : 'Generate AI'),
+        ),
+        FilledButton.icon(
+          onPressed: _loading ? null : () => Navigator.pop(context),
+          icon: const Icon(Icons.check),
+          label: const Text('Close'),
+        ),
+      ],
+    );
+  }
+}
 
-  FilledButton.icon(
-    onPressed: _loading ? null : () => Navigator.pop(context),
-    icon: const Icon(Icons.check),
-    label: const Text("Close"),
-  ),
-],
+class _ContentCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Widget child;
+  final Widget? action;
+
+  const _ContentCard({
+    required this.icon,
+    required this.title,
+    required this.child,
+    this.action,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                if (action != null) action!,
+              ],
+            ),
+            const SizedBox(height: 8),
+            child,
+          ],
+        ),
+      ),
     );
   }
 }
