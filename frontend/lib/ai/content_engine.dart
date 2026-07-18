@@ -24,9 +24,11 @@ class ContentEngine {
       caption: '''
 นี่คือ Mock Content ที่สร้างจาก PromptBuilder
 
-$product
+สินค้า : ${product.name}
+ราคา : ฿${product.price}
+หมวดหมู่ : ${product.category}
 
-Prompt Length: ${prompt.length} characters
+Prompt Length : ${prompt.length} characters
 ''',
       hashtags: const [
         '#SoloForgeAI',
