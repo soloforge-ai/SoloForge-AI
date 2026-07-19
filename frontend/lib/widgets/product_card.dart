@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../engine/miniboss_engine.dart';
-import '../models/product.dart';
+import '../models/affiliate_product.dart';
 
 class ProductCard extends StatelessWidget {
-  final Product product;
+  final AffiliateProduct product;
   final VoidCallback onForge;
 
   const ProductCard({
@@ -15,8 +14,6 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final result = MiniBossEngine.analyze(product);
-
     return Card(
       child: ListTile(
         leading: const CircleAvatar(
@@ -27,88 +24,84 @@ class ProductCard extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-
         title: Padding(
           padding: const EdgeInsets.only(bottom: 6),
           child: Text(
-            product.name,
+            product.title,
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 20,
             ),
           ),
         ),
-
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            Row(
+            Text(
+              product.shopName,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
-
-                Text(
-                  "MiniBoss Score : ${result.score}/100",
-                  style: TextStyle(
-                    color: result.score >= 90
-                        ? Colors.green
-                        : result.score >= 75
-                            ? Colors.orange
-                            : Colors.red,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                _ScoreChip(
+                  label: 'MiniBoss',
+                  value: product.miniBossScore,
+                  color: _scoreColor(product.miniBossScore),
                 ),
-
-                const SizedBox(width: 8),
-
-                Icon(
-                  Icons.auto_awesome,
-                  size: 18,
-                  color: result.score >= 90
-                      ? Colors.green
-                      : result.score >= 75
-                          ? Colors.orange
-                          : Colors.red,
-                ),
+                _ScoreChip(label: 'Sold', value: product.soldScore),
+                _ScoreChip(label: 'Price', value: product.priceScore),
+                _ScoreChip(label: 'Commission', value: product.commissionScore),
               ],
             ),
-
             const SizedBox(height: 8),
-
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: result.reasons.map((reason) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.deepPurple.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    reason,
-                    style: const TextStyle(
-                      fontSize: 11,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 8),
-
             Text(
-              "฿${product.price}   ⭐ ${product.rating}",
+              '฿${product.price.toStringAsFixed(2)}   Sold ${product.sold}   Commission ฿${product.commissionAmount.toStringAsFixed(2)} (${product.commissionRate.toStringAsFixed(2)}%)',
             ),
           ],
         ),
-
         trailing: FilledButton(
           onPressed: onForge,
-          child: const Text("Forge"),
+          child: const Text('Forge'),
+        ),
+      ),
+    );
+  }
+
+  static Color _scoreColor(double score) {
+    if (score >= 90) return Colors.green;
+    if (score >= 75) return Colors.orange;
+    return Colors.red;
+  }
+}
+
+class _ScoreChip extends StatelessWidget {
+  const _ScoreChip({
+    required this.label,
+    required this.value,
+    this.color = Colors.deepPurple,
+  });
+
+  final String label;
+  final double value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        '$label: ${value.toStringAsFixed(0)}',
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

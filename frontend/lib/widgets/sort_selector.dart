@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 enum SortType {
-  score,
-  commission,
-  rating,
-  price,
+  miniBossScore,
+  soldScore,
+  priceScore,
+  commissionScore,
 }
 
 class SortSelector extends StatelessWidget {
@@ -25,25 +25,25 @@ class SortSelector extends StatelessWidget {
       underline: const SizedBox(),
       items: const [
         DropdownMenuItem(
-          value: SortType.score,
-          child: Text("⭐ Best Score"),
+          value: SortType.miniBossScore,
+          child: Text('⭐ MiniBoss Score'),
         ),
         DropdownMenuItem(
-          value: SortType.commission,
-          child: Text("💰 Highest Commission"),
+          value: SortType.soldScore,
+          child: Text('🛒 Sold Score'),
         ),
         DropdownMenuItem(
-          value: SortType.rating,
-          child: Text("⭐ Highest Rating"),
+          value: SortType.priceScore,
+          child: Text('💵 Price Score'),
         ),
         DropdownMenuItem(
-          value: SortType.price,
-          child: Text("💵 Lowest Price"),
+          value: SortType.commissionScore,
+          child: Text('💰 Commission Score'),
         ),
       ],
-      onChanged: (v) {
-        if (v != null) {
-          onChanged(v);
+      onChanged: (value) {
+        if (value != null) {
+          onChanged(value);
         }
       },
     );

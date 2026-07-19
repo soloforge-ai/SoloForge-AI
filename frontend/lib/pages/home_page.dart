@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../engine/miniboss_engine.dart';
-import '../models/product.dart';
-import '../services/product_service.dart';
-import '../widgets/category_filter.dart';
+import '../models/affiliate_product.dart';
+import '../services/catalog_service.dart';
+import '../widgets/miniboss_dialog.dart';
 import '../widgets/product_card.dart';
 import '../widgets/sort_selector.dart';
-import '../widgets/miniboss_dialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,12 +14,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Product> allProducts = [];
-  List<Product> products = [];
+  final CatalogService _catalogService = const CatalogService();
 
-  String selectedCategory = "All";
-  String keyword = "";
-  SortType sortType = SortType.score;
+  List<AffiliateProduct> allProducts = [];
+  List<AffiliateProduct> products = [];
+
+  String keyword = '';
+  SortType sortType = SortType.miniBossScore;
+  bool loading = true;
 
   @override
   void initState() {
@@ -30,63 +30,56 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> loadProducts() async {
-    final data = await ProductService.loadProducts();
+    final data = await _catalogService.getProducts();
 
-data.sort((a, b) {
-  final scoreA = MiniBossEngine.analyze(a).score;
-  final scoreB = MiniBossEngine.analyze(b).score;
-  return scoreB.compareTo(scoreA);
-});
+    if (!mounted) return;
 
-setState(() {
-  allProducts = data;
-  filterProducts();
-});
+    setState(() {
+      allProducts = data;
+      loading = false;
+    });
+
+    filterProducts();
   }
 
   void filterProducts() {
-    List<Product> result = allProducts;
+    final normalizedKeyword = keyword.trim().toLowerCase();
+    var result = allProducts;
 
-    if (selectedCategory != "All") {
-      result = result.where((p) => p.category == selectedCategory).toList();
-    }
-
-    if (keyword.isNotEmpty) {
-      result = result.where((p) {
-        return p.name.toLowerCase().contains(keyword.toLowerCase());
+    if (normalizedKeyword.isNotEmpty) {
+      result = result.where((product) {
+        return product.title.toLowerCase().contains(normalizedKeyword) ||
+            product.shopName.toLowerCase().contains(normalizedKeyword);
       }).toList();
+    } else {
+      result = List<AffiliateProduct>.from(result);
     }
 
     switch (sortType) {
-  case SortType.score:
-    result.sort((a, b) =>
-        MiniBossEngine.analyze(b).score.compareTo(
-              MiniBossEngine.analyze(a).score,
-            ));
-    break;
-
-  case SortType.commission:
-    result.sort((a, b) => b.commission.compareTo(a.commission));
-    break;
-
-  case SortType.rating:
-    result.sort((a, b) => b.rating.compareTo(a.rating));
-    break;
-
-  case SortType.price:
-    result.sort((a, b) => a.price.compareTo(b.price));
-    break;
-}
+      case SortType.miniBossScore:
+        result.sort((a, b) => b.miniBossScore.compareTo(a.miniBossScore));
+        break;
+      case SortType.soldScore:
+        result.sort((a, b) => b.soldScore.compareTo(a.soldScore));
+        break;
+      case SortType.priceScore:
+        result.sort((a, b) => b.priceScore.compareTo(a.priceScore));
+        break;
+      case SortType.commissionScore:
+        result.sort((a, b) => b.commissionScore.compareTo(a.commissionScore));
+        break;
+    }
 
     setState(() {
       products = result;
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("SoloForge AI"),
+        title: const Text('SoloForge AI'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -94,84 +87,67 @@ setState(() {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "👔 MiniBoss Product Hunter",
+              '👔 MiniBoss Product Hunter',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 20),
-
-            CategoryFilter(
-              selected: selectedCategory,
-              onSelected: (value) {
+            SortSelector(
+              value: sortType,
+              onChanged: (value) {
                 setState(() {
-                  selectedCategory = value;
+                  sortType = value;
                 });
                 filterProducts();
               },
             ),
-
             const SizedBox(height: 12),
-
-SortSelector(
-  value: sortType,
-  onChanged: (value) {
-  setState(() {
-    sortType = value;
-  });
-
-  filterProducts();
-  },
-),
-
-const SizedBox(height: 12),
-
             TextField(
               onChanged: (value) {
                 keyword = value;
                 filterProducts();
               },
               decoration: InputDecoration(
-                hintText: "ค้นหาสินค้า...",
+                hintText: 'Search by product title or shop name...',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
             Text(
-              "พบ ${products.length} รายการ",
+              loading
+                  ? 'Loading Shopee catalog...'
+                  : 'พบ ${products.length} รายการ',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 10),
-
             Expanded(
-              child: ListView.builder(
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final p = products[index];
+              child: loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      itemCount: products.length,
+                      itemBuilder: (context, index) {
+                        final product = products[index];
 
-                  return ProductCard(
-                    product: p,
-                    onForge: () {
-  showDialog(
-    context: context,
-    builder: (_) => MiniBossDialog(
-      product: p,
-    ),
-  );
-},
-                  );
-                },
-              ),
+                        return ProductCard(
+                          product: product,
+                          onForge: () {
+                            showDialog(
+                              context: context,
+                              builder: (_) => MiniBossDialog(
+                                product: product.toProduct(),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
             ),
           ],
         ),
