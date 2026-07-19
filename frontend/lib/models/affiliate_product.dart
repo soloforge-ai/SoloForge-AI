@@ -1,58 +1,87 @@
-/// Represents a product that can be promoted through an affiliate platform.
-///
-/// The model intentionally keeps platform-specific payloads in [rawData] so
-/// integrations such as Shopee can preserve source details without leaking
-/// those concerns into the rest of the app.
+import 'product.dart';
+
+/// Represents a product from the Shopee master affiliate catalog.
 class AffiliateProduct {
-  /// Creates an affiliate product entity.
+  /// Creates a Shopee affiliate product entity.
   const AffiliateProduct({
-    required this.id,
+    required this.itemId,
     required this.title,
-    required this.imageUrl,
-    required this.affiliateUrl,
-    required this.originalUrl,
     required this.price,
-    required this.commissionRate,
-    required this.category,
-    required this.brand,
-    required this.rating,
     required this.sold,
-    required this.rawData,
+    required this.shopName,
+    required this.commissionRate,
+    required this.commissionAmount,
+    required this.productUrl,
+    required this.affiliateUrl,
+    required this.priceBucket,
+    required this.priceScore,
+    required this.soldBucket,
+    required this.soldScore,
+    required this.commissionBucket,
+    required this.commissionScore,
+    required this.miniBossScore,
   });
 
-  /// Stable product identifier from the affiliate provider.
-  final String id;
-
-  /// Display name of the product.
+  final String itemId;
   final String title;
-
-  /// URL for the product image.
-  final String imageUrl;
-
-  /// Trackable affiliate URL used for attribution.
-  final String affiliateUrl;
-
-  /// Original marketplace URL before affiliate tracking is applied.
-  final String originalUrl;
-
-  /// Current product price in the marketplace currency.
   final double price;
-
-  /// Commission percentage offered for this product.
-  final double commissionRate;
-
-  /// Product category used for browsing and filtering.
-  final String category;
-
-  /// Product brand or seller-provided brand name.
-  final String brand;
-
-  /// Average marketplace rating for the product.
-  final double rating;
-
-  /// Number of units sold according to the source platform.
   final int sold;
+  final String shopName;
+  final double commissionRate;
+  final double commissionAmount;
+  final String productUrl;
+  final String affiliateUrl;
+  final String priceBucket;
+  final double priceScore;
+  final String soldBucket;
+  final double soldScore;
+  final String commissionBucket;
+  final double commissionScore;
+  final double miniBossScore;
 
-  /// Raw provider payload for future platform-specific use cases.
-  final Map<String, dynamic> rawData;
+  factory AffiliateProduct.fromCsv(Map<String, String> row) {
+    return AffiliateProduct(
+      itemId: _read(row, 'itemId'),
+      title: _read(row, 'title'),
+      price: _readDouble(row, 'price'),
+      sold: _readInt(row, 'sold'),
+      shopName: _read(row, 'shopName'),
+      commissionRate: _readDouble(row, 'commissionRate'),
+      commissionAmount: _readDouble(row, 'commissionAmount'),
+      productUrl: _read(row, 'productUrl'),
+      affiliateUrl: _read(row, 'affiliateUrl'),
+      priceBucket: _read(row, 'PriceBucket'),
+      priceScore: _readDouble(row, 'PriceScore'),
+      soldBucket: _read(row, 'SoldBucket'),
+      soldScore: _readDouble(row, 'SoldScore'),
+      commissionBucket: _read(row, 'CommissionBucket'),
+      commissionScore: _readDouble(row, 'CommissionScore'),
+      miniBossScore: _readDouble(row, 'MiniBossScore'),
+    );
+  }
+
+  Product toProduct() {
+    return Product(
+      id: int.tryParse(itemId) ?? itemId.hashCode,
+      name: title,
+      price: price.round(),
+      commission: commissionAmount.round(),
+      rating: (miniBossScore / 20).clamp(0, 5).toDouble(),
+      category: priceBucket,
+      shop: shopName,
+      brand: shopName,
+    );
+  }
+
+  static String _read(Map<String, String> row, String key) => row[key]?.trim() ?? '';
+
+  static double _readDouble(Map<String, String> row, String key) {
+    final value = _read(row, key).replaceAll(',', '').replaceAll('%', '');
+    return double.tryParse(value) ?? 0;
+  }
+
+  static int _readInt(Map<String, String> row, String key) {
+    final value = _read(row, key).replaceAll(',', '');
+    return int.tryParse(value) ?? double.tryParse(value)?.round() ?? 0;
+  }
 }

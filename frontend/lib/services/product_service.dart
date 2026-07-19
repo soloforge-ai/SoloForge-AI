@@ -1,18 +1,12 @@
-import 'dart:convert';
-
-import 'package:flutter/services.dart';
-
 import '../models/product.dart';
+import 'catalog_service.dart';
 
 class ProductService {
+  static const CatalogService _catalogService = CatalogService();
+
   static Future<List<Product>> loadProducts() async {
-    final jsonString =
-        await rootBundle.loadString('assets/data/products.json');
+    final affiliateProducts = await _catalogService.getProducts();
 
-    final List<dynamic> jsonData = json.decode(jsonString);
-
-    return jsonData
-        .map((item) => Product.fromJson(item))
-        .toList();
+    return affiliateProducts.map((product) => product.toProduct()).toList();
   }
 }
