@@ -1,10 +1,21 @@
 {
-    "version": "1.0.0",
-    "engine": "MiniBoss",
-    "categories": [
-        "Beauty",
-        "Home Decor",
-        "Shopee Food",
-        "Squishy"
-    ]
+  "version": "1.0.0",
+  "engine": "MiniBoss",
+
+  "weights": {
+    "rating": 30,
+    "shop_rating": 15,
+    "sold": 20,
+    "discount": 15,
+    "official_shop": 10,
+    "preferred_shop": 5,
+    "stock": 5
+  },
+
+  "limits": {
+    "rating": 5,
+    "shop_rating": 5,
+    "sold": 1000,
+    "discount": 100
+  }
 }

@@ -1,42 +1,63 @@
-from pprint import pprint
+from time import perf_counter
 
 from reader import stream_rows
 from transformer import transform_row
 from miniboss import load_rules, analyze
+from exporter import JsonlExporter
+from manifest import write_manifest
 
 
 def main():
+
     rules = load_rules()
 
-    row = next(stream_rows())
+    start = perf_counter()
 
-    product = transform_row(row)
+    processed = 0
 
-    print("=" * 80)
-    print("RAW CSV")
-    print(f"shop_rating          : {row.get('shop_rating')}")
-    print(f"discount_percentage  : {row.get('discount_percentage')}")
-    print()
+    with JsonlExporter() as exporter:
 
-    print("=" * 80)
-    print("TRANSFORMED PRODUCT")
-    pprint(product, sort_dicts=False)
-    print()
+        for row in stream_rows():
 
-    print("=" * 80)
-    print("CHECK IMPORTANT FIELDS")
-    print(f"Product Rating : {product['rating']}")
-    print(f"Shop Rating    : {product['shop']['rating']}")
-    print(f"Discount       : {product['discount']}")
-    print(f"Sold           : {product['sold']}")
-    print(f"Stock          : {product['stock']}")
-    print()
+            product = transform_row(row)
 
-    result = analyze(product, rules)
+            miniboss = analyze(product, rules)
 
-    print("=" * 80)
-    print("MINIBOSS RESULT")
-    pprint(result, sort_dicts=False)
+            product["miniboss"] = miniboss
+
+            exporter.write(product)
+
+            processed += 1
+
+            if processed % 10000 == 0:
+
+                elapsed = perf_counter() - start
+
+                speed = processed / elapsed if elapsed else 0
+
+                print(
+                    f"\rProcessed: {processed:,} products | "
+                    f"{speed:,.0f} products/sec",
+                    end="",
+                    flush=True,
+                )
+
+        write_manifest(exporter)
+
+    elapsed = perf_counter() - start
+
+    speed = processed / elapsed if elapsed else 0
+
+    print("\n")
+    print("=" * 50)
+    print("Processing Complete")
+    print("=" * 50)
+    print(f"Products      : {processed:,}")
+    print(f"Chunks        : {len(exporter.chunk_files)}")
+    print(f"Time          : {elapsed:.2f} sec")
+    print(f"Speed         : {speed:,.0f} products/sec")
+    print(f"Output Folder : data/processed")
+    print("=" * 50)
 
 
 if __name__ == "__main__":

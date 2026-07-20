@@ -1,23 +1,24 @@
-def to_float(value):
+def to_float(value, default=0.0):
     """
-    Convert a value to float.
+    Safely convert a value to float.
 
     Examples:
-        "59"    -> 59.0
-        "4.82"  -> 4.82
-        ""      -> None
-        None    -> None
+        "59"      -> 59.0
+        "4.82"    -> 4.82
+        ""        -> 0.0
+        None      -> 0.0
+        "abc"     -> 0.0
     """
 
     if value is None:
-        return None
+        return default
 
     value = str(value).strip()
 
     if value == "":
-        return None
+        return default
 
     try:
         return float(value)
-    except ValueError:
-        return None
+    except (ValueError, TypeError):
+        return default

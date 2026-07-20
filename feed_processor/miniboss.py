@@ -91,7 +91,7 @@ def analyze(product, rules):
 
 def score_shop_rating(product, rules):
 
-    rating = product.get("shop", {}).get("rating", 0)
+    rating = product.get("shop", {}).get("rating") or 0
 
     max_rating = rules["limits"]["shop_rating"]
     weight = rules["weights"]["shop_rating"]
