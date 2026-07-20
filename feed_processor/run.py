@@ -1,13 +1,11 @@
 from reader import stream_rows
-from cleaner import to_float
+from transformer import transform_row
 
 for row in stream_rows():
+    product = transform_row(row)
 
-    print(row["title"])
-
-    print("Price :", to_float(row["price"]))
-    print("Rating:", to_float(row["item_rating"]))
+    print(product)
 
     break
 
-print("\nCleaner OK")
+print("\nTransformer OK")
