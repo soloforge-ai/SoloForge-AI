@@ -28,16 +28,19 @@ def transform_row(row):
 
         "price": to_float(row.get("price")),
         "sale_price": to_float(row.get("sale_price")),
+        "discount": to_float(row.get("discount_percentage")),
 
         "rating": to_float(row.get("item_rating")),
         "sold": int(to_float(row.get("item_sold")) or 0),
+        "stock": int(to_float(row.get("stock")) or 0),
 
-        "shop": {
-            "name": row.get("shop_name", ""),
-            "seller": row.get("seller_name", ""),
-            "official": to_bool(row.get("is_official_shop")),
-            "preferred": to_bool(row.get("is_preferred_shop")),
-        },
+    "shop": {
+        "name": row.get("shop_name", ""),
+        "seller": row.get("seller_name", ""),
+        "rating": to_float(row.get("shop_rating")),
+        "official": to_bool(row.get("is_official_shop", False)),
+        "preferred": to_bool(row.get("is_preferred_shop", False)),
+    },
 
         "commission": {
             "rate": 0.0,
