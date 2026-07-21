@@ -5,6 +5,7 @@ import '../services/catalog_service.dart';
 import '../widgets/miniboss_dialog.dart';
 import '../widgets/product_card.dart';
 import '../widgets/sort_selector.dart';
+import 'forge_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -138,13 +139,15 @@ class _HomePageState extends State<HomePage> {
                         return ProductCard(
                           product: product,
                           onForge: () {
-                            showDialog(
-                              context: context,
-                              builder: (_) => MiniBossDialog(
-                                product: product.toProduct(),
-                              ),
-                            );
-                          },
+                          Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ForgePage(
+                              product: product,
+                            ),
+                          ),
+                        );
+                      },
                         );
                       },
                     ),

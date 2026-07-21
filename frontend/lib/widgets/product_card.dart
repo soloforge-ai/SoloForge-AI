@@ -39,7 +39,9 @@ class ProductCard extends StatelessWidget {
           children: [
             Text(
               product.shopName,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -51,14 +53,38 @@ class ProductCard extends StatelessWidget {
                   value: product.miniBossScore,
                   color: _scoreColor(product.miniBossScore),
                 ),
-                _ScoreChip(label: 'Sold', value: product.soldScore),
-                _ScoreChip(label: 'Price', value: product.priceScore),
-                _ScoreChip(label: 'Commission', value: product.commissionScore),
+                _ScoreChip(
+                  label: 'Sold',
+                  value: product.soldScore,
+                ),
+                _ScoreChip(
+                  label: 'Price',
+                  value: product.priceScore,
+                ),
+                _ScoreChip(
+                  label: 'Commission',
+                  value: product.commissionScore,
+                ),
               ],
             ),
             const SizedBox(height: 8),
+
+            // Product Information
             Text(
-              '฿${product.price.toStringAsFixed(2)}   Sold ${product.sold}   Commission ฿${product.commissionAmount.toStringAsFixed(2)} (${product.commissionRate.toStringAsFixed(2)}%)',
+              '${product.priceText}   ${product.soldText}',
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            Text(
+              'Commission ${product.commissionAmountText} (${product.commissionRateText})',
+              style: const TextStyle(
+                color: Colors.deepPurple,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -71,8 +97,8 @@ class ProductCard extends StatelessWidget {
   }
 
   static Color _scoreColor(double score) {
-    if (score >= 90) return Colors.green;
-    if (score >= 75) return Colors.orange;
+    if (score >= 4.5) return Colors.green;
+    if (score >= 2.5) return Colors.orange;
     return Colors.red;
   }
 }
@@ -91,7 +117,10 @@ class _ScoreChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
