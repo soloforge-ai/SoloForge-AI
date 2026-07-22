@@ -1,765 +1,770 @@
-[
-    {
-        "path": "D:\\Project\\SoloForge-AI\\docs\\AI_PIPELINE.md",
-        "name": "AI_PIPELINE.md",
-        "extension": ".md",
-        "language": "Markdown",
-        "category": "Documentation",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\docs\\ARCHITECTURE.md",
-        "name": "ARCHITECTURE.md",
-        "extension": ".md",
-        "language": "Markdown",
-        "category": "Documentation",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\docs\\CHANGELOG.md",
-        "name": "CHANGELOG.md",
-        "extension": ".md",
-        "language": "Markdown",
-        "category": "Documentation",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\docs\\CURRENT_SPRINT.md",
-        "name": "CURRENT_SPRINT.md",
-        "extension": ".md",
-        "language": "Markdown",
-        "category": "Documentation",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\docs\\PROJECT_INDEX.md",
-        "name": "PROJECT_INDEX.md",
-        "extension": ".md",
-        "language": "Markdown",
-        "category": "Documentation",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\docs\\ROADMAP.md",
-        "name": "ROADMAP.md",
-        "extension": ".md",
-        "language": "Markdown",
-        "category": "Documentation",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\feed_processor\\cleaner.py",
-        "name": "cleaner.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "FeedProcessor",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\feed_processor\\config.py",
-        "name": "config.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "FeedProcessor",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\feed_processor\\exporter.py",
-        "name": "exporter.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "FeedProcessor",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\feed_processor\\manifest.py",
-        "name": "manifest.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "FeedProcessor",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\feed_processor\\miniboss.py",
-        "name": "miniboss.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "FeedProcessor",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\feed_processor\\reader.py",
-        "name": "reader.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "FeedProcessor",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\feed_processor\\run.py",
-        "name": "run.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "FeedProcessor",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\feed_processor\\transformer.py",
-        "name": "transformer.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "FeedProcessor",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\content_engine.dart",
-        "name": "content_engine.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "AI",
-        "classes": [
-            "ContentEngine"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\platforms.dart",
-        "name": "platforms.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "AI",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\prompt_builder.dart",
-        "name": "prompt_builder.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "AI",
-        "classes": [
-            "PromptBuilder"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\providers\\ai_provider.dart",
-        "name": "ai_provider.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "AI",
-        "classes": [
-            "AIProvider",
-            "AIProviderException"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\providers\\openrouter_provider.dart",
-        "name": "openrouter_provider.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "AI",
-        "classes": [
-            "OpenRouterProvider"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\templates.dart",
-        "name": "templates.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "AI",
-        "classes": [
-            "PromptTemplates"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\datasources\\abstract\\affiliate_data_source.dart",
-        "name": "affiliate_data_source.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Datasource",
-        "classes": [
-            "AffiliateDataSource"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\datasources\\mock\\mock_data_source.dart",
-        "name": "mock_data_source.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Datasource",
-        "classes": [
-            "MockDataSource"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\engine\\miniboss_engine.dart",
-        "name": "miniboss_engine.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Engine",
-        "classes": [
-            "MiniBossResult",
-            "MiniBossEngine"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\main.dart",
-        "name": "main.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Other",
-        "classes": [
-            "SoloForgeApp"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\models\\affiliate_product.dart",
-        "name": "affiliate_product.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Model",
-        "classes": [
-            "AffiliateProduct"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\models\\generated_content.dart",
-        "name": "generated_content.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Model",
-        "classes": [
-            "GeneratedContent"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\models\\product.dart",
-        "name": "product.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Model",
-        "classes": [
-            "Product"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\pages\\forge_page.dart",
-        "name": "forge_page.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Page",
-        "classes": [
-            "ForgePage",
-            "_ForgePageState"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\pages\\home_page.dart",
-        "name": "home_page.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Page",
-        "classes": [
-            "HomePage",
-            "_HomePageState"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\repositories\\affiliate_repository.dart",
-        "name": "affiliate_repository.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Repository",
-        "classes": [
-            "AffiliateRepository"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\services\\catalog_service.dart",
-        "name": "catalog_service.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Service",
-        "classes": [
-            "CatalogService"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\services\\product_service.dart",
-        "name": "product_service.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Service",
-        "classes": [
-            "ProductService"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\category_filter.dart",
-        "name": "category_filter.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Widget",
-        "classes": [
-            "CategoryFilter"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\analysis_card.dart",
-        "name": "analysis_card.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Widget",
-        "classes": [
-            "AnalysisCard"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\content_field.dart",
-        "name": "content_field.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Widget",
-        "classes": [
-            "ContentField"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\content_studio.dart",
-        "name": "content_studio.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Widget",
-        "classes": [
-            "ContentStudio"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\miniboss_card.dart",
-        "name": "miniboss_card.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Widget",
-        "classes": [
-            "MiniBossCard"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\product_header.dart",
-        "name": "product_header.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Widget",
-        "classes": [
-            "ProductHeader"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\miniboss_dialog.dart",
-        "name": "miniboss_dialog.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Widget",
-        "classes": [
-            "MiniBossDialog",
-            "_MiniBossDialogState",
-            "_ContentCard"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\product_card.dart",
-        "name": "product_card.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Widget",
-        "classes": [
-            "ProductCard",
-            "_ScoreChip"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\product_detail_panel.dart",
-        "name": "product_detail_panel.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Widget",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\sort_selector.dart",
-        "name": "sort_selector.dart",
-        "extension": ".dart",
-        "language": "Dart",
-        "category": "Widget",
-        "classes": [
-            "SortSelector"
-        ],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\rules\\miniboss_rules.json",
-        "name": "miniboss_rules.json",
-        "extension": ".json",
-        "language": "JSON",
-        "category": "Rule",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\project_scanner.py",
-        "name": "project_scanner.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\__init__.py",
-        "name": "__init__.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\config.py",
-        "name": "config.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\inventory.py",
-        "name": "inventory.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\main.py",
-        "name": "main.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\models\\__init__.py",
-        "name": "__init__.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\models\\inventory_item.py",
-        "name": "inventory_item.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\PROJECT_INDEX.md",
-        "name": "PROJECT_INDEX.md",
-        "extension": ".md",
-        "language": "Markdown",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\project_inventory.json",
-        "name": "project_inventory.json",
-        "extension": ".json",
-        "language": "JSON",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\PROJECT_STATS.md",
-        "name": "PROJECT_STATS.md",
-        "extension": ".md",
-        "language": "Markdown",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\PROJECT_TREE.md",
-        "name": "PROJECT_TREE.md",
-        "extension": ".md",
-        "language": "Markdown",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\__init__.py",
-        "name": "__init__.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\dart_parser.py",
-        "name": "dart_parser.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\json_parser.py",
-        "name": "json_parser.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\markdown_parser.py",
-        "name": "markdown_parser.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\python_parser.py",
-        "name": "python_parser.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\scanner.py",
-        "name": "scanner.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\__init__.py",
-        "name": "__init__.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\json_writer.py",
-        "name": "json_writer.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\markdown_writer.py",
-        "name": "markdown_writer.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    },
-    {
-        "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\stats_writer.py",
-        "name": "stats_writer.py",
-        "extension": ".py",
-        "language": "Python",
-        "category": "Tool",
-        "classes": [],
-        "enums": [],
-        "extensions": [],
-        "imports": []
-    }
-]
+{
+    "version": "1.0",
+    "generated_at": "2026-07-22T13:01:18",
+    "total_files": 64,
+    "items": [
+        {
+            "path": "D:\\Project\\SoloForge-AI\\docs\\AI_PIPELINE.md",
+            "name": "AI_PIPELINE.md",
+            "extension": ".md",
+            "language": "Markdown",
+            "category": "Documentation",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\docs\\ARCHITECTURE.md",
+            "name": "ARCHITECTURE.md",
+            "extension": ".md",
+            "language": "Markdown",
+            "category": "Documentation",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\docs\\CHANGELOG.md",
+            "name": "CHANGELOG.md",
+            "extension": ".md",
+            "language": "Markdown",
+            "category": "Documentation",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\docs\\CURRENT_SPRINT.md",
+            "name": "CURRENT_SPRINT.md",
+            "extension": ".md",
+            "language": "Markdown",
+            "category": "Documentation",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\docs\\PROJECT_INDEX.md",
+            "name": "PROJECT_INDEX.md",
+            "extension": ".md",
+            "language": "Markdown",
+            "category": "Documentation",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\docs\\ROADMAP.md",
+            "name": "ROADMAP.md",
+            "extension": ".md",
+            "language": "Markdown",
+            "category": "Documentation",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\feed_processor\\cleaner.py",
+            "name": "cleaner.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "FeedProcessor",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\feed_processor\\config.py",
+            "name": "config.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "FeedProcessor",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\feed_processor\\exporter.py",
+            "name": "exporter.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "FeedProcessor",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\feed_processor\\manifest.py",
+            "name": "manifest.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "FeedProcessor",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\feed_processor\\miniboss.py",
+            "name": "miniboss.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "FeedProcessor",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\feed_processor\\reader.py",
+            "name": "reader.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "FeedProcessor",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\feed_processor\\run.py",
+            "name": "run.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "FeedProcessor",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\feed_processor\\transformer.py",
+            "name": "transformer.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "FeedProcessor",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\content_engine.dart",
+            "name": "content_engine.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "AI",
+            "classes": [
+                "ContentEngine"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\platforms.dart",
+            "name": "platforms.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "AI",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\prompt_builder.dart",
+            "name": "prompt_builder.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "AI",
+            "classes": [
+                "PromptBuilder"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\providers\\ai_provider.dart",
+            "name": "ai_provider.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "AI",
+            "classes": [
+                "AIProvider",
+                "AIProviderException"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\providers\\openrouter_provider.dart",
+            "name": "openrouter_provider.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "AI",
+            "classes": [
+                "OpenRouterProvider"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\templates.dart",
+            "name": "templates.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "AI",
+            "classes": [
+                "PromptTemplates"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\datasources\\abstract\\affiliate_data_source.dart",
+            "name": "affiliate_data_source.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Datasource",
+            "classes": [
+                "AffiliateDataSource"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\datasources\\mock\\mock_data_source.dart",
+            "name": "mock_data_source.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Datasource",
+            "classes": [
+                "MockDataSource"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\engine\\miniboss_engine.dart",
+            "name": "miniboss_engine.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Engine",
+            "classes": [
+                "MiniBossResult",
+                "MiniBossEngine"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\main.dart",
+            "name": "main.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Other",
+            "classes": [
+                "SoloForgeApp"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\models\\affiliate_product.dart",
+            "name": "affiliate_product.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Model",
+            "classes": [
+                "AffiliateProduct"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\models\\generated_content.dart",
+            "name": "generated_content.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Model",
+            "classes": [
+                "GeneratedContent"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\models\\product.dart",
+            "name": "product.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Model",
+            "classes": [
+                "Product"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\pages\\forge_page.dart",
+            "name": "forge_page.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Page",
+            "classes": [
+                "ForgePage",
+                "_ForgePageState"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\pages\\home_page.dart",
+            "name": "home_page.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Page",
+            "classes": [
+                "HomePage",
+                "_HomePageState"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\repositories\\affiliate_repository.dart",
+            "name": "affiliate_repository.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Repository",
+            "classes": [
+                "AffiliateRepository"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\services\\catalog_service.dart",
+            "name": "catalog_service.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Service",
+            "classes": [
+                "CatalogService"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\services\\product_service.dart",
+            "name": "product_service.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Service",
+            "classes": [
+                "ProductService"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\category_filter.dart",
+            "name": "category_filter.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Widget",
+            "classes": [
+                "CategoryFilter"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\analysis_card.dart",
+            "name": "analysis_card.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Widget",
+            "classes": [
+                "AnalysisCard"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\content_field.dart",
+            "name": "content_field.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Widget",
+            "classes": [
+                "ContentField"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\content_studio.dart",
+            "name": "content_studio.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Widget",
+            "classes": [
+                "ContentStudio"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\miniboss_card.dart",
+            "name": "miniboss_card.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Widget",
+            "classes": [
+                "MiniBossCard"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\product_header.dart",
+            "name": "product_header.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Widget",
+            "classes": [
+                "ProductHeader"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\miniboss_dialog.dart",
+            "name": "miniboss_dialog.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Widget",
+            "classes": [
+                "MiniBossDialog",
+                "_MiniBossDialogState",
+                "_ContentCard"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\product_card.dart",
+            "name": "product_card.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Widget",
+            "classes": [
+                "ProductCard",
+                "_ScoreChip"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\product_detail_panel.dart",
+            "name": "product_detail_panel.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Widget",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\sort_selector.dart",
+            "name": "sort_selector.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Widget",
+            "classes": [
+                "SortSelector"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\rules\\miniboss_rules.json",
+            "name": "miniboss_rules.json",
+            "extension": ".json",
+            "language": "JSON",
+            "category": "Rule",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\project_scanner.py",
+            "name": "project_scanner.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\__init__.py",
+            "name": "__init__.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\config.py",
+            "name": "config.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\inventory.py",
+            "name": "inventory.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\main.py",
+            "name": "main.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\models\\__init__.py",
+            "name": "__init__.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\models\\inventory_item.py",
+            "name": "inventory_item.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\PROJECT_INDEX.md",
+            "name": "PROJECT_INDEX.md",
+            "extension": ".md",
+            "language": "Markdown",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\project_inventory.json",
+            "name": "project_inventory.json",
+            "extension": ".json",
+            "language": "JSON",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\PROJECT_STATS.md",
+            "name": "PROJECT_STATS.md",
+            "extension": ".md",
+            "language": "Markdown",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\PROJECT_TREE.md",
+            "name": "PROJECT_TREE.md",
+            "extension": ".md",
+            "language": "Markdown",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\__init__.py",
+            "name": "__init__.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\dart_parser.py",
+            "name": "dart_parser.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\json_parser.py",
+            "name": "json_parser.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\markdown_parser.py",
+            "name": "markdown_parser.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\python_parser.py",
+            "name": "python_parser.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\scanner.py",
+            "name": "scanner.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\__init__.py",
+            "name": "__init__.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\json_writer.py",
+            "name": "json_writer.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\markdown_writer.py",
+            "name": "markdown_writer.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\stats_writer.py",
+            "name": "stats_writer.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        }
+    ]
+}
