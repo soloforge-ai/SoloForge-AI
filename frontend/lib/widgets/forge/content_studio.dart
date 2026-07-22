@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../ai/platforms.dart';
 import 'content_field.dart';
 
 class ContentStudio extends StatelessWidget {
   final int selectedPlatform;
 
-  final List<String> platforms;
+  final List<PlatformType> platforms;
 
   final ValueChanged<int> onPlatformChanged;
+
+  final Future<void> Function() onGenerate;
 
   final VoidCallback onCopy;
 
@@ -21,12 +24,35 @@ class ContentStudio extends StatelessWidget {
     required this.selectedPlatform,
     required this.platforms,
     required this.onPlatformChanged,
+    required this.onGenerate,
     required this.onCopy,
     required this.hookController,
     required this.captionController,
     required this.hashtagController,
     required this.ctaController,
   });
+
+  String _platformName(PlatformType platform) {
+    switch (platform) {
+      case PlatformType.facebook:
+        return "Facebook";
+
+      case PlatformType.tiktok:
+        return "TikTok";
+
+      case PlatformType.instagram:
+        return "Instagram";
+
+      case PlatformType.lemon8:
+        return "Lemon8";
+
+      case PlatformType.youtube:
+        return "YouTube";
+
+      case PlatformType.x:
+        return "X";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +79,9 @@ class ContentStudio extends StatelessWidget {
                 platforms.length,
                 (index) {
                   return ChoiceChip(
-                    label: Text(platforms[index]),
+                    label: Text(
+                      _platformName(platforms[index]),
+                    ),
                     selected: selectedPlatform == index,
                     onSelected: (_) {
                       onPlatformChanged(index);
@@ -101,9 +129,18 @@ class ContentStudio extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: () {
-                  onCopy();
-                },
+                onPressed: onGenerate,
+                icon: const Icon(Icons.auto_awesome),
+                label: const Text("Generate AI"),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onCopy,
                 icon: const Icon(Icons.copy),
                 label: const Text("Copy All"),
               ),
