@@ -7,6 +7,7 @@ import '../widgets/forge/product_header.dart';
 import '../widgets/forge/miniboss_card.dart';
 import '../widgets/forge/analysis_card.dart';
 import '../widgets/forge/content_studio.dart';
+import '../engine/generate_engine.dart';
 
 class ForgePage extends StatefulWidget {
   final AffiliateProduct product;
@@ -38,6 +39,20 @@ final platforms = const [
   "Threads",
   "YouTube",
 ];
+
+final generateEngine = const GenerateEngine();
+
+void generateContent() {
+  final content = generateEngine.generate(widget.product);
+
+  setState(() {
+    hookController.text = content.hook;
+    captionController.text = content.caption;
+    hashtagController.text = content.hashtags.join(" ");
+    ctaController.text = content.callToAction;
+  });
+}
+
 
 
 @override
