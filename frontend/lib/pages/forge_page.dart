@@ -3,6 +3,11 @@ import 'package:flutter/services.dart';
 
 import '../models/affiliate_product.dart';
 
+import '../widgets/forge/product_header.dart';
+import '../widgets/forge/miniboss_card.dart';
+import '../widgets/forge/analysis_card.dart';
+import '../widgets/forge/content_studio.dart';
+
 class ForgePage extends StatefulWidget {
   final AffiliateProduct product;
 
@@ -68,121 +73,51 @@ void copyToClipboard(String text) {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              product.title,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            Text("🏪 ${product.shopName}"),
-
-            const SizedBox(height: 8),
-
-            Text("💰 ${product.priceText}"),
-
-            Text("🛒 ${product.soldText}"),
-
-            Text(
-              "💸 ${product.commissionAmountText} (${product.commissionRateText})",
-            ),
+            ProductHeader(product: product),
 
             const SizedBox(height: 20),
 
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "MiniBoss Score",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    LinearProgressIndicator(
-                      value: product.miniBossScore / 10,
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      product.miniBossScore.toStringAsFixed(1),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+
+            MiniBossCard(product: product),
 
             const SizedBox(height: 20),
 
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      "AI Analysis",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Text("• จุดเด่นของสินค้า"),
-                    Text("• เหมาะกับใคร"),
-                    Text("• Hook สำหรับคลิป"),
-                    Text("• ไอเดียรีวิว"),
-                    Text("• CTA"),
-                  ],
-                ),
-              ),
-            ),
+
+            const AnalysisCard(),
 
             const SizedBox(height: 24),
 
-SizedBox(
-  width: double.infinity,
-  child: Card(
-    child: Padding(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Content Studio",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-   
+ContentStudio(
+  selectedPlatform: selectedPlatform,
+  platforms: platforms,
+
+  hookController: hookController,
+  captionController: captionController,
+  hashtagController: hashtagController,
+  ctaController: ctaController,
+
+  onPlatformChanged: (index) {
+    setState(() {
+      selectedPlatform = index;
+    });
+  },
+
+  onCopy: () {
+    copyToClipboard(
+      '''
+${hookController.text}
+
+${captionController.text}
+
+${hashtagController.text}
+
+${ctaController.text}
+''',
+    );
+  },
 ),
 
-        const SizedBox(height: 16),
-
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: List.generate(
-            platforms.length,
-            (index) {
-              return ChoiceChip(
-                label: Text(platforms[index]),
-                selected: selectedPlatform == index,
-                onSelected: (value) {
-                  setState(() {
-                    selectedPlatform = index;
-                  });
-                },
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 24),
+const SizedBox(height: 24),
 
 TextField(
   controller: captionController,
@@ -211,14 +146,9 @@ SizedBox(
 ],
     ),
   ),
-    ),
-    ),
-
-const SizedBox(height: 24),
-          
-   ],
-   ),
-      ),
     );
+
+const SizedBox(height: 24);
+ 
   }
 }
