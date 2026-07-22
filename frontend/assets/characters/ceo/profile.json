@@ -1,0 +1,96 @@
+{
+  "id": "ceo",
+  "version": "1.0",
+
+  "name": "CEO",
+
+  "role": "SoloForge AI Official Mascot",
+
+  "description": "Cute premium 3D chibi male mascot representing SoloForge AI. He is the official presenter for affiliate products, AI tutorials, reviews, and lifestyle content.",
+
+  "physical": {
+    "height_cm": 30,
+    "style": "3D Chibi",
+    "head_ratio": "Large Head",
+    "body_ratio": "Cute Proportion",
+    "gender": "Male",
+    "age_appearance": "Young Adult"
+  },
+
+  "face": {
+    "shape": "Round",
+    "expression_default": "Calm",
+    "eye_color": "Dark Brown",
+    "eyebrows": "Natural",
+    "skin_tone": "Fair Warm"
+  },
+
+  "hair": {
+    "color": "Black",
+    "style": "Short Layer",
+    "bangs": "Full Fringe",
+    "texture": "Soft"
+  },
+
+  "glasses": {
+    "enabled": true,
+    "shape": "Large Rounded Rectangle",
+    "color": "Black"
+  },
+
+  "outfit": {
+    "jacket": "White Luxury Suit",
+    "shirt": "Black",
+    "tie": "Red",
+    "pants": "White",
+    "shoes": "Black Leather",
+    "accessory": "Gold SoloForge Pin"
+  },
+
+  "personality": {
+    "traits": [
+      "Friendly",
+      "Warm",
+      "Professional",
+      "Playful",
+      "Trustworthy"
+    ]
+  },
+
+  "pose_rules": {
+    "default": "Standing",
+    "hands": [
+      "Hands In Pocket",
+      "Holding Product",
+      "Pointing Product",
+      "Thumbs Up"
+    ]
+  },
+
+  "brand_rules": {
+    "never_change_face": true,
+    "never_remove_glasses": true,
+    "never_change_hair": true,
+    "never_change_outfit_colors": true,
+    "maintain_chibi_proportion": true
+  },
+
+  "references": {
+  "master": "references/master.png",
+  "front": "references/front.png",
+  "left": "references/left.png",
+  "right": "references/right.png",
+  "back": "references/back.png",
+  "smile": "references/smile.png",
+  "holding": "references/holding.png",
+  "pointing": "references/pointing.png",
+  "thinking": "references/thinking.png",
+  "icon": "references/icon.png"
+},
+
+"prompt": {
+  "base": "Official SoloForge AI CEO mascot. Premium 3D chibi male. Large black glasses. White luxury suit. Black shirt. Red tie. Maintain identical face, hairstyle, glasses and outfit in every image.",
+  "negative": "different face, different hairstyle, missing glasses, different outfit, beard, mustache, realistic human, anime, low quality, watermark, text, logo"
+}
+
+}

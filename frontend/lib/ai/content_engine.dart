@@ -4,11 +4,13 @@ import 'platforms.dart';
 import 'prompt_builder.dart';
 import 'providers/ai_provider.dart';
 import 'providers/openrouter_provider.dart';
+import 'providers/mock_provider.dart';
 
 class ContentEngine {
   const ContentEngine._();
 
-  static final AIProvider _defaultProvider = OpenRouterProvider();
+  static final AIProvider _defaultProvider =
+    const MockProvider();
 
   static Future<GeneratedContent> generateContent({
     required Product product,
