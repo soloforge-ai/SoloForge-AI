@@ -11,14 +11,7 @@ class ImagePromptBuilder {
     required Scene scene,
     required Map<String, dynamic> product,
   }) {
-    return ImagePrompt(
-      class ImagePromptBuilder {
-  static ImagePrompt build({
-    required Character character,
-    required CreativeStyle creative,
-    required Scene scene,
-    required Map<String, dynamic> product,
-  }) {
+  
     final positiveParts = <String>[
       character.basePrompt,
       ...creative.prompt.values.cast<String>(),

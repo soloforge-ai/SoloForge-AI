@@ -1,6 +1,6 @@
 {
     "version": "1.0",
-    "generated_at": "2026-07-23T09:25:18",
+    "generated_at": "2026-07-23T10:55:15",
     "total_files": 79,
     "items": [
         {
@@ -10,6 +10,7 @@
             "language": "Markdown",
             "category": "Documentation",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -21,6 +22,7 @@
             "language": "Markdown",
             "category": "Documentation",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -32,6 +34,7 @@
             "language": "Markdown",
             "category": "Documentation",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -43,6 +46,7 @@
             "language": "Markdown",
             "category": "Documentation",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -54,6 +58,7 @@
             "language": "Markdown",
             "category": "Documentation",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -65,6 +70,7 @@
             "language": "Markdown",
             "category": "Documentation",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -76,6 +82,7 @@
             "language": "Python",
             "category": "FeedProcessor",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -87,6 +94,7 @@
             "language": "Python",
             "category": "FeedProcessor",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -98,6 +106,7 @@
             "language": "Python",
             "category": "FeedProcessor",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -109,6 +118,7 @@
             "language": "Python",
             "category": "FeedProcessor",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -120,6 +130,7 @@
             "language": "Python",
             "category": "FeedProcessor",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -131,6 +142,7 @@
             "language": "Python",
             "category": "FeedProcessor",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -142,6 +154,7 @@
             "language": "Python",
             "category": "FeedProcessor",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -153,6 +166,7 @@
             "language": "Python",
             "category": "FeedProcessor",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -166,6 +180,7 @@
             "classes": [
                 "ContentEngine"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -185,6 +200,7 @@
             "language": "Dart",
             "category": "AI",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -197,6 +213,9 @@
             "category": "AI",
             "classes": [
                 "PromptBuilder"
+            ],
+            "methods": [
+                "_getTemplate"
             ],
             "enums": [],
             "extensions": [],
@@ -216,6 +235,9 @@
                 "AIProvider",
                 "AIProviderException"
             ],
+            "methods": [
+                "toString"
+            ],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -232,6 +254,7 @@
             "classes": [
                 "MockProvider"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -248,6 +271,11 @@
             "category": "AI",
             "classes": [
                 "OpenRouterProvider"
+            ],
+            "methods": [
+                "_contentFromJson",
+                "_readString",
+                "_readStringList"
             ],
             "enums": [],
             "extensions": [],
@@ -268,6 +296,7 @@
             "classes": [
                 "PromptTemplates"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -281,6 +310,9 @@
             "classes": [
                 "Character"
             ],
+            "methods": [
+                "reference"
+            ],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -292,6 +324,7 @@
             "language": "Dart",
             "category": "Other",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -304,6 +337,9 @@
             "category": "Service",
             "classes": [
                 "CharacterEngine"
+            ],
+            "methods": [
+                "reference"
             ],
             "enums": [],
             "extensions": [],
@@ -320,6 +356,9 @@
             "category": "Service",
             "classes": [
                 "CharacterLoader"
+            ],
+            "methods": [
+                "load"
             ],
             "enums": [],
             "extensions": [],
@@ -338,6 +377,7 @@
             "classes": [
                 "CreativeStyle"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -351,6 +391,7 @@
             "classes": [
                 "CreativeEngine"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -366,6 +407,9 @@
             "category": "Service",
             "classes": [
                 "CreativeLoader"
+            ],
+            "methods": [
+                "loadStyle"
             ],
             "enums": [],
             "extensions": [],
@@ -384,6 +428,7 @@
             "classes": [
                 "AffiliateDataSource"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -399,6 +444,7 @@
             "classes": [
                 "MockDataSource"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -415,6 +461,9 @@
                 "MiniBossResult",
                 "MiniBossEngine"
             ],
+            "methods": [
+                "analyze"
+            ],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -428,9 +477,9 @@
             "language": "Dart",
             "category": "Other",
             "classes": [
-                "ImagePromptBuilder",
                 "ImagePromptBuilder"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -449,6 +498,7 @@
             "classes": [
                 "ImagePrompt"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -460,6 +510,7 @@
             "language": "Dart",
             "category": "Other",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -471,6 +522,7 @@
             "language": "Dart",
             "category": "Other",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -483,6 +535,10 @@
             "category": "Other",
             "classes": [
                 "SoloForgeApp"
+            ],
+            "methods": [
+                "main",
+                "build"
             ],
             "enums": [],
             "extensions": [],
@@ -500,6 +556,12 @@
             "classes": [
                 "AffiliateProduct"
             ],
+            "methods": [
+                "toProduct",
+                "_read",
+                "_readDouble",
+                "_readInt"
+            ],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -515,6 +577,7 @@
             "classes": [
                 "GeneratedContent"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -530,6 +593,7 @@
             "classes": [
                 "Product"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -543,6 +607,17 @@
             "classes": [
                 "ForgePage",
                 "_ForgePageState"
+            ],
+            "methods": [
+                "createState",
+                "generateContent",
+                "setState",
+                "setState",
+                "setState",
+                "copyToClipboard",
+                "dispose",
+                "build",
+                "setState"
             ],
             "enums": [],
             "extensions": [],
@@ -569,6 +644,16 @@
                 "HomePage",
                 "_HomePageState"
             ],
+            "methods": [
+                "createState",
+                "initState",
+                "loadProducts",
+                "setState",
+                "filterProducts",
+                "setState",
+                "build",
+                "setState"
+            ],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -590,6 +675,10 @@
             "classes": [
                 "AffiliateRepository"
             ],
+            "methods": [
+                "getProducts",
+                "search"
+            ],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -606,6 +695,7 @@
             "classes": [
                 "Scene"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -619,6 +709,7 @@
             "classes": [
                 "SceneEngine"
             ],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -634,6 +725,9 @@
             "category": "Service",
             "classes": [
                 "SceneLoader"
+            ],
+            "methods": [
+                "load"
             ],
             "enums": [],
             "extensions": [],
@@ -651,6 +745,12 @@
             "category": "Service",
             "classes": [
                 "CatalogService"
+            ],
+            "methods": [
+                "getProducts",
+                "search",
+                "_hasValues",
+                "_compareByMiniBossScoreDescending"
             ],
             "enums": [],
             "extensions": [],
@@ -670,6 +770,9 @@
             "classes": [
                 "ProductService"
             ],
+            "methods": [
+                "loadProducts"
+            ],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -686,6 +789,9 @@
             "classes": [
                 "CategoryFilter"
             ],
+            "methods": [
+                "build"
+            ],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -700,6 +806,9 @@
             "category": "Widget",
             "classes": [
                 "AnalysisCard"
+            ],
+            "methods": [
+                "build"
             ],
             "enums": [],
             "extensions": [],
@@ -716,6 +825,9 @@
             "classes": [
                 "ContentField"
             ],
+            "methods": [
+                "build"
+            ],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -730,6 +842,10 @@
             "category": "Widget",
             "classes": [
                 "ContentStudio"
+            ],
+            "methods": [
+                "_platformName",
+                "build"
             ],
             "enums": [],
             "extensions": [],
@@ -748,6 +864,9 @@
             "classes": [
                 "MiniBossCard"
             ],
+            "methods": [
+                "build"
+            ],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -763,6 +882,9 @@
             "category": "Widget",
             "classes": [
                 "ProductHeader"
+            ],
+            "methods": [
+                "build"
             ],
             "enums": [],
             "extensions": [],
@@ -781,6 +903,16 @@
                 "MiniBossDialog",
                 "_MiniBossDialogState",
                 "_ContentCard"
+            ],
+            "methods": [
+                "createState",
+                "_generateContent",
+                "setState",
+                "setState",
+                "_copyText",
+                "_buildPostText",
+                "build",
+                "build"
             ],
             "enums": [],
             "extensions": [],
@@ -804,6 +936,11 @@
                 "ProductCard",
                 "_ScoreChip"
             ],
+            "methods": [
+                "build",
+                "_scoreColor",
+                "build"
+            ],
             "enums": [],
             "extensions": [],
             "imports": [
@@ -818,6 +955,7 @@
             "language": "Dart",
             "category": "Widget",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -830,6 +968,9 @@
             "category": "Widget",
             "classes": [
                 "SortSelector"
+            ],
+            "methods": [
+                "build"
             ],
             "enums": [],
             "extensions": [],
@@ -844,6 +985,7 @@
             "language": "JSON",
             "category": "Rule",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -855,6 +997,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -866,6 +1009,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -877,6 +1021,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -888,6 +1033,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -899,6 +1045,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -910,6 +1057,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -921,6 +1069,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -932,6 +1081,7 @@
             "language": "Markdown",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -943,6 +1093,7 @@
             "language": "JSON",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -954,6 +1105,7 @@
             "language": "Markdown",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -965,6 +1117,7 @@
             "language": "Markdown",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -976,6 +1129,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -987,6 +1141,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -998,6 +1153,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -1009,6 +1165,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -1020,6 +1177,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -1031,6 +1189,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -1042,6 +1201,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -1053,6 +1213,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -1064,6 +1225,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -1075,6 +1237,7 @@
             "language": "Python",
             "category": "Tool",
             "classes": [],
+            "methods": [],
             "enums": [],
             "extensions": [],
             "imports": []

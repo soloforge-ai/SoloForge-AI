@@ -15,6 +15,30 @@ class DartParser:
         re.MULTILINE,
     )
 
+    METHOD_PATTERN = re.compile(
+        r"^\s*(?:static\s+)?(?:[\w<>,?\s]+\s+)?([A-Za-z_]\w*)\s*\([^;{}]*\)\s*(?:async\s*)?(?:\{|=>)",
+        re.MULTILINE,
+    )
+
+    EXCLUDED_METHODS = {
+        "if",
+        "for",
+        "while",
+        "switch",
+        "return",
+        "catch",
+        "try",
+        "else",
+        "Scaffold",
+        "SizedBox",
+        "Card",
+        "ChoiceChip",
+        "DropdownMenuItem",
+        "MaterialPageRoute",
+        "ProductCard",
+        "_ContentCard",
+    }
+
     def parse(
         self,
         file: Path,
@@ -33,3 +57,11 @@ class DartParser:
         item.imports.extend(
             self.IMPORT_PATTERN.findall(text)
         )
+
+        methods = [
+            method
+            for method in self.METHOD_PATTERN.findall(text)
+            if method not in self.EXCLUDED_METHODS
+        ]
+
+        item.methods.extend(methods)
