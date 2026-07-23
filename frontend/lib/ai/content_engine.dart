@@ -3,7 +3,7 @@ import '../models/product.dart';
 import 'platforms.dart';
 import 'prompt_builder.dart';
 import 'providers/ai_provider.dart';
-import 'providers/openrouter_provider.dart';
+
 import 'providers/mock_provider.dart';
 
 class ContentEngine {

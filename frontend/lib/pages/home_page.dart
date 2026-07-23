@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../models/affiliate_product.dart';
 import '../services/catalog_service.dart';
-import '../widgets/miniboss_dialog.dart';
+
 import '../widgets/product_card.dart';
 import '../widgets/sort_selector.dart';
 import 'forge_page.dart';
+import 'image_test_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -95,6 +96,26 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 20),
+
+SizedBox(
+  width: double.infinity,
+  child: FilledButton.icon(
+    icon: const Icon(Icons.image),
+    label: const Text("Image Engine Test"),
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const ImageTestPage(),
+        ),
+      );
+    },
+  ),
+),
+
+const SizedBox(height: 20),
+
+
             SortSelector(
               value: sortType,
               onChanged: (value) {
