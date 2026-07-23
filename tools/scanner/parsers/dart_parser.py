@@ -10,6 +10,11 @@ class DartParser:
         r"class\s+([A-Za-z0-9_]+)"
     )
 
+    IMPORT_PATTERN = re.compile(
+        r"^\s*import\s+['\"]([^'\"]+)['\"]",
+        re.MULTILINE,
+    )
+
     def parse(
         self,
         file: Path,
@@ -23,4 +28,8 @@ class DartParser:
 
         item.classes.extend(
             self.CLASS_PATTERN.findall(text)
+        )
+
+        item.imports.extend(
+            self.IMPORT_PATTERN.findall(text)
         )

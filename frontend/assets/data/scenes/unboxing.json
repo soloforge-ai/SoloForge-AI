@@ -1,0 +1,14 @@
+{
+  "id": "unboxing",
+  "name": "Unboxing",
+  "description": "Product unboxing experience",
+
+  "prompt": {
+    "environment": "studio desk",
+    "composition": "opening package",
+    "camera": "top angle",
+    "background": "clean table",
+    "lighting": "softbox lighting",
+    "focus": "package and product"
+  }
+}

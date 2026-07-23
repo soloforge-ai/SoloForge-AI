@@ -1,0 +1,22 @@
+{
+  "id": "luxury",
+  "name": "Luxury",
+  "description": "Luxury premium commercial artwork",
+
+  "prompt": {
+    "style": "luxury premium illustration",
+    "quality": "masterpiece",
+    "rendering": "premium digital painting",
+    "shading": "cinematic lighting",
+    "colors": "gold and black palette",
+    "expression": "confident"
+  },
+
+  "negative_prompt": [
+    "low quality",
+    "blurry",
+    "text",
+    "watermark",
+    "cheap looking"
+  ]
+}

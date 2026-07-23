@@ -1,0 +1,14 @@
+{
+  "id": "affiliate",
+  "name": "Affiliate Product Showcase",
+  "description": "Commercial affiliate product presentation",
+
+  "prompt": {
+    "environment": "clean modern studio",
+    "composition": "product centered",
+    "camera": "eye level",
+    "background": "minimal background",
+    "lighting": "soft studio lighting",
+    "focus": "product and mascot"
+  }
+}

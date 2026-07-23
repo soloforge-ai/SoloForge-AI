@@ -1,0 +1,14 @@
+{
+  "id": "review",
+  "name": "Product Review",
+  "description": "Friendly product review scene",
+
+  "prompt": {
+    "environment": "creator workspace",
+    "composition": "mascot holding product",
+    "camera": "medium shot",
+    "background": "clean desk setup",
+    "lighting": "natural daylight",
+    "focus": "product demonstration"
+  }
+}

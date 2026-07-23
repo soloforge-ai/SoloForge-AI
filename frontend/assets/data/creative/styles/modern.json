@@ -1,0 +1,22 @@
+{
+  "id": "modern",
+  "name": "Modern",
+  "description": "Modern commercial illustration",
+
+  "prompt": {
+    "style": "modern illustration",
+    "quality": "ultra high quality",
+    "rendering": "clean digital art",
+    "shading": "smooth gradient",
+    "colors": "neutral palette",
+    "expression": "professional"
+  },
+
+  "negative_prompt": [
+    "low quality",
+    "blurry",
+    "text",
+    "watermark",
+    "extra limbs"
+  ]
+}

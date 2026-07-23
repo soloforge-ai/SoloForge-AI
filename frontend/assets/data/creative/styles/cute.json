@@ -1,0 +1,23 @@
+{
+  "id": "cute",
+  "name": "Cute",
+  "description": "Cute mascot illustration",
+
+  "prompt": {
+    "style": "cute mascot illustration",
+    "quality": "high quality",
+    "rendering": "clean vector illustration",
+    "shading": "soft shading",
+    "colors": "vibrant colors",
+    "expression": "adorable expression"
+  },
+
+  "negative_prompt": [
+    "blurry",
+    "low quality",
+    "watermark",
+    "text",
+    "extra limbs",
+    "deformed"
+  ]
+}

@@ -1,7 +1,7 @@
 {
     "version": "1.0",
-    "generated_at": "2026-07-22T13:01:18",
-    "total_files": 64,
+    "generated_at": "2026-07-23T09:25:18",
+    "total_files": 79,
     "items": [
         {
             "path": "D:\\Project\\SoloForge-AI\\docs\\AI_PIPELINE.md",
@@ -168,7 +168,15 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "../models/generated_content.dart",
+                "../models/product.dart",
+                "platforms.dart",
+                "prompt_builder.dart",
+                "providers/ai_provider.dart",
+                "providers/openrouter_provider.dart",
+                "providers/mock_provider.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\platforms.dart",
@@ -192,7 +200,11 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "../models/product.dart",
+                "platforms.dart",
+                "templates.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\providers\\ai_provider.dart",
@@ -206,7 +218,27 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "../../models/generated_content.dart",
+                "../platforms.dart"
+            ]
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\providers\\mock_provider.dart",
+            "name": "mock_provider.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "AI",
+            "classes": [
+                "MockProvider"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": [
+                "../../models/generated_content.dart",
+                "../platforms.dart",
+                "ai_provider.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\providers\\openrouter_provider.dart",
@@ -219,7 +251,13 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "dart:convert",
+                "package:http/http.dart",
+                "../../models/generated_content.dart",
+                "../platforms.dart",
+                "ai_provider.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\templates.dart",
@@ -235,6 +273,109 @@
             "imports": []
         },
         {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\character\\models\\character.dart",
+            "name": "character.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Model",
+            "classes": [
+                "Character"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\character\\prompts\\character_prompt_builder.dart",
+            "name": "character_prompt_builder.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Other",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\character\\services\\character_engine.dart",
+            "name": "character_engine.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Service",
+            "classes": [
+                "CharacterEngine"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": [
+                "../models/character.dart",
+                "character_loader.dart"
+            ]
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\character\\services\\character_loader.dart",
+            "name": "character_loader.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Service",
+            "classes": [
+                "CharacterLoader"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": [
+                "dart:convert",
+                "package:flutter/services.dart",
+                "../models/character.dart"
+            ]
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\creative\\models\\creative_style.dart",
+            "name": "creative_style.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Model",
+            "classes": [
+                "CreativeStyle"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\creative\\services\\creative_engine.dart",
+            "name": "creative_engine.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Service",
+            "classes": [
+                "CreativeEngine"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": [
+                "../models/creative_style.dart",
+                "creative_loader.dart"
+            ]
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\creative\\services\\creative_loader.dart",
+            "name": "creative_loader.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Service",
+            "classes": [
+                "CreativeLoader"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": [
+                "dart:convert",
+                "package:flutter/services.dart",
+                "../models/creative_style.dart"
+            ]
+        },
+        {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\datasources\\abstract\\affiliate_data_source.dart",
             "name": "affiliate_data_source.dart",
             "extension": ".dart",
@@ -245,7 +386,9 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "../../models/affiliate_product.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\datasources\\mock\\mock_data_source.dart",
@@ -258,7 +401,9 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "../../services/catalog_service.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\engine\\miniboss_engine.dart",
@@ -270,6 +415,62 @@
                 "MiniBossResult",
                 "MiniBossEngine"
             ],
+            "enums": [],
+            "extensions": [],
+            "imports": [
+                "../models/product.dart"
+            ]
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\image\\builders\\image_prompt_builder.dart",
+            "name": "image_prompt_builder.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Other",
+            "classes": [
+                "ImagePromptBuilder",
+                "ImagePromptBuilder"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": [
+                "../../character/models/character.dart",
+                "../../creative/models/creative_style.dart",
+                "../../scene/models/scene.dart",
+                "../models/image_prompt.dart"
+            ]
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\image\\models\\image_prompt.dart",
+            "name": "image_prompt.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Model",
+            "classes": [
+                "ImagePrompt"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\image\\providers\\image_provider.dart",
+            "name": "image_provider.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Other",
+            "classes": [],
+            "enums": [],
+            "extensions": [],
+            "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\image\\providers\\mock_provider.dart",
+            "name": "mock_provider.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Other",
+            "classes": [],
             "enums": [],
             "extensions": [],
             "imports": []
@@ -285,7 +486,10 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:flutter/material.dart",
+                "pages/home_page.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\models\\affiliate_product.dart",
@@ -298,7 +502,9 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "product.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\models\\generated_content.dart",
@@ -311,7 +517,9 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "../ai/platforms.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\models\\product.dart",
@@ -338,7 +546,18 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:flutter/material.dart",
+                "package:flutter/services.dart",
+                "../ai/content_engine.dart",
+                "../ai/platforms.dart",
+                "../models/affiliate_product.dart",
+                "../models/generated_content.dart",
+                "../widgets/forge/analysis_card.dart",
+                "../widgets/forge/content_studio.dart",
+                "../widgets/forge/miniboss_card.dart",
+                "../widgets/forge/product_header.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\pages\\home_page.dart",
@@ -352,7 +571,15 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:flutter/material.dart",
+                "../models/affiliate_product.dart",
+                "../services/catalog_service.dart",
+                "../widgets/miniboss_dialog.dart",
+                "../widgets/product_card.dart",
+                "../widgets/sort_selector.dart",
+                "forge_page.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\repositories\\affiliate_repository.dart",
@@ -365,7 +592,56 @@
             ],
             "enums": [],
             "extensions": [],
+            "imports": [
+                "../datasources/abstract/affiliate_data_source.dart",
+                "../models/affiliate_product.dart"
+            ]
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\scene\\models\\scene.dart",
+            "name": "scene.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Model",
+            "classes": [
+                "Scene"
+            ],
+            "enums": [],
+            "extensions": [],
             "imports": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\scene\\services\\scene_engine.dart",
+            "name": "scene_engine.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Service",
+            "classes": [
+                "SceneEngine"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": [
+                "../models/scene.dart",
+                "scene_loader.dart"
+            ]
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\scene\\services\\scene_loader.dart",
+            "name": "scene_loader.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Service",
+            "classes": [
+                "SceneLoader"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": [
+                "dart:convert",
+                "package:flutter/services.dart",
+                "../models/scene.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\services\\catalog_service.dart",
@@ -378,7 +654,12 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:csv/csv.dart",
+                "package:flutter/services.dart",
+                "../datasources/abstract/affiliate_data_source.dart",
+                "../models/affiliate_product.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\services\\product_service.dart",
@@ -391,7 +672,10 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "../models/product.dart",
+                "catalog_service.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\category_filter.dart",
@@ -404,7 +688,9 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:flutter/material.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\analysis_card.dart",
@@ -417,7 +703,9 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:flutter/material.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\content_field.dart",
@@ -430,7 +718,9 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:flutter/material.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\content_studio.dart",
@@ -443,7 +733,11 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:flutter/material.dart",
+                "../../ai/platforms.dart",
+                "content_field.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\miniboss_card.dart",
@@ -456,7 +750,10 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:flutter/material.dart",
+                "../../models/affiliate_product.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\product_header.dart",
@@ -469,7 +766,10 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:flutter/material.dart",
+                "../../models/affiliate_product.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\miniboss_dialog.dart",
@@ -484,7 +784,15 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:flutter/material.dart",
+                "package:flutter/services.dart",
+                "../ai/content_engine.dart",
+                "../ai/platforms.dart",
+                "../engine/miniboss_engine.dart",
+                "../models/generated_content.dart",
+                "../models/product.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\product_card.dart",
@@ -498,7 +806,10 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:flutter/material.dart",
+                "../models/affiliate_product.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\product_detail_panel.dart",
@@ -522,7 +833,9 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "package:flutter/material.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\rules\\miniboss_rules.json",

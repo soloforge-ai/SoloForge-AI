@@ -1,0 +1,14 @@
+{
+  "id": "lifestyle",
+  "name": "Lifestyle",
+  "description": "Daily lifestyle content",
+
+  "prompt": {
+    "environment": "modern cozy room",
+    "composition": "natural pose",
+    "camera": "wide shot",
+    "background": "home environment",
+    "lighting": "warm daylight",
+    "focus": "daily life"
+  }
+}
