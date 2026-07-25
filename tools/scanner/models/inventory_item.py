@@ -15,5 +15,8 @@ class InventoryItem:
     extensions: list[str] = field(default_factory=list)
     imports: list[str] = field(default_factory=list)
 
+    dependencies: list[str] = field(default_factory=list)
+    used_by: list[str] = field(default_factory=list)
+
     def to_dict(self):
         return asdict(self)

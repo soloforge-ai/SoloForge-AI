@@ -1,7 +1,7 @@
 {
     "version": "1.0",
-    "generated_at": "2026-07-23T10:55:15",
-    "total_files": 79,
+    "generated_at": "2026-07-25T18:12:04",
+    "total_files": 91,
     "items": [
         {
             "path": "D:\\Project\\SoloForge-AI\\docs\\AI_PIPELINE.md",
@@ -13,7 +13,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\docs\\ARCHITECTURE.md",
@@ -25,7 +27,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\docs\\CHANGELOG.md",
@@ -37,7 +41,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\docs\\CURRENT_SPRINT.md",
@@ -49,7 +55,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\docs\\PROJECT_INDEX.md",
@@ -61,7 +69,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\docs\\ROADMAP.md",
@@ -73,7 +83,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\feed_processor\\cleaner.py",
@@ -85,7 +97,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\feed_processor\\config.py",
@@ -97,7 +111,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\feed_processor\\exporter.py",
@@ -109,7 +125,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\feed_processor\\manifest.py",
@@ -121,7 +139,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\feed_processor\\miniboss.py",
@@ -133,7 +153,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\feed_processor\\reader.py",
@@ -145,7 +167,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\feed_processor\\run.py",
@@ -157,7 +181,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\feed_processor\\transformer.py",
@@ -169,7 +195,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\content_engine.dart",
@@ -189,8 +217,19 @@
                 "platforms.dart",
                 "prompt_builder.dart",
                 "providers/ai_provider.dart",
-                "providers/openrouter_provider.dart",
                 "providers/mock_provider.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/platforms.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/prompt_builder.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/providers/ai_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/providers/mock_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/providers/mock_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/models/generated_content.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/models/product.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -203,7 +242,17 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/content_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/prompt_builder.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/providers/ai_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/providers/mock_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/models/generated_content.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/content_studio.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\prompt_builder.dart",
@@ -223,6 +272,14 @@
                 "../models/product.dart",
                 "platforms.dart",
                 "templates.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/platforms.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/templates.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/models/product.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/content_engine.dart"
             ]
         },
         {
@@ -243,6 +300,14 @@
             "imports": [
                 "../../models/generated_content.dart",
                 "../platforms.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/platforms.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/models/generated_content.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/content_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/providers/mock_provider.dart"
             ]
         },
         {
@@ -261,30 +326,14 @@
                 "../../models/generated_content.dart",
                 "../platforms.dart",
                 "ai_provider.dart"
-            ]
-        },
-        {
-            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\providers\\openrouter_provider.dart",
-            "name": "openrouter_provider.dart",
-            "extension": ".dart",
-            "language": "Dart",
-            "category": "AI",
-            "classes": [
-                "OpenRouterProvider"
             ],
-            "methods": [
-                "_contentFromJson",
-                "_readString",
-                "_readStringList"
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/platforms.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/providers/ai_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/models/generated_content.dart"
             ],
-            "enums": [],
-            "extensions": [],
-            "imports": [
-                "dart:convert",
-                "package:http/http.dart",
-                "../../models/generated_content.dart",
-                "../platforms.dart",
-                "ai_provider.dart"
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/content_engine.dart"
             ]
         },
         {
@@ -299,7 +348,11 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/prompt_builder.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\character\\models\\character.dart",
@@ -315,7 +368,14 @@
             ],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/character/services/character_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/character/services/character_loader.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/builders/image_prompt_builder.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/services/image_engine.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\character\\prompts\\character_prompt_builder.dart",
@@ -327,7 +387,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\character\\services\\character_engine.dart",
@@ -346,6 +408,13 @@
             "imports": [
                 "../models/character.dart",
                 "character_loader.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/character/models/character.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/character/services/character_loader.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/image_test_page.dart"
             ]
         },
         {
@@ -366,6 +435,12 @@
                 "dart:convert",
                 "package:flutter/services.dart",
                 "../models/character.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/character/models/character.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/character/services/character_engine.dart"
             ]
         },
         {
@@ -380,7 +455,14 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/creative/services/creative_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/creative/services/creative_loader.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/builders/image_prompt_builder.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/services/image_engine.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\creative\\services\\creative_engine.dart",
@@ -397,6 +479,13 @@
             "imports": [
                 "../models/creative_style.dart",
                 "creative_loader.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/creative/models/creative_style.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/creative/services/creative_loader.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/image_test_page.dart"
             ]
         },
         {
@@ -417,6 +506,12 @@
                 "dart:convert",
                 "package:flutter/services.dart",
                 "../models/creative_style.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/creative/models/creative_style.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/creative/services/creative_engine.dart"
             ]
         },
         {
@@ -433,6 +528,13 @@
             "extensions": [],
             "imports": [
                 "../../models/affiliate_product.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/repositories/affiliate_repository.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/services/catalog_service.dart"
             ]
         },
         {
@@ -449,7 +551,11 @@
             "extensions": [],
             "imports": [
                 "../../services/catalog_service.dart"
-            ]
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/services/catalog_service.dart"
+            ],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\engine\\miniboss_engine.dart",
@@ -468,7 +574,11 @@
             "extensions": [],
             "imports": [
                 "../models/product.dart"
-            ]
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/models/product.dart"
+            ],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\image\\builders\\image_prompt_builder.dart",
@@ -487,6 +597,36 @@
                 "../../creative/models/creative_style.dart",
                 "../../scene/models/scene.dart",
                 "../models/image_prompt.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/character/models/character.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/creative/models/creative_style.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/models/image_prompt.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/scene/models/scene.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/image/services/image_engine.dart"
+            ]
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\image\\models\\generated_image.dart",
+            "name": "generated_image.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Model",
+            "classes": [
+                "GeneratedImage"
+            ],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/image/providers/image_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/providers/mock_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/services/image_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/pages/image_test_page.dart"
             ]
         },
         {
@@ -501,7 +641,13 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/image/builders/image_prompt_builder.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/providers/image_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/providers/mock_provider.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\image\\providers\\image_provider.dart",
@@ -509,11 +655,24 @@
             "extension": ".dart",
             "language": "Dart",
             "category": "Other",
-            "classes": [],
+            "classes": [
+                "ImageProvider"
+            ],
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "../models/generated_image.dart",
+                "../models/image_prompt.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/image/models/generated_image.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/models/image_prompt.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/image/providers/mock_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/services/image_engine.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\image\\providers\\mock_provider.dart",
@@ -521,11 +680,62 @@
             "extension": ".dart",
             "language": "Dart",
             "category": "Other",
-            "classes": [],
+            "classes": [
+                "MockImageProvider"
+            ],
+            "methods": [
+                "generate"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": [
+                "../models/generated_image.dart",
+                "../models/image_prompt.dart",
+                "image_provider.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/image/models/generated_image.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/models/image_prompt.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/providers/image_provider.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/content_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/services/image_engine.dart"
+            ]
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\image\\services\\image_engine.dart",
+            "name": "image_engine.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Service",
+            "classes": [
+                "ImageEngine"
+            ],
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [
+                "../../character/models/character.dart",
+                "../../creative/models/creative_style.dart",
+                "../../scene/models/scene.dart",
+                "../builders/image_prompt_builder.dart",
+                "../models/generated_image.dart",
+                "../providers/image_provider.dart",
+                "../providers/mock_provider.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/character/models/character.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/creative/models/creative_style.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/builders/image_prompt_builder.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/models/generated_image.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/providers/image_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/providers/mock_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/scene/models/scene.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/image_test_page.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\main.dart",
@@ -545,7 +755,11 @@
             "imports": [
                 "package:flutter/material.dart",
                 "pages/home_page.dart"
-            ]
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/home_page.dart"
+            ],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\models\\affiliate_product.dart",
@@ -566,6 +780,19 @@
             "extensions": [],
             "imports": [
                 "product.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/models/product.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/datasources/abstract/affiliate_data_source.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/pages/home_page.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/repositories/affiliate_repository.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/services/catalog_service.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/miniboss_card.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/product_header.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/product_card.dart"
             ]
         },
         {
@@ -582,6 +809,15 @@
             "extensions": [],
             "imports": [
                 "../ai/platforms.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/platforms.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/content_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/providers/ai_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/providers/mock_provider.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -596,7 +832,15 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/content_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/prompt_builder.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/engine/miniboss_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/services/product_service.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\pages\\forge_page.dart",
@@ -632,6 +876,19 @@
                 "../widgets/forge/content_studio.dart",
                 "../widgets/forge/miniboss_card.dart",
                 "../widgets/forge/product_header.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/content_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/platforms.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/models/generated_content.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/analysis_card.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/content_studio.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/miniboss_card.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/product_header.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/home_page.dart"
             ]
         },
         {
@@ -660,10 +917,65 @@
                 "package:flutter/material.dart",
                 "../models/affiliate_product.dart",
                 "../services/catalog_service.dart",
-                "../widgets/miniboss_dialog.dart",
                 "../widgets/product_card.dart",
                 "../widgets/sort_selector.dart",
-                "forge_page.dart"
+                "forge_page.dart",
+                "image_test_page.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/pages/image_test_page.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/services/catalog_service.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/product_card.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/sort_selector.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/main.dart"
+            ]
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\pages\\image_test_page.dart",
+            "name": "image_test_page.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Page",
+            "classes": [
+                "ImageTestPage",
+                "_ImageTestPageState"
+            ],
+            "methods": [
+                "createState",
+                "initState",
+                "_initialize",
+                "setState",
+                "setState",
+                "_generateImage",
+                "setState",
+                "setState",
+                "setState",
+                "_buildResult",
+                "build"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": [
+                "package:flutter/material.dart",
+                "../character/services/character_engine.dart",
+                "../creative/services/creative_engine.dart",
+                "../scene/services/scene_engine.dart",
+                "../image/models/generated_image.dart",
+                "../image/services/image_engine.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/character/services/character_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/creative/services/creative_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/models/generated_image.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/services/image_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/scene/services/scene_engine.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/home_page.dart"
             ]
         },
         {
@@ -684,7 +996,12 @@
             "imports": [
                 "../datasources/abstract/affiliate_data_source.dart",
                 "../models/affiliate_product.dart"
-            ]
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/datasources/abstract/affiliate_data_source.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart"
+            ],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\scene\\models\\scene.dart",
@@ -698,7 +1015,14 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/image/builders/image_prompt_builder.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/image/services/image_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/scene/services/scene_engine.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/scene/services/scene_loader.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\scene\\services\\scene_engine.dart",
@@ -715,6 +1039,13 @@
             "imports": [
                 "../models/scene.dart",
                 "scene_loader.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/scene/models/scene.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/scene/services/scene_loader.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/image_test_page.dart"
             ]
         },
         {
@@ -735,6 +1066,12 @@
                 "dart:convert",
                 "package:flutter/services.dart",
                 "../models/scene.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/scene/models/scene.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/scene/services/scene_engine.dart"
             ]
         },
         {
@@ -759,6 +1096,15 @@
                 "package:flutter/services.dart",
                 "../datasources/abstract/affiliate_data_source.dart",
                 "../models/affiliate_product.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/datasources/abstract/affiliate_data_source.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/datasources/mock/mock_data_source.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/pages/home_page.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/services/product_service.dart"
             ]
         },
         {
@@ -778,7 +1124,12 @@
             "imports": [
                 "../models/product.dart",
                 "catalog_service.dart"
-            ]
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/models/product.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/services/catalog_service.dart"
+            ],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\category_filter.dart",
@@ -796,7 +1147,9 @@
             "extensions": [],
             "imports": [
                 "package:flutter/material.dart"
-            ]
+            ],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\forge\\analysis_card.dart",
@@ -814,6 +1167,10 @@
             "extensions": [],
             "imports": [
                 "package:flutter/material.dart"
+            ],
+            "dependencies": [],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -832,6 +1189,10 @@
             "extensions": [],
             "imports": [
                 "package:flutter/material.dart"
+            ],
+            "dependencies": [],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/content_studio.dart"
             ]
         },
         {
@@ -853,6 +1214,13 @@
                 "package:flutter/material.dart",
                 "../../ai/platforms.dart",
                 "content_field.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/platforms.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/content_field.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -872,6 +1240,12 @@
             "imports": [
                 "package:flutter/material.dart",
                 "../../models/affiliate_product.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -891,39 +1265,12 @@
             "imports": [
                 "package:flutter/material.dart",
                 "../../models/affiliate_product.dart"
-            ]
-        },
-        {
-            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\miniboss_dialog.dart",
-            "name": "miniboss_dialog.dart",
-            "extension": ".dart",
-            "language": "Dart",
-            "category": "Widget",
-            "classes": [
-                "MiniBossDialog",
-                "_MiniBossDialogState",
-                "_ContentCard"
             ],
-            "methods": [
-                "createState",
-                "_generateContent",
-                "setState",
-                "setState",
-                "_copyText",
-                "_buildPostText",
-                "build",
-                "build"
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart"
             ],
-            "enums": [],
-            "extensions": [],
-            "imports": [
-                "package:flutter/material.dart",
-                "package:flutter/services.dart",
-                "../ai/content_engine.dart",
-                "../ai/platforms.dart",
-                "../engine/miniboss_engine.dart",
-                "../models/generated_content.dart",
-                "../models/product.dart"
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -946,6 +1293,12 @@
             "imports": [
                 "package:flutter/material.dart",
                 "../models/affiliate_product.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/home_page.dart"
             ]
         },
         {
@@ -958,7 +1311,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\widgets\\sort_selector.dart",
@@ -976,6 +1331,10 @@
             "extensions": [],
             "imports": [
                 "package:flutter/material.dart"
+            ],
+            "dependencies": [],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/home_page.dart"
             ]
         },
         {
@@ -988,7 +1347,23 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\__init__.py",
+            "name": "__init__.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\project_scanner.py",
@@ -1000,7 +1375,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\__init__.py",
@@ -1012,7 +1389,51 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\builders\\dependency_builder.py",
+            "name": "dependency_builder.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\builders\\project_intelligence_builder.py",
+            "name": "project_intelligence_builder.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\builders\\reverse_dependency_builder.py",
+            "name": "reverse_dependency_builder.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\config.py",
@@ -1024,7 +1445,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\inventory.py",
@@ -1036,7 +1459,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\main.py",
@@ -1048,7 +1473,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\models\\__init__.py",
@@ -1060,7 +1487,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\models\\inventory_item.py",
@@ -1072,7 +1501,23 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\models\\project_intelligence.py",
+            "name": "project_intelligence.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\PROJECT_INDEX.md",
@@ -1084,7 +1529,23 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\PROJECT_INTELLIGENCE.md",
+            "name": "PROJECT_INTELLIGENCE.md",
+            "extension": ".md",
+            "language": "Markdown",
+            "category": "Tool",
+            "classes": [],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\project_inventory.json",
@@ -1096,7 +1557,23 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\PROJECT_MAP.md",
+            "name": "PROJECT_MAP.md",
+            "extension": ".md",
+            "language": "Markdown",
+            "category": "Tool",
+            "classes": [],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\PROJECT_STATS.md",
@@ -1108,7 +1585,23 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\PROJECT_STATUS.md",
+            "name": "PROJECT_STATUS.md",
+            "extension": ".md",
+            "language": "Markdown",
+            "category": "Tool",
+            "classes": [],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\output\\PROJECT_TREE.md",
@@ -1120,7 +1613,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\__init__.py",
@@ -1132,7 +1627,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\dart_parser.py",
@@ -1144,7 +1641,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\json_parser.py",
@@ -1156,7 +1655,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\markdown_parser.py",
@@ -1168,7 +1669,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\parsers\\python_parser.py",
@@ -1180,7 +1683,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\scanner.py",
@@ -1192,7 +1697,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\__init__.py",
@@ -1204,7 +1711,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\json_writer.py",
@@ -1216,7 +1725,9 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\markdown_writer.py",
@@ -1228,7 +1739,37 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\project_intelligence_writer.py",
+            "name": "project_intelligence_writer.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\project_map_writer.py",
+            "name": "project_map_writer.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\stats_writer.py",
@@ -1240,7 +1781,23 @@
             "methods": [],
             "enums": [],
             "extensions": [],
-            "imports": []
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\tools\\scanner\\writers\\status_writer.py",
+            "name": "status_writer.py",
+            "extension": ".py",
+            "language": "Python",
+            "category": "Tool",
+            "classes": [],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
+            "used_by": []
         }
     ]
 }
