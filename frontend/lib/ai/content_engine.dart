@@ -3,22 +3,25 @@ import '../models/product.dart';
 import 'platforms.dart';
 import 'prompt_builder.dart';
 import 'providers/ai_provider.dart';
-
 import 'providers/mock_provider.dart';
+import 'product_enricher.dart';
 
 class ContentEngine {
   const ContentEngine._();
 
   static final AIProvider _defaultProvider =
-    const MockProvider();
+      const MockProvider();
 
   static Future<GeneratedContent> generateContent({
     required Product product,
     required PlatformType platform,
     AIProvider? provider,
   }) async {
+    final enrichedProduct =
+        const ProductEnricher().enrich(product);
+
     final prompt = PromptBuilder.buildCaptionPrompt(
-      product: product,
+      product: enrichedProduct,
       platform: platform,
     );
 

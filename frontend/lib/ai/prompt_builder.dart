@@ -14,23 +14,75 @@ class PromptBuilder {
     return '''
 $template
 
+==============================
 Product Information
+==============================
 
 Name: ${product.name}
 Category: ${product.category}
 Brand: ${product.brand ?? "-"}
+Shop: ${product.shop}
+
 Price: ${product.price}
-Rating: ${product.rating}
 Commission: ${product.commission}%
+Rating: ${product.rating}
 
-Target Audience: ${product.targetAudience ?? "-"}
+==============================
+Target Audience
+==============================
 
-MiniBoss Notes
+${product.targetAudience ?? "-"}
 
-Evergreen: ${product.evergreen}
-Giftable: ${product.giftable}
+==============================
+Product Metadata
+==============================
 
-Generate high-quality content based on this product.
+Description:
+${product.description ?? "-"}
+
+Tags:
+${product.tags.isEmpty ? "-" : product.tags.join(", ")}
+
+Keywords:
+${product.keywords.isEmpty ? "-" : product.keywords.join(", ")}
+
+Mood:
+${product.mood ?? "-"}
+
+==============================
+MiniBoss Analysis
+==============================
+
+Evergreen:
+${product.evergreen}
+
+Giftable:
+${product.giftable}
+
+Suitable For Short Video:
+${product.suitableForShortVideo}
+
+CEO Approved:
+${product.ceoApproved}
+
+==============================
+Instructions
+==============================
+
+Write high-quality affiliate marketing content.
+
+Requirements:
+
+- Focus on the product benefits.
+- Use the product metadata as the primary context.
+- Naturally use the provided keywords.
+- Match the writing style for the selected platform.
+- Do not invent product features.
+- Keep the content engaging and persuasive.
+- Avoid generic marketing phrases.
+- End with a clear call-to-action.
+
+Generate the best possible content.
 ''';
   }
 
