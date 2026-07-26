@@ -68,6 +68,7 @@ flutter:
     - assets/characters/ceo/profile.json
     - assets/characters/ceo/references/
     - assets/characters/ceo/thumbnails/
+    - assets/templates/tiktok/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

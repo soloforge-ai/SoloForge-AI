@@ -1,9 +1,13 @@
 import '../../models/generated_content.dart';
 import '../platforms.dart';
+import '../template_repository.dart';
 import 'ai_provider.dart';
 
 class MockProvider implements AIProvider {
   const MockProvider();
+
+  static const TemplateRepository _repository =
+      TemplateRepository();
 
   @override
   Future<GeneratedContent> generateContent({
@@ -15,6 +19,68 @@ class MockProvider implements AIProvider {
     );
 
     final lower = prompt.toLowerCase();
+
+    // =====================================================
+    // NEW : Try loading Template (Transition Step)
+    // =====================================================
+
+    try {
+      if (lower.contains('squishy') ||
+          lower.contains('สกุชชี่') ||
+          lower.contains('cheese') ||
+          lower.contains('ชีส')) {
+        final template =
+            await _repository.loadTemplate(
+          platform: 'tiktok',
+          template: 'cute_toy',
+        );
+
+        final titles =
+            List<String>.from(template['titles'] ?? []);
+
+        final hooks =
+            List<String>.from(template['hooks'] ?? []);
+
+        final hashtags =
+            List<String>.from(template['hashtags'] ?? []);
+
+        return GeneratedContent(
+          title: titles.isNotEmpty
+              ? titles.first.replaceAll(
+                  '{{product}}',
+                  'Cheese Squishy',
+                )
+              : 'Cheese Squishy',
+
+          hook: hooks.isNotEmpty
+              ? hooks.first
+              : 'เห็นแล้วอยากบีบทั้งวัน',
+
+          caption: '''
+🧀 สกุชชี่ชีสนุ่มเด้ง บีบเพลินสุด ๆ
+
+✨ เนื้อนุ่ม คืนตัวช้า
+💖 ช่วยคลายเครียดระหว่างวัน
+🎁 เหมาะซื้อใช้เองหรือเป็นของขวัญ
+''',
+
+          hashtags: hashtags,
+
+          callToAction: "🛒 กดลิงก์เพื่อดูรายละเอียดสินค้า",
+
+          platform: platform,
+
+          createdAt: DateTime.now(),
+        );
+      }
+    } catch (_) {
+      // ถ้าโหลด Template ไม่ได้
+      // จะใช้ Logic เดิมด้านล่าง
+    }
+
+    // =====================================================
+    // Existing Mock Logic (Fallback)
+    // =====================================================
 
     String title;
     String hook;
