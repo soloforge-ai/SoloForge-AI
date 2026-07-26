@@ -31,6 +31,19 @@ class AffiliateProduct {
     required this.commissionScore,
 
     required this.miniBossScore,
+
+    // ==========================
+    // SoloForge Metadata
+    // ==========================
+
+    this.description,
+    this.tags = const [],
+    this.keywords = const [],
+    this.mood,
+    this.targetAudience,
+    this.suitableForShortVideo = false,
+    this.ceoApproved = false,
+    this.favorite = false,
   });
 
   final String itemId;
@@ -63,6 +76,26 @@ class AffiliateProduct {
 
   final double miniBossScore;
 
+  // =====================================================
+  // SoloForge Metadata
+  // =====================================================
+
+  final String? description;
+
+  final List<String> tags;
+
+  final List<String> keywords;
+
+  final String? mood;
+
+  final String? targetAudience;
+
+  final bool suitableForShortVideo;
+
+  final bool ceoApproved;
+
+  final bool favorite;
+
   factory AffiliateProduct.fromCsv(Map<String, String> row) {
     return AffiliateProduct(
       itemId: _read(row, 'รหัสสินค้า'),
@@ -92,6 +125,30 @@ class AffiliateProduct {
       commissionScore: _readDouble(row, 'CommissionScore'),
 
       miniBossScore: _readDouble(row, 'MiniBossScore'),
+
+      // Metadata
+      description: _read(row, 'Description'),
+
+      tags: _split(_read(row, 'Tags')),
+
+      keywords: _split(_read(row, 'Keywords')),
+
+      mood: _read(row, 'Mood').isEmpty
+          ? null
+          : _read(row, 'Mood'),
+
+      targetAudience: _read(row, 'TargetAudience').isEmpty
+          ? null
+          : _read(row, 'TargetAudience'),
+
+      suitableForShortVideo:
+          _read(row, 'ShortVideo') == 'true',
+
+      ceoApproved:
+          _read(row, 'CEOApproved') == 'true',
+
+      favorite:
+          _read(row, 'Favorite') == 'true',
     );
   }
 
@@ -105,7 +162,84 @@ class AffiliateProduct {
       category: priceBucket,
       shop: shopName,
       brand: shopName,
+      description: description,
+      tags: tags,
+      keywords: keywords,
+      mood: mood,
+      targetAudience: targetAudience,
+      suitableForShortVideo: suitableForShortVideo,
+      ceoApproved: ceoApproved,
     );
+  }
+
+  AffiliateProduct copyWith({
+    String? description,
+    List<String>? tags,
+    List<String>? keywords,
+    String? mood,
+    String? targetAudience,
+    bool? suitableForShortVideo,
+    bool? ceoApproved,
+    bool? favorite,
+  }) {
+    return AffiliateProduct(
+      itemId: itemId,
+      title: title,
+      priceDisplay: priceDisplay,
+      soldDisplay: soldDisplay,
+      price: price,
+      sold: sold,
+      shopName: shopName,
+      commissionRate: commissionRate,
+      commissionAmount: commissionAmount,
+      productUrl: productUrl,
+      affiliateUrl: affiliateUrl,
+      priceBucket: priceBucket,
+      priceScore: priceScore,
+      soldBucket: soldBucket,
+      soldScore: soldScore,
+      commissionBucket: commissionBucket,
+      commissionScore: commissionScore,
+      miniBossScore: miniBossScore,
+      description: description ?? this.description,
+      tags: tags ?? this.tags,
+      keywords: keywords ?? this.keywords,
+      mood: mood ?? this.mood,
+      targetAudience: targetAudience ?? this.targetAudience,
+      suitableForShortVideo:
+          suitableForShortVideo ?? this.suitableForShortVideo,
+      ceoApproved: ceoApproved ?? this.ceoApproved,
+      favorite: favorite ?? this.favorite,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "itemId": itemId,
+      "title": title,
+      "price": price,
+      "sold": sold,
+      "shopName": shopName,
+      "commissionRate": commissionRate,
+      "commissionAmount": commissionAmount,
+      "productUrl": productUrl,
+      "affiliateUrl": affiliateUrl,
+      "priceBucket": priceBucket,
+      "priceScore": priceScore,
+      "soldBucket": soldBucket,
+      "soldScore": soldScore,
+      "commissionBucket": commissionBucket,
+      "commissionScore": commissionScore,
+      "miniBossScore": miniBossScore,
+      "description": description,
+      "tags": tags,
+      "keywords": keywords,
+      "mood": mood,
+      "targetAudience": targetAudience,
+      "suitableForShortVideo": suitableForShortVideo,
+      "ceoApproved": ceoApproved,
+      "favorite": favorite,
+    };
   }
 
   /// ---------- Display Helpers ----------
@@ -126,12 +260,28 @@ class AffiliateProduct {
       row[key]?.trim() ?? '';
 
   static double _readDouble(Map<String, String> row, String key) {
-    final value = _read(row, key).replaceAll(',', '').replaceAll('%', '');
+    final value = _read(row, key)
+        .replaceAll(',', '')
+        .replaceAll('%', '');
     return double.tryParse(value) ?? 0;
   }
 
   static int _readInt(Map<String, String> row, String key) {
     final value = _read(row, key).replaceAll(',', '');
-    return int.tryParse(value) ?? double.tryParse(value)?.round() ?? 0;
+    return int.tryParse(value) ??
+        double.tryParse(value)?.round() ??
+        0;
+  }
+
+  static List<String> _split(String value) {
+    if (value.trim().isEmpty) {
+      return const [];
+    }
+
+    return value
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
   }
 }

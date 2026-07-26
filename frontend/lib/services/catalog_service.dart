@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../datasources/abstract/affiliate_data_source.dart';
 import '../models/affiliate_product.dart';
+import 'product_search_service.dart';
 
 /// Loads and queries the Shopee master affiliate catalog CSV asset.
 class CatalogService implements AffiliateDataSource {
@@ -23,43 +24,51 @@ class CatalogService implements AffiliateDataSource {
       return [];
     }
 
-    final headers = rows.first.map((header) => header.toString().trim()).toList();
-    final products = rows.skip(1).where(_hasValues).map((row) {
-      final values = <String, String>{};
+    final headers =
+        rows.first.map((header) => header.toString().trim()).toList();
 
-      for (var index = 0; index < headers.length; index++) {
-        values[headers[index]] = index < row.length ? row[index].toString() : '';
-      }
+    final products = rows
+        .skip(1)
+        .where(_hasValues)
+        .map((row) {
+          final values = <String, String>{};
 
-      return AffiliateProduct.fromCsv(values);
-    }).toList();
+          for (var index = 0; index < headers.length; index++) {
+            values[headers[index]] =
+                index < row.length ? row[index].toString() : '';
+          }
 
-    return products..sort(_compareByMiniBossScoreDescending);
+          return AffiliateProduct.fromCsv(values);
+        })
+        .toList();
+
+    products.sort(_compareByMiniBossScoreDescending);
+
+    return products;
   }
 
   @override
   Future<List<AffiliateProduct>> search(String keyword) async {
-    final normalizedKeyword = keyword.trim().toLowerCase();
     final products = await getProducts();
 
-    if (normalizedKeyword.isEmpty) {
-      return products;
-    }
-
-    return products.where((product) {
-      return product.title.toLowerCase().contains(normalizedKeyword) ||
-          product.shopName.toLowerCase().contains(normalizedKeyword);
-    }).toList();
+    return const ProductSearchService().search(
+      products,
+      keyword,
+    );
   }
 
   static bool _hasValues(List<dynamic> row) {
-    return row.any((value) => value.toString().trim().isNotEmpty);
+    return row.any(
+      (value) => value.toString().trim().isNotEmpty,
+    );
   }
 
   static int _compareByMiniBossScoreDescending(
     AffiliateProduct first,
     AffiliateProduct second,
   ) {
-    return second.miniBossScore.compareTo(first.miniBossScore);
+    return second.miniBossScore.compareTo(
+      first.miniBossScore,
+    );
   }
 }
