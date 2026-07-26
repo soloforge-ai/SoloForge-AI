@@ -152,6 +152,74 @@ class AffiliateProduct {
     );
   }
 
+  factory AffiliateProduct.fromJson(
+      Map<String, dynamic> json,
+    ) {
+      return AffiliateProduct(
+      itemId: json['id']?.toString() ?? '',
+      title: json['title'] ?? '',
+
+      priceDisplay:
+          (json['sale_price'] ?? json['price'] ?? 0).toString(),
+
+      soldDisplay:
+          (json['sold'] ?? 0).toString(),
+
+      price:
+          (json['sale_price'] ?? json['price'] ?? 0)
+              .toDouble(),
+
+      sold: json['sold'] ?? 0,
+
+      shopName:
+          json['shop']?['name'] ?? '',
+
+      commissionRate:
+          (json['commission']?['rate'] ?? 0)
+              .toDouble(),
+
+      commissionAmount:
+          (json['commission']?['amount'] ?? 0)
+              .toDouble(),
+
+      productUrl:
+          json['links']?['product'] ?? '',
+
+      affiliateUrl:
+          json['links']?['short'] ?? '',
+
+      // ยังไม่มีข้อมูลใน catalog.json
+      priceBucket: '',
+      priceScore: 0,
+
+      soldBucket: '',
+      soldScore: 0,
+
+      commissionBucket: '',
+      commissionScore: 0,
+
+      miniBossScore:
+          (json['miniboss']?['score'] ?? 0)
+              .toDouble(),
+
+      description: null,
+
+      tags: const [],
+
+      keywords: const [],
+
+      mood: null,
+
+      targetAudience: null,
+
+      suitableForShortVideo: false,
+
+      ceoApproved: false,
+
+      favorite: false,
+    );
+  }
+
   Product toProduct() {
     return Product(
       id: int.tryParse(itemId) ?? itemId.hashCode,

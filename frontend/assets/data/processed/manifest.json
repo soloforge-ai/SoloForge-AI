@@ -1,0 +1,29 @@
+{
+    "version": 1,
+    "generated_at": "2026-07-20T19:13:24",
+    "total_products": 1000000,
+    "total_chunks": 20,
+    "chunk_size": 50000,
+    "chunks": [
+        "ranked_products_0001.jsonl",
+        "ranked_products_0002.jsonl",
+        "ranked_products_0003.jsonl",
+        "ranked_products_0004.jsonl",
+        "ranked_products_0005.jsonl",
+        "ranked_products_0006.jsonl",
+        "ranked_products_0007.jsonl",
+        "ranked_products_0008.jsonl",
+        "ranked_products_0009.jsonl",
+        "ranked_products_0010.jsonl",
+        "ranked_products_0011.jsonl",
+        "ranked_products_0012.jsonl",
+        "ranked_products_0013.jsonl",
+        "ranked_products_0014.jsonl",
+        "ranked_products_0015.jsonl",
+        "ranked_products_0016.jsonl",
+        "ranked_products_0017.jsonl",
+        "ranked_products_0018.jsonl",
+        "ranked_products_0019.jsonl",
+        "ranked_products_0020.jsonl"
+    ]
+}

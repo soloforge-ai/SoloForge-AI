@@ -69,6 +69,7 @@ flutter:
     - assets/characters/ceo/references/
     - assets/characters/ceo/thumbnails/
     - assets/templates/tiktok/
+    - assets/data/processed/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

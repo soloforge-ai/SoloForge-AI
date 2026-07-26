@@ -1,74 +1,51 @@
-import 'package:csv/csv.dart';
+import 'dart:convert';
+
 import 'package:flutter/services.dart';
 
 import '../datasources/abstract/affiliate_data_source.dart';
 import '../models/affiliate_product.dart';
 import 'product_search_service.dart';
 
-/// Loads and queries the Shopee master affiliate catalog CSV asset.
 class CatalogService implements AffiliateDataSource {
   const CatalogService({
-    this.assetPath = 'assets/data/Shopee_MasterCatalog.csv',
-    CsvDecoder csvDecoder = const CsvDecoder(),
-  }) : _csvDecoder = csvDecoder;
+    this.assetPath = 'assets/data/catalog.json',
+  });
 
   final String assetPath;
-  final CsvDecoder _csvDecoder;
 
   @override
   Future<List<AffiliateProduct>> getProducts() async {
-    final csv = await rootBundle.loadString(assetPath);
-    final rows = _csvDecoder.convert(csv);
+    final jsonString = await rootBundle.loadString(assetPath);
 
-    if (rows.isEmpty) {
-      return [];
-    }
+    final List<dynamic> data =
+        jsonDecode(jsonString) as List<dynamic>;
 
-    final headers =
-        rows.first.map((header) => header.toString().trim()).toList();
-
-    final products = rows
-        .skip(1)
-        .where(_hasValues)
-        .map((row) {
-          final values = <String, String>{};
-
-          for (var index = 0; index < headers.length; index++) {
-            values[headers[index]] =
-                index < row.length ? row[index].toString() : '';
-          }
-
-          return AffiliateProduct.fromCsv(values);
-        })
+    final products = data
+        .map(
+          (e) => AffiliateProduct.fromJson(
+            e as Map<String, dynamic>,
+          ),
+        )
         .toList();
 
-    products.sort(_compareByMiniBossScoreDescending);
+    products.sort(
+      (a, b) => b.miniBossScore.compareTo(
+        a.miniBossScore,
+      ),
+    );
 
     return products;
   }
 
   @override
-  Future<List<AffiliateProduct>> search(String keyword) async {
+  Future<List<AffiliateProduct>> search(
+    String keyword,
+  ) async {
     final products = await getProducts();
 
     return const ProductSearchService().search(
       products,
       keyword,
-    );
-  }
-
-  static bool _hasValues(List<dynamic> row) {
-    return row.any(
-      (value) => value.toString().trim().isNotEmpty,
-    );
-  }
-
-  static int _compareByMiniBossScoreDescending(
-    AffiliateProduct first,
-    AffiliateProduct second,
-  ) {
-    return second.miniBossScore.compareTo(
-      first.miniBossScore,
     );
   }
 }
