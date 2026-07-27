@@ -44,5 +44,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Flutter generated processed data
+/assets/data/processed/ranked_products_0001.jsonl
 
-/assets/data/processed/*.jsonl
+# Scanner generated files
+tools/scanner/output/
+
+# Keep output folder only if needed
+# !tools/scanner/output/.gitkeep
