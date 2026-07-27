@@ -9,16 +9,14 @@ import 'product_enricher.dart';
 class ContentEngine {
   const ContentEngine._();
 
-  static final AIProvider _defaultProvider =
-      const MockProvider();
+  static final AIProvider _defaultProvider = const MockProvider();
 
   static Future<GeneratedContent> generateContent({
     required Product product,
     required PlatformType platform,
     AIProvider? provider,
   }) async {
-    final enrichedProduct =
-        const ProductEnricher().enrich(product);
+    final enrichedProduct = const ProductEnricher().enrich(product);
 
     final prompt = PromptBuilder.buildCaptionPrompt(
       product: enrichedProduct,

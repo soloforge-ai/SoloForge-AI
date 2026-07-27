@@ -36,19 +36,15 @@ class Character {
       role: json['role'],
       description: json['description'],
 
-      heightCm:
-          (json['physical']['height_cm'] as num).toDouble(),
+      heightCm: (json['physical']['height_cm'] as num).toDouble(),
 
       style: json['physical']['style'],
 
-      references:
-          Map<String, String>.from(json['references']),
+      references: Map<String, String>.from(json['references']),
 
-      basePrompt:
-          json['prompt']['base'],
+      basePrompt: json['prompt']['base'],
 
-      negativePrompt:
-          json['prompt']['negative'],
+      negativePrompt: json['prompt']['negative'],
     );
   }
 

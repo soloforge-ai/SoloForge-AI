@@ -6,11 +6,7 @@ class ProductCard extends StatelessWidget {
   final AffiliateProduct product;
   final VoidCallback onForge;
 
-  const ProductCard({
-    super.key,
-    required this.product,
-    required this.onForge,
-  });
+  const ProductCard({super.key, required this.product, required this.onForge});
 
   @override
   Widget build(BuildContext context) {
@@ -19,19 +15,13 @@ class ProductCard extends StatelessWidget {
         leading: const CircleAvatar(
           radius: 24,
           backgroundColor: Colors.deepPurple,
-          child: Icon(
-            Icons.shopping_bag,
-            color: Colors.white,
-          ),
+          child: Icon(Icons.shopping_bag, color: Colors.white),
         ),
         title: Padding(
           padding: const EdgeInsets.only(bottom: 6),
           child: Text(
             product.title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
           ),
         ),
         subtitle: Column(
@@ -39,9 +29,7 @@ class ProductCard extends StatelessWidget {
           children: [
             Text(
               product.shopName,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -53,18 +41,9 @@ class ProductCard extends StatelessWidget {
                   value: product.miniBossScore,
                   color: _scoreColor(product.miniBossScore),
                 ),
-                _ScoreChip(
-                  label: 'Sold',
-                  value: product.soldScore,
-                ),
-                _ScoreChip(
-                  label: 'Price',
-                  value: product.priceScore,
-                ),
-                _ScoreChip(
-                  label: 'Commission',
-                  value: product.commissionScore,
-                ),
+                _ScoreChip(label: 'Sold', value: product.soldScore),
+                _ScoreChip(label: 'Price', value: product.priceScore),
+                _ScoreChip(label: 'Commission', value: product.commissionScore),
               ],
             ),
             const SizedBox(height: 8),
@@ -72,9 +51,7 @@ class ProductCard extends StatelessWidget {
             // Product Information
             Text(
               '${product.priceText}   ${product.soldText}',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
 
             const SizedBox(height: 4),
@@ -88,10 +65,7 @@ class ProductCard extends StatelessWidget {
             ),
           ],
         ),
-        trailing: FilledButton(
-          onPressed: onForge,
-          child: const Text('Forge'),
-        ),
+        trailing: FilledButton(onPressed: onForge, child: const Text('Forge')),
       ),
     );
   }
@@ -117,10 +91,7 @@ class _ScoreChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),

@@ -36,25 +36,16 @@ class ProductEnricher {
       'rabbit',
       'กระต่าย',
     ])) {
-      _addAll(tags, [
-        'Cute',
-        'Desk Toy',
-        'Stress Relief',
-      ]);
+      _addAll(tags, ['Cute', 'Desk Toy', 'Stress Relief']);
 
-      _addAll(keywords, [
-        'Cute',
-        'Soft',
-        'Squishy',
-      ]);
+      _addAll(keywords, ['Cute', 'Soft', 'Squishy']);
 
       description ??=
           'ของเล่นสกุชชี่สุดนุ่ม บีบเพลิน ช่วยคลายเครียด เหมาะสำหรับตั้งโต๊ะทำงานหรือสะสม';
 
       mood ??= 'Cute';
 
-      targetAudience ??=
-          'นักเรียน วัยทำงาน และคนชอบของน่ารัก';
+      targetAudience ??= 'นักเรียน วัยทำงาน และคนชอบของน่ารัก';
 
       suitableForShortVideo = true;
     }
@@ -63,20 +54,12 @@ class ProductEnricher {
     // Cheese
     // =====================================================
 
-    if (_containsAny(name, [
-      'cheese',
-      'ชีส',
-    ])) {
-      _addAll(tags, [
-        'Cheese',
-      ]);
+    if (_containsAny(name, ['cheese', 'ชีส'])) {
+      _addAll(tags, ['Cheese']);
 
-      _addAll(keywords, [
-        'Cheese',
-      ]);
+      _addAll(keywords, ['Cheese']);
 
-      description ??=
-          'สกุชชี่ชีสดีไซน์น่ารัก เนื้อนุ่ม คืนตัวช้า บีบเพลิน';
+      description ??= 'สกุชชี่ชีสดีไซน์น่ารัก เนื้อนุ่ม คืนตัวช้า บีบเพลิน';
 
       ceoApproved = true;
     }
@@ -85,21 +68,12 @@ class ProductEnricher {
     // Bread
     // =====================================================
 
-    if (_containsAny(name, [
-      'bread',
-      'toast',
-      'ขนมปัง',
-    ])) {
-      _addAll(tags, [
-        'Bread',
-      ]);
+    if (_containsAny(name, ['bread', 'toast', 'ขนมปัง'])) {
+      _addAll(tags, ['Bread']);
 
-      _addAll(keywords, [
-        'Bread',
-      ]);
+      _addAll(keywords, ['Bread']);
 
-      description ??=
-          'สกุชชี่ขนมปังเนื้อนุ่ม ดีไซน์เหมือนของจริง';
+      description ??= 'สกุชชี่ขนมปังเนื้อนุ่ม ดีไซน์เหมือนของจริง';
 
       suitableForShortVideo = true;
     }
@@ -108,21 +82,14 @@ class ProductEnricher {
     // Capybara
     // =====================================================
 
-    if (_containsAny(name, [
-      'capybara',
-    ])) {
-      _addAll(tags, [
-        'Capybara',
-      ]);
+    if (_containsAny(name, ['capybara'])) {
+      _addAll(tags, ['Capybara']);
 
-      _addAll(keywords, [
-        'Capybara',
-      ]);
+      _addAll(keywords, ['Capybara']);
 
       mood = 'Healing';
 
-      description ??=
-          'ของสะสมสุดน่ารักสำหรับคนรักคาปิบารา';
+      description ??= 'ของสะสมสุดน่ารักสำหรับคนรักคาปิบารา';
 
       suitableForShortVideo = true;
     }

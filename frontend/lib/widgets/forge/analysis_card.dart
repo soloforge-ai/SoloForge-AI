@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AnalysisCard extends StatelessWidget {
-  const AnalysisCard({
-    super.key,
-  });
+  const AnalysisCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,10 +13,7 @@ class AnalysisCard extends StatelessWidget {
           children: const [
             Text(
               "AI Analysis",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
             SizedBox(height: 12),

@@ -35,7 +35,6 @@ class AffiliateProduct {
     // ==========================
     // SoloForge Metadata
     // ==========================
-
     this.description,
     this.tags = const [],
     this.keywords = const [],
@@ -133,60 +132,42 @@ class AffiliateProduct {
 
       keywords: _split(_read(row, 'Keywords')),
 
-      mood: _read(row, 'Mood').isEmpty
-          ? null
-          : _read(row, 'Mood'),
+      mood: _read(row, 'Mood').isEmpty ? null : _read(row, 'Mood'),
 
       targetAudience: _read(row, 'TargetAudience').isEmpty
           ? null
           : _read(row, 'TargetAudience'),
 
-      suitableForShortVideo:
-          _read(row, 'ShortVideo') == 'true',
+      suitableForShortVideo: _read(row, 'ShortVideo') == 'true',
 
-      ceoApproved:
-          _read(row, 'CEOApproved') == 'true',
+      ceoApproved: _read(row, 'CEOApproved') == 'true',
 
-      favorite:
-          _read(row, 'Favorite') == 'true',
+      favorite: _read(row, 'Favorite') == 'true',
     );
   }
 
-  factory AffiliateProduct.fromJson(
-      Map<String, dynamic> json,
-    ) {
-      return AffiliateProduct(
+  factory AffiliateProduct.fromJson(Map<String, dynamic> json) {
+    return AffiliateProduct(
       itemId: json['id']?.toString() ?? '',
       title: json['title'] ?? '',
 
-      priceDisplay:
-          (json['sale_price'] ?? json['price'] ?? 0).toString(),
+      priceDisplay: (json['sale_price'] ?? json['price'] ?? 0).toString(),
 
-      soldDisplay:
-          (json['sold'] ?? 0).toString(),
+      soldDisplay: (json['sold'] ?? 0).toString(),
 
-      price:
-          (json['sale_price'] ?? json['price'] ?? 0)
-              .toDouble(),
+      price: (json['sale_price'] ?? json['price'] ?? 0).toDouble(),
 
       sold: json['sold'] ?? 0,
 
-      shopName:
-          json['shop']?['name'] ?? '',
+      shopName: json['shop']?['name'] ?? '',
 
-      commissionRate:
-          (json['commission']?['rate'] ?? 0)
-              .toDouble(),
+      commissionRate: (json['commission']?['rate'] ?? 0).toDouble(),
 
-      commissionAmount:
-          (json['commission']?['amount'] ?? 0)
-              .toDouble(),
+      commissionAmount: (json['commission']?['amount'] ?? 0).toDouble(),
 
-      productUrl:
-          json['links']?['product'] ?? '',
+      productUrl: json['links']?['product'] ?? '',
 
-      affiliateUrl:
-          json['links']?['short'] ?? '',
+      affiliateUrl: json['links']?['short'] ?? '',
 
       // ยังไม่มีข้อมูลใน catalog.json
       priceBucket: '',
@@ -198,9 +179,7 @@ class AffiliateProduct {
       commissionBucket: '',
       commissionScore: 0,
 
-      miniBossScore:
-          (json['miniboss']?['score'] ?? 0)
-              .toDouble(),
+      miniBossScore: (json['miniboss']?['score'] ?? 0).toDouble(),
 
       description: null,
 
@@ -316,8 +295,7 @@ class AffiliateProduct {
 
   String get soldText => 'ขาย $soldDisplay';
 
-  String get commissionAmountText =>
-      '฿${commissionAmount.toStringAsFixed(2)}';
+  String get commissionAmountText => '฿${commissionAmount.toStringAsFixed(2)}';
 
   String get commissionRateText =>
       '${(commissionRate * 100).toStringAsFixed(0)}%';
@@ -328,17 +306,13 @@ class AffiliateProduct {
       row[key]?.trim() ?? '';
 
   static double _readDouble(Map<String, String> row, String key) {
-    final value = _read(row, key)
-        .replaceAll(',', '')
-        .replaceAll('%', '');
+    final value = _read(row, key).replaceAll(',', '').replaceAll('%', '');
     return double.tryParse(value) ?? 0;
   }
 
   static int _readInt(Map<String, String> row, String key) {
     final value = _read(row, key).replaceAll(',', '');
-    return int.tryParse(value) ??
-        double.tryParse(value)?.round() ??
-        0;
+    return int.tryParse(value) ?? double.tryParse(value)?.round() ?? 0;
   }
 
   static List<String> _split(String value) {

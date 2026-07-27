@@ -24,8 +24,9 @@ class _CatalogTestPageState extends State<CatalogTestPage> {
 
   Future<void> loadCatalog() async {
     try {
-      final jsonString =
-          await rootBundle.loadString('assets/data/catalog.json');
+      final jsonString = await rootBundle.loadString(
+        'assets/data/catalog.json',
+      );
 
       final data = jsonDecode(jsonString);
 
@@ -44,28 +45,18 @@ class _CatalogTestPageState extends State<CatalogTestPage> {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (error.isNotEmpty) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Catalog Test'),
-        ),
-        body: Center(
-          child: Text(error),
-        ),
+        appBar: AppBar(title: const Text('Catalog Test')),
+        body: Center(child: Text(error)),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Catalog (${products.length})'),
-      ),
+      appBar: AppBar(title: Text('Catalog (${products.length})')),
       body: ListView.builder(
         itemCount: products.length,
         itemBuilder: (context, index) {
@@ -73,19 +64,14 @@ class _CatalogTestPageState extends State<CatalogTestPage> {
 
           final images = (p['images'] as List?) ?? [];
 
-          final image =
-              images.isNotEmpty ? images.first.toString() : '';
+          final image = images.isNotEmpty ? images.first.toString() : '';
 
           return Card(
             margin: const EdgeInsets.all(8),
             child: ListTile(
               leading: image.isEmpty
                   ? const Icon(Icons.image_not_supported)
-                  : Image.network(
-                      image,
-                      width: 70,
-                      fit: BoxFit.cover,
-                    ),
+                  : Image.network(image, width: 70, fit: BoxFit.cover),
               title: Text(
                 p['title'] ?? '',
                 maxLines: 2,

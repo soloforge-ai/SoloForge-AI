@@ -49,18 +49,9 @@ class ProductIntelligenceEngine {
         title.contains("กระต่าย")) {
       category = "Cute Toy";
 
-      keywords.addAll([
-        "Cute",
-        "Squishy",
-        "Soft",
-      ]);
+      keywords.addAll(["Cute", "Squishy", "Soft"]);
 
-      audience.addAll([
-        "นักเรียน",
-        "วัยรุ่น",
-        "วัยทำงาน",
-        "คนชอบของน่ารัก",
-      ]);
+      audience.addAll(["นักเรียน", "วัยรุ่น", "วัยทำงาน", "คนชอบของน่ารัก"]);
 
       sellingPoints.addAll([
         "นุ่มเด้ง",
@@ -81,32 +72,22 @@ class ProductIntelligenceEngine {
     // Squishy
     //----------------------------------------------------
 
-    if (title.contains("squishy") ||
-        title.contains("สกุชชี่")) {
+    if (title.contains("squishy") || title.contains("สกุชชี่")) {
       keywords.add("Stress Relief");
 
-      sellingPoints.addAll([
-        "สัมผัสนุ่ม",
-        "คืนตัวช้า",
-      ]);
+      sellingPoints.addAll(["สัมผัสนุ่ม", "คืนตัวช้า"]);
 
-      painPoints.addAll([
-        "ชอบของเล่นคลายเครียด",
-      ]);
+      painPoints.addAll(["ชอบของเล่นคลายเครียด"]);
     }
 
     //----------------------------------------------------
     // Cheese
     //----------------------------------------------------
 
-    if (title.contains("cheese") ||
-        title.contains("ชีส")) {
+    if (title.contains("cheese") || title.contains("ชีส")) {
       keywords.add("Cheese");
 
-      sellingPoints.addAll([
-        "ดีไซน์ชีสน่ารัก",
-        "เหมาะสะสม",
-      ]);
+      sellingPoints.addAll(["ดีไซน์ชีสน่ารัก", "เหมาะสะสม"]);
     }
 
     //----------------------------------------------------
@@ -118,9 +99,7 @@ class ProductIntelligenceEngine {
         title.contains("toast")) {
       keywords.add("Bread");
 
-      sellingPoints.addAll([
-        "ดีไซน์เหมือนขนมจริง",
-      ]);
+      sellingPoints.addAll(["ดีไซน์เหมือนขนมจริง"]);
     }
 
     return ProductIntelligence(

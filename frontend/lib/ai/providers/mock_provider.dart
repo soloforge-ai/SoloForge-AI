@@ -6,17 +6,14 @@ import 'ai_provider.dart';
 class MockProvider implements AIProvider {
   const MockProvider();
 
-  static const TemplateRepository _repository =
-      TemplateRepository();
+  static const TemplateRepository _repository = TemplateRepository();
 
   @override
   Future<GeneratedContent> generateContent({
     required String prompt,
     required PlatformType platform,
   }) async {
-    await Future.delayed(
-      const Duration(seconds: 1),
-    );
+    await Future.delayed(const Duration(seconds: 1));
 
     final lower = prompt.toLowerCase();
 
@@ -29,32 +26,23 @@ class MockProvider implements AIProvider {
           lower.contains('สกุชชี่') ||
           lower.contains('cheese') ||
           lower.contains('ชีส')) {
-        final template =
-            await _repository.loadTemplate(
+        final template = await _repository.loadTemplate(
           platform: 'tiktok',
           template: 'cute_toy',
         );
 
-        final titles =
-            List<String>.from(template['titles'] ?? []);
+        final titles = List<String>.from(template['titles'] ?? []);
 
-        final hooks =
-            List<String>.from(template['hooks'] ?? []);
+        final hooks = List<String>.from(template['hooks'] ?? []);
 
-        final hashtags =
-            List<String>.from(template['hashtags'] ?? []);
+        final hashtags = List<String>.from(template['hashtags'] ?? []);
 
         return GeneratedContent(
           title: titles.isNotEmpty
-              ? titles.first.replaceAll(
-                  '{{product}}',
-                  'Cheese Squishy',
-                )
+              ? titles.first.replaceAll('{{product}}', 'Cheese Squishy')
               : 'Cheese Squishy',
 
-          hook: hooks.isNotEmpty
-              ? hooks.first
-              : 'เห็นแล้วอยากบีบทั้งวัน',
+          hook: hooks.isNotEmpty ? hooks.first : 'เห็นแล้วอยากบีบทั้งวัน',
 
           caption: '''
 🧀 สกุชชี่ชีสนุ่มเด้ง บีบเพลินสุด ๆ
@@ -127,12 +115,7 @@ class MockProvider implements AIProvider {
 📸 ถ่ายรูปสวยทุกมุม
 ''';
 
-      hashtags = const [
-        "#Capybara",
-        "#Cute",
-        "#DeskDecor",
-        "#SoloForgeAI",
-      ];
+      hashtags = const ["#Capybara", "#Cute", "#DeskDecor", "#SoloForgeAI"];
     } else if (lower.contains('bread') ||
         lower.contains('toast') ||
         lower.contains('ขนมปัง')) {
@@ -149,12 +132,7 @@ class MockProvider implements AIProvider {
 📱 เหมาะทำคลิปสั้น
 ''';
 
-      hashtags = const [
-        "#Bread",
-        "#Squishy",
-        "#CuteToy",
-        "#SoloForgeAI",
-      ];
+      hashtags = const ["#Bread", "#Squishy", "#CuteToy", "#SoloForgeAI"];
     } else {
       title = "✨ Affiliate Pick";
 
@@ -170,11 +148,7 @@ class MockProvider implements AIProvider {
 กดดูรายละเอียดเพิ่มเติมได้เลย
 ''';
 
-      hashtags = const [
-        "#Shopee",
-        "#Affiliate",
-        "#SoloForgeAI",
-      ];
+      hashtags = const ["#Shopee", "#Affiliate", "#SoloForgeAI"];
     }
 
     return GeneratedContent(

@@ -32,9 +32,7 @@ class _TemplateTestPageState extends State<TemplateTestPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Template Test'),
-      ),
+      appBar: AppBar(title: const Text('Template Test')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: SelectableText(result),

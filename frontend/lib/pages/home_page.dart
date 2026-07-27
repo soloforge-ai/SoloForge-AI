@@ -80,9 +80,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('SoloForge AI'),
-      ),
+      appBar: AppBar(title: const Text('SoloForge AI')),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -90,31 +88,25 @@ class _HomePageState extends State<HomePage> {
           children: [
             const Text(
               '👔 MiniBoss Product Hunter',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
 
-SizedBox(
-  width: double.infinity,
-  child: FilledButton.icon(
-    icon: const Icon(Icons.image),
-    label: const Text("Image Engine Test"),
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const ImageTestPage(),
-        ),
-      );
-    },
-  ),
-),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.image),
+                label: const Text("Image Engine Test"),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ImageTestPage()),
+                  );
+                },
+              ),
+            ),
 
-const SizedBox(height: 20),
-
+            const SizedBox(height: 20),
 
             SortSelector(
               value: sortType,
@@ -144,9 +136,7 @@ const SizedBox(height: 20),
               loading
                   ? 'Loading Shopee catalog...'
                   : 'พบ ${products.length} รายการ',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
             Expanded(
@@ -160,15 +150,13 @@ const SizedBox(height: 20),
                         return ProductCard(
                           product: product,
                           onForge: () {
-                          Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ForgePage(
-                              product: product,
-                            ),
-                          ),
-                        );
-                      },
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ForgePage(product: product),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),

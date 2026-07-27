@@ -8,8 +8,7 @@ import '../providers/image_provider.dart';
 import '../providers/mock_provider.dart';
 
 class ImageEngine {
-  static final ImageProvider _provider =
-      MockImageProvider();
+  static final ImageProvider _provider = MockImageProvider();
 
   static Future<GeneratedImage> generate({
     required Character character,

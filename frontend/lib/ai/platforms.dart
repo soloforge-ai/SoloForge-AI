@@ -1,11 +1,4 @@
-enum PlatformType {
-  tiktok,
-  facebook,
-  instagram,
-  lemon8,
-  youtube,
-  x,
-}
+enum PlatformType { tiktok, facebook, instagram, lemon8, youtube, x }
 
 extension PlatformTypeExtension on PlatformType {
   String get displayName {

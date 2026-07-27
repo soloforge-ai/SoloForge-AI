@@ -10,8 +10,6 @@ class SceneLoader {
       'assets/data/scenes/$id.json',
     );
 
-    return Scene.fromJson(
-      jsonDecode(jsonString),
-    );
+    return Scene.fromJson(jsonDecode(jsonString));
   }
 }

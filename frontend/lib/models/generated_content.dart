@@ -31,10 +31,7 @@ class GeneratedContent {
     );
   }
 
-  bool get isEmpty =>
-      title.isEmpty &&
-      hook.isEmpty &&
-      caption.isEmpty;
+  bool get isEmpty => title.isEmpty && hook.isEmpty && caption.isEmpty;
 
   bool get isNotEmpty => !isEmpty;
 }

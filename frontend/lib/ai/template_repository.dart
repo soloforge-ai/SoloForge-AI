@@ -9,9 +9,6 @@ class TemplateRepository {
     required String platform,
     required String template,
   }) {
-    return _engine.loadTemplate(
-      platform: platform,
-      template: template,
-    );
+    return _engine.loadTemplate(platform: platform, template: template);
   }
 }

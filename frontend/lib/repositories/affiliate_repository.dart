@@ -8,7 +8,7 @@ import '../models/affiliate_product.dart';
 class AffiliateRepository {
   /// Creates a repository backed by [dataSource].
   const AffiliateRepository({required AffiliateDataSource dataSource})
-      : _dataSource = dataSource;
+    : _dataSource = dataSource;
 
   final AffiliateDataSource _dataSource;
 

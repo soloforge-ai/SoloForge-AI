@@ -64,10 +64,7 @@ class ContentStudio extends StatelessWidget {
           children: [
             const Text(
               "Content Studio",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 16),
@@ -75,20 +72,15 @@ class ContentStudio extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: List.generate(
-                platforms.length,
-                (index) {
-                  return ChoiceChip(
-                    label: Text(
-                      _platformName(platforms[index]),
-                    ),
-                    selected: selectedPlatform == index,
-                    onSelected: (_) {
-                      onPlatformChanged(index);
-                    },
-                  );
-                },
-              ),
+              children: List.generate(platforms.length, (index) {
+                return ChoiceChip(
+                  label: Text(_platformName(platforms[index])),
+                  selected: selectedPlatform == index,
+                  onSelected: (_) {
+                    onPlatformChanged(index);
+                  },
+                );
+              }),
             ),
 
             const SizedBox(height: 24),

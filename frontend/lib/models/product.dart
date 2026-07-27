@@ -117,10 +117,8 @@ class Product {
       tags: List<String>.from(json["tags"] ?? const []),
       keywords: List<String>.from(json["keywords"] ?? const []),
       mood: json["mood"],
-      suitableForShortVideo:
-          json["suitableForShortVideo"] ?? false,
-      ceoApproved:
-          json["ceoApproved"] ?? false,
+      suitableForShortVideo: json["suitableForShortVideo"] ?? false,
+      ceoApproved: json["ceoApproved"] ?? false,
     );
   }
 

@@ -1,21 +1,12 @@
 import 'package:flutter/material.dart';
 
-enum SortType {
-  miniBossScore,
-  soldScore,
-  priceScore,
-  commissionScore,
-}
+enum SortType { miniBossScore, soldScore, priceScore, commissionScore }
 
 class SortSelector extends StatelessWidget {
   final SortType value;
   final ValueChanged<SortType> onChanged;
 
-  const SortSelector({
-    super.key,
-    required this.value,
-    required this.onChanged,
-  });
+  const SortSelector({super.key, required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {

@@ -15,10 +15,7 @@ import '../widgets/forge/product_header.dart';
 class ForgePage extends StatefulWidget {
   final AffiliateProduct product;
 
-  const ForgePage({
-    super.key,
-    required this.product,
-  });
+  const ForgePage({super.key, required this.product});
 
   @override
   State<ForgePage> createState() => _ForgePageState();
@@ -48,8 +45,7 @@ class _ForgePageState extends State<ForgePage> {
     });
 
     try {
-      final GeneratedContent content =
-          await ContentEngine.generateContent(
+      final GeneratedContent content = await ContentEngine.generateContent(
         product: widget.product.toProduct(),
         platform: platforms[selectedPlatform],
       );
@@ -72,15 +68,10 @@ class _ForgePageState extends State<ForgePage> {
   }
 
   void copyToClipboard(String text) {
-    Clipboard.setData(
-      ClipboardData(text: text),
-    );
+    Clipboard.setData(ClipboardData(text: text));
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Copied"),
-        duration: Duration(seconds: 1),
-      ),
+      const SnackBar(content: Text("Copied"), duration: Duration(seconds: 1)),
     );
   }
 
@@ -99,9 +90,7 @@ class _ForgePageState extends State<ForgePage> {
     final product = widget.product;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("AI Forge"),
-      ),
+      appBar: AppBar(title: const Text("AI Forge")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -143,8 +132,7 @@ class _ForgePageState extends State<ForgePage> {
               onGenerate: generateContent,
 
               onCopy: () {
-                copyToClipboard(
-                  '''
+                copyToClipboard('''
 ${hookController.text}
 
 ${captionController.text}
@@ -152,8 +140,7 @@ ${captionController.text}
 ${hashtagController.text}
 
 ${ctaController.text}
-''',
-                );
+''');
               },
             ),
           ],

@@ -14,15 +14,10 @@ class JsonlCatalogService {
         'assets/data/processed/$chunkFile',
       );
 
-      final lines = jsonl
-          .split('\n')
-          .where((line) => line.trim().isNotEmpty);
+      final lines = jsonl.split('\n').where((line) => line.trim().isNotEmpty);
 
       return lines
-          .map(
-            (line) => jsonDecode(line)
-                as Map<String, dynamic>,
-          )
+          .map((line) => jsonDecode(line) as Map<String, dynamic>)
           .toList();
     } catch (e) {
       print('Failed to load $chunkFile');
@@ -38,9 +33,7 @@ class JsonlCatalogService {
     final products = <Map<String, dynamic>>[];
 
     for (final chunk in chunkFiles) {
-      final data = await loadChunk(
-        chunkFile: chunk,
-      );
+      final data = await loadChunk(chunkFile: chunk);
       products.addAll(data);
     }
 
@@ -55,9 +48,7 @@ class JsonlCatalogService {
     final products = <Map<String, dynamic>>[];
 
     for (final chunk in chunkFiles) {
-      final data = await loadChunk(
-        chunkFile: chunk,
-      );
+      final data = await loadChunk(chunkFile: chunk);
 
       products.addAll(data);
 

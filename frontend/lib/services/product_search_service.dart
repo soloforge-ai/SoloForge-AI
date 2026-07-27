@@ -3,10 +3,7 @@ import '../models/affiliate_product.dart';
 class ProductSearchService {
   const ProductSearchService();
 
-  List<AffiliateProduct> search(
-    List<AffiliateProduct> products,
-    String query,
-  ) {
+  List<AffiliateProduct> search(List<AffiliateProduct> products, String query) {
     final keyword = query.trim().toLowerCase();
 
     if (keyword.isEmpty) {
@@ -19,12 +16,7 @@ class ProductSearchService {
       final score = _calculateScore(product, keyword);
 
       if (score > 0) {
-        results.add(
-          _SearchResult(
-            product: product,
-            score: score,
-          ),
-        );
+        results.add(_SearchResult(product: product, score: score));
       }
     }
 
@@ -33,10 +25,7 @@ class ProductSearchService {
     return results.map((e) => e.product).toList();
   }
 
-  int _calculateScore(
-    AffiliateProduct product,
-    String keyword,
-  ) {
+  int _calculateScore(AffiliateProduct product, String keyword) {
     var score = 0;
 
     if (product.title.toLowerCase().contains(keyword)) {
@@ -47,21 +36,15 @@ class ProductSearchService {
       score += 20;
     }
 
-    if ((product.description ?? "")
-        .toLowerCase()
-        .contains(keyword)) {
+    if ((product.description ?? "").toLowerCase().contains(keyword)) {
       score += 60;
     }
 
-    if ((product.mood ?? "")
-        .toLowerCase()
-        .contains(keyword)) {
+    if ((product.mood ?? "").toLowerCase().contains(keyword)) {
       score += 30;
     }
 
-    if ((product.targetAudience ?? "")
-        .toLowerCase()
-        .contains(keyword)) {
+    if ((product.targetAudience ?? "").toLowerCase().contains(keyword)) {
       score += 30;
     }
 
@@ -93,8 +76,5 @@ class _SearchResult {
   final AffiliateProduct product;
   final int score;
 
-  const _SearchResult({
-    required this.product,
-    required this.score,
-  });
+  const _SearchResult({required this.product, required this.score});
 }

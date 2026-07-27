@@ -10,8 +10,6 @@ class CreativeLoader {
       'assets/data/creative/styles/$id.json',
     );
 
-    return CreativeStyle.fromJson(
-      jsonDecode(jsonString),
-    );
+    return CreativeStyle.fromJson(jsonDecode(jsonString));
   }
 }

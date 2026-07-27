@@ -74,15 +74,11 @@ class AffiliateProduct {
       officialShop: json['shop']?['official'] ?? false,
       preferredShop: json['shop']?['preferred'] ?? false,
 
-      minibossScore:
-          (json['miniboss']?['score'] ?? 0).toDouble(),
+      minibossScore: (json['miniboss']?['score'] ?? 0).toDouble(),
 
-      minibossGrade:
-          json['miniboss']?['grade'] ?? '',
+      minibossGrade: json['miniboss']?['grade'] ?? '',
 
-      reasons: List<String>.from(
-        json['miniboss']?['reasons'] ?? [],
-      ),
+      reasons: List<String>.from(json['miniboss']?['reasons'] ?? []),
     );
   }
 

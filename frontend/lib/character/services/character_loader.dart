@@ -10,8 +10,7 @@ class CharacterLoader {
       'assets/characters/$id/profile.json',
     );
 
-    final Map<String, dynamic> json =
-        jsonDecode(jsonString);
+    final Map<String, dynamic> json = jsonDecode(jsonString);
 
     return Character.fromJson(json);
   }

@@ -11,7 +11,6 @@ class ImagePromptBuilder {
     required Scene scene,
     required Map<String, dynamic> product,
   }) {
-  
     final positiveParts = <String>[
       character.basePrompt,
       ...creative.prompt.values.cast<String>(),
@@ -20,15 +19,13 @@ class ImagePromptBuilder {
 
     final productName = product['name'];
 
-    if (productName != null &&
-        productName.toString().isNotEmpty) {
+    if (productName != null && productName.toString().isNotEmpty) {
       positiveParts.add(productName.toString());
     }
 
     final positivePrompt = positiveParts.join(', ');
 
-    final negativePrompt =
-        creative.negativePrompt.join(', ');
+    final negativePrompt = creative.negativePrompt.join(', ');
 
     return ImagePrompt(
       positivePrompt: positivePrompt,
