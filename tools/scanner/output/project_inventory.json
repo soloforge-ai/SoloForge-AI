@@ -1,7 +1,7 @@
 {
     "version": "1.0",
-    "generated_at": "2026-07-25T18:12:04",
-    "total_files": 91,
+    "generated_at": "2026-07-25T20:29:18",
+    "total_files": 93,
     "items": [
         {
             "path": "D:\\Project\\SoloForge-AI\\docs\\AI_PIPELINE.md",
@@ -772,9 +772,11 @@
             ],
             "methods": [
                 "toProduct",
+                "toJson",
                 "_read",
                 "_readDouble",
-                "_readInt"
+                "_readInt",
+                "_split"
             ],
             "enums": [],
             "extensions": [],
@@ -790,6 +792,7 @@
                 "D:/Project/SoloForge-AI/frontend/lib/pages/home_page.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/repositories/affiliate_repository.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/services/catalog_service.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/services/product_search_service.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/miniboss_card.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/product_header.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/widgets/product_card.dart"
@@ -829,7 +832,9 @@
             "classes": [
                 "Product"
             ],
-            "methods": [],
+            "methods": [
+                "toJson"
+            ],
             "enums": [],
             "extensions": [],
             "imports": [],
@@ -1095,16 +1100,44 @@
                 "package:csv/csv.dart",
                 "package:flutter/services.dart",
                 "../datasources/abstract/affiliate_data_source.dart",
-                "../models/affiliate_product.dart"
+                "../models/affiliate_product.dart",
+                "product_search_service.dart"
             ],
             "dependencies": [
                 "D:/Project/SoloForge-AI/frontend/lib/datasources/abstract/affiliate_data_source.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart"
+                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/services/product_search_service.dart"
             ],
             "used_by": [
                 "D:/Project/SoloForge-AI/frontend/lib/datasources/mock/mock_data_source.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/pages/home_page.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/services/product_service.dart"
+            ]
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\services\\product_search_service.dart",
+            "name": "product_search_service.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Service",
+            "classes": [
+                "ProductSearchService",
+                "_SearchResult"
+            ],
+            "methods": [
+                "search",
+                "_calculateScore"
+            ],
+            "enums": [],
+            "extensions": [],
+            "imports": [
+                "../models/affiliate_product.dart"
+            ],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart"
+            ],
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/services/catalog_service.dart"
             ]
         },
         {
@@ -1129,6 +1162,22 @@
                 "D:/Project/SoloForge-AI/frontend/lib/models/product.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/services/catalog_service.dart"
             ],
+            "used_by": []
+        },
+        {
+            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\utils\\product_metadata.dart",
+            "name": "product_metadata.dart",
+            "extension": ".dart",
+            "language": "Dart",
+            "category": "Other",
+            "classes": [
+                "ProductMetadata"
+            ],
+            "methods": [],
+            "enums": [],
+            "extensions": [],
+            "imports": [],
+            "dependencies": [],
             "used_by": []
         },
         {

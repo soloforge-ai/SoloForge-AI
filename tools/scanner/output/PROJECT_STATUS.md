@@ -36,6 +36,8 @@
 - product.dart
 - product_card.dart
 - product_header.dart
+- product_metadata.dart
+- product_search_service.dart
 - product_service.dart
 - prompt_builder.dart
 - scene.dart

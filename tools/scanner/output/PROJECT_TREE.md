@@ -116,7 +116,12 @@
 ## D:\Project\SoloForge-AI\frontend\lib\services
 
 - catalog_service.dart
+- product_search_service.dart
 - product_service.dart
+
+## D:\Project\SoloForge-AI\frontend\lib\utils
+
+- product_metadata.dart
 
 ## D:\Project\SoloForge-AI\frontend\lib\widgets
 

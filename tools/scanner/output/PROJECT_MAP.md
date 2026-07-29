@@ -24,6 +24,7 @@
 
 - frontend/lib/datasources/abstract/affiliate_data_source.dart
 - frontend/lib/models/affiliate_product.dart
+- frontend/lib/services/product_search_service.dart
 
 ## frontend/lib/character/services/character_engine.dart
 
@@ -145,6 +146,10 @@
 - frontend/lib/models/affiliate_product.dart
 
 ## frontend/lib/widgets/forge/product_header.dart
+
+- frontend/lib/models/affiliate_product.dart
+
+## frontend/lib/services/product_search_service.dart
 
 - frontend/lib/models/affiliate_product.dart
 

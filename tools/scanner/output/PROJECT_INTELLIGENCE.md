@@ -26,6 +26,7 @@
 ## Possible Orphan Files
 
 - D:/Project/SoloForge-AI/frontend/lib/character/prompts/character_prompt_builder.dart
+- D:/Project/SoloForge-AI/frontend/lib/utils/product_metadata.dart
 - D:/Project/SoloForge-AI/frontend/lib/widgets/category_filter.dart
 - D:/Project/SoloForge-AI/frontend/lib/widgets/product_detail_panel.dart
 
