@@ -71,6 +71,7 @@ flutter:
     - assets/templates/tiktok/
     - assets/data/processed/
     - assets/config/version.json
+    - assets/branding/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

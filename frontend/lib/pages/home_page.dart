@@ -8,6 +8,8 @@ import '../widgets/sort_selector.dart';
 import 'forge_page.dart';
 import 'image_test_page.dart';
 
+import 'about_page.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -82,7 +84,23 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('SoloForge AI')),
+      appBar: AppBar(
+  title: const Text('SoloForge AI'),
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.info_outline),
+      tooltip: "About",
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const AboutPage(),
+          ),
+        );
+      },
+    ),
+  ],
+),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
