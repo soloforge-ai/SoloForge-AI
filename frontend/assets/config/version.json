@@ -1,0 +1,19 @@
+{
+  "app_name": "AI Forge",
+  "company": "SoloForge AI",
+
+  "version": "0.1.0",
+  "channel": "Alpha",
+  "build": 1,
+
+  "release_date": "2026-07-29",
+  "release_time": "15:45 ICT",
+
+  "engine": "MiniBoss v1",
+
+  "scanner": "v1",
+
+  "api_version": "0.0.0",
+
+  "description": "First Alpha Release"
+}

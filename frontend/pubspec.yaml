@@ -70,6 +70,7 @@ flutter:
     - assets/characters/ceo/thumbnails/
     - assets/templates/tiktok/
     - assets/data/processed/
+    - assets/config/version.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:
