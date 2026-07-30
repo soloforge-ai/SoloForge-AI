@@ -1,20 +1,46 @@
-from cleaner import to_float
 from datetime import datetime
 
+from cleaner import to_float
+
+
 def to_bool(value):
-    return str(value).strip().lower() in {
+    """
+    Convert Shopee boolean-like values to bool.
+    """
+
+    value = str(value).strip().lower()
+
+    return value in {
         "true",
         "1",
         "yes",
+        "official shop",
+        "preferred shop",
+        "official",
+        "preferred",
+        "on",
     }
 
+
 def transform_row(row):
+
     return {
-        "id": row.get("itemid", ""),
+
+        # ==================================================
+        # Basic
+        # ==================================================
+
+        "id": str(row.get("itemid", "")).strip(),
+        "itemid": str(row.get("itemid", "")).strip(),
         "source": "shopee",
+
+        # ==================================================
+        # Product
+        # ==================================================
 
         "title": row.get("title", ""),
         "brand": row.get("global_brand", ""),
+
         "category": " > ".join(
             filter(
                 None,
@@ -34,22 +60,48 @@ def transform_row(row):
         "sold": int(to_float(row.get("item_sold")) or 0),
         "stock": int(to_float(row.get("stock")) or 0),
 
-    "shop": {
-        "name": row.get("shop_name", ""),
-        "seller": row.get("seller_name", ""),
-        "rating": to_float(row.get("shop_rating")),
-        "official": to_bool(row.get("is_official_shop", False)),
-        "preferred": to_bool(row.get("is_preferred_shop", False)),
-    },
+        # ==================================================
+        # Shop
+        # ==================================================
 
-        "commission": {
-            "rate": 0.0,
-            "amount": 0.0,
+        "shop": {
+
+            "name": row.get("shop_name", ""),
+            "seller": row.get("seller_name", ""),
+            "rating": to_float(row.get("shop_rating")),
+
+            "official": to_bool(
+                row.get("is_official_shop")
+            ),
+
+            "preferred": to_bool(
+                row.get("is_preferred_shop")
+            ),
+
         },
 
+        # ==================================================
+        # Commission
+        # (จะถูก Merge จาก MasterCatalog)
+        # ==================================================
+
+        "commission": {
+
+            "rate": 0.0,
+            "amount": 0.0,
+
+        },
+
+        # ==================================================
+        # Images
+        # ==================================================
+
         "images": [
+
             image
+
             for image in [
+
                 row.get("image_link", ""),
                 row.get("image_link_2", ""),
                 row.get("image_link_3", ""),
@@ -60,14 +112,35 @@ def transform_row(row):
                 row.get("image_link_8", ""),
                 row.get("image_link_9", ""),
                 row.get("image_link_10", ""),
+
             ]
+
             if image
+
         ],
 
+        # ==================================================
+        # Links
+        # (จะถูกแทนที่โดย merge_catalog.py)
+        # ==================================================
+
         "links": {
+
             "product": row.get("product_link", ""),
-            "short": row.get("product_short link", ""),
+
+            "short":
+                row.get("product_short_link")
+                or row.get("product_short link")
+                or "",
+
         },
 
-        "created_at": datetime.now().isoformat(timespec="seconds"),
+        # ==================================================
+        # Metadata
+        # ==================================================
+
+        "created_at": datetime.now().isoformat(
+            timespec="seconds"
+        ),
+
     }
