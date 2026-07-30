@@ -16,6 +16,9 @@ class AffiliateProduct {
     required this.shopName,
     required this.category,
 
+    required this.official,
+    required this.preferred, 
+
     required this.commissionRate,
     required this.commissionAmount,
 
@@ -60,6 +63,9 @@ class AffiliateProduct {
 
   final String shopName;
   final String category;
+
+  final bool official;
+  final bool preferred;
 
   final double commissionRate;
   final double commissionAmount;
@@ -112,6 +118,9 @@ class AffiliateProduct {
 
       shopName: _read(row, 'ชื่อร้านค้า'),
       category: _read(row, 'Category'),
+
+      official: false,
+      preferred: false,
 
       commissionRate: _readDouble(row, 'CommissionRate'),
       commissionAmount: _readDouble(row, 'CommissionAmount'),
@@ -171,6 +180,9 @@ class AffiliateProduct {
 
       shopName: json['shop']?['name'] ?? '',
       category: json['category'] ?? '',
+
+      official: json['shop']?['official'] ?? false,
+      preferred: json['shop']?['preferred'] ?? false, 
 
       commissionRate: (json['commission']?['rate'] ?? 0).toDouble(),
 
@@ -243,6 +255,8 @@ class AffiliateProduct {
     bool? suitableForShortVideo,
     bool? ceoApproved,
     bool? favorite,
+    bool? official,
+    bool? preferred,
   }) {
     return AffiliateProduct(
       itemId: itemId,
@@ -253,6 +267,8 @@ class AffiliateProduct {
       sold: sold,
       shopName: shopName,
       category: category ?? this.category,
+      official: official ?? this.official,
+      preferred: preferred ?? this.preferred,
       commissionRate: commissionRate,
       commissionAmount: commissionAmount,
       productUrl: productUrl,
@@ -286,6 +302,8 @@ class AffiliateProduct {
       "sold": sold,
       "shopName": shopName,
       "category": category,
+      "official": official,
+      "preferred": preferred,
       "commissionRate": commissionRate,
       "commissionAmount": commissionAmount,
       "productUrl": productUrl,
