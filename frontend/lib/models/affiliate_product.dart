@@ -14,6 +14,7 @@ class AffiliateProduct {
     required this.sold,
 
     required this.shopName,
+    required this.category,
 
     required this.commissionRate,
     required this.commissionAmount,
@@ -58,6 +59,7 @@ class AffiliateProduct {
   final int sold;
 
   final String shopName;
+  final String category;
 
   final double commissionRate;
   final double commissionAmount;
@@ -109,6 +111,7 @@ class AffiliateProduct {
       sold: _readInt(row, 'SoldValue'),
 
       shopName: _read(row, 'ชื่อร้านค้า'),
+      category: _read(row, 'Category'),
 
       commissionRate: _readDouble(row, 'CommissionRate'),
       commissionAmount: _readDouble(row, 'CommissionAmount'),
@@ -161,12 +164,13 @@ class AffiliateProduct {
       soldDisplay:
           json['metrics']?['sold_display']?.toString() ??
           (json['sold'] ?? 0).toString(),
-          
+
       price: (json['sale_price'] ?? json['price'] ?? 0).toDouble(),
 
       sold: json['sold'] ?? 0,
 
       shopName: json['shop']?['name'] ?? '',
+      category: json['category'] ?? '',
 
       commissionRate: (json['commission']?['rate'] ?? 0).toDouble(),
 
@@ -216,7 +220,7 @@ class AffiliateProduct {
       price: price.round(),
       commission: commissionAmount.round(),
       rating: (miniBossScore / 20).clamp(0, 5).toDouble(),
-      category: priceBucket,
+      category: category,
       shop: shopName,
       brand: shopName,
       description: description,
@@ -248,6 +252,7 @@ class AffiliateProduct {
       price: price,
       sold: sold,
       shopName: shopName,
+      category: category ?? this.category,
       commissionRate: commissionRate,
       commissionAmount: commissionAmount,
       productUrl: productUrl,
@@ -280,6 +285,7 @@ class AffiliateProduct {
       "price": price,
       "sold": sold,
       "shopName": shopName,
+      "category": category,
       "commissionRate": commissionRate,
       "commissionAmount": commissionAmount,
       "productUrl": productUrl,

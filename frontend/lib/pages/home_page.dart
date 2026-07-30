@@ -7,6 +7,7 @@ import '../widgets/product_card.dart';
 import '../widgets/sort_selector.dart';
 import 'forge_page.dart';
 import 'image_test_page.dart';
+import '../widgets/category_filter_bar.dart';
 
 import 'about_page.dart';
 
@@ -28,6 +29,18 @@ class _HomePageState extends State<HomePage> {
   String keyword = '';
   SortType sortType = SortType.miniBossScore;
   bool loading = true;
+
+  String selectedCategory = 'All';
+
+  final List<String> categories = [
+    'All',
+    'Beauty',
+    'Fashion',
+    'Home',
+    'Electronics',
+    'Food',
+    'Pet',
+  ];
 
   @override
   void initState() {
@@ -59,6 +72,13 @@ class _HomePageState extends State<HomePage> {
       }).toList();
     } else {
       result = List<AffiliateProduct>.from(result);
+    }
+    if (selectedCategory != 'All') {
+      result = result.where((product) {
+        return product.category
+            .toLowerCase()
+            .contains(selectedCategory.toLowerCase());
+      }).toList();
     }
 
     switch (sortType) {
@@ -151,13 +171,29 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            Text(
-              loading
-                  ? 'Loading Shopee catalog...'
-                  : 'พบ ${products.length} รายการ',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+            const SizedBox(height: 12),
+
+              CategoryFilterBar(
+                categories: categories,
+                selectedCategory: selectedCategory,
+                onSelected: (category) {
+                  setState(() {
+                    selectedCategory = category;
+                  });
+
+                  filterProducts();
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              Text(
+                loading
+                    ? 'Loading Shopee catalog...'
+                    : 'พบ ${products.length} รายการ',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              
             const SizedBox(height: 10),
             Expanded(
               child: loading
