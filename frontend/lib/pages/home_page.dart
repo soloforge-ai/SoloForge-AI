@@ -19,7 +19,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final CatalogService _catalogService = const CatalogService(
-    assetPath: 'assets/data/featured_catalog.json',
+    assetPath: 'assets/data/catalog_matched.json',
   );
 
   List<AffiliateProduct> allProducts = [];

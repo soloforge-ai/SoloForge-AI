@@ -20,6 +20,7 @@ class AffiliateProduct {
 
     required this.productUrl,
     required this.affiliateUrl,
+    required this.images,
 
     required this.priceBucket,
     required this.priceScore,
@@ -63,6 +64,7 @@ class AffiliateProduct {
 
   final String productUrl;
   final String affiliateUrl;
+  final List<String> images;
 
   final String priceBucket;
   final double priceScore;
@@ -113,6 +115,7 @@ class AffiliateProduct {
 
       productUrl: _read(row, 'ลิงก์สินค้า'),
       affiliateUrl: _read(row, 'ลิงก์ข้อเสนอ'),
+      images: const [],
 
       priceBucket: _read(row, 'PriceBucket'),
       priceScore: _readDouble(row, 'PriceScore'),
@@ -151,10 +154,14 @@ class AffiliateProduct {
       itemId: json['id']?.toString() ?? '',
       title: json['title'] ?? '',
 
-      priceDisplay: (json['sale_price'] ?? json['price'] ?? 0).toString(),
+      priceDisplay:
+          json['metrics']?['price_display']?.toString() ??
+          (json['sale_price'] ?? json['price'] ?? 0).toString(),
 
-      soldDisplay: (json['sold'] ?? 0).toString(),
-
+      soldDisplay:
+          json['metrics']?['sold_display']?.toString() ??
+          (json['sold'] ?? 0).toString(),
+          
       price: (json['sale_price'] ?? json['price'] ?? 0).toDouble(),
 
       sold: json['sold'] ?? 0,
@@ -166,8 +173,11 @@ class AffiliateProduct {
       commissionAmount: (json['commission']?['amount'] ?? 0).toDouble(),
 
       productUrl: json['links']?['product'] ?? '',
+      affiliateUrl: json['links']?['affiliate'] ?? '',
 
-      affiliateUrl: json['links']?['short'] ?? '',
+      images: List<String>.from(
+        json['images'] ?? const [],
+      ),
 
       // ยังไม่มีข้อมูลใน catalog.json
       priceBucket: '',
@@ -220,6 +230,7 @@ class AffiliateProduct {
   }
 
   AffiliateProduct copyWith({
+    List<String>? images,
     String? description,
     List<String>? tags,
     List<String>? keywords,
@@ -241,6 +252,8 @@ class AffiliateProduct {
       commissionAmount: commissionAmount,
       productUrl: productUrl,
       affiliateUrl: affiliateUrl,
+      images: images ?? this.images,
+
       priceBucket: priceBucket,
       priceScore: priceScore,
       soldBucket: soldBucket,
@@ -271,6 +284,7 @@ class AffiliateProduct {
       "commissionAmount": commissionAmount,
       "productUrl": productUrl,
       "affiliateUrl": affiliateUrl,
+      "images": images,
       "priceBucket": priceBucket,
       "priceScore": priceScore,
       "soldBucket": soldBucket,

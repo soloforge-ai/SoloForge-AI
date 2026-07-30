@@ -27,7 +27,7 @@ class MiniBossCard extends StatelessWidget {
             const SizedBox(height: 12),
 
             Text(
-              "${product.miniBossScore.toStringAsFixed(1)} / 10",
+              "${product.miniBossScore.toStringAsFixed(1)} / 100",
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ],
