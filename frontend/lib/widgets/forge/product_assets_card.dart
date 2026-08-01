@@ -35,9 +35,9 @@ class ProductAssetsCard extends StatelessWidget {
   }) {
     return Card(
       elevation: 0,
-      color: Colors.grey.shade100,
+      color: Colors.grey.shade600,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(13),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -47,17 +47,17 @@ class ProductAssetsCard extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 1),
             SelectableText(
               value,
-              style: const TextStyle(fontSize: 13),
+              style: const TextStyle(fontSize: 15),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 1),
             Align(
               alignment: Alignment.centerRight,
               child: ElevatedButton.icon(
                 onPressed: () => _copy(context, value, title),
-                icon: const Icon(Icons.copy, size: 18),
+                icon: const Icon(Icons.copy, size: 12),
                 label: const Text('Copy'),
               ),
             ),
@@ -76,7 +76,7 @@ class ProductAssetsCard extends StatelessWidget {
           title: 'Affiliate Link',
           value: product.affiliateUrl,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         _assetTile(
           context,
           title: 'Product Link',

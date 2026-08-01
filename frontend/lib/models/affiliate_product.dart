@@ -141,7 +141,7 @@ class AffiliateProduct {
       miniBossScore: _readDouble(row, 'MiniBossScore'),
 
       // Metadata
-      description: _read(row, 'Description'),
+      description: _read(row, 'description'),
 
       tags: _split(_read(row, 'Tags')),
 
@@ -207,23 +207,30 @@ class AffiliateProduct {
 
       miniBossScore: (json['miniboss']?['score'] ?? 0).toDouble(),
 
-      description: null,
+      description: json["description"],
 
-      tags: const [],
+      tags: List<String>.from(
+        json["tags"] ?? const [],
+      ),
 
-      keywords: const [],
+      keywords: List<String>.from(
+        json["keywords"] ?? const [],
+      ),
 
-      mood: null,
+      mood: json["mood"],
 
-      targetAudience: null,
+      targetAudience: json["targetAudience"],
 
-      suitableForShortVideo: false,
+      suitableForShortVideo:
+          json["suitableForShortVideo"] ?? false,
 
-      ceoApproved: false,
+      ceoApproved:
+          json["ceoApproved"] ?? false,
 
-      favorite: false,
-    );
-  }
+      favorite:
+          json["favorite"] ?? false,
+          );
+        }
 
   Product toProduct() {
     return Product(
