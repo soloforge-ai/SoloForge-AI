@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 
@@ -5,8 +6,14 @@ class ProjectIndexWriter:
 
     def write(
         self,
+        inventory,
         output: Path,
     ):
+
+        groups = defaultdict(list)
+
+        for item in inventory:
+            groups[item.category].append(item)
 
         lines = []
 
@@ -14,21 +21,19 @@ class ProjectIndexWriter:
         lines.append("")
         lines.append("> Generated automatically.")
         lines.append("")
-        lines.append("## Pages")
-        lines.append("")
-        lines.append("-")
-        lines.append("")
-        lines.append("## Services")
-        lines.append("")
-        lines.append("-")
-        lines.append("")
-        lines.append("## Models")
-        lines.append("")
-        lines.append("-")
-        lines.append("")
-        lines.append("## Widgets")
-        lines.append("")
-        lines.append("-")
+
+        for category in sorted(groups):
+
+            lines.append(f"## {category}")
+            lines.append("")
+
+            for item in sorted(
+                groups[category],
+                key=lambda x: x.name.lower(),
+            ):
+                lines.append(f"- {item.name}")
+
+            lines.append("")
 
         output.parent.mkdir(
             parents=True,

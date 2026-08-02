@@ -97,6 +97,7 @@ def main():
     )
 
     ProjectIndexWriter().write(
+        inventory,
         docs_dir / "PROJECT_INDEX.md",
     )
 
