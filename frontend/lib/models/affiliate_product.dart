@@ -259,6 +259,7 @@ class AffiliateProduct {
     List<String>? keywords,
     String? mood,
     String? targetAudience,
+    String? category,
     bool? suitableForShortVideo,
     bool? ceoApproved,
     bool? favorite,
