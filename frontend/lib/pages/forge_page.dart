@@ -102,7 +102,7 @@ class _ForgePageState extends State<ForgePage> {
             const SizedBox(height: 20),
             MiniBossCard(product: product),
             const SizedBox(height: 20),
-            const AnalysisCard(),
+            AnalysisCard(intelligence: intelligence),
             const SizedBox(height: 20),
             ProductAssetsCard(product: product),
             const SizedBox(height: 20),
