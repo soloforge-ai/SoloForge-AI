@@ -89,6 +89,7 @@ def main():
     )
 
     RoadmapWriter().write(
+        intelligence,
         docs_dir / "ROADMAP.md",
     )
 

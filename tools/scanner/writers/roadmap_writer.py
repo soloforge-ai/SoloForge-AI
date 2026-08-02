@@ -5,6 +5,7 @@ class RoadmapWriter:
 
     def write(
         self,
+        intelligence,
         output: Path,
     ):
 
@@ -14,17 +15,37 @@ class RoadmapWriter:
         lines.append("")
         lines.append("> Generated automatically.")
         lines.append("")
-        lines.append("## Phase 1")
+
+        lines.append("## ✅ Completed")
         lines.append("")
-        lines.append("-")
+
+        if intelligence.completed_features:
+            for item in intelligence.completed_features:
+                lines.append(f"- {item}")
+        else:
+            lines.append("- None")
+
         lines.append("")
-        lines.append("## Phase 2")
+
+        lines.append("## 🟡 In Progress")
         lines.append("")
-        lines.append("-")
+
+        if intelligence.in_progress_features:
+            for item in intelligence.in_progress_features:
+                lines.append(f"- {item}")
+        else:
+            lines.append("- None")
+
         lines.append("")
-        lines.append("## Phase 3")
+
+        lines.append("## 🔲 Planned")
         lines.append("")
-        lines.append("-")
+
+        if intelligence.missing_features:
+            for item in intelligence.missing_features:
+                lines.append(f"- {item}")
+        else:
+            lines.append("- None")
 
         output.parent.mkdir(
             parents=True,
