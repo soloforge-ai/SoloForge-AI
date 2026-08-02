@@ -6,6 +6,8 @@ import '../ai/content_engine.dart';
 import '../ai/platforms.dart';
 import '../models/affiliate_product.dart';
 import '../models/generated_content.dart';
+import '../ai/product_intelligence.dart';
+
 import '../widgets/forge/analysis_card.dart';
 import '../widgets/forge/content_studio.dart';
 import '../widgets/forge/miniboss_card.dart';
@@ -39,6 +41,8 @@ class _ForgePageState extends State<ForgePage> {
 
   bool isGenerating = false;
 
+  late final ProductIntelligence intelligence;
+
   Future<void> generateContent() async {
     setState(() => isGenerating = true);
     try {
@@ -62,6 +66,15 @@ class _ForgePageState extends State<ForgePage> {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Copied')),
+    );
+  }
+
+@override
+  void initState() {
+    super.initState();
+
+    intelligence = const ProductIntelligenceEngine().analyze(
+      widget.product.toProduct(),
     );
   }
 
