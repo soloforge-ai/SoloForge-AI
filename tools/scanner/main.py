@@ -2,17 +2,33 @@ from pathlib import Path
 
 from .inventory import InventoryBuilder
 from .scanner import ProjectScanner
-from .writers.json_writer import JsonWriter
-
-from .writers.stats_writer import StatsWriter
-from .writers.status_writer import StatusWriter
-from .writers.markdown_writer import MarkdownWriter
-from .writers.project_map_writer import ProjectMapWriter
 
 from .builders.dependency_builder import DependencyBuilder
-from .builders.project_intelligence_builder import ProjectIntelligenceBuilder
-from .writers.project_intelligence_writer import ProjectIntelligenceWriter
-from .builders.reverse_dependency_builder import ReverseDependencyBuilder
+from .builders.project_intelligence_builder import (
+    ProjectIntelligenceBuilder,
+)
+from .builders.reverse_dependency_builder import (
+    ReverseDependencyBuilder,
+)
+
+from .writers.json_writer import JsonWriter
+from .writers.status_writer import StatusWriter
+from .writers.project_map_writer import ProjectMapWriter
+from .writers.project_intelligence_writer import (
+    ProjectIntelligenceWriter,
+)
+
+from .writers.roadmap_writer import RoadmapWriter
+from .writers.current_sprint_writer import (
+    CurrentSprintWriter,
+)
+from .writers.project_index_writer import (
+    ProjectIndexWriter,
+)
+from .writers.architecture_writer import (
+    ArchitectureWriter,
+)
+
 
 def main():
 
@@ -28,90 +44,71 @@ def main():
 
     inventory = InventoryBuilder().build(
         files,
-        )
+    )
+
     inventory = DependencyBuilder().build(
         inventory,
-        )
+    )
 
     inventory = ReverseDependencyBuilder().build(
         inventory,
     )
-  
+
     intelligence = ProjectIntelligenceBuilder().build(
         inventory,
-        )
+    )
 
-    output = (
+    output_dir = (
         Path(__file__).parent
         / "output"
-        / "project_inventory.json"
+    )
+
+    docs_dir = (
+        Path(__file__).parent.parent.parent
+        / "docs"
     )
 
     JsonWriter().write(
         inventory,
-        output,
-    )
-
-    stats_output = (
-        Path(__file__).parent
-        / "output"
-        / "PROJECT_STATS.md"
-    )
-
-    StatsWriter().write(
-    inventory,
-    stats_output,
-    )
-
-    status_output = (
-        Path(__file__).parent
-        / "output"
-        / "PROJECT_STATUS.md"
+        output_dir / "project_inventory.json",
     )
 
     StatusWriter().write(
         inventory,
-        status_output,
-    )
-
-    tree_output = (
-    Path(__file__).parent
-        / "output"
-        / "PROJECT_TREE.md"
-    )
-
-    MarkdownWriter().write(
-        inventory,
-        tree_output,
-    )
-
-    map_output = (
-        Path(__file__).parent
-        / "output"
-        / "PROJECT_MAP.md"
+        output_dir / "PROJECT_STATUS.md",
     )
 
     ProjectMapWriter().write(
         inventory,
-        map_output,
-    )
-
-    intelligence_output = (
-        Path(__file__).parent
-        / "output"
-        / "PROJECT_INTELLIGENCE.md"
+        output_dir / "PROJECT_MAP.md",
     )
 
     ProjectIntelligenceWriter().write(
         intelligence,
-        intelligence_output,
+        output_dir / "PROJECT_INTELLIGENCE.md",
+    )
+
+    RoadmapWriter().write(
+        docs_dir / "ROADMAP.md",
+    )
+
+    CurrentSprintWriter().write(
+        docs_dir / "CURRENT_SPRINT.md",
+    )
+
+    ProjectIndexWriter().write(
+        docs_dir / "PROJECT_INDEX.md",
+    )
+
+    ArchitectureWriter().write(
+        docs_dir / "ARCHITECTURE.md",
     )
 
     print(f"Inventory Built : {len(inventory)}")
-
-    print(f"JSON Generated : {output}")
-
+    print(f"JSON Generated : {output_dir / 'project_inventory.json'}")
+    print("Documentation Generated.")
     print("Done.")
+
 
 if __name__ == "__main__":
     main()

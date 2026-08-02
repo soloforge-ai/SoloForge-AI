@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 SoloForge AI Developer Launcher
 Sprint 32A
@@ -20,6 +19,7 @@ def run(title: str, command: list[str], cwd=None):
     result = subprocess.run(
         command,
         cwd=cwd or ROOT,
+        shell=True,
     )
 
     if result.returncode != 0:
@@ -65,10 +65,10 @@ def miniboss_test():
 
 
 def scanner():
-    run(
+    return run(
         "Project Scanner",
-        ["python", "main.py"],
-        ROOT / "tools" / "scanner",
+        ["python", "-m", "tools.scanner.main"],
+        ROOT,
     )
 
 
@@ -97,8 +97,8 @@ def full_build():
 
     if not run(
         "Project Scanner",
-        ["python", "main.py"],
-        ROOT / "tools" / "scanner",
+        ["python", "-m", "tools.scanner.main"],
+        ROOT,
     ):
         return
 

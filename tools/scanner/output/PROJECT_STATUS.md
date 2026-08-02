@@ -2,13 +2,19 @@
 
 ## ✅ Completed
 
+- about_page.dart
 - affiliate_data_source.dart
 - affiliate_product.dart
+- affiliate_product_v2.dart
 - affiliate_repository.dart
+- ai_forge_page.dart
+- ai_forge_service.dart
 - ai_provider.dart
 - analysis_card.dart
 - catalog_service.dart
+- catalog_test_page.dart
 - category_filter.dart
+- category_filter_bar.dart
 - character.dart
 - character_engine.dart
 - character_loader.dart
@@ -19,14 +25,18 @@
 - creative_loader.dart
 - creative_style.dart
 - forge_page.dart
+- forge_page_generated.dart
+- forge_result.dart
 - generated_content.dart
 - generated_image.dart
 - home_page.dart
 - image_engine.dart
 - image_prompt.dart
 - image_prompt_builder.dart
+- image_prompt_service.dart
 - image_provider.dart
 - image_test_page.dart
+- jsonl_catalog_service.dart
 - main.dart
 - miniboss_card.dart
 - miniboss_engine.dart
@@ -34,56 +44,85 @@
 - mock_provider.dart
 - mock_provider.dart
 - product.dart
+- product_assets_card.dart
 - product_card.dart
+- product_enricher.dart
 - product_header.dart
+- product_intelligence.dart
 - product_metadata.dart
 - product_search_service.dart
 - product_service.dart
 - prompt_builder.dart
+- prompt_context.dart
+- prompt_studio.dart
+- prompt_template.dart
 - scene.dart
 - scene_engine.dart
 - scene_loader.dart
 - sort_selector.dart
+- template_engine.dart
+- template_repository.dart
+- template_test_page.dart
 - templates.dart
+- update_service.dart
+- version_card.dart
+- version_info.dart
+- version_service.dart
+- video_prompt_service.dart
+- voice_prompt_service.dart
 
 ## 💤 Placeholder
 
+- 2026-07-29_v0.1.0.md
 - AI_PIPELINE.md
 - ARCHITECTURE.md
 - CHANGELOG.md
 - CURRENT_SPRINT.md
-- PROJECT_INDEX.md
+- DEVELOPER_GUIDE.md
 - PROJECT_INDEX.md
 - PROJECT_INTELLIGENCE.md
 - PROJECT_MAP.md
-- PROJECT_STATS.md
 - PROJECT_STATUS.md
-- PROJECT_TREE.md
 - ROADMAP.md
 - __init__.py
 - __init__.py
 - __init__.py
 - __init__.py
 - __init__.py
+- __init__.py
+- architecture_writer.py
+- builder.py
 - character_prompt_builder.dart
+- check_match.py
 - cleaner.py
 - config.py
 - config.py
+- constants.py
+- current_sprint_writer.py
 - dart_parser.py
 - dependency_builder.py
+- discount.py
 - exporter.py
+- grade.py
+- inspect_feed.py
 - inventory.py
 - inventory_item.py
 - json_parser.py
 - json_writer.py
+- loader.py
 - main.py
 - manifest.py
 - markdown_parser.py
-- markdown_writer.py
+- matched_exporter.py
+- merge_catalog.py
 - miniboss.py
+- miniboss_legacy.py
 - miniboss_rules.json
+- official.py
 - platforms.dart
+- preferred.py
 - product_detail_panel.dart
+- project_index_writer.py
 - project_intelligence.py
 - project_intelligence_builder.py
 - project_intelligence_writer.py
@@ -91,23 +130,34 @@
 - project_map_writer.py
 - project_scanner.py
 - python_parser.py
+- quality_filter.py
+- rating.py
 - reader.py
+- report.py
+- result.py
 - reverse_dependency_builder.py
+- roadmap_writer.py
 - run.py
 - scanner.py
-- stats_writer.py
+- shop_rating.py
+- sold.py
+- statistics.py
 - status_writer.py
+- stock.py
+- sync_flutter.py
+- test_miniboss.py
 - transformer.py
+- validator.py
 
 ## Next Recommended Tasks
 
+- Implement 2026-07-29_v0.1.0.md
 - Implement AI_PIPELINE.md
 - Implement ARCHITECTURE.md
 - Implement CHANGELOG.md
 - Implement CURRENT_SPRINT.md
-- Implement PROJECT_INDEX.md
+- Implement DEVELOPER_GUIDE.md
 - Implement PROJECT_INDEX.md
 - Implement PROJECT_INTELLIGENCE.md
 - Implement PROJECT_MAP.md
-- Implement PROJECT_STATS.md
 - Implement PROJECT_STATUS.md
