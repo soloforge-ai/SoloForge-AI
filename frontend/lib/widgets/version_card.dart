@@ -32,34 +32,34 @@ class VersionCard extends StatelessWidget {
             const SizedBox(height: 4),
 
             Text(
-              "Powered by ${version.company}",
+              'Powered by ${version.company}',
               style: theme.textTheme.bodySmall,
             ),
 
             const Divider(height: 32),
 
             _infoTile(
-              "Version",
+              'Version',
               version.fullVersion,
             ),
 
             _infoTile(
-              "Released",
+              'Released',
               version.release,
             ),
 
             _infoTile(
-              "MiniBoss Engine",
+              'MiniBoss Engine',
               version.engine,
             ),
 
             _infoTile(
-              "Scanner",
+              'Scanner',
               version.scanner,
             ),
 
             _infoTile(
-              "API",
+              'API',
               version.apiVersion,
             ),
 
@@ -71,7 +71,7 @@ class VersionCard extends StatelessWidget {
                 vertical: 8,
               ),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(.15),
+                color: Colors.green.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Row(
@@ -84,7 +84,7 @@ class VersionCard extends StatelessWidget {
                   ),
                   SizedBox(width: 8),
                   Text(
-                    "Latest Version",
+                    'Latest Version',
                     style: TextStyle(
                       color: Colors.green,
                       fontWeight: FontWeight.bold,

@@ -40,9 +40,7 @@ class ProductCard extends StatelessWidget {
                       ),
               ),
             ),
-
             const SizedBox(width: 10),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,9 +55,7 @@ class ProductCard extends StatelessWidget {
                       height: 1.25,
                     ),
                   ),
-
                   const SizedBox(height: 2),
-
                   Text(
                     product.shopName,
                     maxLines: 1,
@@ -69,9 +65,7 @@ class ProductCard extends StatelessWidget {
                       color: Colors.grey.shade600,
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
@@ -79,21 +73,18 @@ class ProductCard extends StatelessWidget {
                       if (product.official)
                         _buildBadge(
                           icon: Icons.verified,
-                          label: "Official",
+                          label: 'Official',
                           color: Colors.amber,
                         ),
-
                       if (product.preferred)
                         _buildBadge(
                           icon: Icons.favorite,
-                          label: "Preferred",
+                          label: 'Preferred',
                           color: Colors.purple,
                         ),
                     ],
                   ),
-
                   const SizedBox(height: 6),
-
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
@@ -103,33 +94,25 @@ class ProductCard extends StatelessWidget {
                         value: product.miniBossScore,
                         color: _scoreColor(product.miniBossScore),
                       ),
-
                       _ScoreChip(
                         label: 'Sold',
                         value: product.sold >= 1000
                             ? 100
-                            : (product.sold / 10)
-                                .clamp(0, 100)
-                                .toDouble(),
+                            : (product.sold / 10).clamp(0, 100).toDouble(),
                       ),
-
                       _ScoreChip(
                         label: 'Price',
                         value: product.price >= 1000
                             ? 100
                             : (product.price / 10).clamp(0, 100),
                       ),
-
                       _ScoreChip(
                         label: 'Comm',
-                        value: (product.commissionAmount * 10)
-                            .clamp(0, 100),
+                        value: (product.commissionAmount * 10).clamp(0, 100),
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 8),
-
                   Text(
                     product.priceText,
                     style: const TextStyle(
@@ -137,7 +120,6 @@ class ProductCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   Text(
                     product.soldText,
                     style: TextStyle(
@@ -145,9 +127,7 @@ class ProductCard extends StatelessWidget {
                       color: Colors.grey.shade600,
                     ),
                   ),
-
                   const SizedBox(height: 2),
-
                   Text(
                     'Commission ${product.commissionAmountText} (${product.commissionRateText})',
                     style: const TextStyle(
@@ -159,16 +139,14 @@ class ProductCard extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(width: 8),
-
             SizedBox(
               width: 94,
               height: 32,
               child: FilledButton(
                 onPressed: onForge,
                 child: const Text(
-                  "🔥Forge",
+                  '🔥Forge',
                   style: TextStyle(fontSize: 12),
                 ),
               ),
@@ -205,7 +183,7 @@ class _ScoreChip extends StatelessWidget {
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color),
       ),
@@ -232,7 +210,7 @@ Widget _buildBadge({
       vertical: 3,
     ),
     decoration: BoxDecoration(
-      color: color.withOpacity(0.12),
+      color: color.withValues(alpha: 0.12),
       borderRadius: BorderRadius.circular(20),
       border: Border.all(color: color),
     ),
