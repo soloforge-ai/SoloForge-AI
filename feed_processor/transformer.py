@@ -39,6 +39,7 @@ def transform_row(row):
         # ==================================================
 
         "title": row.get("title", ""),
+        "description": row.get("description", ""),
         "brand": row.get("global_brand", ""),
 
         "category": " > ".join(
@@ -50,6 +51,22 @@ def transform_row(row):
                     row.get("global_category3", ""),
                 ],
             )
+        ),
+
+        # Product Metadata
+        "attributes": row.get(
+            "global_item_attributes",
+            "",
+        ),
+
+        "condition": row.get(
+            "condition",
+            "",
+        ),
+
+        "variants": row.get(
+            "model_names",
+            "",
         ),
 
         "price": to_float(row.get("price")),

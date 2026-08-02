@@ -1,16 +1,18 @@
 import json
 from pathlib import Path
 
-from config import OUTPUT_DIR
-
 # ==========================
 # Config
 # ==========================
 
-TOP_PRODUCTS = 1000
-FEATURED_LIMIT = 200
-
 ROOT = Path(__file__).resolve().parent.parent
+
+SOURCE = (
+    ROOT
+    / "data"
+    / "processed"
+    / "catalog_matched.json"
+)
 
 CATALOG_OUTPUT = (
     ROOT
@@ -28,6 +30,8 @@ FEATURED_OUTPUT = (
     / "featured_catalog.json"
 )
 
+FEATURED_LIMIT = 200
+
 # ==========================
 # Sync
 # ==========================
@@ -35,36 +39,21 @@ FEATURED_OUTPUT = (
 
 def sync():
 
-    products = []
+    print("=" * 60)
+    print("Loading Matched Catalog...")
+    print("=" * 60)
 
-    jsonl_files = sorted(
-        OUTPUT_DIR.glob("ranked_products_*.jsonl")
-    )
+    if not SOURCE.exists():
+        print(f"ERROR : {SOURCE} not found.")
+        return
 
-    for file in jsonl_files:
+    with open(
+        SOURCE,
+        "r",
+        encoding="utf-8",
+    ) as f:
 
-        with open(
-            file,
-            "r",
-            encoding="utf-8",
-        ) as f:
-
-            for line in f:
-
-                if not line.strip():
-                    continue
-
-                products.append(json.loads(line))
-
-                if len(products) >= TOP_PRODUCTS:
-                    break
-
-        if len(products) >= TOP_PRODUCTS:
-            break
-
-    # ==========================
-    # Sort Featured Products
-    # ==========================
+        products = json.load(f)
 
     featured_products = sorted(
         products,
@@ -72,18 +61,10 @@ def sync():
         reverse=True,
     )[:FEATURED_LIMIT]
 
-    # ==========================
-    # Create Output Folder
-    # ==========================
-
     CATALOG_OUTPUT.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
-
-    # ==========================
-    # Save catalog.json
-    # ==========================
 
     with open(
         CATALOG_OUTPUT,
@@ -98,10 +79,6 @@ def sync():
             indent=2,
         )
 
-    # ==========================
-    # Save featured_catalog.json
-    # ==========================
-
     with open(
         FEATURED_OUTPUT,
         "w",
@@ -114,10 +91,6 @@ def sync():
             ensure_ascii=False,
             indent=2,
         )
-
-    # ==========================
-    # Log
-    # ==========================
 
     print("=" * 60)
     print("Flutter Sync Complete")
