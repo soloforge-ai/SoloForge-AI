@@ -6,9 +6,10 @@ import '../models/affiliate_product.dart';
 /// The repository depends on the [AffiliateDataSource] abstraction so data
 /// providers can be swapped without changing feature code.
 class AffiliateRepository {
-  /// Creates a repository backed by [dataSource].
-  const AffiliateRepository({required AffiliateDataSource dataSource})
-    : _dataSource = dataSource;
+  /// Creates a repository backed by [AffiliateDataSource].
+  const AffiliateRepository({
+    required this._dataSource,
+  });
 
   final AffiliateDataSource _dataSource;
 
