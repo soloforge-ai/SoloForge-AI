@@ -20,7 +20,7 @@ class CategoryFilterBar extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final category = categories[index];
           final selected = category == selectedCategory;
@@ -34,7 +34,8 @@ class CategoryFilterBar extends StatelessWidget {
             backgroundColor: const Color(0xFF2A2630),
             labelStyle: TextStyle(
               color: selected ? Colors.white : Colors.white70,
-              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              fontWeight:
+                  selected ? FontWeight.bold : FontWeight.normal,
             ),
             side: BorderSide(
               color: selected
