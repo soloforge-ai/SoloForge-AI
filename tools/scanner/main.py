@@ -93,6 +93,7 @@ def main():
     )
 
     CurrentSprintWriter().write(
+        inventory,
         docs_dir / "CURRENT_SPRINT.md",
     )
 

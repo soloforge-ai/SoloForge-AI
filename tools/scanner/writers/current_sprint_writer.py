@@ -5,8 +5,19 @@ class CurrentSprintWriter:
 
     def write(
         self,
+        inventory,
         output: Path,
     ):
+
+        completed = []
+        placeholder = []
+
+        for item in inventory:
+
+            if item.methods or item.classes:
+                completed.append(item.name)
+            else:
+                placeholder.append(item.name)
 
         lines = []
 
@@ -14,21 +25,44 @@ class CurrentSprintWriter:
         lines.append("")
         lines.append("> Generated automatically.")
         lines.append("")
-        lines.append("## Sprint")
+
+        lines.append("## Project")
         lines.append("")
-        lines.append("-")
+        lines.append(f"- Total Files : {len(inventory)}")
+        lines.append(f"- Completed Files : {len(completed)}")
+        lines.append(f"- Placeholder Files : {len(placeholder)}")
         lines.append("")
+
         lines.append("## Completed")
         lines.append("")
-        lines.append("-")
+
+        if completed:
+            for name in sorted(completed):
+                lines.append(f"- {name}")
+        else:
+            lines.append("- None")
+
         lines.append("")
-        lines.append("## In Progress")
+
+        lines.append("## Placeholder")
         lines.append("")
-        lines.append("-")
+
+        if placeholder:
+            for name in sorted(placeholder):
+                lines.append(f"- {name}")
+        else:
+            lines.append("- None")
+
         lines.append("")
-        lines.append("## Next")
+
+        lines.append("## Next Recommended Tasks")
         lines.append("")
-        lines.append("-")
+
+        if placeholder:
+            for name in sorted(placeholder)[:10]:
+                lines.append(f"- Implement {name}")
+        else:
+            lines.append("- Great job!")
 
         output.parent.mkdir(
             parents=True,
