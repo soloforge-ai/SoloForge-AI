@@ -104,6 +104,7 @@ def main():
     )
 
     ArchitectureWriter().write(
+        inventory,
         docs_dir / "ARCHITECTURE.md",
     )
 

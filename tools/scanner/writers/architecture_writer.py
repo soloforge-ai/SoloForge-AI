@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 
@@ -5,8 +6,14 @@ class ArchitectureWriter:
 
     def write(
         self,
+        inventory,
         output: Path,
     ):
+
+        groups = defaultdict(int)
+
+        for item in inventory:
+            groups[item.category] += 1
 
         lines = []
 
@@ -14,17 +21,29 @@ class ArchitectureWriter:
         lines.append("")
         lines.append("> Generated automatically.")
         lines.append("")
-        lines.append("## Frontend")
+
+        lines.append("## Project Overview")
         lines.append("")
-        lines.append("-")
+        lines.append(f"- Total Files : {len(inventory)}")
+        lines.append(f"- Total Categories : {len(groups)}")
         lines.append("")
-        lines.append("## Scanner")
+
+        lines.append("## Modules")
         lines.append("")
-        lines.append("-")
+
+        for category in sorted(groups):
+            lines.append(
+                f"- {category} ({groups[category]} files)"
+            )
+
         lines.append("")
-        lines.append("## AI")
+        lines.append("## Layer Overview")
         lines.append("")
-        lines.append("-")
+        lines.append("- Inventory")
+        lines.append("- Builders")
+        lines.append("- Writers")
+        lines.append("- Output")
+        lines.append("- Documentation")
 
         output.parent.mkdir(
             parents=True,
