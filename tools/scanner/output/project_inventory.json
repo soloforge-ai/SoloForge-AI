@@ -1,7 +1,7 @@
 {
     "version": "1.0",
-    "generated_at": "2026-08-02T13:22:57",
-    "total_files": 143,
+    "generated_at": "2026-08-05T10:44:21",
+    "total_files": 142,
     "items": [
         {
             "path": "D:\\Project\\SoloForge-AI\\docs\\AI_PIPELINE.md",
@@ -595,8 +595,7 @@
                 "D:/Project/SoloForge-AI/frontend/lib/models/product.dart"
             ],
             "used_by": [
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page_generated.dart"
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -618,7 +617,6 @@
                 "D:/Project/SoloForge-AI/frontend/lib/ai/providers/mock_provider.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/models/generated_content.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page_generated.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/content_studio.dart"
             ]
         },
@@ -669,7 +667,10 @@
             "dependencies": [
                 "D:/Project/SoloForge-AI/frontend/lib/models/product.dart"
             ],
-            "used_by": []
+            "used_by": [
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/analysis_card.dart"
+            ]
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\ai\\prompt_builder.dart",
@@ -1253,7 +1254,6 @@
                 "D:/Project/SoloForge-AI/frontend/lib/datasources/abstract/affiliate_data_source.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/pages/ai_forge_page.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page_generated.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/pages/home_page.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/repositories/affiliate_repository.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/services/ai_forge_service.dart",
@@ -1328,8 +1328,7 @@
                 "D:/Project/SoloForge-AI/frontend/lib/ai/content_engine.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/ai/providers/ai_provider.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/ai/providers/mock_provider.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page_generated.dart"
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -1481,12 +1480,15 @@
             ],
             "methods": [
                 "createState",
+                "initState",
                 "generateContent",
+                "setState",
                 "setState",
                 "setState",
                 "copyToClipboard",
                 "dispose",
-                "build"
+                "build",
+                "setState"
             ],
             "enums": [],
             "extensions": [],
@@ -1495,6 +1497,7 @@
                 "package:flutter/services.dart",
                 "../ai/content_engine.dart",
                 "../ai/platforms.dart",
+                "../ai/product_intelligence.dart",
                 "../models/affiliate_product.dart",
                 "../models/generated_content.dart",
                 "../widgets/forge/analysis_card.dart",
@@ -1507,6 +1510,7 @@
             "dependencies": [
                 "D:/Project/SoloForge-AI/frontend/lib/ai/content_engine.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/ai/platforms.dart",
+                "D:/Project/SoloForge-AI/frontend/lib/ai/product_intelligence.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/models/generated_content.dart",
                 "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/analysis_card.dart",
@@ -1519,55 +1523,6 @@
             "used_by": [
                 "D:/Project/SoloForge-AI/frontend/lib/pages/home_page.dart"
             ]
-        },
-        {
-            "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\pages\\forge_page_generated.dart",
-            "name": "forge_page_generated.dart",
-            "extension": ".dart",
-            "language": "Dart",
-            "category": "Page",
-            "classes": [
-                "ForgePage",
-                "_ForgePageState"
-            ],
-            "methods": [
-                "createState",
-                "generateContent",
-                "setState",
-                "setState",
-                "copyToClipboard",
-                "dispose",
-                "build"
-            ],
-            "enums": [],
-            "extensions": [],
-            "imports": [
-                "package:flutter/material.dart",
-                "package:flutter/services.dart",
-                "../ai/content_engine.dart",
-                "../ai/platforms.dart",
-                "../models/affiliate_product.dart",
-                "../models/generated_content.dart",
-                "../widgets/forge/analysis_card.dart",
-                "../widgets/forge/content_studio.dart",
-                "../widgets/forge/miniboss_card.dart",
-                "../widgets/forge/product_assets_card.dart",
-                "../widgets/forge/product_header.dart",
-                "../widgets/forge/prompt_studio.dart"
-            ],
-            "dependencies": [
-                "D:/Project/SoloForge-AI/frontend/lib/ai/content_engine.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/ai/platforms.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/models/generated_content.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/analysis_card.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/content_studio.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/miniboss_card.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/product_assets_card.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/product_header.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/prompt_studio.dart"
-            ],
-            "used_by": []
         },
         {
             "path": "D:\\Project\\SoloForge-AI\\frontend\\lib\\pages\\home_page.dart",
@@ -2156,17 +2111,21 @@
                 "AnalysisCard"
             ],
             "methods": [
+                "_section",
+                "Column",
                 "build"
             ],
             "enums": [],
             "extensions": [],
             "imports": [
-                "package:flutter/material.dart"
+                "package:flutter/material.dart",
+                "../../ai/product_intelligence.dart"
             ],
-            "dependencies": [],
+            "dependencies": [
+                "D:/Project/SoloForge-AI/frontend/lib/ai/product_intelligence.dart"
+            ],
             "used_by": [
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page_generated.dart"
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -2217,8 +2176,7 @@
                 "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/content_field.dart"
             ],
             "used_by": [
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page_generated.dart"
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -2243,8 +2201,7 @@
                 "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart"
             ],
             "used_by": [
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page_generated.dart"
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -2271,8 +2228,7 @@
                 "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart"
             ],
             "used_by": [
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page_generated.dart"
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -2297,8 +2253,7 @@
                 "D:/Project/SoloForge-AI/frontend/lib/models/affiliate_product.dart"
             ],
             "used_by": [
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page_generated.dart"
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {
@@ -2340,8 +2295,7 @@
                 "D:/Project/SoloForge-AI/frontend/lib/widgets/forge/content_field.dart"
             ],
             "used_by": [
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart",
-                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page_generated.dart"
+                "D:/Project/SoloForge-AI/frontend/lib/pages/forge_page.dart"
             ]
         },
         {

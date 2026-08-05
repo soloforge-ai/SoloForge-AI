@@ -99,7 +99,6 @@
 - ai_forge_page.dart
 - catalog_test_page.dart
 - forge_page.dart
-- forge_page_generated.dart
 - home_page.dart
 - image_test_page.dart
 - template_test_page.dart

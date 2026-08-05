@@ -37,6 +37,10 @@
 - frontend/lib/ai/platforms.dart
 - frontend/lib/models/generated_content.dart
 
+## frontend/lib/widgets/forge/analysis_card.dart
+
+- frontend/lib/ai/product_intelligence.dart
+
 ## frontend/lib/services/catalog_service.dart
 
 - frontend/lib/datasources/abstract/affiliate_data_source.dart
@@ -81,19 +85,7 @@
 
 - frontend/lib/ai/content_engine.dart
 - frontend/lib/ai/platforms.dart
-- frontend/lib/models/affiliate_product.dart
-- frontend/lib/models/generated_content.dart
-- frontend/lib/widgets/forge/analysis_card.dart
-- frontend/lib/widgets/forge/content_studio.dart
-- frontend/lib/widgets/forge/miniboss_card.dart
-- frontend/lib/widgets/forge/product_assets_card.dart
-- frontend/lib/widgets/forge/product_header.dart
-- frontend/lib/widgets/forge/prompt_studio.dart
-
-## frontend/lib/pages/forge_page_generated.dart
-
-- frontend/lib/ai/content_engine.dart
-- frontend/lib/ai/platforms.dart
+- frontend/lib/ai/product_intelligence.dart
 - frontend/lib/models/affiliate_product.dart
 - frontend/lib/models/generated_content.dart
 - frontend/lib/widgets/forge/analysis_card.dart

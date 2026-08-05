@@ -25,7 +25,6 @@
 - creative_loader.dart
 - creative_style.dart
 - forge_page.dart
-- forge_page_generated.dart
 - forge_result.dart
 - generated_content.dart
 - generated_image.dart

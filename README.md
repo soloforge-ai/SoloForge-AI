@@ -1,42 +1,45 @@
 # 🚀 SoloForge AI
 
-> **AI Creator Operating System for Affiliate Marketing**
+> **AI Creator Operating System**
 
-SoloForge AI is an AI-powered platform that helps creators discover winning products, analyze affiliate opportunities, and generate high-quality content with minimal effort.
+SoloForge AI is a modular AI-powered platform for creators, affiliate marketers, and solo entrepreneurs.
+
+The project combines AI-assisted development, product intelligence, content generation, and automation into a single creator operating system.
 
 ---
 
-# ✨ Features
+# ✨ Core Features
 
-- 🛍 Product Catalog
+- 🛍 Product Intelligence Engine
 - ⭐ MiniBoss Scoring Engine
-- 📊 Featured Product Ranking
+- 📊 Affiliate Product Analysis
 - 🤖 AI Content Generation
 - 🎬 Content Studio
-- 📱 Flutter Mobile App
-- ⚡ JSON Pipeline
-- 🔥 Affiliate Workflow
+- 📱 Flutter Mobile Application
+- ⚡ Documentation Pipeline
+- 🧠 Project Intelligence
+- 🚀 Developer Launcher
 
 ---
 
-# 🏗 Architecture
+# 🏗 High-Level Architecture
 
 ```
-CSV Product Feed
-        │
-        ▼
+Product Feed
+      │
+      ▼
 Feed Processor
-        │
-        ▼
+      │
+      ▼
 MiniBoss Engine
-        │
-        ▼
+      │
+      ▼
 JSON Catalog
-        │
-        ▼
-Flutter App
-        │
-        ▼
+      │
+      ▼
+Flutter Application
+      │
+      ▼
 AI Content Generation
 ```
 
@@ -47,30 +50,55 @@ AI Content Generation
 ```
 SoloForge-AI/
 │
+├── .ai/                # AI Development Protocol
+├── assets/
+├── backend/
+├── data/
+├── docs/
+├── feed_processor/
+├── frontend/
+├── prompts/
+├── rules/
+├── tools/
+│
 ├── README.md
 ├── RUNBOOK.md
-├── PROJECT_BIBLE.md
-│
-├── feed_processor/
-│   ├── run.py
-│   ├── sync_flutter.py
-│   ├── test_miniboss.py
-│   ├── miniboss.py
-│   └── engine/
-│
-├── frontend/
-│   ├── lib/
-│   ├── assets/
-│   └── pubspec.yaml
-│
-└── tools/
+└── dev.py
 ```
 
 ---
 
 # 🚀 Quick Start
 
-## Process Product Feed
+## Developer Launcher
+
+```bash
+py dev.py
+```
+
+Available commands
+
+- Run Flutter
+- Product Pipeline
+- MiniBoss Test
+- Project Scanner
+- Full Build
+
+---
+
+## Run Flutter
+
+```bash
+cd frontend
+
+flutter pub get
+
+flutter run
+```
+
+---
+
+## Run Product Pipeline
 
 ```bash
 cd feed_processor
@@ -80,22 +108,18 @@ python run.py
 
 ---
 
-## Sync Flutter Data
+## Run Project Scanner
 
-```bash
-python sync_flutter.py
+Launch from Developer Launcher
+
+```
+py dev.py
 ```
 
----
+Select
 
-## Run Flutter App
-
-```bash
-cd ../frontend
-
-flutter pub get
-
-flutter run
+```
+Project Scanner
 ```
 
 ---
@@ -114,105 +138,141 @@ Expected
 
 ```
 Full Result Equal
+
 True
 ```
 
 ---
 
-# 🛠 Tech Stack
+# 🛠 Technology Stack
 
-### Backend
-
-- Python
-- JSONL
-- MiniBoss Engine
-
-### Mobile
+## Frontend
 
 - Flutter
 - Dart
 
-### Data
+## Backend
+
+- Python
+
+## Data
 
 - JSON
+- JSONL
 - CSV
 
-### AI
+## AI
 
+- ChatGPT
 - Prompt Engineering
-- Content Generation
-- Affiliate Analysis
+- AI Content Generation
 
----
+## Development
 
-# 📈 Development Workflow
-
-```
-CSV
- ↓
-run.py
- ↓
-MiniBoss Engine
- ↓
-ranked_products.jsonl
- ↓
-sync_flutter.py
- ↓
-catalog.json
- ↓
-Flutter
- ↓
-Generate Content
-```
+- Git
+- GitHub
+- VS Code
 
 ---
 
 # 📚 Documentation
 
-| Document | Description |
-|----------|-------------|
+| Location | Purpose |
+|----------|----------|
 | README.md | Project overview |
-| RUNBOOK.md | Daily development commands |
-| PROJECT_BIBLE.md | Complete project documentation |
+| RUNBOOK.md | Build, Run, Debug |
+| docs/ | Human documentation |
+| .ai/ | AI Development Protocol |
 
 ---
 
-# 🗺 Roadmap
+# 🤖 AI Development Protocol
 
-### Sprint 31 ✅
+SoloForge AI uses a standardized AI development workflow.
 
-- Modular MiniBoss Engine
-- Production Migration
-- Featured Catalog
-- Flutter Sync
-- Regression Testing
+AI assistants should read the following documents before performing development tasks.
 
-### Sprint 32
+1. PROTOCOL.md
+2. AI_CONTEXT.md
+3. AI_RULES.md
+4. AI_TASK.md
 
-- Creator Engine
-- Profit Score
-- Trend Score
-- Prompt Engine v2
+Location
 
-### Future
+```
+.ai/
+```
 
-- AI Video Pipeline
-- Telegram Bot
-- Auto Content Publishing
-- Analytics Dashboard
+The protocol is designed to work with multiple AI assistants, including ChatGPT, Claude, Gemini, Codex, GitHub Copilot, Cursor, and future AI systems.
 
 ---
 
-# 🤝 Contributing
+# 🚀 Current Development
 
-1. Create a new branch
-2. Commit with Sprint number
-3. Open Pull Request
+Current Sprint
+
+```
+Sprint 42
+```
+
+Current Objective
+
+```
+SoloForge AI Development Protocol v1.0
+```
+
+Status
+
+```
+Active Development
+```
+
+---
+
+# 🗺 Project Roadmap
+
+The complete development roadmap is maintained separately.
+
+See
+
+```
+docs/ROADMAP.md
+```
+
+---
+
+# 🤝 Development Workflow
+
+```
+Understand
+
+↓
+
+Plan
+
+↓
+
+Implement
+
+↓
+
+Test
+
+↓
+
+Document
+
+↓
+
+Commit
+```
+
+Every completed sprint is tracked using Git Tags.
 
 Example
 
 ```
-Sprint 32: Creator Engine
+sprint-42
 ```
 
 ---

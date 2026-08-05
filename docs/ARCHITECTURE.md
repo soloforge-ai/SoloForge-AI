@@ -4,7 +4,7 @@
 
 ## Project Overview
 
-- Total Files : 143
+- Total Files : 142
 - Total Categories : 13
 
 ## Modules
@@ -16,7 +16,7 @@
 - FeedProcessor (32 files)
 - Model (11 files)
 - Other (6 files)
-- Page (8 files)
+- Page (7 files)
 - Repository (1 files)
 - Rule (1 files)
 - Service (19 files)
