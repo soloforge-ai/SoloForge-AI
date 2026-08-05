@@ -1,107 +1,198 @@
-import json
+"""
+SoloForge AI
+Flutter Sync
+
+Sprint 44
+Production Version
+
+Sync Discovery Database
+→ Flutter Assets
+"""
+
+import shutil
+import argparse
 from pathlib import Path
 
-# ==========================
+# ==========================================================
 # Config
-# ==========================
+# ==========================================================
 
 ROOT = Path(__file__).resolve().parent.parent
 
-SOURCE = (
-    ROOT
-    / "data"
-    / "processed"
-    / "catalog_matched.json"
-)
+DISCOVERY_DIR = ROOT / "data" / "discovery"
 
-CATALOG_OUTPUT = (
+FLUTTER_DATA = (
     ROOT
     / "frontend"
     / "assets"
     / "data"
-    / "catalog.json"
 )
 
-FEATURED_OUTPUT = (
-    ROOT
-    / "frontend"
-    / "assets"
-    / "data"
-    / "featured_catalog.json"
+SOURCE_CATEGORY_INDEX = (
+    DISCOVERY_DIR
+    / "category_index.json"
 )
 
-FEATURED_LIMIT = 200
+SOURCE_REPORT = (
+    DISCOVERY_DIR
+    / "discovery_report.json"
+)
 
-# ==========================
-# Sync
-# ==========================
+SOURCE_TOP_PRODUCTS = (
+    DISCOVERY_DIR
+    / "top_products.json"
+)
+
+SOURCE_CATEGORIES = (
+    DISCOVERY_DIR
+    / "categories"
+)
+
+TARGET_CATEGORY_INDEX = (
+    FLUTTER_DATA
+    / "category_index.json"
+)
+
+TARGET_REPORT = (
+    FLUTTER_DATA
+    / "discovery_report.json"
+)
+
+TARGET_TOP_PRODUCTS = (
+    FLUTTER_DATA
+    / "top_products.json"
+)
+
+TARGET_CATEGORIES = (
+    FLUTTER_DATA
+    / "categories"
+)
+
+# ==========================================================
+# Copy File
+# ==========================================================
 
 
-def sync():
+def copy_file(source: Path, target: Path):
 
-    print("=" * 60)
-    print("Loading Matched Catalog...")
-    print("=" * 60)
+    if not source.exists():
+        print(f"Missing : {source.name}")
+        return False
 
-    if not SOURCE.exists():
-        print(f"ERROR : {SOURCE} not found.")
-        return
-
-    with open(
-        SOURCE,
-        "r",
-        encoding="utf-8",
-    ) as f:
-
-        products = json.load(f)
-
-    featured_products = sorted(
-        products,
-        key=lambda x: x.get("miniBossScore", 0),
-        reverse=True,
-    )[:FEATURED_LIMIT]
-
-    CATALOG_OUTPUT.parent.mkdir(
+    target.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    with open(
-        CATALOG_OUTPUT,
-        "w",
-        encoding="utf-8",
-    ) as f:
+    shutil.copy2(source, target)
 
-        json.dump(
-            products,
-            f,
-            ensure_ascii=False,
-            indent=2,
+    print(f"Copied : {source.name}")
+
+    return True
+
+
+# ==========================================================
+# Copy Categories
+# ==========================================================
+
+
+def copy_categories():
+
+    if TARGET_CATEGORIES.exists():
+        shutil.rmtree(TARGET_CATEGORIES)
+
+    TARGET_CATEGORIES.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    copied = 0
+
+    for file in sorted(
+        SOURCE_CATEGORIES.glob("*.json")
+    ):
+
+        shutil.copy2(
+            file,
+            TARGET_CATEGORIES / file.name,
         )
 
-    with open(
-        FEATURED_OUTPUT,
-        "w",
-        encoding="utf-8",
-    ) as f:
+        print(f"Copied : {file.name}")
 
-        json.dump(
-            featured_products,
-            f,
-            ensure_ascii=False,
-            indent=2,
+        copied += 1
+
+    return copied
+
+
+# ==========================================================
+# Sync
+# ==========================================================
+
+
+def sync(full=False):
+
+    print("=" * 60)
+    print("Flutter Discovery Sync")
+    print("=" * 60)
+
+    print(
+        f"Mode : {'Full' if full else 'Production'}"
+    )
+
+    print()
+
+    copy_file(
+        SOURCE_CATEGORY_INDEX,
+        TARGET_CATEGORY_INDEX,
+    )
+
+    copy_file(
+        SOURCE_REPORT,
+        TARGET_REPORT,
+    )
+
+    if full:
+
+        print()
+
+        print("Full Mode")
+
+        copy_file(
+            SOURCE_TOP_PRODUCTS,
+            TARGET_TOP_PRODUCTS,
         )
+
+    category_count = copy_categories()
+
+    print()
 
     print("=" * 60)
     print("Flutter Sync Complete")
     print("=" * 60)
-    print(f"Catalog Products : {len(products):,}")
-    print(f"Featured         : {len(featured_products):,}")
+
+    print(f"Categories Copied : {category_count}")
+
     print()
-    print(f"Catalog Output   : {CATALOG_OUTPUT}")
-    print(f"Featured Output  : {FEATURED_OUTPUT}")
+
+    print(f"Output : {FLUTTER_DATA}")
+
     print("=" * 60)
 
 
+# ==========================================================
+
 if __name__ == "__main__":
-    sync()
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Sync top_products.json",
+    )
+
+    args = parser.parse_args()
+
+    sync(
+        full=args.full,
+    )
