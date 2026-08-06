@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import '../../models/affiliate_product.dart';
 
 class DiscoveryService {
   const DiscoveryService();
@@ -38,28 +39,27 @@ class DiscoveryService {
   /// ------------------------------------------------------------
 
   Future<List<Map<String, dynamic>>> loadChunk(
-    String fileName,
+    String chunkFile,
   ) async {
     final jsonString = await rootBundle.loadString(
-      '$_basePath/$fileName',
+      '$_basePath/$chunkFile',
     );
 
     final Map<String, dynamic> jsonData =
         json.decode(jsonString);
 
-    final List<dynamic> products =
-        jsonData['products'] ?? [];
-
-    return products.cast<Map<String, dynamic>>();
+    return (jsonData['products'] as List)
+        .cast<Map<String, dynamic>>();
   }
-
+  
   /// ------------------------------------------------------------
-  /// Load Products by Category
-  ///
-  /// Merge every chunk into one List
+  /// Load Products by Category Name
+  /// Example:
+  /// Beauty
+  /// Home & Living
   /// ------------------------------------------------------------
 
-  Future<List<Map<String, dynamic>>> loadProducts(
+  Future<List<AffiliateProduct>> loadProducts(
     String categoryName,
   ) async {
     final index = await loadCategoryIndex();
@@ -71,14 +71,18 @@ class DiscoveryService {
     final List<dynamic> chunks =
         index[categoryName]['chunks'];
 
-    final List<Map<String, dynamic>> products = [];
+    final List<AffiliateProduct> products = [];
 
     for (final chunk in chunks) {
       final data = await loadChunk(
         chunk as String,
       );
 
-      products.addAll(data);
+      products.addAll(
+        data.map(
+          (e) => AffiliateProduct.fromJson(e),
+        ),
+      );
     }
 
     return products;
@@ -109,45 +113,44 @@ class DiscoveryService {
   /// ------------------------------------------------------------
   /// Featured Products
   ///
-  /// Load only first chunk from every category
+  /// Load Top N products from every category
   /// ------------------------------------------------------------
 
-  Future<List<Map<String, dynamic>>> loadFeaturedProducts({
-    int limitPerCategory = 20,
-  }) async {
-    final index = await loadCategoryIndex();
+Future<List<AffiliateProduct>> loadFeaturedProducts({
+  int limitPerCategory = 20,
+}) async {
+  final index = await loadCategoryIndex();
 
-    final List<Map<String, dynamic>> result = [];
+  final List<AffiliateProduct> result = [];
 
-    for (final value in index.values) {
-      final List<dynamic> chunks =
-          value['chunks'];
+  for (final value in index.values) {
+    final List<dynamic> chunks =
+        value['chunks'];
 
-      if (chunks.isEmpty) {
-        continue;
-      }
-
-      final products = await loadChunk(
-        chunks.first as String,
-      );
-
-      result.addAll(
-        products.take(limitPerCategory),
-      );
+    if (chunks.isEmpty) {
+      continue;
     }
 
-    result.sort((a, b) {
-      final scoreA =
-          ((a['miniBossScore'] ?? 0) as num)
-              .toDouble();
+    final products = await loadChunk(
+      chunks.first as String,
+    );
 
-      final scoreB =
-          ((b['miniBossScore'] ?? 0) as num)
-              .toDouble();
-
-      return scoreB.compareTo(scoreA);
-    });
-
-    return result;
+    result.addAll(
+      products
+          .take(limitPerCategory)
+          .map(
+            (e) => AffiliateProduct.fromJson(e),
+          ),
+    );
   }
+
+  result.sort(
+    (a, b) =>
+        b.miniBossScore.compareTo(
+          a.miniBossScore,
+        ),
+  );
+
+  return result;
+}
 }

@@ -15,35 +15,50 @@ class CategoryFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: categories.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final category = categories[index];
-          final selected = category == selectedCategory;
+      height: 46,
+      child: ScrollConfiguration(
+        behavior: const MaterialScrollBehavior().copyWith(
+          scrollbars: true,
+        ),
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          itemCount: categories.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final category = categories[index];
+            final selected = category == selectedCategory;
 
-          return FilterChip(
-            label: Text(category),
-            selected: selected,
-            onSelected: (_) => onSelected(category),
-            showCheckmark: false,
-            selectedColor: Colors.deepPurple,
-            backgroundColor: const Color(0xFF2A2630),
-            labelStyle: TextStyle(
-              color: selected ? Colors.white : Colors.white70,
-              fontWeight:
-                  selected ? FontWeight.bold : FontWeight.normal,
-            ),
-            side: BorderSide(
-              color: selected
-                  ? Colors.deepPurpleAccent
-                  : Colors.grey.shade700,
-            ),
-          );
-        },
+            return FilterChip(
+              label: Text(
+                category,
+                overflow: TextOverflow.ellipsis,
+              ),
+              selected: selected,
+              onSelected: (_) => onSelected(category),
+              showCheckmark: false,
+              materialTapTargetSize:
+                  MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              selectedColor: Colors.deepPurple,
+              backgroundColor: const Color(0xFF2A2630),
+              side: BorderSide(
+                color: selected
+                    ? Colors.deepPurpleAccent
+                    : Colors.grey.shade700,
+              ),
+              labelStyle: TextStyle(
+                color: selected
+                    ? Colors.white
+                    : Colors.white70,
+                fontWeight: selected
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
