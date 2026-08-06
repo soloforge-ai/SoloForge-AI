@@ -11,6 +11,7 @@ import 'image_test_page.dart';
 import '../widgets/category_filter_bar.dart';
 
 import 'about_page.dart';
+import '../widgets/home/hero_banner.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -145,10 +146,7 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '👔 MiniBoss Product Hunter',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
+            const HeroBanner(),
             const SizedBox(height: 20),
 
             SizedBox(
