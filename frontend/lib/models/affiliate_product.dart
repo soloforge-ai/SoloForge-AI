@@ -166,13 +166,31 @@ class AffiliateProduct {
       itemId: json['id']?.toString() ?? '',
       title: json['title'] ?? '',
 
-      priceDisplay:
-          json['metrics']?['price_display']?.toString() ??
-          (json['sale_price'] ?? json['price'] ?? 0).toString(),
+      priceDisplay: (() {
+        final display =
+            json['metrics']?['price_display']?.toString() ?? '';
 
-      soldDisplay:
-          json['metrics']?['sold_display']?.toString() ??
-          (json['sold'] ?? 0).toString(),
+        if (display.isNotEmpty) {
+          return display;
+        }
+
+        final salePrice = json['sale_price'];
+        final price = json['price'];
+
+        return ((salePrice ?? price ?? 0) as num)
+            .toStringAsFixed(0);
+      })(),
+
+      soldDisplay: (() {
+        final display =
+            json['metrics']?['sold_display']?.toString() ?? '';
+
+        if (display.isNotEmpty) {
+          return display;
+        }
+
+        return (json['sold'] ?? 0).toString();
+      })(),
 
       price: (json['sale_price'] ?? json['price'] ?? 0).toDouble(),
 
