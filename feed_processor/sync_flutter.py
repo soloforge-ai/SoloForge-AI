@@ -2,15 +2,15 @@
 SoloForge AI
 Flutter Sync
 
-Sprint 44
+Sprint 45.5
 Production Version
 
 Sync Discovery Database
 → Flutter Assets
 """
 
-import shutil
 import argparse
+import shutil
 from pathlib import Path
 
 # ==========================================================
@@ -33,6 +33,11 @@ SOURCE_CATEGORY_INDEX = (
     / "category_index.json"
 )
 
+SOURCE_CHUNK_INDEX = (
+    DISCOVERY_DIR
+    / "chunk_index.json"
+)
+
 SOURCE_REPORT = (
     DISCOVERY_DIR
     / "discovery_report.json"
@@ -51,6 +56,11 @@ SOURCE_CATEGORIES = (
 TARGET_CATEGORY_INDEX = (
     FLUTTER_DATA
     / "category_index.json"
+)
+
+TARGET_CHUNK_INDEX = (
+    FLUTTER_DATA
+    / "chunk_index.json"
 )
 
 TARGET_REPORT = (
@@ -76,7 +86,7 @@ TARGET_CATEGORIES = (
 def copy_file(source: Path, target: Path):
 
     if not source.exists():
-        print(f"Missing : {source.name}")
+        print(f"Missing : {source}")
         return False
 
     target.parent.mkdir(
@@ -84,44 +94,88 @@ def copy_file(source: Path, target: Path):
         exist_ok=True,
     )
 
-    shutil.copy2(source, target)
+    shutil.copy2(
+        source,
+        target,
+    )
 
-    print(f"Copied : {source.name}")
+    print(f"Copied : {target.name}")
 
     return True
 
 
 # ==========================================================
-# Copy Categories
+# Copy Chunk Database
 # ==========================================================
 
 
 def copy_categories():
 
+    if not SOURCE_CATEGORIES.exists():
+
+        print("Missing : categories")
+
+        return (
+            0,
+            0,
+        )
+
     if TARGET_CATEGORIES.exists():
-        shutil.rmtree(TARGET_CATEGORIES)
+
+        shutil.rmtree(
+            TARGET_CATEGORIES
+        )
 
     TARGET_CATEGORIES.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    copied = 0
+    category_count = 0
+    chunk_count = 0
 
-    for file in sorted(
-        SOURCE_CATEGORIES.glob("*.json")
+    for category_dir in sorted(
+        SOURCE_CATEGORIES.iterdir()
     ):
 
-        shutil.copy2(
-            file,
-            TARGET_CATEGORIES / file.name,
+        if not category_dir.is_dir():
+            continue
+
+        target_dir = (
+            TARGET_CATEGORIES
+            / category_dir.name
         )
 
-        print(f"Copied : {file.name}")
+        target_dir.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
 
-        copied += 1
+        category_count += 1
 
-    return copied
+        for chunk in sorted(
+            category_dir.glob(
+                "chunk_*.json"
+            )
+        ):
+
+            shutil.copy2(
+                chunk,
+                target_dir / chunk.name,
+            )
+
+            print(
+                f"Copied : "
+                f"{category_dir.name}/"
+                f"{chunk.name}"
+            )
+
+            chunk_count += 1
+
+    return (
+        category_count,
+        chunk_count,
+    )
 
 
 # ==========================================================
@@ -129,7 +183,9 @@ def copy_categories():
 # ==========================================================
 
 
-def sync(full=False):
+def sync(
+    full=False,
+):
 
     print("=" * 60)
     print("Flutter Discovery Sync")
@@ -144,6 +200,11 @@ def sync(full=False):
     copy_file(
         SOURCE_CATEGORY_INDEX,
         TARGET_CATEGORY_INDEX,
+    )
+
+    copy_file(
+        SOURCE_CHUNK_INDEX,
+        TARGET_CHUNK_INDEX,
     )
 
     copy_file(
@@ -162,7 +223,12 @@ def sync(full=False):
             TARGET_TOP_PRODUCTS,
         )
 
-    category_count = copy_categories()
+    print()
+
+    (
+        category_count,
+        chunk_count,
+    ) = copy_categories()
 
     print()
 
@@ -170,11 +236,19 @@ def sync(full=False):
     print("Flutter Sync Complete")
     print("=" * 60)
 
-    print(f"Categories Copied : {category_count}")
+    print(
+        f"Categories Copied : {category_count}"
+    )
+
+    print(
+        f"Chunks Copied     : {chunk_count}"
+    )
 
     print()
 
-    print(f"Output : {FLUTTER_DATA}")
+    print(
+        f"Output : {FLUTTER_DATA}"
+    )
 
     print("=" * 60)
 

@@ -1,0 +1,26 @@
+{
+    "Automobiles": [
+        "Automobile Spare Parts",
+        "Automotive Oils & Lubes",
+        "Automotive Services & Installations",
+        "Automotive Tools"
+    ],
+
+    "Motorcycles": [
+        "Motorcycle Spare Parts",
+        "Motorcycles"
+    ],
+
+    "Home & Living": [
+        "Fengshui & Religious Supplies",
+        "Gardening",
+        "Tools & Home Improvement"
+    ],
+
+    "Tickets, Vouchers & Services": [
+        "E-Money",
+        "Real Estate",
+        "Services",
+        "Shopee"
+    ]
+}

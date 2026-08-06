@@ -27,7 +27,7 @@ from pathlib import Path
 from category_filter import CategoryFilter
 from content_filter import ContentFilter
 from category_ranker import CategoryRanker
-from category_exporter import export_categories
+from chunk_exporter import export_chunks
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -36,6 +36,7 @@ OUTPUT_DIR = ROOT / "data" / "discovery"
 
 OUTPUT_FILE = OUTPUT_DIR / "top_products.json"
 STATS_FILE = OUTPUT_DIR / "discovery_stats.json"
+CHUNK_INDEX_FILE = OUTPUT_DIR / "chunk_index.json"
 REPORT_FILE = OUTPUT_DIR / "discovery_report.json"
 
 TOP_N = 200
@@ -219,12 +220,37 @@ def main():
             indent=2,
         )
 
+    from category_exporter import (
+        export_categories,
+        build_level1_catalog,
+    )
     # ------------------------------------------------------
-    # Export Category Files
+    # Export Category Database
     # ------------------------------------------------------
 
-    export_categories(result)
+    level1_catalog, category_index = (
+        export_categories(
+            result
+        )
+    )
 
+    category_index = export_chunks(
+        level1_catalog,
+        category_index,
+    )
+
+    with open(
+        OUTPUT_DIR / "category_index.json",
+        "w",
+        encoding="utf-8",
+    ) as f:
+
+        json.dump(
+            category_index,
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
     # ------------------------------------------------------
     # Export Statistics
     # ------------------------------------------------------
@@ -273,7 +299,8 @@ def main():
     print()
 
     print(f"Discovery Output   : {OUTPUT_FILE}")
-    print(f"Category Export    : {OUTPUT_DIR / 'categories'}")
+    print(f"Chunk Export       : {OUTPUT_DIR / 'categories'}")
+    print(f"Chunk Index        : {CHUNK_INDEX_FILE}")
     print(f"Category Index     : {OUTPUT_DIR / 'category_index.json'}")
     print(f"Statistics Output  : {STATS_FILE}")
     print(f"Discovery Report   : {REPORT_FILE}")

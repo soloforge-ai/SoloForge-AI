@@ -1,0 +1,206 @@
+{
+  "Beauty": {
+    "category": "Beauty",
+    "products": 9638,
+    "chunk_count": 10,
+    "chunks": [
+      "categories/Beauty/chunk_0001.json",
+      "categories/Beauty/chunk_0002.json",
+      "categories/Beauty/chunk_0003.json",
+      "categories/Beauty/chunk_0004.json",
+      "categories/Beauty/chunk_0005.json",
+      "categories/Beauty/chunk_0006.json",
+      "categories/Beauty/chunk_0007.json",
+      "categories/Beauty/chunk_0008.json",
+      "categories/Beauty/chunk_0009.json",
+      "categories/Beauty/chunk_0010.json"
+    ]
+  },
+  "Fashion Accessories": {
+    "category": "Fashion Accessories",
+    "products": 6186,
+    "chunk_count": 7,
+    "chunks": [
+      "categories/Fashion_Accessories/chunk_0001.json",
+      "categories/Fashion_Accessories/chunk_0002.json",
+      "categories/Fashion_Accessories/chunk_0003.json",
+      "categories/Fashion_Accessories/chunk_0004.json",
+      "categories/Fashion_Accessories/chunk_0005.json",
+      "categories/Fashion_Accessories/chunk_0006.json",
+      "categories/Fashion_Accessories/chunk_0007.json"
+    ]
+  },
+  "Food & Beverages": {
+    "category": "Food & Beverages",
+    "products": 14564,
+    "chunk_count": 15,
+    "chunks": [
+      "categories/Food_and_Beverages/chunk_0001.json",
+      "categories/Food_and_Beverages/chunk_0002.json",
+      "categories/Food_and_Beverages/chunk_0003.json",
+      "categories/Food_and_Beverages/chunk_0004.json",
+      "categories/Food_and_Beverages/chunk_0005.json",
+      "categories/Food_and_Beverages/chunk_0006.json",
+      "categories/Food_and_Beverages/chunk_0007.json",
+      "categories/Food_and_Beverages/chunk_0008.json",
+      "categories/Food_and_Beverages/chunk_0009.json",
+      "categories/Food_and_Beverages/chunk_0010.json",
+      "categories/Food_and_Beverages/chunk_0011.json",
+      "categories/Food_and_Beverages/chunk_0012.json",
+      "categories/Food_and_Beverages/chunk_0013.json",
+      "categories/Food_and_Beverages/chunk_0014.json",
+      "categories/Food_and_Beverages/chunk_0015.json"
+    ]
+  },
+  "Health": {
+    "category": "Health",
+    "products": 5706,
+    "chunk_count": 6,
+    "chunks": [
+      "categories/Health/chunk_0001.json",
+      "categories/Health/chunk_0002.json",
+      "categories/Health/chunk_0003.json",
+      "categories/Health/chunk_0004.json",
+      "categories/Health/chunk_0005.json",
+      "categories/Health/chunk_0006.json"
+    ]
+  },
+  "Home & Living": {
+    "category": "Home & Living",
+    "products": 23682,
+    "chunk_count": 24,
+    "chunks": [
+      "categories/Home_and_Living/chunk_0001.json",
+      "categories/Home_and_Living/chunk_0002.json",
+      "categories/Home_and_Living/chunk_0003.json",
+      "categories/Home_and_Living/chunk_0004.json",
+      "categories/Home_and_Living/chunk_0005.json",
+      "categories/Home_and_Living/chunk_0006.json",
+      "categories/Home_and_Living/chunk_0007.json",
+      "categories/Home_and_Living/chunk_0008.json",
+      "categories/Home_and_Living/chunk_0009.json",
+      "categories/Home_and_Living/chunk_0010.json",
+      "categories/Home_and_Living/chunk_0011.json",
+      "categories/Home_and_Living/chunk_0012.json",
+      "categories/Home_and_Living/chunk_0013.json",
+      "categories/Home_and_Living/chunk_0014.json",
+      "categories/Home_and_Living/chunk_0015.json",
+      "categories/Home_and_Living/chunk_0016.json",
+      "categories/Home_and_Living/chunk_0017.json",
+      "categories/Home_and_Living/chunk_0018.json",
+      "categories/Home_and_Living/chunk_0019.json",
+      "categories/Home_and_Living/chunk_0020.json",
+      "categories/Home_and_Living/chunk_0021.json",
+      "categories/Home_and_Living/chunk_0022.json",
+      "categories/Home_and_Living/chunk_0023.json",
+      "categories/Home_and_Living/chunk_0024.json"
+    ]
+  },
+  "Home Appliances": {
+    "category": "Home Appliances",
+    "products": 8610,
+    "chunk_count": 9,
+    "chunks": [
+      "categories/Home_Appliances/chunk_0001.json",
+      "categories/Home_Appliances/chunk_0002.json",
+      "categories/Home_Appliances/chunk_0003.json",
+      "categories/Home_Appliances/chunk_0004.json",
+      "categories/Home_Appliances/chunk_0005.json",
+      "categories/Home_Appliances/chunk_0006.json",
+      "categories/Home_Appliances/chunk_0007.json",
+      "categories/Home_Appliances/chunk_0008.json",
+      "categories/Home_Appliances/chunk_0009.json"
+    ]
+  },
+  "Men Clothes": {
+    "category": "Men Clothes",
+    "products": 4968,
+    "chunk_count": 5,
+    "chunks": [
+      "categories/Men_Clothes/chunk_0001.json",
+      "categories/Men_Clothes/chunk_0002.json",
+      "categories/Men_Clothes/chunk_0003.json",
+      "categories/Men_Clothes/chunk_0004.json",
+      "categories/Men_Clothes/chunk_0005.json"
+    ]
+  },
+  "Mobile & Gadgets": {
+    "category": "Mobile & Gadgets",
+    "products": 4525,
+    "chunk_count": 5,
+    "chunks": [
+      "categories/Mobile_and_Gadgets/chunk_0001.json",
+      "categories/Mobile_and_Gadgets/chunk_0002.json",
+      "categories/Mobile_and_Gadgets/chunk_0003.json",
+      "categories/Mobile_and_Gadgets/chunk_0004.json",
+      "categories/Mobile_and_Gadgets/chunk_0005.json"
+    ]
+  },
+  "Pets": {
+    "category": "Pets",
+    "products": 6821,
+    "chunk_count": 7,
+    "chunks": [
+      "categories/Pets/chunk_0001.json",
+      "categories/Pets/chunk_0002.json",
+      "categories/Pets/chunk_0003.json",
+      "categories/Pets/chunk_0004.json",
+      "categories/Pets/chunk_0005.json",
+      "categories/Pets/chunk_0006.json",
+      "categories/Pets/chunk_0007.json"
+    ]
+  },
+  "Sports & Outdoors": {
+    "category": "Sports & Outdoors",
+    "products": 9872,
+    "chunk_count": 10,
+    "chunks": [
+      "categories/Sports_and_Outdoors/chunk_0001.json",
+      "categories/Sports_and_Outdoors/chunk_0002.json",
+      "categories/Sports_and_Outdoors/chunk_0003.json",
+      "categories/Sports_and_Outdoors/chunk_0004.json",
+      "categories/Sports_and_Outdoors/chunk_0005.json",
+      "categories/Sports_and_Outdoors/chunk_0006.json",
+      "categories/Sports_and_Outdoors/chunk_0007.json",
+      "categories/Sports_and_Outdoors/chunk_0008.json",
+      "categories/Sports_and_Outdoors/chunk_0009.json",
+      "categories/Sports_and_Outdoors/chunk_0010.json"
+    ]
+  },
+  "Stationery": {
+    "category": "Stationery",
+    "products": 10498,
+    "chunk_count": 11,
+    "chunks": [
+      "categories/Stationery/chunk_0001.json",
+      "categories/Stationery/chunk_0002.json",
+      "categories/Stationery/chunk_0003.json",
+      "categories/Stationery/chunk_0004.json",
+      "categories/Stationery/chunk_0005.json",
+      "categories/Stationery/chunk_0006.json",
+      "categories/Stationery/chunk_0007.json",
+      "categories/Stationery/chunk_0008.json",
+      "categories/Stationery/chunk_0009.json",
+      "categories/Stationery/chunk_0010.json",
+      "categories/Stationery/chunk_0011.json"
+    ]
+  },
+  "Women Clothes": {
+    "category": "Women Clothes",
+    "products": 10291,
+    "chunk_count": 11,
+    "chunks": [
+      "categories/Women_Clothes/chunk_0001.json",
+      "categories/Women_Clothes/chunk_0002.json",
+      "categories/Women_Clothes/chunk_0003.json",
+      "categories/Women_Clothes/chunk_0004.json",
+      "categories/Women_Clothes/chunk_0005.json",
+      "categories/Women_Clothes/chunk_0006.json",
+      "categories/Women_Clothes/chunk_0007.json",
+      "categories/Women_Clothes/chunk_0008.json",
+      "categories/Women_Clothes/chunk_0009.json",
+      "categories/Women_Clothes/chunk_0010.json",
+      "categories/Women_Clothes/chunk_0011.json"
+    ]
+  }
+}

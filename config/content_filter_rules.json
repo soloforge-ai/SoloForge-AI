@@ -1,0 +1,30 @@
+{
+  "title_blacklist": [
+    "gift",
+    "ของแถม",
+    "สมนาคุณ",
+    "งดจำหน่าย",
+    "not for sale",
+    "sample",
+    "ตัวอย่าง",
+    "test",
+    "ทดลอง"
+  ],
+
+  "description_blacklist": [
+    "งดจำหน่าย",
+    "ของสมนาคุณ",
+    "not for sale",
+    "sample only"
+  ],
+
+  "min_price": 5,
+
+  "max_price": 100000,
+
+  "require_affiliate": false,
+
+  "reject_zero_stock": false,
+
+  "reject_zero_commission": false
+}

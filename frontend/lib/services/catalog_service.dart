@@ -1,35 +1,66 @@
-import 'dart:convert';
-
-import 'package:flutter/services.dart';
-
 import '../datasources/abstract/affiliate_data_source.dart';
 import '../models/affiliate_product.dart';
+import 'discovery/discovery_service.dart';
 import 'product_search_service.dart';
 
 class CatalogService implements AffiliateDataSource {
-  const CatalogService({this.assetPath = 'assets/data/catalog.json'});
+  const CatalogService();
 
-  final String assetPath;
-
-  @override
+    @override
   Future<List<AffiliateProduct>> getProducts() async {
-    final jsonString = await rootBundle.loadString(assetPath);
+    final products =
+      await const DiscoveryService().loadFeaturedProducts();
 
-    final List<dynamic> data = jsonDecode(jsonString) as List<dynamic>;
-
-    final products = data
-        .map((e) => AffiliateProduct.fromJson(e as Map<String, dynamic>))
+    final result = products
+        .map(
+          (e) => AffiliateProduct.fromJson(
+            e,
+          ),
+        )
         .toList();
 
-    products.sort((a, b) => b.miniBossScore.compareTo(a.miniBossScore));
+    result.sort(
+      (a, b) => b.miniBossScore.compareTo(
+        a.miniBossScore,
+      ),
+    );
 
-    return products;
+    return result;
+  }
+
+  Future<List<AffiliateProduct>> getCategory(
+    String category,
+  ) async {
+    final products = await const DiscoveryService().loadProducts(
+      category,
+    );
+
+    final result = products
+        .map(
+          (e) => AffiliateProduct.fromJson(
+            e,
+          ),
+        )
+        .toList();
+
+    result.sort(
+      (a, b) => b.miniBossScore.compareTo(
+        a.miniBossScore,
+      ),
+    );
+
+    return result;
   }
 
   @override
-  Future<List<AffiliateProduct>> search(String keyword) async {
+  Future<List<AffiliateProduct>> search(
+    String keyword,
+  ) async {
     final products = await getProducts();
 
-    return const ProductSearchService().search(products, keyword);
+    return const ProductSearchService().search(
+      products,
+      keyword,
+    );
   }
 }

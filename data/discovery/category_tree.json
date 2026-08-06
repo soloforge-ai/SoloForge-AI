@@ -1,0 +1,6142 @@
+{
+  "Stationery": {
+    "count": 40552,
+    "children": {
+      "Notebooks & Papers": {
+        "count": 9985,
+        "children": {
+          "Labels & Stickers": {
+            "count": 5675,
+            "children": {}
+          },
+          "Book Covers": {
+            "count": 132,
+            "children": {}
+          },
+          "Memo & Sticky Notes": {
+            "count": 558,
+            "children": {}
+          },
+          "Loose Leaf": {
+            "count": 124,
+            "children": {}
+          },
+          "Notebooks & Notepads": {
+            "count": 1239,
+            "children": {}
+          },
+          "Art Paper & Boards": {
+            "count": 706,
+            "children": {}
+          },
+          "Bookmarks": {
+            "count": 198,
+            "children": {}
+          },
+          "Printing & Photocopy Paper": {
+            "count": 555,
+            "children": {}
+          },
+          "Others": {
+            "count": 334,
+            "children": {}
+          },
+          "Thermal Paper & Continuous Paper": {
+            "count": 464,
+            "children": {}
+          }
+        }
+      },
+      "School & Office Equipment": {
+        "count": 13250,
+        "children": {
+          "Label Printers": {
+            "count": 171,
+            "children": {}
+          },
+          "Lanyards & Name Tags": {
+            "count": 1170,
+            "children": {}
+          },
+          "Folders, Paper Organizers & Accessories": {
+            "count": 1275,
+            "children": {}
+          },
+          "Ink Stamps & Pads": {
+            "count": 793,
+            "children": {}
+          },
+          "Scissors": {
+            "count": 733,
+            "children": {}
+          },
+          "Clips, Pins & Tacks": {
+            "count": 558,
+            "children": {}
+          },
+          "Strings & Tapes": {
+            "count": 1923,
+            "children": {}
+          },
+          "Pen Knives & Paper Cutters": {
+            "count": 1089,
+            "children": {}
+          },
+          "Staplers & Staples": {
+            "count": 468,
+            "children": {}
+          },
+          "Writing Boards & Board Stands": {
+            "count": 468,
+            "children": {}
+          },
+          "Glues": {
+            "count": 821,
+            "children": {}
+          },
+          "Rulers, Protractors & Stencils": {
+            "count": 568,
+            "children": {}
+          },
+          "Others": {
+            "count": 1151,
+            "children": {}
+          },
+          "Pencil Cases": {
+            "count": 1123,
+            "children": {}
+          },
+          "Calculators": {
+            "count": 315,
+            "children": {}
+          },
+          "Sharpeners": {
+            "count": 284,
+            "children": {}
+          },
+          "Calendars": {
+            "count": 140,
+            "children": {}
+          },
+          "Hole Punchers": {
+            "count": 200,
+            "children": {}
+          }
+        }
+      },
+      "Gift & Wrapping": {
+        "count": 5041,
+        "children": {
+          "Gift Bags": {
+            "count": 808,
+            "children": {}
+          },
+          "Carton Boxes": {
+            "count": 1208,
+            "children": {}
+          },
+          "Others": {
+            "count": 313,
+            "children": {}
+          },
+          "Ribbons": {
+            "count": 1406,
+            "children": {}
+          },
+          "Bubble Wraps": {
+            "count": 400,
+            "children": {}
+          },
+          "Gift Wrappers": {
+            "count": 486,
+            "children": {}
+          },
+          "Gift Boxes": {
+            "count": 420,
+            "children": {}
+          }
+        }
+      },
+      "Writing & Correction": {
+        "count": 6503,
+        "children": {
+          "Pens & Inks": {
+            "count": 3196,
+            "children": {}
+          },
+          "Pencils": {
+            "count": 973,
+            "children": {}
+          },
+          "Markers": {
+            "count": 946,
+            "children": {}
+          },
+          "Highlighters": {
+            "count": 270,
+            "children": {}
+          },
+          "Eraser & Correction Supplies": {
+            "count": 966,
+            "children": {}
+          },
+          "Others": {
+            "count": 152,
+            "children": {}
+          }
+        }
+      },
+      "Letters & Envelopes": {
+        "count": 1304,
+        "children": {
+          "Envelopes & Angpao": {
+            "count": 816,
+            "children": {}
+          },
+          "Post Cards": {
+            "count": 246,
+            "children": {}
+          },
+          "Others": {
+            "count": 67,
+            "children": {}
+          },
+          "Postage Stamps & Duty Stamps": {
+            "count": 175,
+            "children": {}
+          }
+        }
+      },
+      "Art Supplies": {
+        "count": 3653,
+        "children": {
+          "Paint Brushes": {
+            "count": 420,
+            "children": {}
+          },
+          "Others": {
+            "count": 1278,
+            "children": {}
+          },
+          "Water & Poster Colours": {
+            "count": 280,
+            "children": {}
+          },
+          "Paint Palettes": {
+            "count": 134,
+            "children": {}
+          },
+          "Color Pencils": {
+            "count": 417,
+            "children": {}
+          },
+          "Canvases & Easels": {
+            "count": 186,
+            "children": {}
+          },
+          "Sketch Books": {
+            "count": 236,
+            "children": {}
+          },
+          "Oil Paint": {
+            "count": 74,
+            "children": {}
+          },
+          "Acrylic Paint": {
+            "count": 461,
+            "children": {}
+          },
+          "Crayons & Pastels": {
+            "count": 167,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 816,
+        "children": {}
+      }
+    }
+  },
+  "Men Clothes": {
+    "count": 20937,
+    "children": {
+      "Socks": {
+        "count": 1485,
+        "children": {}
+      },
+      "Tops": {
+        "count": 9903,
+        "children": {
+          "Shirts": {
+            "count": 1773,
+            "children": {}
+          },
+          "Polo Shirts": {
+            "count": 1633,
+            "children": {}
+          },
+          "T-Shirts": {
+            "count": 5814,
+            "children": {}
+          },
+          "Tanks": {
+            "count": 527,
+            "children": {}
+          },
+          "Others": {
+            "count": 156,
+            "children": {}
+          }
+        }
+      },
+      "Jackets, Coats & Vests": {
+        "count": 807,
+        "children": {
+          "Jackets": {
+            "count": 566,
+            "children": {}
+          },
+          "Vests": {
+            "count": 156,
+            "children": {}
+          },
+          "Winter Jackets & Coats": {
+            "count": 67,
+            "children": {}
+          },
+          "Others": {
+            "count": 18,
+            "children": {}
+          }
+        }
+      },
+      "Shorts": {
+        "count": 1547,
+        "children": {}
+      },
+      "Innerwear & Underwear": {
+        "count": 1654,
+        "children": {
+          "Underwear": {
+            "count": 1525,
+            "children": {}
+          },
+          "Others": {
+            "count": 36,
+            "children": {}
+          },
+          "Undershirts": {
+            "count": 78,
+            "children": {}
+          },
+          "Thermal Innerwear": {
+            "count": 15,
+            "children": {}
+          }
+        }
+      },
+      "Hoodies & Sweatshirts": {
+        "count": 529,
+        "children": {
+          "Hoodies": {
+            "count": 402,
+            "children": {}
+          },
+          "Sweatshirts": {
+            "count": 126,
+            "children": {}
+          },
+          "Others": {
+            "count": 1,
+            "children": {}
+          }
+        }
+      },
+      "Pants": {
+        "count": 1742,
+        "children": {
+          "Pants": {
+            "count": 1121,
+            "children": {}
+          },
+          "Joggers": {
+            "count": 170,
+            "children": {}
+          },
+          "Cargo": {
+            "count": 413,
+            "children": {}
+          },
+          "Others": {
+            "count": 38,
+            "children": {}
+          }
+        }
+      },
+      "Jeans": {
+        "count": 1043,
+        "children": {}
+      },
+      "Sweaters & Cardigans": {
+        "count": 123,
+        "children": {}
+      },
+      "Traditional Wear": {
+        "count": 406,
+        "children": {
+          "Sets": {
+            "count": 60,
+            "children": {}
+          },
+          "Others": {
+            "count": 77,
+            "children": {}
+          },
+          "Tops": {
+            "count": 201,
+            "children": {}
+          },
+          "Bottoms": {
+            "count": 68,
+            "children": {}
+          }
+        }
+      },
+      "Suits": {
+        "count": 312,
+        "children": {
+          "Suit Pants": {
+            "count": 154,
+            "children": {}
+          },
+          "Suit Jackets & Blazers": {
+            "count": 83,
+            "children": {}
+          },
+          "Others": {
+            "count": 5,
+            "children": {}
+          },
+          "Suit Sets": {
+            "count": 52,
+            "children": {}
+          },
+          "Suit Vests & Waistcoats": {
+            "count": 18,
+            "children": {}
+          }
+        }
+      },
+      "Sets": {
+        "count": 213,
+        "children": {}
+      },
+      "Occupational Attire": {
+        "count": 595,
+        "children": {}
+      },
+      "Costumes": {
+        "count": 309,
+        "children": {}
+      },
+      "Others": {
+        "count": 125,
+        "children": {}
+      },
+      "Sleepwear": {
+        "count": 144,
+        "children": {}
+      }
+    }
+  },
+  "Home & Living": {
+    "count": 229674,
+    "children": {
+      "Home Organizers": {
+        "count": 13039,
+        "children": {
+          "Tissue Holders": {
+            "count": 617,
+            "children": {}
+          },
+          "Others": {
+            "count": 1060,
+            "children": {}
+          },
+          "Storage Boxes, Bags & Baskets": {
+            "count": 3560,
+            "children": {}
+          },
+          "Wardrobe Organizers": {
+            "count": 666,
+            "children": {}
+          },
+          "Hangers & Pegs": {
+            "count": 1519,
+            "children": {}
+          },
+          "Hooks": {
+            "count": 2387,
+            "children": {}
+          },
+          "Jewelry Organizers": {
+            "count": 1309,
+            "children": {}
+          },
+          "Desk Organizers": {
+            "count": 1018,
+            "children": {}
+          },
+          "Shoe Storage Boxes": {
+            "count": 343,
+            "children": {}
+          },
+          "Laundry Bags & Baskets": {
+            "count": 560,
+            "children": {}
+          }
+        }
+      },
+      "Furniture": {
+        "count": 10355,
+        "children": {
+          "Benches, Chairs & Stools": {
+            "count": 1751,
+            "children": {}
+          },
+          "Shelves & Racks": {
+            "count": 2234,
+            "children": {}
+          },
+          "Desks & Tables": {
+            "count": 1815,
+            "children": {}
+          },
+          "Others": {
+            "count": 1048,
+            "children": {}
+          },
+          "Cupboards & Cabinets": {
+            "count": 1159,
+            "children": {}
+          },
+          "Cushions": {
+            "count": 703,
+            "children": {}
+          },
+          "Bed Frames & Headboards": {
+            "count": 487,
+            "children": {}
+          },
+          "Sofas": {
+            "count": 466,
+            "children": {}
+          },
+          "Wardrobes": {
+            "count": 332,
+            "children": {}
+          },
+          "Doorstoppers": {
+            "count": 360,
+            "children": {}
+          }
+        }
+      },
+      "Tools & Home Improvement": {
+        "count": 54268,
+        "children": {
+          "Tools": {
+            "count": 33060,
+            "children": {}
+          },
+          "Doors & Windows": {
+            "count": 1573,
+            "children": {}
+          },
+          "Others": {
+            "count": 3080,
+            "children": {}
+          },
+          "Wall Paints & Coatings": {
+            "count": 2180,
+            "children": {}
+          },
+          "Water Pumps, Parts & Accessories": {
+            "count": 3265,
+            "children": {}
+          },
+          "Construction Materials": {
+            "count": 1254,
+            "children": {}
+          },
+          "Protective Gloves, Goggles & Masks": {
+            "count": 1240,
+            "children": {}
+          },
+          "Air Pumps, Parts & Accessories": {
+            "count": 539,
+            "children": {}
+          },
+          "Industrial Adhesives & Tapes": {
+            "count": 3365,
+            "children": {}
+          },
+          "Sinks & Water Taps": {
+            "count": 2042,
+            "children": {}
+          },
+          "Roofing & Flooring": {
+            "count": 864,
+            "children": {}
+          },
+          "Ladders": {
+            "count": 277,
+            "children": {}
+          },
+          "Trollies": {
+            "count": 641,
+            "children": {}
+          },
+          "Shades, Awnings & Tarpaulins": {
+            "count": 888,
+            "children": {}
+          }
+        }
+      },
+      "Gardening": {
+        "count": 31052,
+        "children": {
+          "Plants": {
+            "count": 6567,
+            "children": {}
+          },
+          "Garden Decorations": {
+            "count": 1744,
+            "children": {}
+          },
+          "Lawn Mowers": {
+            "count": 3625,
+            "children": {}
+          },
+          "Irrigation Systems": {
+            "count": 3550,
+            "children": {}
+          },
+          "Gardening Tools": {
+            "count": 2134,
+            "children": {}
+          },
+          "Fertilizer": {
+            "count": 3585,
+            "children": {}
+          },
+          "Others": {
+            "count": 3519,
+            "children": {}
+          },
+          "Seeds & Bulbs": {
+            "count": 4013,
+            "children": {}
+          },
+          "Pots & Planters": {
+            "count": 1614,
+            "children": {}
+          },
+          "Garden Soils & Growing Media": {
+            "count": 701,
+            "children": {}
+          }
+        }
+      },
+      "Home Care Supplies": {
+        "count": 20716,
+        "children": {
+          "Dusters": {
+            "count": 286,
+            "children": {}
+          },
+          "Pest & Weed Control": {
+            "count": 3537,
+            "children": {}
+          },
+          "Laundry Care": {
+            "count": 3251,
+            "children": {}
+          },
+          "Cleaning Agents": {
+            "count": 2916,
+            "children": {}
+          },
+          "Tissue & Paper Towels": {
+            "count": 1366,
+            "children": {}
+          },
+          "Mops": {
+            "count": 1041,
+            "children": {}
+          },
+          "Cleaning Brushes": {
+            "count": 1327,
+            "children": {}
+          },
+          "Basins, Buckets & Water Dippers": {
+            "count": 799,
+            "children": {}
+          },
+          "Plastic Bags & Trash Bags": {
+            "count": 1262,
+            "children": {}
+          },
+          "Sponges & Scouring Pads": {
+            "count": 823,
+            "children": {}
+          },
+          "Cleaning Cloths": {
+            "count": 765,
+            "children": {}
+          },
+          "Others": {
+            "count": 843,
+            "children": {}
+          },
+          "Brooms": {
+            "count": 443,
+            "children": {}
+          },
+          "Trash & Recycling Bins": {
+            "count": 630,
+            "children": {}
+          },
+          "Toilet Paper": {
+            "count": 423,
+            "children": {}
+          },
+          "Clotheslines & Drying Racks": {
+            "count": 1004,
+            "children": {}
+          }
+        }
+      },
+      "Dinnerware": {
+        "count": 14639,
+        "children": {
+          "Water Bottles & Accessories": {
+            "count": 3170,
+            "children": {}
+          },
+          "Cups, Mugs & Glasses": {
+            "count": 3843,
+            "children": {}
+          },
+          "Cutleries": {
+            "count": 1690,
+            "children": {}
+          },
+          "Plates": {
+            "count": 1156,
+            "children": {}
+          },
+          "Bowls": {
+            "count": 1168,
+            "children": {}
+          },
+          "Jugs, Pitchers & Accessories": {
+            "count": 386,
+            "children": {}
+          },
+          "Food Covers": {
+            "count": 278,
+            "children": {}
+          },
+          "Others": {
+            "count": 675,
+            "children": {}
+          },
+          "Tea Pots & Sets": {
+            "count": 650,
+            "children": {}
+          },
+          "Placemats & Coasters": {
+            "count": 917,
+            "children": {}
+          },
+          "Straws": {
+            "count": 706,
+            "children": {}
+          }
+        }
+      },
+      "Kitchenware": {
+        "count": 28296,
+        "children": {
+          "Food Storage": {
+            "count": 5711,
+            "children": {}
+          },
+          "Graters, Peelers & Cutters": {
+            "count": 813,
+            "children": {}
+          },
+          "Knives & Kitchen Scissors": {
+            "count": 1269,
+            "children": {}
+          },
+          "Pans": {
+            "count": 672,
+            "children": {}
+          },
+          "Others": {
+            "count": 3274,
+            "children": {}
+          },
+          "Kitchen Racks": {
+            "count": 1626,
+            "children": {}
+          },
+          "Bakewares & Decorations": {
+            "count": 4088,
+            "children": {}
+          },
+          "Lighters, Matches & Fire Starters": {
+            "count": 505,
+            "children": {}
+          },
+          "Pots": {
+            "count": 723,
+            "children": {}
+          },
+          "Grills & Accessories": {
+            "count": 565,
+            "children": {}
+          },
+          "Aluminium Foil": {
+            "count": 320,
+            "children": {}
+          },
+          "Measuring Glasses & Spoons": {
+            "count": 763,
+            "children": {}
+          },
+          "Kitchen Weighing Scales": {
+            "count": 484,
+            "children": {}
+          },
+          "Strainers": {
+            "count": 1055,
+            "children": {}
+          },
+          "Tea, Coffee & Bartending Equipments": {
+            "count": 1789,
+            "children": {}
+          },
+          "Sealers": {
+            "count": 321,
+            "children": {}
+          },
+          "Aprons & Kitchen Gloves": {
+            "count": 1228,
+            "children": {}
+          },
+          "Chopping Boards": {
+            "count": 372,
+            "children": {}
+          },
+          "Spatulas & Cooking Tweezers": {
+            "count": 1422,
+            "children": {}
+          },
+          "Whisks & Beaters": {
+            "count": 213,
+            "children": {}
+          },
+          "Cling Wrap": {
+            "count": 583,
+            "children": {}
+          },
+          "Can & Bottle Openers": {
+            "count": 500,
+            "children": {}
+          }
+        }
+      },
+      "Decoration": {
+        "count": 17088,
+        "children": {
+          "Mirrors": {
+            "count": 355,
+            "children": {}
+          },
+          "Photo Frames & Wall Decoration": {
+            "count": 2309,
+            "children": {}
+          },
+          "Others": {
+            "count": 2625,
+            "children": {}
+          },
+          "Flowers": {
+            "count": 2448,
+            "children": {}
+          },
+          "Candles & Candleholders": {
+            "count": 1253,
+            "children": {}
+          },
+          "Vases & Vessels": {
+            "count": 508,
+            "children": {}
+          },
+          "Curtains & Blinds": {
+            "count": 1669,
+            "children": {}
+          },
+          "Wallpapers & Wall Stickers": {
+            "count": 1866,
+            "children": {}
+          },
+          "Clocks": {
+            "count": 818,
+            "children": {}
+          },
+          "Furniture & Appliance Covers": {
+            "count": 839,
+            "children": {}
+          },
+          "Table Cloths": {
+            "count": 730,
+            "children": {}
+          },
+          "Floor Mats": {
+            "count": 702,
+            "children": {}
+          },
+          "Carpets & Rugs": {
+            "count": 966,
+            "children": {}
+          }
+        }
+      },
+      "Home Fragrance & Aromatherapy": {
+        "count": 2561,
+        "children": {
+          "Air Fresheners & Home Fragrance": {
+            "count": 1384,
+            "children": {}
+          },
+          "Essential Oils": {
+            "count": 587,
+            "children": {}
+          },
+          "Others": {
+            "count": 181,
+            "children": {}
+          },
+          "Diffusers, Humidifiers & Oil Burners": {
+            "count": 409,
+            "children": {}
+          }
+        }
+      },
+      "Bedding": {
+        "count": 5368,
+        "children": {
+          "Cooling Mats": {
+            "count": 74,
+            "children": {}
+          },
+          "Mattresses": {
+            "count": 550,
+            "children": {}
+          },
+          "Pillows": {
+            "count": 980,
+            "children": {}
+          },
+          "Blankets, Comforters & Quilts": {
+            "count": 837,
+            "children": {}
+          },
+          "Bedsheets, Pillowcases & Bolster Cases": {
+            "count": 1839,
+            "children": {}
+          },
+          "Others": {
+            "count": 256,
+            "children": {}
+          },
+          "Mattress Protectors & Toppers": {
+            "count": 273,
+            "children": {}
+          },
+          "Mosquito Nets": {
+            "count": 365,
+            "children": {}
+          },
+          "Bolsters": {
+            "count": 194,
+            "children": {}
+          }
+        }
+      },
+      "Bathrooms": {
+        "count": 8779,
+        "children": {
+          "Others": {
+            "count": 1680,
+            "children": {}
+          },
+          "Bathroom Racks & Cabinets": {
+            "count": 804,
+            "children": {}
+          },
+          "Toothbrush Holders & Toothpaste Dispensers": {
+            "count": 638,
+            "children": {}
+          },
+          "Showerheads & Bidet Sprays": {
+            "count": 1729,
+            "children": {}
+          },
+          "Soap Dispensers, Holders & Boxes": {
+            "count": 590,
+            "children": {}
+          },
+          "Towels & Bathrobes": {
+            "count": 1294,
+            "children": {}
+          },
+          "Toilet Bowls, Seats & Covers": {
+            "count": 858,
+            "children": {}
+          },
+          "Bath Brushes & Loofahs": {
+            "count": 560,
+            "children": {}
+          },
+          "Shower Caps": {
+            "count": 183,
+            "children": {}
+          },
+          "Shower Seats & Commodes": {
+            "count": 92,
+            "children": {}
+          },
+          "Shower Curtains": {
+            "count": 158,
+            "children": {}
+          },
+          "Safety Handles": {
+            "count": 106,
+            "children": {}
+          },
+          "Bathtubs": {
+            "count": 87,
+            "children": {}
+          }
+        }
+      },
+      "Lighting": {
+        "count": 6944,
+        "children": {}
+      },
+      "Fengshui & Religious Supplies": {
+        "count": 6119,
+        "children": {}
+      },
+      "Party Supplies": {
+        "count": 5879,
+        "children": {
+          "Backdrops & Banners": {
+            "count": 1552,
+            "children": {}
+          },
+          "Others": {
+            "count": 745,
+            "children": {}
+          },
+          "Disposable Tableware": {
+            "count": 1452,
+            "children": {}
+          },
+          "Party Hats & Masks": {
+            "count": 446,
+            "children": {}
+          },
+          "Cards": {
+            "count": 348,
+            "children": {}
+          },
+          "Balloons": {
+            "count": 1205,
+            "children": {}
+          },
+          "Sashes": {
+            "count": 76,
+            "children": {}
+          },
+          "Wooden Clips": {
+            "count": 55,
+            "children": {}
+          }
+        }
+      },
+      "Safety & Security": {
+        "count": 2710,
+        "children": {
+          "Door Hardware & Locks": {
+            "count": 1982,
+            "children": {}
+          },
+          "Others": {
+            "count": 436,
+            "children": {}
+          },
+          "Safes": {
+            "count": 155,
+            "children": {}
+          },
+          "Fire Fighting Equipments": {
+            "count": 137,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 1553,
+        "children": {}
+      },
+      "Hand Warmers, Hot Water Bags & Ice Bags": {
+        "count": 308,
+        "children": {}
+      }
+    }
+  },
+  "Women Clothes": {
+    "count": 54941,
+    "children": {
+      "Traditional Wear": {
+        "count": 1539,
+        "children": {
+          "Dresses": {
+            "count": 149,
+            "children": {}
+          },
+          "Sets": {
+            "count": 370,
+            "children": {}
+          },
+          "Bottoms": {
+            "count": 207,
+            "children": {}
+          },
+          "Tops": {
+            "count": 716,
+            "children": {}
+          },
+          "Others": {
+            "count": 97,
+            "children": {}
+          }
+        }
+      },
+      "Lingerie & Underwear": {
+        "count": 8355,
+        "children": {
+          "Bras": {
+            "count": 2837,
+            "children": {}
+          },
+          "Panties": {
+            "count": 2582,
+            "children": {}
+          },
+          "Shapewear": {
+            "count": 450,
+            "children": {}
+          },
+          "Sexy Lingerie": {
+            "count": 1256,
+            "children": {}
+          },
+          "Bra Accessories": {
+            "count": 740,
+            "children": {}
+          },
+          "Sets": {
+            "count": 184,
+            "children": {}
+          },
+          "Thermal Innerwear": {
+            "count": 36,
+            "children": {}
+          },
+          "Others": {
+            "count": 71,
+            "children": {}
+          },
+          "Safety Pants": {
+            "count": 199,
+            "children": {}
+          }
+        }
+      },
+      "Tops": {
+        "count": 17824,
+        "children": {
+          "T-shirts": {
+            "count": 6863,
+            "children": {}
+          },
+          "Tanks & Camisoles": {
+            "count": 3578,
+            "children": {}
+          },
+          "Tube Tops": {
+            "count": 532,
+            "children": {}
+          },
+          "Polo Shirts": {
+            "count": 806,
+            "children": {}
+          },
+          "Others": {
+            "count": 1593,
+            "children": {}
+          },
+          "Shirts & Blouses": {
+            "count": 4141,
+            "children": {}
+          },
+          "Bodysuits": {
+            "count": 311,
+            "children": {}
+          }
+        }
+      },
+      "Dresses": {
+        "count": 4347,
+        "children": {}
+      },
+      "Fabric": {
+        "count": 1409,
+        "children": {
+          "Cotton": {
+            "count": 440,
+            "children": {}
+          },
+          "Wool": {
+            "count": 14,
+            "children": {}
+          },
+          "Velvet, Silk & Satin": {
+            "count": 178,
+            "children": {}
+          },
+          "Others": {
+            "count": 610,
+            "children": {}
+          },
+          "Leather": {
+            "count": 67,
+            "children": {}
+          },
+          "Canvas": {
+            "count": 27,
+            "children": {}
+          },
+          "Denim": {
+            "count": 47,
+            "children": {}
+          },
+          "Vinyl & Nylon": {
+            "count": 26,
+            "children": {}
+          }
+        }
+      },
+      "Hoodies & Sweatshirts": {
+        "count": 475,
+        "children": {
+          "Others": {
+            "count": 8,
+            "children": {}
+          },
+          "Hoodies": {
+            "count": 309,
+            "children": {}
+          },
+          "Sweatshirts": {
+            "count": 158,
+            "children": {}
+          }
+        }
+      },
+      "Jeans": {
+        "count": 1484,
+        "children": {}
+      },
+      "Pants & Leggings": {
+        "count": 3486,
+        "children": {
+          "Pants": {
+            "count": 3204,
+            "children": {}
+          },
+          "Leggings & Treggings": {
+            "count": 216,
+            "children": {}
+          },
+          "Others": {
+            "count": 66,
+            "children": {}
+          }
+        }
+      },
+      "Shorts": {
+        "count": 1910,
+        "children": {
+          "Shorts": {
+            "count": 1627,
+            "children": {}
+          },
+          "Skorts": {
+            "count": 275,
+            "children": {}
+          },
+          "Others": {
+            "count": 8,
+            "children": {}
+          }
+        }
+      },
+      "Costumes": {
+        "count": 731,
+        "children": {}
+      },
+      "Sweaters & Cardigans": {
+        "count": 1155,
+        "children": {}
+      },
+      "Socks & Stockings": {
+        "count": 2987,
+        "children": {
+          "Socks": {
+            "count": 2416,
+            "children": {}
+          },
+          "Pantyhose": {
+            "count": 520,
+            "children": {}
+          },
+          "Others": {
+            "count": 51,
+            "children": {}
+          }
+        }
+      },
+      "Jackets, Coats & Vests": {
+        "count": 1218,
+        "children": {
+          "Jackets": {
+            "count": 419,
+            "children": {}
+          },
+          "Blazers": {
+            "count": 312,
+            "children": {}
+          },
+          "Vests": {
+            "count": 190,
+            "children": {}
+          },
+          "Capes": {
+            "count": 153,
+            "children": {}
+          },
+          "Winter Jackets & Coats": {
+            "count": 122,
+            "children": {}
+          },
+          "Others": {
+            "count": 22,
+            "children": {}
+          }
+        }
+      },
+      "Sleepwear & Pajamas": {
+        "count": 2002,
+        "children": {
+          "Pajamas": {
+            "count": 1369,
+            "children": {}
+          },
+          "Night Dresses": {
+            "count": 537,
+            "children": {}
+          },
+          "Kimonos & Robes": {
+            "count": 71,
+            "children": {}
+          },
+          "Others": {
+            "count": 25,
+            "children": {}
+          }
+        }
+      },
+      "Jumpsuits, Playsuits & Overalls": {
+        "count": 283,
+        "children": {
+          "Overalls": {
+            "count": 100,
+            "children": {}
+          },
+          "Jumpsuits": {
+            "count": 132,
+            "children": {}
+          },
+          "Playsuits": {
+            "count": 46,
+            "children": {}
+          },
+          "Others": {
+            "count": 5,
+            "children": {}
+          }
+        }
+      },
+      "Sets": {
+        "count": 2566,
+        "children": {
+          "Individual Sets": {
+            "count": 1949,
+            "children": {}
+          },
+          "Others": {
+            "count": 413,
+            "children": {}
+          },
+          "Family Sets": {
+            "count": 120,
+            "children": {}
+          },
+          "Couple Sets": {
+            "count": 84,
+            "children": {}
+          }
+        }
+      },
+      "Skirts": {
+        "count": 2281,
+        "children": {}
+      },
+      "Maternity Wear": {
+        "count": 538,
+        "children": {
+          "Maternity Bottoms": {
+            "count": 161,
+            "children": {}
+          },
+          "Maternity Sets": {
+            "count": 23,
+            "children": {}
+          },
+          "Nursing Bras": {
+            "count": 70,
+            "children": {}
+          },
+          "Maternity Tops": {
+            "count": 20,
+            "children": {}
+          },
+          "Maternity Dresses": {
+            "count": 169,
+            "children": {}
+          },
+          "Breastfeeding Wear": {
+            "count": 88,
+            "children": {}
+          },
+          "Others": {
+            "count": 7,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 249,
+        "children": {}
+      },
+      "Wedding Dresses": {
+        "count": 102,
+        "children": {}
+      }
+    }
+  },
+  "Pets": {
+    "count": 32660,
+    "children": {
+      "Pet Accessories": {
+        "count": 12644,
+        "children": {
+          "Aquarium Needs": {
+            "count": 3819,
+            "children": {}
+          },
+          "Toys": {
+            "count": 1718,
+            "children": {}
+          },
+          "Bowls & Feeders": {
+            "count": 1902,
+            "children": {}
+          },
+          "Others": {
+            "count": 640,
+            "children": {}
+          },
+          "Pet Furniture": {
+            "count": 2833,
+            "children": {}
+          },
+          "Leashes, Collars, Harnesses & Muzzles": {
+            "count": 1321,
+            "children": {}
+          },
+          "Travel Essentials": {
+            "count": 411,
+            "children": {}
+          }
+        }
+      },
+      "Pet Food": {
+        "count": 12101,
+        "children": {
+          "Cat Food": {
+            "count": 4008,
+            "children": {}
+          },
+          "Dog Food": {
+            "count": 2066,
+            "children": {}
+          },
+          "Small Pet Food": {
+            "count": 894,
+            "children": {}
+          },
+          "Bird Feed": {
+            "count": 967,
+            "children": {}
+          },
+          "Dog Treats": {
+            "count": 1330,
+            "children": {}
+          },
+          "Reptile Food": {
+            "count": 147,
+            "children": {}
+          },
+          "Others": {
+            "count": 195,
+            "children": {}
+          },
+          "Cat Treats": {
+            "count": 1128,
+            "children": {}
+          },
+          "Aquarium Pet Food": {
+            "count": 899,
+            "children": {}
+          },
+          "Small Pet Treats": {
+            "count": 467,
+            "children": {}
+          }
+        }
+      },
+      "Litter & Toilet": {
+        "count": 2155,
+        "children": {
+          "Cat Litter & Boxes": {
+            "count": 1100,
+            "children": {}
+          },
+          "Poop Bags & Scoopers": {
+            "count": 211,
+            "children": {}
+          },
+          "Small Pet Bedding & Litter": {
+            "count": 147,
+            "children": {}
+          },
+          "Dog Training Pads & Trays": {
+            "count": 322,
+            "children": {}
+          },
+          "Others": {
+            "count": 220,
+            "children": {}
+          },
+          "Diapers": {
+            "count": 155,
+            "children": {}
+          }
+        }
+      },
+      "Pet Healthcare": {
+        "count": 1872,
+        "children": {
+          "Medication": {
+            "count": 148,
+            "children": {}
+          },
+          "Vitamins & Supplements": {
+            "count": 1101,
+            "children": {}
+          },
+          "Anti Fleas & Ticks": {
+            "count": 255,
+            "children": {}
+          },
+          "Others": {
+            "count": 368,
+            "children": {}
+          }
+        }
+      },
+      "Pet Clothing & Accessories": {
+        "count": 1659,
+        "children": {
+          "Pet Clothing": {
+            "count": 956,
+            "children": {}
+          },
+          "Neck Accessories": {
+            "count": 375,
+            "children": {}
+          },
+          "Hats": {
+            "count": 108,
+            "children": {}
+          },
+          "Hair Accessories": {
+            "count": 58,
+            "children": {}
+          },
+          "Others": {
+            "count": 48,
+            "children": {}
+          },
+          "Boots, Socks & Paw Protectors": {
+            "count": 74,
+            "children": {}
+          },
+          "Eyewear": {
+            "count": 25,
+            "children": {}
+          },
+          "Wet Weather Gear": {
+            "count": 15,
+            "children": {}
+          }
+        }
+      },
+      "Pet Grooming": {
+        "count": 1989,
+        "children": {
+          "Oral Care": {
+            "count": 184,
+            "children": {}
+          },
+          "Hair Care": {
+            "count": 1336,
+            "children": {}
+          },
+          "Others": {
+            "count": 337,
+            "children": {}
+          },
+          "Claw Care": {
+            "count": 132,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 240,
+        "children": {}
+      }
+    }
+  },
+  "Computers & Accessories": {
+    "count": 16431,
+    "children": {
+      "Data Storage": {
+        "count": 1021,
+        "children": {
+          "Flash Drives & OTG": {
+            "count": 522,
+            "children": {}
+          },
+          "Compact Discs": {
+            "count": 45,
+            "children": {}
+          },
+          "Hard Disk Casings & Dockings": {
+            "count": 153,
+            "children": {}
+          },
+          "Others": {
+            "count": 71,
+            "children": {}
+          },
+          "SSD": {
+            "count": 125,
+            "children": {}
+          },
+          "Hard Drives": {
+            "count": 88,
+            "children": {}
+          },
+          "Network Attached Storage (NAS)": {
+            "count": 17,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 535,
+        "children": {}
+      },
+      "Desktop & Laptop Components": {
+        "count": 2727,
+        "children": {
+          "Motherboards": {
+            "count": 100,
+            "children": {}
+          },
+          "Fans & Heatsinks": {
+            "count": 732,
+            "children": {}
+          },
+          "Graphics Cards": {
+            "count": 90,
+            "children": {}
+          },
+          "UPS & Stabilizers": {
+            "count": 148,
+            "children": {}
+          },
+          "Thermal Paste": {
+            "count": 132,
+            "children": {}
+          },
+          "Power Supply Units": {
+            "count": 584,
+            "children": {}
+          },
+          "PC Cases": {
+            "count": 144,
+            "children": {}
+          },
+          "Others": {
+            "count": 578,
+            "children": {}
+          },
+          "RAM": {
+            "count": 77,
+            "children": {}
+          },
+          "Sound Cards": {
+            "count": 71,
+            "children": {}
+          },
+          "Optical Drives": {
+            "count": 16,
+            "children": {}
+          },
+          "Processors": {
+            "count": 55,
+            "children": {}
+          }
+        }
+      },
+      "Network Components": {
+        "count": 1838,
+        "children": {
+          "Network Cables & Connectors": {
+            "count": 760,
+            "children": {}
+          },
+          "Modems & Wireless Routers": {
+            "count": 220,
+            "children": {}
+          },
+          "Wireless Adapters & Network Cards": {
+            "count": 249,
+            "children": {}
+          },
+          "Others": {
+            "count": 174,
+            "children": {}
+          },
+          "Repeaters": {
+            "count": 143,
+            "children": {}
+          },
+          "KVM Switches": {
+            "count": 48,
+            "children": {}
+          },
+          "Network Switches & PoE": {
+            "count": 218,
+            "children": {}
+          },
+          "Print Servers": {
+            "count": 18,
+            "children": {}
+          },
+          "Powerline Adapters": {
+            "count": 8,
+            "children": {}
+          }
+        }
+      },
+      "Peripherals & Accessories": {
+        "count": 3881,
+        "children": {
+          "Laptop Stands & Foldable Laptop Desks": {
+            "count": 480,
+            "children": {}
+          },
+          "Mouse Pads": {
+            "count": 860,
+            "children": {}
+          },
+          "Keyboard & Trackpad Covers": {
+            "count": 146,
+            "children": {}
+          },
+          "Laptop Batteries": {
+            "count": 334,
+            "children": {}
+          },
+          "Laptop Chargers & Adaptors": {
+            "count": 533,
+            "children": {}
+          },
+          "Others": {
+            "count": 417,
+            "children": {}
+          },
+          "USB Hubs & Card Readers": {
+            "count": 614,
+            "children": {}
+          },
+          "Video Conference Devices": {
+            "count": 19,
+            "children": {}
+          },
+          "Laptop Skins & Covers": {
+            "count": 345,
+            "children": {}
+          },
+          "Webcams": {
+            "count": 67,
+            "children": {}
+          },
+          "Cooling Pads": {
+            "count": 66,
+            "children": {}
+          }
+        }
+      },
+      "Printers & Scanners": {
+        "count": 3054,
+        "children": {
+          "Inks & Toners": {
+            "count": 1646,
+            "children": {}
+          },
+          "Others": {
+            "count": 781,
+            "children": {}
+          },
+          "Printers, Scanners & Photocopy Machines": {
+            "count": 214,
+            "children": {}
+          },
+          "Thermal & Barcode Printers": {
+            "count": 134,
+            "children": {}
+          },
+          "3D Printers": {
+            "count": 279,
+            "children": {}
+          }
+        }
+      },
+      "Keyboards & Mice": {
+        "count": 2425,
+        "children": {
+          "Mice": {
+            "count": 781,
+            "children": {}
+          },
+          "Others": {
+            "count": 680,
+            "children": {}
+          },
+          "Keyboards": {
+            "count": 892,
+            "children": {}
+          },
+          "Drawing Tablets": {
+            "count": 72,
+            "children": {}
+          }
+        }
+      },
+      "Monitors": {
+        "count": 365,
+        "children": {}
+      },
+      "Laptops": {
+        "count": 87,
+        "children": {}
+      },
+      "Office Equipment": {
+        "count": 259,
+        "children": {
+          "Others": {
+            "count": 101,
+            "children": {}
+          },
+          "Absence Machines": {
+            "count": 72,
+            "children": {}
+          },
+          "Money Counters": {
+            "count": 53,
+            "children": {}
+          },
+          "Paper Shredders": {
+            "count": 31,
+            "children": {}
+          },
+          "Typewriters": {
+            "count": 2,
+            "children": {}
+          }
+        }
+      },
+      "Softwares": {
+        "count": 146,
+        "children": {}
+      },
+      "Desktop Computers": {
+        "count": 93,
+        "children": {
+          "Desktop PC": {
+            "count": 47,
+            "children": {}
+          },
+          "Server PC": {
+            "count": 15,
+            "children": {}
+          },
+          "Others": {
+            "count": 5,
+            "children": {}
+          },
+          "Mini PC": {
+            "count": 11,
+            "children": {}
+          },
+          "All-in-One Desktops": {
+            "count": 15,
+            "children": {}
+          }
+        }
+      }
+    }
+  },
+  "Motorcycles": {
+    "count": 35630,
+    "children": {
+      "Motorcycle Spare Parts": {
+        "count": 25659,
+        "children": {
+          "Ignition & Engine Parts": {
+            "count": 3978,
+            "children": {}
+          },
+          "Fuel System": {
+            "count": 1474,
+            "children": {}
+          },
+          "Drivetrain, Transmission & Clutches": {
+            "count": 3532,
+            "children": {}
+          },
+          "Others": {
+            "count": 5895,
+            "children": {}
+          },
+          "Exhaust & Emissions": {
+            "count": 635,
+            "children": {}
+          },
+          "Lighting": {
+            "count": 1731,
+            "children": {}
+          },
+          "Shocks, Struts & Suspension": {
+            "count": 1257,
+            "children": {}
+          },
+          "Brake System": {
+            "count": 2579,
+            "children": {}
+          },
+          "Cables & Tubes": {
+            "count": 410,
+            "children": {}
+          },
+          "Wheels, Rims & Accessories": {
+            "count": 856,
+            "children": {}
+          },
+          "Batteries & Accessories": {
+            "count": 196,
+            "children": {}
+          },
+          "Body & Frame": {
+            "count": 2370,
+            "children": {}
+          },
+          "Tires & Accessories": {
+            "count": 634,
+            "children": {}
+          },
+          "Horns & Accessories": {
+            "count": 112,
+            "children": {}
+          }
+        }
+      },
+      "Motorcycle Accessories": {
+        "count": 8503,
+        "children": {
+          "Mud Flaps & Splash Guards": {
+            "count": 501,
+            "children": {}
+          },
+          "Stickers, Logos & Emblems": {
+            "count": 2099,
+            "children": {}
+          },
+          "Others": {
+            "count": 2908,
+            "children": {}
+          },
+          "Phone Holders": {
+            "count": 271,
+            "children": {}
+          },
+          "Speedometers, Odometers & Gauges": {
+            "count": 481,
+            "children": {}
+          },
+          "Mirrors & Accessories": {
+            "count": 744,
+            "children": {}
+          },
+          "Covers": {
+            "count": 158,
+            "children": {}
+          },
+          "Boxes & Cases": {
+            "count": 453,
+            "children": {}
+          },
+          "Carpets": {
+            "count": 160,
+            "children": {}
+          },
+          "Seats & Seat Covers": {
+            "count": 535,
+            "children": {}
+          },
+          "Locks & Security": {
+            "count": 193,
+            "children": {}
+          }
+        }
+      },
+      "Motorcycle Helmets & Accessories": {
+        "count": 950,
+        "children": {}
+      },
+      "Others": {
+        "count": 461,
+        "children": {}
+      },
+      "Motorcycles": {
+        "count": 57,
+        "children": {}
+      }
+    }
+  },
+  "Food & Beverages": {
+    "count": 56508,
+    "children": {
+      "Snacks": {
+        "count": 12374,
+        "children": {
+          "Dried Snacks": {
+            "count": 3214,
+            "children": {}
+          },
+          "Biscuits, Cookies & Wafers": {
+            "count": 2056,
+            "children": {}
+          },
+          "Nuts": {
+            "count": 1117,
+            "children": {}
+          },
+          "Pudding, Jellies & Marshmallow": {
+            "count": 946,
+            "children": {}
+          },
+          "Chips & Crisps": {
+            "count": 1460,
+            "children": {}
+          },
+          "Seaweed": {
+            "count": 373,
+            "children": {}
+          },
+          "Seeds": {
+            "count": 403,
+            "children": {}
+          },
+          "Sweets & Candy": {
+            "count": 1157,
+            "children": {}
+          },
+          "Chocolate": {
+            "count": 783,
+            "children": {}
+          },
+          "Popcorn": {
+            "count": 121,
+            "children": {}
+          },
+          "Others": {
+            "count": 744,
+            "children": {}
+          }
+        }
+      },
+      "Fresh & Frozen Food": {
+        "count": 3969,
+        "children": {
+          "Vegetables": {
+            "count": 335,
+            "children": {}
+          },
+          "Fruits": {
+            "count": 442,
+            "children": {}
+          },
+          "Processed Meat & Seafood": {
+            "count": 852,
+            "children": {}
+          },
+          "Frozen Processed Food": {
+            "count": 579,
+            "children": {}
+          },
+          "Seafood": {
+            "count": 485,
+            "children": {}
+          },
+          "Meat": {
+            "count": 864,
+            "children": {}
+          },
+          "Vegetarian Meat": {
+            "count": 166,
+            "children": {}
+          },
+          "Others": {
+            "count": 106,
+            "children": {}
+          },
+          "Mushroom": {
+            "count": 140,
+            "children": {}
+          }
+        }
+      },
+      "Beverages": {
+        "count": 12606,
+        "children": {
+          "Chocolate Drinks": {
+            "count": 531,
+            "children": {}
+          },
+          "Coffee": {
+            "count": 3788,
+            "children": {}
+          },
+          "Cordial & Syrups": {
+            "count": 784,
+            "children": {}
+          },
+          "Non-dairy Milk": {
+            "count": 654,
+            "children": {}
+          },
+          "Tea & Tea Bags": {
+            "count": 2710,
+            "children": {}
+          },
+          "Drink Toppings": {
+            "count": 193,
+            "children": {}
+          },
+          "Others": {
+            "count": 128,
+            "children": {}
+          },
+          "Juice & Juice Vinegar": {
+            "count": 690,
+            "children": {}
+          },
+          "Powdered Drink Mixes": {
+            "count": 834,
+            "children": {}
+          },
+          "Traditional & Herbal Drinks": {
+            "count": 718,
+            "children": {}
+          },
+          "Carbonated Drinks & Tonics": {
+            "count": 689,
+            "children": {}
+          },
+          "Water": {
+            "count": 565,
+            "children": {}
+          },
+          "Energy & Isotonic Drinks": {
+            "count": 261,
+            "children": {}
+          },
+          "Dessert Drink": {
+            "count": 61,
+            "children": {}
+          }
+        }
+      },
+      "Dairy & Eggs": {
+        "count": 4488,
+        "children": {
+          "Yogurt & Cultured Milk": {
+            "count": 917,
+            "children": {}
+          },
+          "Creamers": {
+            "count": 183,
+            "children": {}
+          },
+          "Butter & Margarine": {
+            "count": 220,
+            "children": {}
+          },
+          "Milk": {
+            "count": 1986,
+            "children": {}
+          },
+          "Others": {
+            "count": 18,
+            "children": {}
+          },
+          "Cheese & Cheese Powder": {
+            "count": 433,
+            "children": {}
+          },
+          "Ice cream": {
+            "count": 105,
+            "children": {}
+          },
+          "Eggs": {
+            "count": 325,
+            "children": {}
+          },
+          "Beancurd": {
+            "count": 301,
+            "children": {}
+          }
+        }
+      },
+      "Bakery": {
+        "count": 2223,
+        "children": {
+          "Pastry": {
+            "count": 574,
+            "children": {}
+          },
+          "Breads": {
+            "count": 679,
+            "children": {}
+          },
+          "Others": {
+            "count": 430,
+            "children": {}
+          },
+          "Cakes & Pies": {
+            "count": 540,
+            "children": {}
+          }
+        }
+      },
+      "Cooking Essentials": {
+        "count": 8633,
+        "children": {
+          "Seasonings & Condiments": {
+            "count": 6010,
+            "children": {}
+          },
+          "Oil": {
+            "count": 594,
+            "children": {}
+          },
+          "Flavour Enhancers": {
+            "count": 226,
+            "children": {}
+          },
+          "Stock, Gravy & Instant Soup": {
+            "count": 432,
+            "children": {}
+          },
+          "Flour Coating": {
+            "count": 148,
+            "children": {}
+          },
+          "Cooking Paste & Kit": {
+            "count": 411,
+            "children": {}
+          },
+          "Sweetener": {
+            "count": 186,
+            "children": {}
+          },
+          "Sugar": {
+            "count": 413,
+            "children": {}
+          },
+          "Others": {
+            "count": 213,
+            "children": {}
+          }
+        }
+      },
+      "Food Staples": {
+        "count": 5573,
+        "children": {
+          "Dried Goods": {
+            "count": 2418,
+            "children": {}
+          },
+          "Preserved Vegetables": {
+            "count": 476,
+            "children": {}
+          },
+          "Rice": {
+            "count": 1142,
+            "children": {}
+          },
+          "Canned Food": {
+            "count": 524,
+            "children": {}
+          },
+          "Pasta": {
+            "count": 112,
+            "children": {}
+          },
+          "Others": {
+            "count": 242,
+            "children": {}
+          },
+          "Noodles": {
+            "count": 659,
+            "children": {}
+          }
+        }
+      },
+      "Convenience / Ready-to-eat": {
+        "count": 2886,
+        "children": {
+          "Instant Noodles": {
+            "count": 1369,
+            "children": {}
+          },
+          "Instant Rice & Porridge": {
+            "count": 138,
+            "children": {}
+          },
+          "Cooked Food": {
+            "count": 1190,
+            "children": {}
+          },
+          "Others": {
+            "count": 148,
+            "children": {}
+          },
+          "Instant Hotpot": {
+            "count": 41,
+            "children": {}
+          }
+        }
+      },
+      "Baking Needs": {
+        "count": 2289,
+        "children": {
+          "Flour": {
+            "count": 592,
+            "children": {}
+          },
+          "Baking Decoration": {
+            "count": 443,
+            "children": {}
+          },
+          "Baking Premix Flour": {
+            "count": 242,
+            "children": {}
+          },
+          "Baking Flavoring": {
+            "count": 254,
+            "children": {}
+          },
+          "Baking Powder & Soda": {
+            "count": 120,
+            "children": {}
+          },
+          "Others": {
+            "count": 534,
+            "children": {}
+          },
+          "Food Coloring": {
+            "count": 104,
+            "children": {}
+          }
+        }
+      },
+      "Breakfast Cereals & Spread": {
+        "count": 1179,
+        "children": {
+          "Jam & Spread": {
+            "count": 407,
+            "children": {}
+          },
+          "Honey & Maple Syrups": {
+            "count": 271,
+            "children": {}
+          },
+          "Cereal, Granola & Oats": {
+            "count": 406,
+            "children": {}
+          },
+          "Breakfast Bar": {
+            "count": 90,
+            "children": {}
+          },
+          "Others": {
+            "count": 5,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 208,
+        "children": {}
+      },
+      "Gift Set & Hampers": {
+        "count": 80,
+        "children": {}
+      }
+    }
+  },
+  "Hobbies & Collections": {
+    "count": 36776,
+    "children": {
+      "Toys & Games": {
+        "count": 8862,
+        "children": {
+          "Capsule Toys": {
+            "count": 445,
+            "children": {}
+          },
+          "Dice, Board & Card Games": {
+            "count": 5027,
+            "children": {}
+          },
+          "Spinning Tops": {
+            "count": 392,
+            "children": {}
+          },
+          "Remote Control Toys & Accessories": {
+            "count": 1869,
+            "children": {}
+          },
+          "Others": {
+            "count": 581,
+            "children": {}
+          },
+          "Rubik's Cubes": {
+            "count": 171,
+            "children": {}
+          },
+          "Magic Toys": {
+            "count": 116,
+            "children": {}
+          },
+          "Prank Toys": {
+            "count": 214,
+            "children": {}
+          },
+          "Yo-yos": {
+            "count": 41,
+            "children": {}
+          },
+          "Kendamas": {
+            "count": 6,
+            "children": {}
+          }
+        }
+      },
+      "Souvenirs": {
+        "count": 6130,
+        "children": {
+          "Hand Fans": {
+            "count": 288,
+            "children": {}
+          },
+          "Keychains": {
+            "count": 4476,
+            "children": {}
+          },
+          "Coin Banks": {
+            "count": 402,
+            "children": {}
+          },
+          "Others": {
+            "count": 390,
+            "children": {}
+          },
+          "Fridge Magnets": {
+            "count": 574,
+            "children": {}
+          }
+        }
+      },
+      "Vinyl Records": {
+        "count": 207,
+        "children": {}
+      },
+      "Collectible Items": {
+        "count": 11878,
+        "children": {
+          "Others": {
+            "count": 765,
+            "children": {}
+          },
+          "Mecha Models & Diecast": {
+            "count": 1269,
+            "children": {}
+          },
+          "Vehicle Models & Diecast": {
+            "count": 1457,
+            "children": {}
+          },
+          "Action Figurines": {
+            "count": 3263,
+            "children": {}
+          },
+          "Sports Collectibles": {
+            "count": 355,
+            "children": {}
+          },
+          "Coins": {
+            "count": 225,
+            "children": {}
+          },
+          "Anime & Manga Collectibles": {
+            "count": 2506,
+            "children": {}
+          },
+          "Idol Collectibles": {
+            "count": 1472,
+            "children": {}
+          },
+          "Stones & Minerals": {
+            "count": 291,
+            "children": {}
+          },
+          "Statues & Sculptures": {
+            "count": 275,
+            "children": {}
+          }
+        }
+      },
+      "CD, DVD & Bluray": {
+        "count": 1444,
+        "children": {}
+      },
+      "Needlework": {
+        "count": 3205,
+        "children": {}
+      },
+      "Musical Instruments & Accessories": {
+        "count": 3614,
+        "children": {
+          "Music Accessories": {
+            "count": 2354,
+            "children": {}
+          },
+          "Percussion Instruments": {
+            "count": 294,
+            "children": {}
+          },
+          "String Instruments": {
+            "count": 508,
+            "children": {}
+          },
+          "Wind Instruments": {
+            "count": 155,
+            "children": {}
+          },
+          "Others": {
+            "count": 167,
+            "children": {}
+          },
+          "Keyboards & Pianos": {
+            "count": 136,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 1100,
+        "children": {}
+      },
+      "Photo Albums": {
+        "count": 336,
+        "children": {}
+      }
+    }
+  },
+  "Beauty": {
+    "count": 73116,
+    "children": {
+      "Skincare": {
+        "count": 15938,
+        "children": {
+          "Lip Treatment": {
+            "count": 914,
+            "children": {}
+          },
+          "Face Sunscreen": {
+            "count": 1650,
+            "children": {}
+          },
+          "Acne Treatment": {
+            "count": 1030,
+            "children": {}
+          },
+          "Facial Moisturizer": {
+            "count": 3862,
+            "children": {}
+          },
+          "Face Mask & Packs": {
+            "count": 1601,
+            "children": {}
+          },
+          "Eye Treatment": {
+            "count": 624,
+            "children": {}
+          },
+          "Facial Cleanser": {
+            "count": 1859,
+            "children": {}
+          },
+          "Facial Serum & Essence": {
+            "count": 2854,
+            "children": {}
+          },
+          "Face Scrub & Peel": {
+            "count": 216,
+            "children": {}
+          },
+          "Toner": {
+            "count": 558,
+            "children": {}
+          },
+          "Blotting Paper": {
+            "count": 104,
+            "children": {}
+          },
+          "Facial Oil": {
+            "count": 129,
+            "children": {}
+          },
+          "Others": {
+            "count": 309,
+            "children": {}
+          },
+          "Facial Mist": {
+            "count": 151,
+            "children": {}
+          },
+          "After Sun Face Care": {
+            "count": 77,
+            "children": {}
+          }
+        }
+      },
+      "Beauty Tools": {
+        "count": 11123,
+        "children": {
+          "Makeup Accessories": {
+            "count": 6275,
+            "children": {}
+          },
+          "Others": {
+            "count": 421,
+            "children": {}
+          },
+          "Hair Tools": {
+            "count": 3067,
+            "children": {}
+          },
+          "Facial Care Tools": {
+            "count": 782,
+            "children": {}
+          },
+          "Hair Removal Tools": {
+            "count": 541,
+            "children": {}
+          },
+          "Body Slimming Tools": {
+            "count": 37,
+            "children": {}
+          }
+        }
+      },
+      "Bath & Body Care": {
+        "count": 9250,
+        "children": {
+          "Body Cream, Lotion & Butter": {
+            "count": 2434,
+            "children": {}
+          },
+          "Body Scrub & Peel": {
+            "count": 556,
+            "children": {}
+          },
+          "Body Wash & Soap": {
+            "count": 3031,
+            "children": {}
+          },
+          "Body Deodorants": {
+            "count": 1363,
+            "children": {}
+          },
+          "Sun Care": {
+            "count": 659,
+            "children": {}
+          },
+          "Massage Oil": {
+            "count": 324,
+            "children": {}
+          },
+          "Others": {
+            "count": 276,
+            "children": {}
+          },
+          "Body Oil": {
+            "count": 248,
+            "children": {}
+          },
+          "Hair Removal Cream & Wax": {
+            "count": 262,
+            "children": {}
+          },
+          "Body Masks": {
+            "count": 66,
+            "children": {}
+          },
+          "Breast Care": {
+            "count": 31,
+            "children": {}
+          }
+        }
+      },
+      "Hand, Foot & Nail Care": {
+        "count": 9461,
+        "children": {
+          "Nail Care": {
+            "count": 8225,
+            "children": {}
+          },
+          "Foot Care": {
+            "count": 636,
+            "children": {}
+          },
+          "Hand Care": {
+            "count": 519,
+            "children": {}
+          },
+          "Others": {
+            "count": 81,
+            "children": {}
+          }
+        }
+      },
+      "Hair Care": {
+        "count": 7984,
+        "children": {
+          "Hair Styling": {
+            "count": 1014,
+            "children": {}
+          },
+          "Hair Treatment": {
+            "count": 2546,
+            "children": {}
+          },
+          "Hair and Scalp Conditioner": {
+            "count": 335,
+            "children": {}
+          },
+          "Hair Colour": {
+            "count": 1383,
+            "children": {}
+          },
+          "Shampoo": {
+            "count": 2378,
+            "children": {}
+          },
+          "Others": {
+            "count": 328,
+            "children": {}
+          }
+        }
+      },
+      "Perfumes & Fragrances": {
+        "count": 4334,
+        "children": {}
+      },
+      "Makeup": {
+        "count": 11892,
+        "children": {
+          "Makeup Removers": {
+            "count": 716,
+            "children": {}
+          },
+          "Face": {
+            "count": 5432,
+            "children": {}
+          },
+          "Eyes": {
+            "count": 3430,
+            "children": {}
+          },
+          "Lips": {
+            "count": 2239,
+            "children": {}
+          },
+          "Others": {
+            "count": 75,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 730,
+        "children": {}
+      },
+      "Men's Care": {
+        "count": 1920,
+        "children": {
+          "Shaving & Grooming": {
+            "count": 1388,
+            "children": {}
+          },
+          "Skincare": {
+            "count": 237,
+            "children": {}
+          },
+          "Hair Care": {
+            "count": 114,
+            "children": {}
+          },
+          "Bath & Body Care": {
+            "count": 133,
+            "children": {}
+          },
+          "Others": {
+            "count": 48,
+            "children": {}
+          }
+        }
+      },
+      "Beauty Sets & Packages": {
+        "count": 484,
+        "children": {}
+      }
+    }
+  },
+  "Women Shoes": {
+    "count": 10285,
+    "children": {
+      "Heels": {
+        "count": 1401,
+        "children": {}
+      },
+      "Flat Sandals & Flip Flops": {
+        "count": 3681,
+        "children": {
+          "Flat Sandals": {
+            "count": 1870,
+            "children": {}
+          },
+          "Indoor Slippers": {
+            "count": 651,
+            "children": {}
+          },
+          "Flip Flops": {
+            "count": 636,
+            "children": {}
+          },
+          "Others": {
+            "count": 187,
+            "children": {}
+          },
+          "Health Slippers": {
+            "count": 337,
+            "children": {}
+          }
+        }
+      },
+      "Sneakers": {
+        "count": 1023,
+        "children": {}
+      },
+      "Shoe Care & Accessories": {
+        "count": 1856,
+        "children": {
+          "Others": {
+            "count": 957,
+            "children": {}
+          },
+          "Insoles & Heel Liners": {
+            "count": 531,
+            "children": {}
+          },
+          "Shoe Care & Cleaning Tools": {
+            "count": 113,
+            "children": {}
+          },
+          "Shoe Laces": {
+            "count": 173,
+            "children": {}
+          },
+          "Shoe Deodorizers": {
+            "count": 29,
+            "children": {}
+          },
+          "Shoe Horns & Trees": {
+            "count": 53,
+            "children": {}
+          }
+        }
+      },
+      "Flats": {
+        "count": 1514,
+        "children": {
+          "Slip Ons, Mary Janes & Mules": {
+            "count": 560,
+            "children": {}
+          },
+          "Oxfords & Lace-Ups": {
+            "count": 53,
+            "children": {}
+          },
+          "Loafers & Boat Shoes": {
+            "count": 532,
+            "children": {}
+          },
+          "Ballet Flats": {
+            "count": 307,
+            "children": {}
+          },
+          "Others": {
+            "count": 62,
+            "children": {}
+          }
+        }
+      },
+      "Wedges": {
+        "count": 370,
+        "children": {}
+      },
+      "Boots": {
+        "count": 381,
+        "children": {
+          "Fashion Boots": {
+            "count": 271,
+            "children": {}
+          },
+          "Rain Boots": {
+            "count": 103,
+            "children": {}
+          },
+          "Others": {
+            "count": 7,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 59,
+        "children": {}
+      }
+    }
+  },
+  "Fashion Accessories": {
+    "count": 55417,
+    "children": {
+      "Others": {
+        "count": 1693,
+        "children": {}
+      },
+      "Additional Accessories": {
+        "count": 10881,
+        "children": {
+          "Charms, Pendants & Ornaments": {
+            "count": 3445,
+            "children": {}
+          },
+          "Brooches & Pins": {
+            "count": 2038,
+            "children": {}
+          },
+          "Patches": {
+            "count": 1601,
+            "children": {}
+          },
+          "Tattoos": {
+            "count": 974,
+            "children": {}
+          },
+          "Others": {
+            "count": 1781,
+            "children": {}
+          },
+          "Cufflinks": {
+            "count": 363,
+            "children": {}
+          },
+          "Masks": {
+            "count": 503,
+            "children": {}
+          },
+          "Handkerchiefs": {
+            "count": 176,
+            "children": {}
+          }
+        }
+      },
+      "Hair Accessories": {
+        "count": 11420,
+        "children": {
+          "Hair Clips & Hair Pins": {
+            "count": 5812,
+            "children": {}
+          },
+          "Headbands": {
+            "count": 1560,
+            "children": {}
+          },
+          "Hair Ties, Ribbons & Scrunchies": {
+            "count": 2087,
+            "children": {}
+          },
+          "Wigs & Extensions": {
+            "count": 1440,
+            "children": {}
+          },
+          "Headpieces, Tiaras & Flower Crowns": {
+            "count": 350,
+            "children": {}
+          },
+          "Others": {
+            "count": 171,
+            "children": {}
+          }
+        }
+      },
+      "Hats & Caps": {
+        "count": 3258,
+        "children": {}
+      },
+      "Eyewear": {
+        "count": 6113,
+        "children": {
+          "Frames & Glasses": {
+            "count": 2483,
+            "children": {}
+          },
+          "Sunglasses": {
+            "count": 2321,
+            "children": {}
+          },
+          "Eyewear Cases & Accessories": {
+            "count": 941,
+            "children": {}
+          },
+          "Others": {
+            "count": 368,
+            "children": {}
+          }
+        }
+      },
+      "Bracelets & Bangles": {
+        "count": 4201,
+        "children": {}
+      },
+      "Belts": {
+        "count": 1970,
+        "children": {}
+      },
+      "Gloves": {
+        "count": 671,
+        "children": {}
+      },
+      "Earrings": {
+        "count": 5547,
+        "children": {}
+      },
+      "Necklaces": {
+        "count": 4635,
+        "children": {}
+      },
+      "Rings": {
+        "count": 2788,
+        "children": {}
+      },
+      "Neckties, Bow Ties & Cravats": {
+        "count": 355,
+        "children": {}
+      },
+      "Scarves & Shawls": {
+        "count": 706,
+        "children": {}
+      },
+      "Accessories Sets & Packages": {
+        "count": 735,
+        "children": {}
+      },
+      "Investment Precious Metals": {
+        "count": 301,
+        "children": {
+          "Jade": {
+            "count": 16,
+            "children": {}
+          },
+          "Platinum & K Gold": {
+            "count": 43,
+            "children": {}
+          },
+          "Others": {
+            "count": 86,
+            "children": {}
+          },
+          "Silver": {
+            "count": 86,
+            "children": {}
+          },
+          "Diamond": {
+            "count": 70,
+            "children": {}
+          }
+        }
+      },
+      "Anklets": {
+        "count": 135,
+        "children": {}
+      },
+      "Fine Jewelry": {
+        "count": 8,
+        "children": {
+          "Charms, Pendants & Ornaments": {
+            "count": 5,
+            "children": {}
+          },
+          "Earrings": {
+            "count": 1,
+            "children": {}
+          },
+          "Bracelets & Bangles": {
+            "count": 1,
+            "children": {}
+          },
+          "Necklaces": {
+            "count": 1,
+            "children": {}
+          }
+        }
+      }
+    }
+  },
+  "Automobiles": {
+    "count": 42289,
+    "children": {
+      "Automotive Care": {
+        "count": 2719,
+        "children": {
+          "Polish, Coating & Sealants": {
+            "count": 947,
+            "children": {}
+          },
+          "Interior Care": {
+            "count": 242,
+            "children": {}
+          },
+          "Wash & Waxes": {
+            "count": 781,
+            "children": {}
+          },
+          "Others": {
+            "count": 339,
+            "children": {}
+          },
+          "Tire & Wheel Care": {
+            "count": 228,
+            "children": {}
+          },
+          "Glass Care & Water Repellents": {
+            "count": 182,
+            "children": {}
+          }
+        }
+      },
+      "Automobile Exterior Accessories": {
+        "count": 6582,
+        "children": {
+          "Stickers, Logos & Emblems": {
+            "count": 2856,
+            "children": {}
+          },
+          "License Plate Accessories": {
+            "count": 371,
+            "children": {}
+          },
+          "Garnish": {
+            "count": 474,
+            "children": {}
+          },
+          "Mirrors & Accessories": {
+            "count": 524,
+            "children": {}
+          },
+          "Covers": {
+            "count": 408,
+            "children": {}
+          },
+          "Sill Plates": {
+            "count": 254,
+            "children": {}
+          },
+          "Others": {
+            "count": 969,
+            "children": {}
+          },
+          "Gutters": {
+            "count": 95,
+            "children": {}
+          },
+          "Antennas": {
+            "count": 156,
+            "children": {}
+          },
+          "Horns & Accessories": {
+            "count": 158,
+            "children": {}
+          },
+          "Mud Flaps & Splash Guards": {
+            "count": 317,
+            "children": {}
+          }
+        }
+      },
+      "Automobile Spare Parts": {
+        "count": 19464,
+        "children": {
+          "Others": {
+            "count": 2660,
+            "children": {}
+          },
+          "Drivetrain, Transmission & Clutches": {
+            "count": 585,
+            "children": {}
+          },
+          "Brake System": {
+            "count": 946,
+            "children": {}
+          },
+          "Engine Parts": {
+            "count": 3541,
+            "children": {}
+          },
+          "Windshield Wipers & Washers": {
+            "count": 887,
+            "children": {}
+          },
+          "Electronics": {
+            "count": 3832,
+            "children": {}
+          },
+          "Radiators, Engine Cooling & Climate Control": {
+            "count": 1090,
+            "children": {}
+          },
+          "Body, Frame & Bumpers": {
+            "count": 1055,
+            "children": {}
+          },
+          "Fuel System": {
+            "count": 417,
+            "children": {}
+          },
+          "Exhaust & Emissions": {
+            "count": 227,
+            "children": {}
+          },
+          "Bearing & Seals": {
+            "count": 909,
+            "children": {}
+          },
+          "Shocks, Struts & Suspension": {
+            "count": 1838,
+            "children": {}
+          },
+          "Tires & Accessories": {
+            "count": 300,
+            "children": {}
+          },
+          "Belts, Hoses & Pulleys": {
+            "count": 636,
+            "children": {}
+          },
+          "Wheels, Rims & Accessories": {
+            "count": 541,
+            "children": {}
+          }
+        }
+      },
+      "Automobile Interior Accessories": {
+        "count": 8895,
+        "children": {
+          "Locks & Security": {
+            "count": 294,
+            "children": {}
+          },
+          "Camcorders & Parking Cameras": {
+            "count": 320,
+            "children": {}
+          },
+          "Seat Headrests & Back Supports": {
+            "count": 196,
+            "children": {}
+          },
+          "Navigation & AV Receivers": {
+            "count": 281,
+            "children": {}
+          },
+          "Organizers & Compartments": {
+            "count": 1457,
+            "children": {}
+          },
+          "HUD, Speedometers & Gauges": {
+            "count": 180,
+            "children": {}
+          },
+          "Phone Holders": {
+            "count": 573,
+            "children": {}
+          },
+          "Steering Wheels & Covers": {
+            "count": 683,
+            "children": {}
+          },
+          "Amplifiers, Speakers & Subwoofers": {
+            "count": 909,
+            "children": {}
+          },
+          "USB Chargers, FM & Bluetooth Transmitters": {
+            "count": 444,
+            "children": {}
+          },
+          "Others": {
+            "count": 1266,
+            "children": {}
+          },
+          "Perfumes, Air Fresheners & Purifiers": {
+            "count": 318,
+            "children": {}
+          },
+          "Pedals & Gear Sticks": {
+            "count": 413,
+            "children": {}
+          },
+          "Carpets & Mats": {
+            "count": 478,
+            "children": {}
+          },
+          "Seats & Seat Covers": {
+            "count": 604,
+            "children": {}
+          },
+          "Sun Shields & Dash Covers": {
+            "count": 450,
+            "children": {}
+          },
+          "Car Mattresses": {
+            "count": 29,
+            "children": {}
+          }
+        }
+      },
+      "Automotive Keychains & Key Covers": {
+        "count": 2336,
+        "children": {}
+      },
+      "Others": {
+        "count": 461,
+        "children": {}
+      },
+      "Automotive Oils & Lubes": {
+        "count": 618,
+        "children": {
+          "Others": {
+            "count": 217,
+            "children": {}
+          },
+          "Oils": {
+            "count": 245,
+            "children": {}
+          },
+          "Greases & Lubricants": {
+            "count": 79,
+            "children": {}
+          },
+          "Automotive Fluids": {
+            "count": 50,
+            "children": {}
+          },
+          "Antifreezes & Coolants": {
+            "count": 23,
+            "children": {}
+          },
+          "Fuel Additives & Savers": {
+            "count": 4,
+            "children": {}
+          }
+        }
+      },
+      "Automotive Tools": {
+        "count": 1152,
+        "children": {
+          "Test, Diagnostic & Repair Tools": {
+            "count": 522,
+            "children": {}
+          },
+          "Tire Pressure Detectors": {
+            "count": 162,
+            "children": {}
+          },
+          "Others": {
+            "count": 468,
+            "children": {}
+          }
+        }
+      },
+      "Automobiles": {
+        "count": 57,
+        "children": {}
+      },
+      "Automotive Services & Installations": {
+        "count": 5,
+        "children": {}
+      }
+    }
+  },
+  "Health": {
+    "count": 32285,
+    "children": {
+      "Personal Care": {
+        "count": 11336,
+        "children": {
+          "Oral Care": {
+            "count": 4278,
+            "children": {}
+          },
+          "Ear Care": {
+            "count": 411,
+            "children": {}
+          },
+          "Massage & Therapy Devices": {
+            "count": 912,
+            "children": {}
+          },
+          "Eye Care": {
+            "count": 2141,
+            "children": {}
+          },
+          "Others": {
+            "count": 1154,
+            "children": {}
+          },
+          "Feminine Care": {
+            "count": 1399,
+            "children": {}
+          },
+          "Adult Diapers & Incontinence": {
+            "count": 492,
+            "children": {}
+          },
+          "Insect Repellents": {
+            "count": 313,
+            "children": {}
+          },
+          "Hand Sanitizers": {
+            "count": 236,
+            "children": {}
+          }
+        }
+      },
+      "Food Supplement": {
+        "count": 11328,
+        "children": {
+          "Well Being": {
+            "count": 7040,
+            "children": {}
+          },
+          "Fitness": {
+            "count": 817,
+            "children": {}
+          },
+          "Weight Management": {
+            "count": 1571,
+            "children": {}
+          },
+          "Beauty Supplements": {
+            "count": 1798,
+            "children": {}
+          },
+          "Others": {
+            "count": 102,
+            "children": {}
+          }
+        }
+      },
+      "Sexual Wellness": {
+        "count": 1395,
+        "children": {
+          "Lubricants": {
+            "count": 280,
+            "children": {}
+          },
+          "Condoms": {
+            "count": 733,
+            "children": {}
+          },
+          "Performance Enhancement": {
+            "count": 311,
+            "children": {}
+          },
+          "Others": {
+            "count": 71,
+            "children": {}
+          }
+        }
+      },
+      "Medical Supplies": {
+        "count": 7495,
+        "children": {
+          "First Aid Supplies": {
+            "count": 2102,
+            "children": {}
+          },
+          "Medical Gloves & Masks": {
+            "count": 1036,
+            "children": {}
+          },
+          "Others": {
+            "count": 793,
+            "children": {}
+          },
+          "Health Monitors & Tests": {
+            "count": 704,
+            "children": {}
+          },
+          "Over-the-counter Medicine": {
+            "count": 539,
+            "children": {}
+          },
+          "Pain Relievers": {
+            "count": 186,
+            "children": {}
+          },
+          "Traditional Medicine": {
+            "count": 505,
+            "children": {}
+          },
+          "Injury & Disability Support": {
+            "count": 806,
+            "children": {}
+          },
+          "Scale & Body Fat Analyzers": {
+            "count": 139,
+            "children": {}
+          },
+          "Nasal Care": {
+            "count": 354,
+            "children": {}
+          },
+          "Laboratory Tools": {
+            "count": 302,
+            "children": {}
+          },
+          "Stethoscopes": {
+            "count": 29,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 731,
+        "children": {}
+      }
+    }
+  },
+  "Mom & Baby": {
+    "count": 27974,
+    "children": {
+      "Toys": {
+        "count": 15985,
+        "children": {
+          "Baby & Toddler Toys": {
+            "count": 596,
+            "children": {}
+          },
+          "Pretend Play": {
+            "count": 1130,
+            "children": {}
+          },
+          "Block Toys": {
+            "count": 1724,
+            "children": {}
+          },
+          "Others": {
+            "count": 860,
+            "children": {}
+          },
+          "Robot Toys": {
+            "count": 237,
+            "children": {}
+          },
+          "Educational Toys": {
+            "count": 3697,
+            "children": {}
+          },
+          "Sports & Outdoor Play": {
+            "count": 1567,
+            "children": {}
+          },
+          "Dolls & Stuffed Toys": {
+            "count": 3372,
+            "children": {}
+          },
+          "Slime & Squishy Toys": {
+            "count": 2013,
+            "children": {}
+          },
+          "Toy Vehicles": {
+            "count": 789,
+            "children": {}
+          }
+        }
+      },
+      "Bath & Body Care": {
+        "count": 1927,
+        "children": {
+          "Baby Laundry Detergent": {
+            "count": 237,
+            "children": {}
+          },
+          "Wipes": {
+            "count": 682,
+            "children": {}
+          },
+          "Hair Care & Body Wash": {
+            "count": 501,
+            "children": {}
+          },
+          "Bathing Tubs & Seats": {
+            "count": 116,
+            "children": {}
+          },
+          "Bath Robes, Towels & Wash Cloths": {
+            "count": 111,
+            "children": {}
+          },
+          "Baby Grooming Tools": {
+            "count": 99,
+            "children": {}
+          },
+          "Bathing Tools & Accessories": {
+            "count": 71,
+            "children": {}
+          },
+          "Shower Caps": {
+            "count": 39,
+            "children": {}
+          },
+          "Baby Colognes & Fragrances": {
+            "count": 17,
+            "children": {}
+          },
+          "Others": {
+            "count": 54,
+            "children": {}
+          }
+        }
+      },
+      "Milk Formula & Baby Food": {
+        "count": 1125,
+        "children": {
+          "Baby Snack": {
+            "count": 162,
+            "children": {}
+          },
+          "Ready-to-Drink Milk": {
+            "count": 232,
+            "children": {}
+          },
+          "Milk Formula": {
+            "count": 447,
+            "children": {}
+          },
+          "Baby Porridge, Puree & Cereal": {
+            "count": 180,
+            "children": {}
+          },
+          "Others": {
+            "count": 104,
+            "children": {}
+          }
+        }
+      },
+      "Baby Travel Essentials": {
+        "count": 529,
+        "children": {
+          "Strollers & Travel Systems": {
+            "count": 80,
+            "children": {}
+          },
+          "Diaper Bags": {
+            "count": 59,
+            "children": {}
+          },
+          "Stroller Accessories": {
+            "count": 140,
+            "children": {}
+          },
+          "Car & Motorbike Seats Accessories": {
+            "count": 75,
+            "children": {}
+          },
+          "Car & Motorbike Seats": {
+            "count": 77,
+            "children": {}
+          },
+          "Others": {
+            "count": 10,
+            "children": {}
+          },
+          "Baby Carrier": {
+            "count": 64,
+            "children": {}
+          },
+          "Child Harnesses & Leashes": {
+            "count": 24,
+            "children": {}
+          }
+        }
+      },
+      "Baby Safety": {
+        "count": 618,
+        "children": {
+          "Safety Locks & Straps": {
+            "count": 162,
+            "children": {}
+          },
+          "Edge & Corner Guards": {
+            "count": 154,
+            "children": {}
+          },
+          "Bumpers, Rails & Guards": {
+            "count": 86,
+            "children": {}
+          },
+          "Baby Gates & Doorways": {
+            "count": 62,
+            "children": {}
+          },
+          "Others": {
+            "count": 92,
+            "children": {}
+          },
+          "Mosquito Netting": {
+            "count": 44,
+            "children": {}
+          },
+          "Monitors": {
+            "count": 18,
+            "children": {}
+          }
+        }
+      },
+      "Diapering & Potty": {
+        "count": 1089,
+        "children": {
+          "Disposable Diapers": {
+            "count": 673,
+            "children": {}
+          },
+          "Cloth Diapers & Accessories": {
+            "count": 96,
+            "children": {}
+          },
+          "Potty Training & Commode Chairs": {
+            "count": 144,
+            "children": {}
+          },
+          "Changing Pads & Kits": {
+            "count": 159,
+            "children": {}
+          },
+          "Others": {
+            "count": 17,
+            "children": {}
+          }
+        }
+      },
+      "Baby Healthcare": {
+        "count": 2102,
+        "children": {
+          "Baby Skincare": {
+            "count": 721,
+            "children": {}
+          },
+          "Baby Vitamins & Supplements": {
+            "count": 592,
+            "children": {}
+          },
+          "Nasal Care": {
+            "count": 138,
+            "children": {}
+          },
+          "Sun Care": {
+            "count": 59,
+            "children": {}
+          },
+          "Baby Oral Care": {
+            "count": 446,
+            "children": {}
+          },
+          "Others": {
+            "count": 146,
+            "children": {}
+          }
+        }
+      },
+      "Nursery": {
+        "count": 1087,
+        "children": {
+          "Mattresses & Bedding": {
+            "count": 633,
+            "children": {}
+          },
+          "Storage & Organization": {
+            "count": 74,
+            "children": {}
+          },
+          "Cribs & Cradles & Beds": {
+            "count": 144,
+            "children": {}
+          },
+          "Others": {
+            "count": 53,
+            "children": {}
+          },
+          "Bouncers, Rockers & Jumpers": {
+            "count": 81,
+            "children": {}
+          },
+          "Walkers": {
+            "count": 102,
+            "children": {}
+          }
+        }
+      },
+      "Feeding Essentials": {
+        "count": 3005,
+        "children": {
+          "Breastfeeding": {
+            "count": 402,
+            "children": {}
+          },
+          "Bibs": {
+            "count": 272,
+            "children": {}
+          },
+          "Bottle-feeding": {
+            "count": 1079,
+            "children": {}
+          },
+          "Highchairs & Booster Seats": {
+            "count": 119,
+            "children": {}
+          },
+          "Others": {
+            "count": 52,
+            "children": {}
+          },
+          "Utensils": {
+            "count": 857,
+            "children": {}
+          },
+          "Pacifiers": {
+            "count": 196,
+            "children": {}
+          },
+          "Food Processors": {
+            "count": 28,
+            "children": {}
+          }
+        }
+      },
+      "Maternity Healthcare": {
+        "count": 216,
+        "children": {
+          "Maternity Vitamins & Supplement": {
+            "count": 132,
+            "children": {}
+          },
+          "Moisturizers & Creams": {
+            "count": 44,
+            "children": {}
+          },
+          "Others": {
+            "count": 20,
+            "children": {}
+          },
+          "Maternity Milk": {
+            "count": 20,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 121,
+        "children": {}
+      },
+      "Gift Sets & Packages": {
+        "count": 87,
+        "children": {}
+      },
+      "Maternity Accessories": {
+        "count": 83,
+        "children": {
+          "Others": {
+            "count": 31,
+            "children": {}
+          },
+          "Maternity Pillows": {
+            "count": 25,
+            "children": {}
+          },
+          "Supporting Belts": {
+            "count": 27,
+            "children": {}
+          }
+        }
+      }
+    }
+  },
+  "Home Appliances": {
+    "count": 33449,
+    "children": {
+      "Large Household Appliances": {
+        "count": 5009,
+        "children": {
+          "Washing Machines & Dryers": {
+            "count": 1536,
+            "children": {}
+          },
+          "Cooling": {
+            "count": 3012,
+            "children": {}
+          },
+          "Others": {
+            "count": 220,
+            "children": {}
+          },
+          "Water Heaters": {
+            "count": 195,
+            "children": {}
+          },
+          "Futon & Shoe Dryers": {
+            "count": 13,
+            "children": {}
+          },
+          "Heaters": {
+            "count": 33,
+            "children": {}
+          }
+        }
+      },
+      "Kitchen Appliances": {
+        "count": 7702,
+        "children": {
+          "Stoves, Hobs & Gas Regulators": {
+            "count": 902,
+            "children": {}
+          },
+          "Kettles": {
+            "count": 332,
+            "children": {}
+          },
+          "Juicers, Blenders & Soya Bean Machines": {
+            "count": 480,
+            "children": {}
+          },
+          "Hoods": {
+            "count": 141,
+            "children": {}
+          },
+          "Water Filters, Coolers & Dispensers": {
+            "count": 1615,
+            "children": {}
+          },
+          "Refrigerators": {
+            "count": 594,
+            "children": {}
+          },
+          "Air Fryers": {
+            "count": 192,
+            "children": {}
+          },
+          "Rice Cookers": {
+            "count": 462,
+            "children": {}
+          },
+          "Ovens": {
+            "count": 122,
+            "children": {}
+          },
+          "Coffee Machines & Accessories": {
+            "count": 711,
+            "children": {}
+          },
+          "Pressure Cookers": {
+            "count": 58,
+            "children": {}
+          },
+          "Specialty Cookware": {
+            "count": 433,
+            "children": {}
+          },
+          "Slow Cookers & Sous Vide Machines": {
+            "count": 27,
+            "children": {}
+          },
+          "Others": {
+            "count": 290,
+            "children": {}
+          },
+          "Mixers": {
+            "count": 205,
+            "children": {}
+          },
+          "Food Processors & Meat Grinders": {
+            "count": 376,
+            "children": {}
+          },
+          "Toasters": {
+            "count": 59,
+            "children": {}
+          },
+          "Multi-function Cookers": {
+            "count": 253,
+            "children": {}
+          },
+          "Freezers": {
+            "count": 161,
+            "children": {}
+          },
+          "Microwaves": {
+            "count": 177,
+            "children": {}
+          },
+          "Deep Fryers": {
+            "count": 74,
+            "children": {}
+          },
+          "Wine Fridges": {
+            "count": 14,
+            "children": {}
+          },
+          "Dishwashers": {
+            "count": 24,
+            "children": {}
+          }
+        }
+      },
+      "Remote Controls": {
+        "count": 1805,
+        "children": {}
+      },
+      "Electrical Circuitry & Parts": {
+        "count": 11301,
+        "children": {
+          "Others": {
+            "count": 6587,
+            "children": {}
+          },
+          "Switches": {
+            "count": 1709,
+            "children": {}
+          },
+          "Electrical Safety": {
+            "count": 930,
+            "children": {}
+          },
+          "Electric Sockets & Extension Cords": {
+            "count": 1515,
+            "children": {}
+          },
+          "Doorbells": {
+            "count": 138,
+            "children": {}
+          },
+          "House Alarms": {
+            "count": 181,
+            "children": {}
+          },
+          "Electricity Savers": {
+            "count": 153,
+            "children": {}
+          },
+          "Lightning Protection": {
+            "count": 88,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 1014,
+        "children": {}
+      },
+      "Batteries": {
+        "count": 1275,
+        "children": {}
+      },
+      "Small Household Appliances": {
+        "count": 3923,
+        "children": {
+          "Air Treatment": {
+            "count": 696,
+            "children": {}
+          },
+          "Vacuum Cleaners & Floor Care Appliances": {
+            "count": 1402,
+            "children": {}
+          },
+          "Sewing Machines & Accessories": {
+            "count": 981,
+            "children": {}
+          },
+          "Water Flossers": {
+            "count": 48,
+            "children": {}
+          },
+          "Irons & Steamers": {
+            "count": 312,
+            "children": {}
+          },
+          "Others": {
+            "count": 367,
+            "children": {}
+          },
+          "Foot Baths & Spas": {
+            "count": 45,
+            "children": {}
+          },
+          "Telephones": {
+            "count": 72,
+            "children": {}
+          }
+        }
+      },
+      "TVs & Accessories": {
+        "count": 1102,
+        "children": {
+          "TV Brackets": {
+            "count": 250,
+            "children": {}
+          },
+          "TV Boxes & Receivers": {
+            "count": 168,
+            "children": {}
+          },
+          "TV Antennas": {
+            "count": 199,
+            "children": {}
+          },
+          "Others": {
+            "count": 363,
+            "children": {}
+          },
+          "TVs": {
+            "count": 122,
+            "children": {}
+          }
+        }
+      },
+      "Projectors & Accessories": {
+        "count": 318,
+        "children": {
+          "Projectors & Projector Screens": {
+            "count": 145,
+            "children": {}
+          },
+          "Pointers": {
+            "count": 97,
+            "children": {}
+          },
+          "Others": {
+            "count": 76,
+            "children": {}
+          }
+        }
+      }
+    }
+  },
+  "Baby & Kids Fashion": {
+    "count": 17942,
+    "children": {
+      "Boy Clothes": {
+        "count": 4257,
+        "children": {
+          "Tops": {
+            "count": 1239,
+            "children": {}
+          },
+          "Swimwear": {
+            "count": 189,
+            "children": {}
+          },
+          "Sleepwear": {
+            "count": 229,
+            "children": {}
+          },
+          "Bottoms": {
+            "count": 735,
+            "children": {}
+          },
+          "Outerwear": {
+            "count": 195,
+            "children": {}
+          },
+          "Underwear & Innerwear": {
+            "count": 230,
+            "children": {}
+          },
+          "Suits & Sets": {
+            "count": 1068,
+            "children": {}
+          },
+          "Costumes": {
+            "count": 358,
+            "children": {}
+          },
+          "Others": {
+            "count": 14,
+            "children": {}
+          }
+        }
+      },
+      "Girl Clothes": {
+        "count": 5656,
+        "children": {
+          "Suits & Sets": {
+            "count": 1175,
+            "children": {}
+          },
+          "Sleepwear": {
+            "count": 303,
+            "children": {}
+          },
+          "Costumes": {
+            "count": 475,
+            "children": {}
+          },
+          "Dresses": {
+            "count": 848,
+            "children": {}
+          },
+          "Tops": {
+            "count": 884,
+            "children": {}
+          },
+          "Underwear & Innerwear": {
+            "count": 624,
+            "children": {}
+          },
+          "Bottoms": {
+            "count": 826,
+            "children": {}
+          },
+          "Swimwear": {
+            "count": 256,
+            "children": {}
+          },
+          "Outerwear": {
+            "count": 200,
+            "children": {}
+          },
+          "Others": {
+            "count": 28,
+            "children": {}
+          },
+          "Rompers, Jumpsuits & Overalls": {
+            "count": 37,
+            "children": {}
+          }
+        }
+      },
+      "Baby Mittens & Footwear": {
+        "count": 220,
+        "children": {}
+      },
+      "Baby & Kids Accessories": {
+        "count": 4159,
+        "children": {
+          "Bags & Luggage": {
+            "count": 803,
+            "children": {}
+          },
+          "Socks": {
+            "count": 784,
+            "children": {}
+          },
+          "Hats & Caps": {
+            "count": 549,
+            "children": {}
+          },
+          "Watches": {
+            "count": 208,
+            "children": {}
+          },
+          "Hair Accessories": {
+            "count": 853,
+            "children": {}
+          },
+          "Jewelry": {
+            "count": 251,
+            "children": {}
+          },
+          "Eyewear": {
+            "count": 201,
+            "children": {}
+          },
+          "Rain Gear": {
+            "count": 156,
+            "children": {}
+          },
+          "Others": {
+            "count": 128,
+            "children": {}
+          },
+          "Belts": {
+            "count": 56,
+            "children": {}
+          },
+          "Scarves": {
+            "count": 45,
+            "children": {}
+          },
+          "Earmuffs": {
+            "count": 32,
+            "children": {}
+          },
+          "Gloves": {
+            "count": 93,
+            "children": {}
+          }
+        }
+      },
+      "Baby Clothes": {
+        "count": 1975,
+        "children": {
+          "Dresses": {
+            "count": 121,
+            "children": {}
+          },
+          "Bodysuits & Jumpsuits": {
+            "count": 795,
+            "children": {}
+          },
+          "Tops": {
+            "count": 202,
+            "children": {}
+          },
+          "Sets": {
+            "count": 437,
+            "children": {}
+          },
+          "Bottoms": {
+            "count": 133,
+            "children": {}
+          },
+          "Swimwear": {
+            "count": 63,
+            "children": {}
+          },
+          "Sleepwear": {
+            "count": 180,
+            "children": {}
+          },
+          "Winter Outerwear": {
+            "count": 19,
+            "children": {}
+          },
+          "Others": {
+            "count": 12,
+            "children": {}
+          },
+          "Regular Outerwear": {
+            "count": 13,
+            "children": {}
+          }
+        }
+      },
+      "Boy Shoes": {
+        "count": 692,
+        "children": {
+          "Sandals": {
+            "count": 252,
+            "children": {}
+          },
+          "Flip Flops": {
+            "count": 143,
+            "children": {}
+          },
+          "Sneakers": {
+            "count": 193,
+            "children": {}
+          },
+          "Formal Shoes": {
+            "count": 58,
+            "children": {}
+          },
+          "Others": {
+            "count": 14,
+            "children": {}
+          },
+          "Loafers": {
+            "count": 18,
+            "children": {}
+          },
+          "Boots": {
+            "count": 14,
+            "children": {}
+          }
+        }
+      },
+      "Girl Shoes": {
+        "count": 942,
+        "children": {
+          "Flip Flops": {
+            "count": 153,
+            "children": {}
+          },
+          "Sneakers": {
+            "count": 146,
+            "children": {}
+          },
+          "Others": {
+            "count": 26,
+            "children": {}
+          },
+          "Flats": {
+            "count": 260,
+            "children": {}
+          },
+          "Sandals": {
+            "count": 281,
+            "children": {}
+          },
+          "Boots": {
+            "count": 62,
+            "children": {}
+          },
+          "Loafers": {
+            "count": 14,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 41,
+        "children": {}
+      }
+    }
+  },
+  "Men Shoes": {
+    "count": 5846,
+    "children": {
+      "Sandals & Flip Flops": {
+        "count": 2175,
+        "children": {
+          "Sandals": {
+            "count": 1547,
+            "children": {}
+          },
+          "Indoor Slippers": {
+            "count": 101,
+            "children": {}
+          },
+          "Flip Flops": {
+            "count": 395,
+            "children": {}
+          },
+          "Health Slippers": {
+            "count": 103,
+            "children": {}
+          },
+          "Others": {
+            "count": 29,
+            "children": {}
+          }
+        }
+      },
+      "Sneakers": {
+        "count": 1106,
+        "children": {}
+      },
+      "Boots": {
+        "count": 763,
+        "children": {
+          "Safety Boots": {
+            "count": 394,
+            "children": {}
+          },
+          "Rain Boots": {
+            "count": 213,
+            "children": {}
+          },
+          "Others": {
+            "count": 55,
+            "children": {}
+          },
+          "Fashion Boots": {
+            "count": 101,
+            "children": {}
+          }
+        }
+      },
+      "Loafers & Boat Shoes": {
+        "count": 261,
+        "children": {}
+      },
+      "Shoe Care & Accessories": {
+        "count": 1101,
+        "children": {
+          "Shoe Insoles": {
+            "count": 344,
+            "children": {}
+          },
+          "Shoe Laces": {
+            "count": 158,
+            "children": {}
+          },
+          "Shoe Deodorizers": {
+            "count": 48,
+            "children": {}
+          },
+          "Shoe Care & Cleaning Tools": {
+            "count": 283,
+            "children": {}
+          },
+          "Others": {
+            "count": 202,
+            "children": {}
+          },
+          "Shoe Horns & Trees": {
+            "count": 66,
+            "children": {}
+          }
+        }
+      },
+      "Oxfords & Lace-Ups": {
+        "count": 230,
+        "children": {}
+      },
+      "Slip Ons & Mules": {
+        "count": 162,
+        "children": {}
+      },
+      "Others": {
+        "count": 48,
+        "children": {}
+      }
+    }
+  },
+  "Gaming & Consoles": {
+    "count": 2670,
+    "children": {
+      "Video Games": {
+        "count": 819,
+        "children": {
+          "Playstation": {
+            "count": 438,
+            "children": {}
+          },
+          "Wii": {
+            "count": 8,
+            "children": {}
+          },
+          "PC Game": {
+            "count": 89,
+            "children": {}
+          },
+          "Switch": {
+            "count": 239,
+            "children": {}
+          },
+          "Gameboy": {
+            "count": 9,
+            "children": {}
+          },
+          "Nintendo DS": {
+            "count": 7,
+            "children": {}
+          },
+          "Xbox": {
+            "count": 17,
+            "children": {}
+          },
+          "Others": {
+            "count": 11,
+            "children": {}
+          },
+          "PSP": {
+            "count": 1,
+            "children": {}
+          }
+        }
+      },
+      "Console Accessories": {
+        "count": 1605,
+        "children": {}
+      },
+      "Console Machines": {
+        "count": 125,
+        "children": {
+          "Playstation": {
+            "count": 13,
+            "children": {}
+          },
+          "Others": {
+            "count": 60,
+            "children": {}
+          },
+          "Switch": {
+            "count": 19,
+            "children": {}
+          },
+          "PSP": {
+            "count": 6,
+            "children": {}
+          },
+          "Gameboy": {
+            "count": 16,
+            "children": {}
+          },
+          "Xbox": {
+            "count": 7,
+            "children": {}
+          },
+          "Wii": {
+            "count": 1,
+            "children": {}
+          },
+          "PS Vita": {
+            "count": 2,
+            "children": {}
+          },
+          "Nintendo DS": {
+            "count": 1,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 121,
+        "children": {}
+      }
+    }
+  },
+  "Mobile & Gadgets": {
+    "count": 67180,
+    "children": {
+      "Accessories": {
+        "count": 60302,
+        "children": {
+          "Cases, Covers, & Skins": {
+            "count": 35592,
+            "children": {}
+          },
+          "Phone Grips": {
+            "count": 968,
+            "children": {}
+          },
+          "Cables, Chargers & Converters": {
+            "count": 4648,
+            "children": {}
+          },
+          "Screen Protectors": {
+            "count": 5973,
+            "children": {}
+          },
+          "Mobile Lens": {
+            "count": 737,
+            "children": {}
+          },
+          "Selfie Accessories": {
+            "count": 726,
+            "children": {}
+          },
+          "USB & Mobile Fans": {
+            "count": 879,
+            "children": {}
+          },
+          "Powerbanks & Batteries": {
+            "count": 2227,
+            "children": {}
+          },
+          "Wearable Accessories": {
+            "count": 3912,
+            "children": {}
+          },
+          "Others": {
+            "count": 1905,
+            "children": {}
+          },
+          "Casting Devices": {
+            "count": 46,
+            "children": {}
+          },
+          "Phone Straps & Keychains": {
+            "count": 1401,
+            "children": {}
+          },
+          "Stylus": {
+            "count": 417,
+            "children": {}
+          },
+          "Memory Cards": {
+            "count": 319,
+            "children": {}
+          },
+          "Mobile Pouches": {
+            "count": 263,
+            "children": {}
+          },
+          "USB & Mobile Lights": {
+            "count": 159,
+            "children": {}
+          },
+          "Mobile Flashes & Selfie Lights": {
+            "count": 61,
+            "children": {}
+          },
+          "Pocket Wifi": {
+            "count": 69,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 4794,
+        "children": {}
+      },
+      "Wearable Devices": {
+        "count": 684,
+        "children": {
+          "Smartwatches & Fitness Trackers": {
+            "count": 403,
+            "children": {}
+          },
+          "GPS Trackers": {
+            "count": 156,
+            "children": {}
+          },
+          "Others": {
+            "count": 73,
+            "children": {}
+          },
+          "VR Devices": {
+            "count": 52,
+            "children": {}
+          }
+        }
+      },
+      "Walkie Talkies": {
+        "count": 403,
+        "children": {}
+      },
+      "Tablets": {
+        "count": 112,
+        "children": {}
+      },
+      "Mobile Phones": {
+        "count": 441,
+        "children": {}
+      },
+      "Sim Cards": {
+        "count": 444,
+        "children": {}
+      }
+    }
+  },
+  "Women Bags": {
+    "count": 11689,
+    "children": {
+      "Bag Accessories": {
+        "count": 2575,
+        "children": {
+          "Bag Straps": {
+            "count": 490,
+            "children": {}
+          },
+          "Bag Organizers": {
+            "count": 406,
+            "children": {}
+          },
+          "Charms & Twillies": {
+            "count": 1038,
+            "children": {}
+          },
+          "Others": {
+            "count": 471,
+            "children": {}
+          },
+          "Cleaning & Care Equipment": {
+            "count": 88,
+            "children": {}
+          },
+          "Bag Holders": {
+            "count": 82,
+            "children": {}
+          }
+        }
+      },
+      "Backpacks": {
+        "count": 735,
+        "children": {}
+      },
+      "Top-handle Bags": {
+        "count": 841,
+        "children": {}
+      },
+      "Laptop Bags": {
+        "count": 329,
+        "children": {
+          "Laptop Sleeves": {
+            "count": 73,
+            "children": {}
+          },
+          "Laptop Bags & Cases": {
+            "count": 198,
+            "children": {}
+          },
+          "Laptop Backpacks": {
+            "count": 54,
+            "children": {}
+          },
+          "Others": {
+            "count": 4,
+            "children": {}
+          }
+        }
+      },
+      "Tote Bags": {
+        "count": 1647,
+        "children": {}
+      },
+      "Wallets": {
+        "count": 1904,
+        "children": {
+          "Card Holders": {
+            "count": 318,
+            "children": {}
+          },
+          "Coin Holders & Purses": {
+            "count": 844,
+            "children": {}
+          },
+          "Long Wallets": {
+            "count": 221,
+            "children": {}
+          },
+          "Bifold & Trifold Wallets": {
+            "count": 355,
+            "children": {}
+          },
+          "Others": {
+            "count": 38,
+            "children": {}
+          },
+          "Phone & Key Wallets": {
+            "count": 128,
+            "children": {}
+          }
+        }
+      },
+      "Crossbody & Shoulder Bags": {
+        "count": 3195,
+        "children": {}
+      },
+      "Others": {
+        "count": 159,
+        "children": {}
+      },
+      "Clutches & Wristlets": {
+        "count": 114,
+        "children": {}
+      },
+      "Waist Bags & Chest Bags": {
+        "count": 190,
+        "children": {}
+      }
+    }
+  },
+  "Watches": {
+    "count": 5214,
+    "children": {
+      "Watches Accessories": {
+        "count": 3386,
+        "children": {
+          "Straps": {
+            "count": 2159,
+            "children": {}
+          },
+          "Buckles": {
+            "count": 56,
+            "children": {}
+          },
+          "Service Tools": {
+            "count": 308,
+            "children": {}
+          },
+          "Boxes": {
+            "count": 159,
+            "children": {}
+          },
+          "Batteries": {
+            "count": 292,
+            "children": {}
+          },
+          "Others": {
+            "count": 412,
+            "children": {}
+          }
+        }
+      },
+      "Men Watches": {
+        "count": 984,
+        "children": {}
+      },
+      "Women Watches": {
+        "count": 752,
+        "children": {}
+      },
+      "Set & Couple Watches": {
+        "count": 52,
+        "children": {}
+      },
+      "Others": {
+        "count": 40,
+        "children": {}
+      }
+    }
+  },
+  "Books & Magazines": {
+    "count": 17307,
+    "children": {
+      "Books": {
+        "count": 16624,
+        "children": {
+          "Children's Books": {
+            "count": 2179,
+            "children": {}
+          },
+          "Comics & Manga": {
+            "count": 2579,
+            "children": {}
+          },
+          "Light Novels": {
+            "count": 227,
+            "children": {}
+          },
+          "Language Learning & Dictionaries": {
+            "count": 787,
+            "children": {}
+          },
+          "Hobbies": {
+            "count": 129,
+            "children": {}
+          },
+          "Education & School": {
+            "count": 3048,
+            "children": {}
+          },
+          "Politics, Law & Social Sciences": {
+            "count": 637,
+            "children": {}
+          },
+          "Music": {
+            "count": 97,
+            "children": {}
+          },
+          "Classic Literature": {
+            "count": 421,
+            "children": {}
+          },
+          "LGBTQ+ Literature": {
+            "count": 530,
+            "children": {}
+          },
+          "Romance": {
+            "count": 731,
+            "children": {}
+          },
+          "Fantasy": {
+            "count": 324,
+            "children": {}
+          },
+          "Religion & Philosophy": {
+            "count": 680,
+            "children": {}
+          },
+          "Careers, Self Help & Personal Development": {
+            "count": 824,
+            "children": {}
+          },
+          "Others": {
+            "count": 238,
+            "children": {}
+          },
+          "Action, Crime & Thrillers": {
+            "count": 262,
+            "children": {}
+          },
+          "Science & Maths": {
+            "count": 326,
+            "children": {}
+          },
+          "Psychology & Relationships": {
+            "count": 188,
+            "children": {}
+          },
+          "Business & Investment": {
+            "count": 572,
+            "children": {}
+          },
+          "Health, Fitness & Dieting": {
+            "count": 158,
+            "children": {}
+          },
+          "Horoscopes": {
+            "count": 188,
+            "children": {}
+          },
+          "Parenting & Family": {
+            "count": 76,
+            "children": {}
+          },
+          "Medical": {
+            "count": 124,
+            "children": {}
+          },
+          "Sticker & Colouring Books": {
+            "count": 330,
+            "children": {}
+          },
+          "Computers & Technology": {
+            "count": 207,
+            "children": {}
+          },
+          "History & Cultures": {
+            "count": 288,
+            "children": {}
+          },
+          "Agriculture, Forestry & Fishery": {
+            "count": 45,
+            "children": {}
+          },
+          "Recipes & Cooking": {
+            "count": 106,
+            "children": {}
+          },
+          "Travel & Tourism": {
+            "count": 66,
+            "children": {}
+          },
+          "Biography & Memoirs": {
+            "count": 86,
+            "children": {}
+          },
+          "Arts, Design & Photography": {
+            "count": 134,
+            "children": {}
+          },
+          "Baby & Soft Books": {
+            "count": 37,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 159,
+        "children": {}
+      },
+      "E-Books": {
+        "count": 367,
+        "children": {}
+      },
+      "Magazines & Newspaper": {
+        "count": 157,
+        "children": {
+          "Lifestyle": {
+            "count": 66,
+            "children": {}
+          },
+          "Others": {
+            "count": 74,
+            "children": {}
+          },
+          "Business": {
+            "count": 3,
+            "children": {}
+          },
+          "Teenager": {
+            "count": 14,
+            "children": {}
+          }
+        }
+      }
+    }
+  },
+  "Travel & Luggage": {
+    "count": 4471,
+    "children": {
+      "Travel Bags": {
+        "count": 873,
+        "children": {
+          "Duffel & Weekender Bags": {
+            "count": 328,
+            "children": {}
+          },
+          "Others": {
+            "count": 59,
+            "children": {}
+          },
+          "Foldable Bags": {
+            "count": 240,
+            "children": {}
+          },
+          "Drawstring Bags": {
+            "count": 246,
+            "children": {}
+          }
+        }
+      },
+      "Travel Accessories": {
+        "count": 3110,
+        "children": {
+          "Travel Size Bottles & Containers": {
+            "count": 1347,
+            "children": {}
+          },
+          "Others": {
+            "count": 137,
+            "children": {}
+          },
+          "Travel Pillows & Eye Covers": {
+            "count": 316,
+            "children": {}
+          },
+          "Travel Organizers": {
+            "count": 534,
+            "children": {}
+          },
+          "Passport Holders & Covers": {
+            "count": 157,
+            "children": {}
+          },
+          "Luggage Scales": {
+            "count": 67,
+            "children": {}
+          },
+          "Luggage Tags": {
+            "count": 134,
+            "children": {}
+          },
+          "Luggage Protectors & Covers": {
+            "count": 198,
+            "children": {}
+          },
+          "Luggage Straps": {
+            "count": 136,
+            "children": {}
+          },
+          "Luggage Locks": {
+            "count": 84,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 53,
+        "children": {}
+      },
+      "Luggage": {
+        "count": 435,
+        "children": {}
+      }
+    }
+  },
+  "Sports & Outdoors": {
+    "count": 47543,
+    "children": {
+      "Sports & Outdoor Apparels": {
+        "count": 8987,
+        "children": {
+          "Jerseys": {
+            "count": 1738,
+            "children": {}
+          },
+          "Sets": {
+            "count": 600,
+            "children": {}
+          },
+          "Swimming Attire": {
+            "count": 1690,
+            "children": {}
+          },
+          "Bottoms": {
+            "count": 1837,
+            "children": {}
+          },
+          "T-shirts": {
+            "count": 1484,
+            "children": {}
+          },
+          "Others": {
+            "count": 290,
+            "children": {}
+          },
+          "Sports Bras": {
+            "count": 597,
+            "children": {}
+          },
+          "Kid's Sports Apparel": {
+            "count": 420,
+            "children": {}
+          },
+          "Jackets": {
+            "count": 331,
+            "children": {}
+          }
+        }
+      },
+      "Sports & Outdoor Recreation Equipments": {
+        "count": 30415,
+        "children": {
+          "Fishing": {
+            "count": 8857,
+            "children": {}
+          },
+          "Cycling": {
+            "count": 5588,
+            "children": {}
+          },
+          "Shooting & Survival Games": {
+            "count": 218,
+            "children": {}
+          },
+          "Camping & Hiking": {
+            "count": 5883,
+            "children": {}
+          },
+          "Billiards": {
+            "count": 378,
+            "children": {}
+          },
+          "Fitness Equipment": {
+            "count": 1752,
+            "children": {}
+          },
+          "Boardsports": {
+            "count": 706,
+            "children": {}
+          },
+          "Swimming & Diving": {
+            "count": 1123,
+            "children": {}
+          },
+          "Badminton": {
+            "count": 1039,
+            "children": {}
+          },
+          "Ice Skating & Winter Sports": {
+            "count": 46,
+            "children": {}
+          },
+          "Others": {
+            "count": 545,
+            "children": {}
+          },
+          "Boxing & Martial Arts": {
+            "count": 379,
+            "children": {}
+          },
+          "Soccer, Futsal & Sepak Takraw": {
+            "count": 523,
+            "children": {}
+          },
+          "Golf": {
+            "count": 916,
+            "children": {}
+          },
+          "Tennis": {
+            "count": 342,
+            "children": {}
+          },
+          "Baseball & Softball": {
+            "count": 30,
+            "children": {}
+          },
+          "Basketball": {
+            "count": 154,
+            "children": {}
+          },
+          "Volleyball": {
+            "count": 83,
+            "children": {}
+          },
+          "Yoga & Pilates": {
+            "count": 749,
+            "children": {}
+          },
+          "Darts": {
+            "count": 89,
+            "children": {}
+          },
+          "Table Tennis": {
+            "count": 348,
+            "children": {}
+          },
+          "Archery": {
+            "count": 174,
+            "children": {}
+          },
+          "Boating": {
+            "count": 164,
+            "children": {}
+          },
+          "Rock Climbing": {
+            "count": 282,
+            "children": {}
+          },
+          "Squash": {
+            "count": 14,
+            "children": {}
+          },
+          "Rugby": {
+            "count": 10,
+            "children": {}
+          },
+          "Surfing & Wakeboarding": {
+            "count": 23,
+            "children": {}
+          }
+        }
+      },
+      "Sports Footwear": {
+        "count": 2640,
+        "children": {
+          "Kid's Sport Shoes": {
+            "count": 129,
+            "children": {}
+          },
+          "Soccer Shoes": {
+            "count": 437,
+            "children": {}
+          },
+          "Running Shoes": {
+            "count": 940,
+            "children": {}
+          },
+          "Basketball Shoes": {
+            "count": 70,
+            "children": {}
+          },
+          "Others": {
+            "count": 323,
+            "children": {}
+          },
+          "Badminton Shoes": {
+            "count": 172,
+            "children": {}
+          },
+          "Futsal Shoes": {
+            "count": 169,
+            "children": {}
+          },
+          "Training Shoes": {
+            "count": 119,
+            "children": {}
+          },
+          "Volleyball Shoes": {
+            "count": 26,
+            "children": {}
+          },
+          "Tennis Shoes": {
+            "count": 41,
+            "children": {}
+          },
+          "Hiking Shoes": {
+            "count": 214,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 535,
+        "children": {}
+      },
+      "Sports & Outdoor Accessories": {
+        "count": 4966,
+        "children": {
+          "Umbrellas": {
+            "count": 984,
+            "children": {}
+          },
+          "Sports & Outdoor Hats": {
+            "count": 672,
+            "children": {}
+          },
+          "Rain Coats": {
+            "count": 564,
+            "children": {}
+          },
+          "Training Equipments": {
+            "count": 219,
+            "children": {}
+          },
+          "Sports Wristbands": {
+            "count": 251,
+            "children": {}
+          },
+          "Dry Bags": {
+            "count": 315,
+            "children": {}
+          },
+          "Others": {
+            "count": 551,
+            "children": {}
+          },
+          "Gym Protective Gears": {
+            "count": 811,
+            "children": {}
+          },
+          "Stopwatches & Pedometers": {
+            "count": 133,
+            "children": {}
+          },
+          "Sports Headbands": {
+            "count": 164,
+            "children": {}
+          },
+          "Mouthguards & Sport Tapes": {
+            "count": 167,
+            "children": {}
+          },
+          "Shoe Bags": {
+            "count": 135,
+            "children": {}
+          }
+        }
+      }
+    }
+  },
+  "Audio": {
+    "count": 9230,
+    "children": {
+      "Earphones, Headphones & Headsets": {
+        "count": 2168,
+        "children": {}
+      },
+      "Home Audio & Speakers": {
+        "count": 2095,
+        "children": {
+          "Speakers": {
+            "count": 1562,
+            "children": {}
+          },
+          "Others": {
+            "count": 465,
+            "children": {}
+          },
+          "Home Theater Systems": {
+            "count": 39,
+            "children": {}
+          },
+          "AV Receivers": {
+            "count": 29,
+            "children": {}
+          }
+        }
+      },
+      "Microphones": {
+        "count": 769,
+        "children": {}
+      },
+      "Audio & Video Cables & Converters": {
+        "count": 1946,
+        "children": {}
+      },
+      "Amplifiers & Mixers": {
+        "count": 677,
+        "children": {}
+      },
+      "Others": {
+        "count": 1192,
+        "children": {}
+      },
+      "Media Players": {
+        "count": 383,
+        "children": {
+          "Voice Recorders": {
+            "count": 57,
+            "children": {}
+          },
+          "Others": {
+            "count": 81,
+            "children": {}
+          },
+          "Radio & Cassette Players": {
+            "count": 132,
+            "children": {}
+          },
+          "MP3 & MP4 Players": {
+            "count": 61,
+            "children": {}
+          },
+          "CD, DVD, & Blu-ray Players": {
+            "count": 52,
+            "children": {}
+          }
+        }
+      }
+    }
+  },
+  "Muslim Fashion": {
+    "count": 812,
+    "children": {
+      "Women Muslim Wear": {
+        "count": 574,
+        "children": {
+          "Veils": {
+            "count": 401,
+            "children": {}
+          },
+          "Top": {
+            "count": 42,
+            "children": {}
+          },
+          "Dresses": {
+            "count": 88,
+            "children": {}
+          },
+          "Others": {
+            "count": 18,
+            "children": {}
+          },
+          "Bottoms": {
+            "count": 16,
+            "children": {}
+          },
+          "Muslimah Sports Apparels": {
+            "count": 5,
+            "children": {}
+          },
+          "Muslimah Swimwear": {
+            "count": 4,
+            "children": {}
+          }
+        }
+      },
+      "Kid Muslim Wear": {
+        "count": 95,
+        "children": {
+          "Girl's Muslim Attire": {
+            "count": 80,
+            "children": {}
+          },
+          "Boy's Muslim Attire": {
+            "count": 15,
+            "children": {}
+          }
+        }
+      },
+      "Men Muslim Wear": {
+        "count": 109,
+        "children": {
+          "Tops": {
+            "count": 12,
+            "children": {}
+          },
+          "Others": {
+            "count": 26,
+            "children": {}
+          },
+          "Robe & Jubah": {
+            "count": 13,
+            "children": {}
+          },
+          "Sarong": {
+            "count": 50,
+            "children": {}
+          },
+          "Pants": {
+            "count": 3,
+            "children": {}
+          },
+          "Baju Melayu": {
+            "count": 5,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 23,
+        "children": {}
+      },
+      "Outerwear": {
+        "count": 5,
+        "children": {
+          "Vests": {
+            "count": 1,
+            "children": {}
+          },
+          "Cardigans": {
+            "count": 1,
+            "children": {}
+          },
+          "Others": {
+            "count": 3,
+            "children": {}
+          }
+        }
+      },
+      "Sets": {
+        "count": 6,
+        "children": {}
+      }
+    }
+  },
+  "Cameras & Drones": {
+    "count": 7026,
+    "children": {
+      "Camera Accessories": {
+        "count": 3962,
+        "children": {
+          "Batteries & Battery Grips": {
+            "count": 547,
+            "children": {}
+          },
+          "Others": {
+            "count": 963,
+            "children": {}
+          },
+          "Camera Cases & Bags": {
+            "count": 661,
+            "children": {}
+          },
+          "Tripods, Monopods, & Accessories": {
+            "count": 627,
+            "children": {}
+          },
+          "Lighting & Studio Equipments": {
+            "count": 368,
+            "children": {}
+          },
+          "Photo Films & Papers": {
+            "count": 164,
+            "children": {}
+          },
+          "Battery Chargers": {
+            "count": 388,
+            "children": {}
+          },
+          "Flash Accessories": {
+            "count": 113,
+            "children": {}
+          },
+          "Gimbals & Stabilizers": {
+            "count": 64,
+            "children": {}
+          },
+          "Flashes": {
+            "count": 51,
+            "children": {}
+          },
+          "Photo Printers": {
+            "count": 16,
+            "children": {}
+          }
+        }
+      },
+      "Security Cameras & Systems": {
+        "count": 1404,
+        "children": {
+          "CCTV Security Cameras": {
+            "count": 1077,
+            "children": {}
+          },
+          "Others": {
+            "count": 211,
+            "children": {}
+          },
+          "DVRs": {
+            "count": 113,
+            "children": {}
+          },
+          "Dummy Cameras": {
+            "count": 3,
+            "children": {}
+          }
+        }
+      },
+      "Drone Accessories": {
+        "count": 203,
+        "children": {}
+      },
+      "Lens Accessories": {
+        "count": 599,
+        "children": {
+          "Filters": {
+            "count": 218,
+            "children": {}
+          },
+          "Lens Caps": {
+            "count": 163,
+            "children": {}
+          },
+          "Others": {
+            "count": 78,
+            "children": {}
+          },
+          "Lens Hoods": {
+            "count": 70,
+            "children": {}
+          },
+          "Lens Mount & Adaptors": {
+            "count": 70,
+            "children": {}
+          }
+        }
+      },
+      "Camera Care": {
+        "count": 311,
+        "children": {
+          "Blowers": {
+            "count": 22,
+            "children": {}
+          },
+          "Others": {
+            "count": 13,
+            "children": {}
+          },
+          "Silica Gel": {
+            "count": 93,
+            "children": {}
+          },
+          "Lenspens & Brushes": {
+            "count": 23,
+            "children": {}
+          },
+          "Cleaning Kit": {
+            "count": 100,
+            "children": {}
+          },
+          "Dry Boxes & Cabinets": {
+            "count": 60,
+            "children": {}
+          }
+        }
+      },
+      "Cameras": {
+        "count": 308,
+        "children": {
+          "Action Cameras": {
+            "count": 114,
+            "children": {}
+          },
+          "Video Camcorders": {
+            "count": 33,
+            "children": {}
+          },
+          "Instant Cameras": {
+            "count": 28,
+            "children": {}
+          },
+          "Point & Shoot": {
+            "count": 64,
+            "children": {}
+          },
+          "Others": {
+            "count": 30,
+            "children": {}
+          },
+          "DSLRs": {
+            "count": 6,
+            "children": {}
+          },
+          "Mirrorless Cameras": {
+            "count": 17,
+            "children": {}
+          },
+          "Analog Cameras": {
+            "count": 16,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 67,
+        "children": {}
+      },
+      "Lenses": {
+        "count": 120,
+        "children": {}
+      },
+      "Drones": {
+        "count": 52,
+        "children": {}
+      }
+    }
+  },
+  "Men Bags": {
+    "count": 3421,
+    "children": {
+      "Wallets": {
+        "count": 784,
+        "children": {
+          "Phone & Key Wallets": {
+            "count": 82,
+            "children": {}
+          },
+          "Card Holders": {
+            "count": 201,
+            "children": {}
+          },
+          "Bifold & Trifold Wallets": {
+            "count": 331,
+            "children": {}
+          },
+          "Coin Holders & Purses": {
+            "count": 102,
+            "children": {}
+          },
+          "Long Wallets": {
+            "count": 50,
+            "children": {}
+          },
+          "Others": {
+            "count": 18,
+            "children": {}
+          }
+        }
+      },
+      "Waist Bags & Chest Bags": {
+        "count": 712,
+        "children": {}
+      },
+      "Crossbody & Shoulder Bags": {
+        "count": 855,
+        "children": {}
+      },
+      "Tote Bags": {
+        "count": 139,
+        "children": {}
+      },
+      "Backpacks": {
+        "count": 496,
+        "children": {}
+      },
+      "Laptop Bags": {
+        "count": 266,
+        "children": {
+          "Laptop Sleeves": {
+            "count": 45,
+            "children": {}
+          },
+          "Laptop Backpacks": {
+            "count": 129,
+            "children": {}
+          },
+          "Laptop Bags & Cases": {
+            "count": 89,
+            "children": {}
+          },
+          "Others": {
+            "count": 3,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 87,
+        "children": {}
+      },
+      "Briefcases": {
+        "count": 49,
+        "children": {}
+      },
+      "Clutches": {
+        "count": 33,
+        "children": {}
+      }
+    }
+  },
+  "Tickets, Vouchers & Services": {
+    "count": 725,
+    "children": {
+      "Events & Attractions": {
+        "count": 32,
+        "children": {
+          "Theme Parks & Attractions": {
+            "count": 8,
+            "children": {}
+          },
+          "Concerts & Exhibitions": {
+            "count": 13,
+            "children": {}
+          },
+          "Movies": {
+            "count": 7,
+            "children": {}
+          },
+          "Others": {
+            "count": 3,
+            "children": {}
+          },
+          "Events, Fairs & Conferences": {
+            "count": 1,
+            "children": {}
+          }
+        }
+      },
+      "Services": {
+        "count": 380,
+        "children": {
+          "Design": {
+            "count": 103,
+            "children": {}
+          },
+          "Photography & Printing": {
+            "count": 143,
+            "children": {}
+          },
+          "Others": {
+            "count": 86,
+            "children": {}
+          },
+          "Insurance": {
+            "count": 33,
+            "children": {}
+          },
+          "Delivery & Moving": {
+            "count": 4,
+            "children": {}
+          },
+          "Housekeeping": {
+            "count": 2,
+            "children": {}
+          },
+          "Air-Conditioning Servicing": {
+            "count": 9,
+            "children": {}
+          }
+        }
+      },
+      "Others": {
+        "count": 96,
+        "children": {}
+      },
+      "Shopping": {
+        "count": 12,
+        "children": {
+          "Others": {
+            "count": 6,
+            "children": {}
+          },
+          "Malls & Department Stores": {
+            "count": 5,
+            "children": {}
+          },
+          "Supermarkets": {
+            "count": 1,
+            "children": {}
+          }
+        }
+      },
+      "Beauty & Wellness": {
+        "count": 104,
+        "children": {
+          "Health": {
+            "count": 77,
+            "children": {}
+          },
+          "Others": {
+            "count": 17,
+            "children": {}
+          },
+          "Spa & Massage": {
+            "count": 6,
+            "children": {}
+          },
+          "Hair": {
+            "count": 1,
+            "children": {}
+          },
+          "Dental": {
+            "count": 2,
+            "children": {}
+          },
+          "Fitness": {
+            "count": 1,
+            "children": {}
+          }
+        }
+      },
+      "Travel": {
+        "count": 8,
+        "children": {
+          "Car Rentals": {
+            "count": 4,
+            "children": {}
+          },
+          "Tour & Packages": {
+            "count": 3,
+            "children": {}
+          },
+          "Trains": {
+            "count": 1,
+            "children": {}
+          }
+        }
+      },
+      "Lessons & Workshops": {
+        "count": 7,
+        "children": {}
+      },
+      "Streaming": {
+        "count": 32,
+        "children": {}
+      },
+      "Transport": {
+        "count": 13,
+        "children": {}
+      },
+      "F&B": {
+        "count": 23,
+        "children": {
+          "Others": {
+            "count": 13,
+            "children": {}
+          },
+          "Dine-in & Takeaway": {
+            "count": 10,
+            "children": {}
+          }
+        }
+      },
+      "Telco": {
+        "count": 3,
+        "children": {
+          "Mobile Data": {
+            "count": 3,
+            "children": {}
+          }
+        }
+      },
+      "Real Estate": {
+        "count": 2,
+        "children": {}
+      },
+      "E-Money": {
+        "count": 8,
+        "children": {}
+      },
+      "Shopee": {
+        "count": 5,
+        "children": {
+          "Others": {
+            "count": 4,
+            "children": {}
+          },
+          "Shopee Official": {
+            "count": 1,
+            "children": {}
+          }
+        }
+      }
+    }
+  }
+}

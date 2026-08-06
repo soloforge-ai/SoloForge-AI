@@ -76,6 +76,20 @@ flutter:
     - assets/data/processed/
     - assets/config/version.json
     - assets/branding/
+    - assets/data/categories/
+
+    - assets/data/categories/Beauty/
+    - assets/data/categories/Fashion_Accessories/
+    - assets/data/categories/Food_and_Beverages/
+    - assets/data/categories/Health/
+    - assets/data/categories/Home_and_Living/
+    - assets/data/categories/Home_Appliances/
+    - assets/data/categories/Men_Clothes/
+    - assets/data/categories/Mobile_and_Gadgets/
+    - assets/data/categories/Pets/
+    - assets/data/categories/Sports_and_Outdoors/
+    - assets/data/categories/Stationery/
+    - assets/data/categories/Women_Clothes/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

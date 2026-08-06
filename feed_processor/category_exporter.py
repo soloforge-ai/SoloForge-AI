@@ -2,17 +2,18 @@
 SoloForge AI
 Category Exporter
 
-Sprint 44
+Sprint 45.5
+Production Version
 
-Export Discovery Database
+Responsibilities
 
-Can be used in 2 ways
-
-1.
-from category_exporter import export_categories
-
-2.
-py category_exporter.py
+Level 3 Categories
+        │
+        ▼
+Build Level 1 Catalog
+        │
+        ├── category_exporter
+        └── chunk_exporter
 """
 
 import json
@@ -48,23 +49,26 @@ def safe_filename(name: str) -> str:
 
 
 # ----------------------------------------------------------
-# Export
+# Build Level 1 Catalog
 # ----------------------------------------------------------
 
-def export_categories(discovery: dict):
+def build_level1_catalog(discovery: dict):
+    """
+    Convert
 
-    OUTPUT_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    Beauty > Skincare > Lip Treatment
+
+    into
+
+    Beauty
+        ├── Skincare
+        ├── Makeup
+        └── Hair Care
+    """
 
     level1_catalog = {}
 
     total_products = 0
-
-    # ------------------------------------------------------
-    # Merge Level 3 -> Level 1
-    # ------------------------------------------------------
 
     for full_category, products in discovery.items():
 
@@ -84,9 +88,10 @@ def export_categories(discovery: dict):
             else "Others"
         )
 
-        if level1 not in level1_catalog:
-
-            level1_catalog[level1] = {}
+        level1_catalog.setdefault(
+            level1,
+            {}
+        )
 
         level1_catalog[level1].setdefault(
             level2,
@@ -99,25 +104,53 @@ def export_categories(discovery: dict):
 
         total_products += len(products)
 
-    # ------------------------------------------------------
-    # Export JSON
-    # ------------------------------------------------------
+    return (
+        level1_catalog,
+        total_products,
+    )
+
+
+# ----------------------------------------------------------
+# Export
+# ----------------------------------------------------------
+
+def export_categories(discovery: dict):
+
+    OUTPUT_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    (
+        level1_catalog,
+        total_products,
+    ) = build_level1_catalog(
+        discovery
+    )
 
     category_index = {}
 
     exported = 0
 
-    for level1, subcategories in sorted(
+    for (
+        level1,
+        subcategories,
+    ) in sorted(
         level1_catalog.items()
     ):
 
-        filename = safe_filename(level1)
+        filename = safe_filename(
+            level1
+        )
 
-        output_file = OUTPUT_DIR / f"{filename}.json"
+        output_file = (
+            OUTPUT_DIR
+            / f"{filename}.json"
+        )
 
         product_count = sum(
-            len(items)
-            for items in subcategories.values()
+            len(products)
+            for products in subcategories.values()
         )
 
         with open(
@@ -137,9 +170,13 @@ def export_categories(discovery: dict):
 
             "name": level1,
 
-            "file": f"categories/{filename}.json",
+            "file": (
+                f"categories/{filename}.json"
+            ),
 
-            "subcategories": len(subcategories),
+            "subcategories": len(
+                subcategories
+            ),
 
             "products": product_count,
 
@@ -161,14 +198,33 @@ def export_categories(discovery: dict):
         )
 
     print()
+
     print("=" * 60)
     print("Category Export Complete")
     print("=" * 60)
-    print(f"Level 1 Categories : {exported}")
-    print(f"Products Exported  : {total_products:,}")
-    print(f"Output Directory   : {OUTPUT_DIR}")
-    print(f"Category Index     : {INDEX_FILE}")
+
+    print(
+        f"Level 1 Categories : {exported}"
+    )
+
+    print(
+        f"Products Exported  : {total_products:,}"
+    )
+
+    print(
+        f"Output Directory   : {OUTPUT_DIR}"
+    )
+
+    print(
+        f"Category Index     : {INDEX_FILE}"
+    )
+
     print("=" * 60)
+
+    return (
+        level1_catalog,
+        category_index,
+    )
 
 
 # ----------------------------------------------------------
@@ -179,7 +235,9 @@ def main():
 
     if not INPUT_FILE.exists():
 
-        print("top_products.json not found")
+        print(
+            "top_products.json not found"
+        )
 
         return
 
@@ -191,7 +249,9 @@ def main():
 
         discovery = json.load(f)
 
-    export_categories(discovery)
+    export_categories(
+        discovery
+    )
 
 
 if __name__ == "__main__":

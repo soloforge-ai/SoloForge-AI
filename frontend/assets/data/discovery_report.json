@@ -1,0 +1,4104 @@
+{
+  "version": 1,
+  "generated_at": "2026-08-06T11:11:21",
+  "summary": {
+    "processed_products": 1000000,
+    "filtered_products": 646839,
+    "categories": 680,
+    "exported_products": 115361,
+    "coverage_percent": 17.83,
+    "top_n": 200,
+    "category_statistics": [
+      {
+        "category": "Beauty > Bath & Body Care > Body Cream, Lotion & Butter",
+        "products": 200,
+        "top_score": 89.39,
+        "average_score": 68.89
+      },
+      {
+        "category": "Beauty > Bath & Body Care > Body Deodorants",
+        "products": 200,
+        "top_score": 88.13,
+        "average_score": 65.25
+      },
+      {
+        "category": "Beauty > Bath & Body Care > Body Masks",
+        "products": 64,
+        "top_score": 75.87,
+        "average_score": 54.25
+      },
+      {
+        "category": "Beauty > Bath & Body Care > Body Oil",
+        "products": 200,
+        "top_score": 83.04,
+        "average_score": 57.33
+      },
+      {
+        "category": "Beauty > Bath & Body Care > Body Scrub & Peel",
+        "products": 200,
+        "top_score": 86.39,
+        "average_score": 61.95
+      },
+      {
+        "category": "Beauty > Bath & Body Care > Body Wash & Soap",
+        "products": 200,
+        "top_score": 89.39,
+        "average_score": 67.7
+      },
+      {
+        "category": "Beauty > Bath & Body Care > Breast Care",
+        "products": 31,
+        "top_score": 69.92,
+        "average_score": 55.27
+      },
+      {
+        "category": "Beauty > Bath & Body Care > Hair Removal Cream & Wax",
+        "products": 200,
+        "top_score": 83.28,
+        "average_score": 57.65
+      },
+      {
+        "category": "Beauty > Bath & Body Care > Massage Oil",
+        "products": 200,
+        "top_score": 69.0,
+        "average_score": 54.98
+      },
+      {
+        "category": "Beauty > Bath & Body Care > Others",
+        "products": 200,
+        "top_score": 71.38,
+        "average_score": 57.52
+      },
+      {
+        "category": "Beauty > Bath & Body Care > Sun Care",
+        "products": 200,
+        "top_score": 91.73,
+        "average_score": 63.82
+      },
+      {
+        "category": "Beauty > Beauty Sets & Packages",
+        "products": 200,
+        "top_score": 84.08,
+        "average_score": 62.46
+      },
+      {
+        "category": "Beauty > Beauty Tools > Body Slimming Tools",
+        "products": 37,
+        "top_score": 62.18,
+        "average_score": 56.27
+      },
+      {
+        "category": "Beauty > Beauty Tools > Facial Care Tools",
+        "products": 200,
+        "top_score": 85.04,
+        "average_score": 64.2
+      },
+      {
+        "category": "Beauty > Beauty Tools > Hair Removal Tools",
+        "products": 200,
+        "top_score": 89.81,
+        "average_score": 63.55
+      },
+      {
+        "category": "Beauty > Beauty Tools > Hair Tools",
+        "products": 200,
+        "top_score": 84.06,
+        "average_score": 68.17
+      },
+      {
+        "category": "Beauty > Beauty Tools > Makeup Accessories",
+        "products": 200,
+        "top_score": 91.91,
+        "average_score": 70.79
+      },
+      {
+        "category": "Beauty > Beauty Tools > Others",
+        "products": 200,
+        "top_score": 68.68,
+        "average_score": 58.27
+      },
+      {
+        "category": "Beauty > Hair Care > Hair Colour",
+        "products": 200,
+        "top_score": 78.53,
+        "average_score": 62.53
+      },
+      {
+        "category": "Beauty > Hair Care > Hair Styling",
+        "products": 200,
+        "top_score": 85.34,
+        "average_score": 62.55
+      },
+      {
+        "category": "Beauty > Hair Care > Hair Treatment",
+        "products": 200,
+        "top_score": 90.38,
+        "average_score": 67.67
+      },
+      {
+        "category": "Beauty > Hair Care > Hair and Scalp Conditioner",
+        "products": 200,
+        "top_score": 75.27,
+        "average_score": 58.96
+      },
+      {
+        "category": "Beauty > Hair Care > Others",
+        "products": 200,
+        "top_score": 82.61,
+        "average_score": 58.38
+      },
+      {
+        "category": "Beauty > Hair Care > Shampoo",
+        "products": 200,
+        "top_score": 86.9,
+        "average_score": 67.8
+      },
+      {
+        "category": "Beauty > Hand, Foot & Nail Care > Foot Care",
+        "products": 200,
+        "top_score": 81.49,
+        "average_score": 62.43
+      },
+      {
+        "category": "Beauty > Hand, Foot & Nail Care > Hand Care",
+        "products": 200,
+        "top_score": 81.32,
+        "average_score": 61.75
+      },
+      {
+        "category": "Beauty > Hand, Foot & Nail Care > Nail Care",
+        "products": 200,
+        "top_score": 86.13,
+        "average_score": 67.98
+      },
+      {
+        "category": "Beauty > Hand, Foot & Nail Care > Others",
+        "products": 81,
+        "top_score": 67.88,
+        "average_score": 55.66
+      },
+      {
+        "category": "Beauty > Makeup > Eyes",
+        "products": 200,
+        "top_score": 91.97,
+        "average_score": 71.66
+      },
+      {
+        "category": "Beauty > Makeup > Face",
+        "products": 200,
+        "top_score": 91.52,
+        "average_score": 74.7
+      },
+      {
+        "category": "Beauty > Makeup > Lips",
+        "products": 200,
+        "top_score": 90.95,
+        "average_score": 69.84
+      },
+      {
+        "category": "Beauty > Makeup > Makeup Removers",
+        "products": 200,
+        "top_score": 90.92,
+        "average_score": 65.64
+      },
+      {
+        "category": "Beauty > Makeup > Others",
+        "products": 74,
+        "top_score": 80.76,
+        "average_score": 53.85
+      },
+      {
+        "category": "Beauty > Men's Care > Bath & Body Care",
+        "products": 133,
+        "top_score": 77.96,
+        "average_score": 56.36
+      },
+      {
+        "category": "Beauty > Men's Care > Hair Care",
+        "products": 113,
+        "top_score": 70.37,
+        "average_score": 54.88
+      },
+      {
+        "category": "Beauty > Men's Care > Others",
+        "products": 48,
+        "top_score": 69.18,
+        "average_score": 56.27
+      },
+      {
+        "category": "Beauty > Men's Care > Shaving & Grooming",
+        "products": 200,
+        "top_score": 87.35,
+        "average_score": 64.68
+      },
+      {
+        "category": "Beauty > Men's Care > Skincare",
+        "products": 200,
+        "top_score": 75.23,
+        "average_score": 58.14
+      },
+      {
+        "category": "Beauty > Others",
+        "products": 200,
+        "top_score": 69.02,
+        "average_score": 58.82
+      },
+      {
+        "category": "Beauty > Perfumes & Fragrances",
+        "products": 200,
+        "top_score": 87.05,
+        "average_score": 67.5
+      },
+      {
+        "category": "Beauty > Skincare > Acne Treatment",
+        "products": 200,
+        "top_score": 88.07,
+        "average_score": 65.69
+      },
+      {
+        "category": "Beauty > Skincare > After Sun Face Care",
+        "products": 75,
+        "top_score": 84.93,
+        "average_score": 56.93
+      },
+      {
+        "category": "Beauty > Skincare > Blotting Paper",
+        "products": 104,
+        "top_score": 71.75,
+        "average_score": 57.77
+      },
+      {
+        "category": "Beauty > Skincare > Eye Treatment",
+        "products": 200,
+        "top_score": 85.74,
+        "average_score": 64.14
+      },
+      {
+        "category": "Beauty > Skincare > Face Mask & Packs",
+        "products": 200,
+        "top_score": 91.19,
+        "average_score": 70.05
+      },
+      {
+        "category": "Beauty > Skincare > Face Scrub & Peel",
+        "products": 200,
+        "top_score": 79.6,
+        "average_score": 56.86
+      },
+      {
+        "category": "Beauty > Skincare > Face Sunscreen",
+        "products": 200,
+        "top_score": 90.05,
+        "average_score": 69.43
+      },
+      {
+        "category": "Beauty > Skincare > Facial Cleanser",
+        "products": 200,
+        "top_score": 91.76,
+        "average_score": 68.34
+      },
+      {
+        "category": "Beauty > Skincare > Facial Mist",
+        "products": 151,
+        "top_score": 77.34,
+        "average_score": 56.64
+      },
+      {
+        "category": "Beauty > Skincare > Facial Moisturizer",
+        "products": 200,
+        "top_score": 91.85,
+        "average_score": 71.09
+      },
+      {
+        "category": "Beauty > Skincare > Facial Oil",
+        "products": 127,
+        "top_score": 66.33,
+        "average_score": 53.29
+      },
+      {
+        "category": "Beauty > Skincare > Facial Serum & Essence",
+        "products": 200,
+        "top_score": 91.07,
+        "average_score": 71.46
+      },
+      {
+        "category": "Beauty > Skincare > Lip Treatment",
+        "products": 200,
+        "top_score": 87.2,
+        "average_score": 65.07
+      },
+      {
+        "category": "Beauty > Skincare > Others",
+        "products": 200,
+        "top_score": 80.52,
+        "average_score": 57.2
+      },
+      {
+        "category": "Beauty > Skincare > Toner",
+        "products": 200,
+        "top_score": 87.92,
+        "average_score": 65.44
+      },
+      {
+        "category": "Fashion Accessories > Accessories Sets & Packages",
+        "products": 200,
+        "top_score": 76.15,
+        "average_score": 62.95
+      },
+      {
+        "category": "Fashion Accessories > Additional Accessories > Brooches & Pins",
+        "products": 200,
+        "top_score": 68.46,
+        "average_score": 64.23
+      },
+      {
+        "category": "Fashion Accessories > Additional Accessories > Charms, Pendants & Ornaments",
+        "products": 200,
+        "top_score": 84.72,
+        "average_score": 67.36
+      },
+      {
+        "category": "Fashion Accessories > Additional Accessories > Cufflinks",
+        "products": 200,
+        "top_score": 70.87,
+        "average_score": 55.89
+      },
+      {
+        "category": "Fashion Accessories > Additional Accessories > Handkerchiefs",
+        "products": 176,
+        "top_score": 72.08,
+        "average_score": 54.47
+      },
+      {
+        "category": "Fashion Accessories > Additional Accessories > Masks",
+        "products": 200,
+        "top_score": 80.54,
+        "average_score": 63.66
+      },
+      {
+        "category": "Fashion Accessories > Additional Accessories > Others",
+        "products": 200,
+        "top_score": 68.1,
+        "average_score": 63.82
+      },
+      {
+        "category": "Fashion Accessories > Additional Accessories > Patches",
+        "products": 200,
+        "top_score": 69.38,
+        "average_score": 62.09
+      },
+      {
+        "category": "Fashion Accessories > Additional Accessories > Tattoos",
+        "products": 200,
+        "top_score": 67.71,
+        "average_score": 62.95
+      },
+      {
+        "category": "Fashion Accessories > Anklets",
+        "products": 135,
+        "top_score": 67.76,
+        "average_score": 55.0
+      },
+      {
+        "category": "Fashion Accessories > Belts",
+        "products": 200,
+        "top_score": 88.6,
+        "average_score": 65.72
+      },
+      {
+        "category": "Fashion Accessories > Bracelets & Bangles",
+        "products": 200,
+        "top_score": 77.31,
+        "average_score": 67.31
+      },
+      {
+        "category": "Fashion Accessories > Earrings",
+        "products": 200,
+        "top_score": 75.6,
+        "average_score": 68.81
+      },
+      {
+        "category": "Fashion Accessories > Eyewear > Eyewear Cases & Accessories",
+        "products": 200,
+        "top_score": 78.28,
+        "average_score": 63.3
+      },
+      {
+        "category": "Fashion Accessories > Eyewear > Frames & Glasses",
+        "products": 200,
+        "top_score": 80.66,
+        "average_score": 67.28
+      },
+      {
+        "category": "Fashion Accessories > Eyewear > Others",
+        "products": 200,
+        "top_score": 79.2,
+        "average_score": 60.33
+      },
+      {
+        "category": "Fashion Accessories > Eyewear > Sunglasses",
+        "products": 200,
+        "top_score": 83.87,
+        "average_score": 66.73
+      },
+      {
+        "category": "Fashion Accessories > Fine Jewelry > Bracelets & Bangles",
+        "products": 1,
+        "top_score": 55.06,
+        "average_score": 55.06
+      },
+      {
+        "category": "Fashion Accessories > Fine Jewelry > Charms, Pendants & Ornaments",
+        "products": 5,
+        "top_score": 61.91,
+        "average_score": 59.34
+      },
+      {
+        "category": "Fashion Accessories > Fine Jewelry > Earrings",
+        "products": 1,
+        "top_score": 48.0,
+        "average_score": 48.0
+      },
+      {
+        "category": "Fashion Accessories > Fine Jewelry > Necklaces",
+        "products": 1,
+        "top_score": 52.3,
+        "average_score": 52.3
+      },
+      {
+        "category": "Fashion Accessories > Gloves",
+        "products": 200,
+        "top_score": 78.49,
+        "average_score": 62.24
+      },
+      {
+        "category": "Fashion Accessories > Hair Accessories > Hair Clips & Hair Pins",
+        "products": 200,
+        "top_score": 75.62,
+        "average_score": 67.32
+      },
+      {
+        "category": "Fashion Accessories > Hair Accessories > Hair Ties, Ribbons & Scrunchies",
+        "products": 200,
+        "top_score": 86.9,
+        "average_score": 66.26
+      },
+      {
+        "category": "Fashion Accessories > Hair Accessories > Headbands",
+        "products": 200,
+        "top_score": 80.17,
+        "average_score": 65.16
+      },
+      {
+        "category": "Fashion Accessories > Hair Accessories > Headpieces, Tiaras & Flower Crowns",
+        "products": 200,
+        "top_score": 66.09,
+        "average_score": 57.56
+      },
+      {
+        "category": "Fashion Accessories > Hair Accessories > Others",
+        "products": 169,
+        "top_score": 67.9,
+        "average_score": 53.43
+      },
+      {
+        "category": "Fashion Accessories > Hair Accessories > Wigs & Extensions",
+        "products": 200,
+        "top_score": 79.41,
+        "average_score": 63.56
+      },
+      {
+        "category": "Fashion Accessories > Hats & Caps",
+        "products": 200,
+        "top_score": 73.68,
+        "average_score": 65.03
+      },
+      {
+        "category": "Fashion Accessories > Investment Precious Metals > Diamond",
+        "products": 68,
+        "top_score": 63.56,
+        "average_score": 51.62
+      },
+      {
+        "category": "Fashion Accessories > Investment Precious Metals > Jade",
+        "products": 16,
+        "top_score": 58.44,
+        "average_score": 52.34
+      },
+      {
+        "category": "Fashion Accessories > Investment Precious Metals > Others",
+        "products": 86,
+        "top_score": 60.5,
+        "average_score": 51.91
+      },
+      {
+        "category": "Fashion Accessories > Investment Precious Metals > Platinum & K Gold",
+        "products": 42,
+        "top_score": 62.98,
+        "average_score": 54.72
+      },
+      {
+        "category": "Fashion Accessories > Investment Precious Metals > Silver",
+        "products": 86,
+        "top_score": 67.25,
+        "average_score": 51.58
+      },
+      {
+        "category": "Fashion Accessories > Necklaces",
+        "products": 200,
+        "top_score": 74.66,
+        "average_score": 67.78
+      },
+      {
+        "category": "Fashion Accessories > Neckties, Bow Ties & Cravats",
+        "products": 200,
+        "top_score": 67.33,
+        "average_score": 58.96
+      },
+      {
+        "category": "Fashion Accessories > Others",
+        "products": 200,
+        "top_score": 81.18,
+        "average_score": 64.65
+      },
+      {
+        "category": "Fashion Accessories > Rings",
+        "products": 200,
+        "top_score": 74.7,
+        "average_score": 66.2
+      },
+      {
+        "category": "Fashion Accessories > Scarves & Shawls",
+        "products": 200,
+        "top_score": 71.95,
+        "average_score": 61.74
+      },
+      {
+        "category": "Food & Beverages > Bakery > Breads",
+        "products": 200,
+        "top_score": 75.66,
+        "average_score": 58.71
+      },
+      {
+        "category": "Food & Beverages > Bakery > Cakes & Pies",
+        "products": 200,
+        "top_score": 77.32,
+        "average_score": 59.53
+      },
+      {
+        "category": "Food & Beverages > Bakery > Others",
+        "products": 200,
+        "top_score": 66.44,
+        "average_score": 54.64
+      },
+      {
+        "category": "Food & Beverages > Bakery > Pastry",
+        "products": 200,
+        "top_score": 84.06,
+        "average_score": 56.63
+      },
+      {
+        "category": "Food & Beverages > Baking Needs > Baking Decoration",
+        "products": 200,
+        "top_score": 65.42,
+        "average_score": 56.16
+      },
+      {
+        "category": "Food & Beverages > Baking Needs > Baking Flavoring",
+        "products": 200,
+        "top_score": 62.96,
+        "average_score": 53.57
+      },
+      {
+        "category": "Food & Beverages > Baking Needs > Baking Powder & Soda",
+        "products": 120,
+        "top_score": 70.66,
+        "average_score": 53.71
+      },
+      {
+        "category": "Food & Beverages > Baking Needs > Baking Premix Flour",
+        "products": 200,
+        "top_score": 68.21,
+        "average_score": 53.75
+      },
+      {
+        "category": "Food & Beverages > Baking Needs > Flour",
+        "products": 200,
+        "top_score": 74.73,
+        "average_score": 56.76
+      },
+      {
+        "category": "Food & Beverages > Baking Needs > Food Coloring",
+        "products": 99,
+        "top_score": 68.99,
+        "average_score": 53.25
+      },
+      {
+        "category": "Food & Beverages > Baking Needs > Others",
+        "products": 200,
+        "top_score": 74.13,
+        "average_score": 56.87
+      },
+      {
+        "category": "Food & Beverages > Beverages > Carbonated Drinks & Tonics",
+        "products": 200,
+        "top_score": 80.0,
+        "average_score": 60.48
+      },
+      {
+        "category": "Food & Beverages > Beverages > Chocolate Drinks",
+        "products": 200,
+        "top_score": 81.18,
+        "average_score": 60.58
+      },
+      {
+        "category": "Food & Beverages > Beverages > Coffee",
+        "products": 200,
+        "top_score": 88.76,
+        "average_score": 67.78
+      },
+      {
+        "category": "Food & Beverages > Beverages > Cordial & Syrups",
+        "products": 200,
+        "top_score": 72.84,
+        "average_score": 60.7
+      },
+      {
+        "category": "Food & Beverages > Beverages > Dessert Drink",
+        "products": 61,
+        "top_score": 59.97,
+        "average_score": 53.27
+      },
+      {
+        "category": "Food & Beverages > Beverages > Drink Toppings",
+        "products": 192,
+        "top_score": 75.85,
+        "average_score": 53.28
+      },
+      {
+        "category": "Food & Beverages > Beverages > Energy & Isotonic Drinks",
+        "products": 200,
+        "top_score": 74.35,
+        "average_score": 58.12
+      },
+      {
+        "category": "Food & Beverages > Beverages > Juice & Juice Vinegar",
+        "products": 200,
+        "top_score": 72.27,
+        "average_score": 60.65
+      },
+      {
+        "category": "Food & Beverages > Beverages > Non-dairy Milk",
+        "products": 200,
+        "top_score": 79.94,
+        "average_score": 60.75
+      },
+      {
+        "category": "Food & Beverages > Beverages > Others",
+        "products": 128,
+        "top_score": 71.65,
+        "average_score": 56.01
+      },
+      {
+        "category": "Food & Beverages > Beverages > Powdered Drink Mixes",
+        "products": 200,
+        "top_score": 73.89,
+        "average_score": 61.18
+      },
+      {
+        "category": "Food & Beverages > Beverages > Tea & Tea Bags",
+        "products": 200,
+        "top_score": 85.02,
+        "average_score": 63.84
+      },
+      {
+        "category": "Food & Beverages > Beverages > Traditional & Herbal Drinks",
+        "products": 200,
+        "top_score": 83.69,
+        "average_score": 61.63
+      },
+      {
+        "category": "Food & Beverages > Beverages > Water",
+        "products": 200,
+        "top_score": 80.62,
+        "average_score": 61.46
+      },
+      {
+        "category": "Food & Beverages > Breakfast Cereals & Spread > Breakfast Bar",
+        "products": 90,
+        "top_score": 80.88,
+        "average_score": 54.59
+      },
+      {
+        "category": "Food & Beverages > Breakfast Cereals & Spread > Cereal, Granola & Oats",
+        "products": 200,
+        "top_score": 79.89,
+        "average_score": 59.09
+      },
+      {
+        "category": "Food & Beverages > Breakfast Cereals & Spread > Honey & Maple Syrups",
+        "products": 200,
+        "top_score": 79.43,
+        "average_score": 55.35
+      },
+      {
+        "category": "Food & Beverages > Breakfast Cereals & Spread > Jam & Spread",
+        "products": 200,
+        "top_score": 81.5,
+        "average_score": 57.37
+      },
+      {
+        "category": "Food & Beverages > Breakfast Cereals & Spread > Others",
+        "products": 5,
+        "top_score": 62.28,
+        "average_score": 53.65
+      },
+      {
+        "category": "Food & Beverages > Convenience / Ready-to-eat > Cooked Food",
+        "products": 200,
+        "top_score": 87.5,
+        "average_score": 61.96
+      },
+      {
+        "category": "Food & Beverages > Convenience / Ready-to-eat > Instant Hotpot",
+        "products": 41,
+        "top_score": 65.75,
+        "average_score": 53.24
+      },
+      {
+        "category": "Food & Beverages > Convenience / Ready-to-eat > Instant Noodles",
+        "products": 200,
+        "top_score": 83.21,
+        "average_score": 62.92
+      },
+      {
+        "category": "Food & Beverages > Convenience / Ready-to-eat > Instant Rice & Porridge",
+        "products": 138,
+        "top_score": 66.62,
+        "average_score": 54.86
+      },
+      {
+        "category": "Food & Beverages > Convenience / Ready-to-eat > Others",
+        "products": 148,
+        "top_score": 63.42,
+        "average_score": 51.77
+      },
+      {
+        "category": "Food & Beverages > Cooking Essentials > Cooking Paste & Kit",
+        "products": 200,
+        "top_score": 69.71,
+        "average_score": 55.12
+      },
+      {
+        "category": "Food & Beverages > Cooking Essentials > Flavour Enhancers",
+        "products": 200,
+        "top_score": 79.55,
+        "average_score": 56.0
+      },
+      {
+        "category": "Food & Beverages > Cooking Essentials > Flour Coating",
+        "products": 148,
+        "top_score": 70.57,
+        "average_score": 54.28
+      },
+      {
+        "category": "Food & Beverages > Cooking Essentials > Oil",
+        "products": 200,
+        "top_score": 81.24,
+        "average_score": 61.97
+      },
+      {
+        "category": "Food & Beverages > Cooking Essentials > Others",
+        "products": 200,
+        "top_score": 63.81,
+        "average_score": 54.09
+      },
+      {
+        "category": "Food & Beverages > Cooking Essentials > Seasonings & Condiments",
+        "products": 200,
+        "top_score": 89.03,
+        "average_score": 69.33
+      },
+      {
+        "category": "Food & Beverages > Cooking Essentials > Stock, Gravy & Instant Soup",
+        "products": 200,
+        "top_score": 83.35,
+        "average_score": 60.6
+      },
+      {
+        "category": "Food & Beverages > Cooking Essentials > Sugar",
+        "products": 200,
+        "top_score": 81.32,
+        "average_score": 57.42
+      },
+      {
+        "category": "Food & Beverages > Cooking Essentials > Sweetener",
+        "products": 184,
+        "top_score": 79.8,
+        "average_score": 54.59
+      },
+      {
+        "category": "Food & Beverages > Dairy & Eggs > Beancurd",
+        "products": 200,
+        "top_score": 65.31,
+        "average_score": 58.51
+      },
+      {
+        "category": "Food & Beverages > Dairy & Eggs > Butter & Margarine",
+        "products": 200,
+        "top_score": 62.82,
+        "average_score": 54.54
+      },
+      {
+        "category": "Food & Beverages > Dairy & Eggs > Cheese & Cheese Powder",
+        "products": 200,
+        "top_score": 80.84,
+        "average_score": 62.92
+      },
+      {
+        "category": "Food & Beverages > Dairy & Eggs > Creamers",
+        "products": 183,
+        "top_score": 74.67,
+        "average_score": 55.67
+      },
+      {
+        "category": "Food & Beverages > Dairy & Eggs > Eggs",
+        "products": 200,
+        "top_score": 63.63,
+        "average_score": 60.02
+      },
+      {
+        "category": "Food & Beverages > Dairy & Eggs > Ice cream",
+        "products": 103,
+        "top_score": 60.42,
+        "average_score": 56.14
+      },
+      {
+        "category": "Food & Beverages > Dairy & Eggs > Milk",
+        "products": 200,
+        "top_score": 78.6,
+        "average_score": 62.92
+      },
+      {
+        "category": "Food & Beverages > Dairy & Eggs > Others",
+        "products": 18,
+        "top_score": 60.34,
+        "average_score": 53.81
+      },
+      {
+        "category": "Food & Beverages > Dairy & Eggs > Yogurt & Cultured Milk",
+        "products": 200,
+        "top_score": 65.88,
+        "average_score": 60.31
+      },
+      {
+        "category": "Food & Beverages > Food Staples > Canned Food",
+        "products": 200,
+        "top_score": 84.38,
+        "average_score": 60.5
+      },
+      {
+        "category": "Food & Beverages > Food Staples > Dried Goods",
+        "products": 200,
+        "top_score": 76.89,
+        "average_score": 61.56
+      },
+      {
+        "category": "Food & Beverages > Food Staples > Noodles",
+        "products": 200,
+        "top_score": 82.39,
+        "average_score": 59.11
+      },
+      {
+        "category": "Food & Beverages > Food Staples > Others",
+        "products": 200,
+        "top_score": 70.05,
+        "average_score": 53.76
+      },
+      {
+        "category": "Food & Beverages > Food Staples > Pasta",
+        "products": 112,
+        "top_score": 70.96,
+        "average_score": 55.1
+      },
+      {
+        "category": "Food & Beverages > Food Staples > Preserved Vegetables",
+        "products": 200,
+        "top_score": 72.1,
+        "average_score": 56.87
+      },
+      {
+        "category": "Food & Beverages > Food Staples > Rice",
+        "products": 200,
+        "top_score": 81.18,
+        "average_score": 62.17
+      },
+      {
+        "category": "Food & Beverages > Fresh & Frozen Food > Frozen Processed Food",
+        "products": 200,
+        "top_score": 72.88,
+        "average_score": 60.47
+      },
+      {
+        "category": "Food & Beverages > Fresh & Frozen Food > Fruits",
+        "products": 200,
+        "top_score": 80.22,
+        "average_score": 58.33
+      },
+      {
+        "category": "Food & Beverages > Fresh & Frozen Food > Meat",
+        "products": 200,
+        "top_score": 66.27,
+        "average_score": 60.26
+      },
+      {
+        "category": "Food & Beverages > Fresh & Frozen Food > Mushroom",
+        "products": 139,
+        "top_score": 65.12,
+        "average_score": 51.99
+      },
+      {
+        "category": "Food & Beverages > Fresh & Frozen Food > Others",
+        "products": 106,
+        "top_score": 65.0,
+        "average_score": 52.57
+      },
+      {
+        "category": "Food & Beverages > Fresh & Frozen Food > Processed Meat & Seafood",
+        "products": 200,
+        "top_score": 85.64,
+        "average_score": 60.38
+      },
+      {
+        "category": "Food & Beverages > Fresh & Frozen Food > Seafood",
+        "products": 200,
+        "top_score": 68.5,
+        "average_score": 57.35
+      },
+      {
+        "category": "Food & Beverages > Fresh & Frozen Food > Vegetables",
+        "products": 200,
+        "top_score": 83.73,
+        "average_score": 58.42
+      },
+      {
+        "category": "Food & Beverages > Fresh & Frozen Food > Vegetarian Meat",
+        "products": 164,
+        "top_score": 59.87,
+        "average_score": 51.85
+      },
+      {
+        "category": "Food & Beverages > Gift Set & Hampers",
+        "products": 65,
+        "top_score": 62.91,
+        "average_score": 54.65
+      },
+      {
+        "category": "Food & Beverages > Others",
+        "products": 200,
+        "top_score": 67.9,
+        "average_score": 51.68
+      },
+      {
+        "category": "Food & Beverages > Snacks > Biscuits, Cookies & Wafers",
+        "products": 200,
+        "top_score": 91.67,
+        "average_score": 62.67
+      },
+      {
+        "category": "Food & Beverages > Snacks > Chips & Crisps",
+        "products": 200,
+        "top_score": 80.06,
+        "average_score": 61.48
+      },
+      {
+        "category": "Food & Beverages > Snacks > Chocolate",
+        "products": 200,
+        "top_score": 80.7,
+        "average_score": 60.51
+      },
+      {
+        "category": "Food & Beverages > Snacks > Dried Snacks",
+        "products": 200,
+        "top_score": 80.52,
+        "average_score": 64.12
+      },
+      {
+        "category": "Food & Beverages > Snacks > Nuts",
+        "products": 200,
+        "top_score": 81.84,
+        "average_score": 61.91
+      },
+      {
+        "category": "Food & Beverages > Snacks > Others",
+        "products": 200,
+        "top_score": 69.77,
+        "average_score": 60.42
+      },
+      {
+        "category": "Food & Beverages > Snacks > Popcorn",
+        "products": 120,
+        "top_score": 63.89,
+        "average_score": 52.38
+      },
+      {
+        "category": "Food & Beverages > Snacks > Pudding, Jellies & Marshmallow",
+        "products": 200,
+        "top_score": 81.93,
+        "average_score": 61.5
+      },
+      {
+        "category": "Food & Beverages > Snacks > Seaweed",
+        "products": 200,
+        "top_score": 86.3,
+        "average_score": 59.48
+      },
+      {
+        "category": "Food & Beverages > Snacks > Seeds",
+        "products": 200,
+        "top_score": 88.37,
+        "average_score": 58.38
+      },
+      {
+        "category": "Food & Beverages > Snacks > Sweets & Candy",
+        "products": 200,
+        "top_score": 79.36,
+        "average_score": 61.5
+      },
+      {
+        "category": "Health > Food Supplement > Beauty Supplements",
+        "products": 200,
+        "top_score": 88.82,
+        "average_score": 71.8
+      },
+      {
+        "category": "Health > Food Supplement > Fitness",
+        "products": 200,
+        "top_score": 89.69,
+        "average_score": 65.62
+      },
+      {
+        "category": "Health > Food Supplement > Others",
+        "products": 98,
+        "top_score": 89.54,
+        "average_score": 56.07
+      },
+      {
+        "category": "Health > Food Supplement > Weight Management",
+        "products": 200,
+        "top_score": 86.37,
+        "average_score": 68.27
+      },
+      {
+        "category": "Health > Food Supplement > Well Being",
+        "products": 200,
+        "top_score": 90.14,
+        "average_score": 73.97
+      },
+      {
+        "category": "Health > Medical Supplies > First Aid Supplies",
+        "products": 200,
+        "top_score": 79.49,
+        "average_score": 63.22
+      },
+      {
+        "category": "Health > Medical Supplies > Health Monitors & Tests",
+        "products": 200,
+        "top_score": 77.74,
+        "average_score": 62.13
+      },
+      {
+        "category": "Health > Medical Supplies > Injury & Disability Support",
+        "products": 200,
+        "top_score": 75.09,
+        "average_score": 62.8
+      },
+      {
+        "category": "Health > Medical Supplies > Laboratory Tools",
+        "products": 200,
+        "top_score": 65.51,
+        "average_score": 52.58
+      },
+      {
+        "category": "Health > Medical Supplies > Medical Gloves & Masks",
+        "products": 200,
+        "top_score": 86.18,
+        "average_score": 64.82
+      },
+      {
+        "category": "Health > Medical Supplies > Nasal Care",
+        "products": 200,
+        "top_score": 82.82,
+        "average_score": 59.46
+      },
+      {
+        "category": "Health > Medical Supplies > Others",
+        "products": 200,
+        "top_score": 72.11,
+        "average_score": 60.74
+      },
+      {
+        "category": "Health > Medical Supplies > Over-the-counter Medicine",
+        "products": 200,
+        "top_score": 70.36,
+        "average_score": 58.68
+      },
+      {
+        "category": "Health > Medical Supplies > Pain Relievers",
+        "products": 170,
+        "top_score": 69.85,
+        "average_score": 55.25
+      },
+      {
+        "category": "Health > Medical Supplies > Scale & Body Fat Analyzers",
+        "products": 138,
+        "top_score": 88.37,
+        "average_score": 58.55
+      },
+      {
+        "category": "Health > Medical Supplies > Stethoscopes",
+        "products": 29,
+        "top_score": 61.9,
+        "average_score": 54.6
+      },
+      {
+        "category": "Health > Medical Supplies > Traditional Medicine",
+        "products": 200,
+        "top_score": 83.3,
+        "average_score": 58.41
+      },
+      {
+        "category": "Health > Others",
+        "products": 200,
+        "top_score": 72.47,
+        "average_score": 58.72
+      },
+      {
+        "category": "Health > Personal Care > Adult Diapers & Incontinence",
+        "products": 200,
+        "top_score": 82.2,
+        "average_score": 62.32
+      },
+      {
+        "category": "Health > Personal Care > Ear Care",
+        "products": 200,
+        "top_score": 84.77,
+        "average_score": 60.95
+      },
+      {
+        "category": "Health > Personal Care > Eye Care",
+        "products": 200,
+        "top_score": 85.11,
+        "average_score": 68.54
+      },
+      {
+        "category": "Health > Personal Care > Feminine Care",
+        "products": 200,
+        "top_score": 87.47,
+        "average_score": 66.68
+      },
+      {
+        "category": "Health > Personal Care > Hand Sanitizers",
+        "products": 200,
+        "top_score": 79.3,
+        "average_score": 57.36
+      },
+      {
+        "category": "Health > Personal Care > Insect Repellents",
+        "products": 200,
+        "top_score": 84.43,
+        "average_score": 58.38
+      },
+      {
+        "category": "Health > Personal Care > Massage & Therapy Devices",
+        "products": 200,
+        "top_score": 81.3,
+        "average_score": 63.51
+      },
+      {
+        "category": "Health > Personal Care > Oral Care",
+        "products": 200,
+        "top_score": 91.07,
+        "average_score": 71.44
+      },
+      {
+        "category": "Health > Personal Care > Others",
+        "products": 200,
+        "top_score": 74.41,
+        "average_score": 62.26
+      },
+      {
+        "category": "Health > Sexual Wellness > Condoms",
+        "products": 200,
+        "top_score": 88.04,
+        "average_score": 63.38
+      },
+      {
+        "category": "Health > Sexual Wellness > Lubricants",
+        "products": 200,
+        "top_score": 80.86,
+        "average_score": 58.18
+      },
+      {
+        "category": "Health > Sexual Wellness > Others",
+        "products": 71,
+        "top_score": 60.5,
+        "average_score": 54.1
+      },
+      {
+        "category": "Health > Sexual Wellness > Performance Enhancement",
+        "products": 200,
+        "top_score": 71.15,
+        "average_score": 55.68
+      },
+      {
+        "category": "Home & Living > Bathrooms > Bath Brushes & Loofahs",
+        "products": 200,
+        "top_score": 79.53,
+        "average_score": 62.79
+      },
+      {
+        "category": "Home & Living > Bathrooms > Bathroom Racks & Cabinets",
+        "products": 200,
+        "top_score": 84.61,
+        "average_score": 64.16
+      },
+      {
+        "category": "Home & Living > Bathrooms > Bathtubs",
+        "products": 87,
+        "top_score": 68.87,
+        "average_score": 56.31
+      },
+      {
+        "category": "Home & Living > Bathrooms > Others",
+        "products": 200,
+        "top_score": 77.05,
+        "average_score": 65.04
+      },
+      {
+        "category": "Home & Living > Bathrooms > Safety Handles",
+        "products": 106,
+        "top_score": 68.1,
+        "average_score": 56.45
+      },
+      {
+        "category": "Home & Living > Bathrooms > Shower Caps",
+        "products": 182,
+        "top_score": 76.81,
+        "average_score": 56.2
+      },
+      {
+        "category": "Home & Living > Bathrooms > Shower Curtains",
+        "products": 157,
+        "top_score": 78.13,
+        "average_score": 58.86
+      },
+      {
+        "category": "Home & Living > Bathrooms > Shower Seats & Commodes",
+        "products": 92,
+        "top_score": 76.21,
+        "average_score": 56.23
+      },
+      {
+        "category": "Home & Living > Bathrooms > Showerheads & Bidet Sprays",
+        "products": 200,
+        "top_score": 86.88,
+        "average_score": 66.82
+      },
+      {
+        "category": "Home & Living > Bathrooms > Soap Dispensers, Holders & Boxes",
+        "products": 200,
+        "top_score": 79.59,
+        "average_score": 63.55
+      },
+      {
+        "category": "Home & Living > Bathrooms > Toilet Bowls, Seats & Covers",
+        "products": 200,
+        "top_score": 85.97,
+        "average_score": 62.99
+      },
+      {
+        "category": "Home & Living > Bathrooms > Toothbrush Holders & Toothpaste Dispensers",
+        "products": 200,
+        "top_score": 84.87,
+        "average_score": 63.96
+      },
+      {
+        "category": "Home & Living > Bathrooms > Towels & Bathrobes",
+        "products": 200,
+        "top_score": 84.42,
+        "average_score": 65.76
+      },
+      {
+        "category": "Home & Living > Bedding > Bedsheets, Pillowcases & Bolster Cases",
+        "products": 200,
+        "top_score": 90.38,
+        "average_score": 68.31
+      },
+      {
+        "category": "Home & Living > Bedding > Blankets, Comforters & Quilts",
+        "products": 200,
+        "top_score": 71.15,
+        "average_score": 63.54
+      },
+      {
+        "category": "Home & Living > Bedding > Bolsters",
+        "products": 193,
+        "top_score": 72.62,
+        "average_score": 55.34
+      },
+      {
+        "category": "Home & Living > Bedding > Cooling Mats",
+        "products": 74,
+        "top_score": 63.65,
+        "average_score": 52.34
+      },
+      {
+        "category": "Home & Living > Bedding > Mattress Protectors & Toppers",
+        "products": 200,
+        "top_score": 79.91,
+        "average_score": 59.28
+      },
+      {
+        "category": "Home & Living > Bedding > Mattresses",
+        "products": 200,
+        "top_score": 82.62,
+        "average_score": 66.66
+      },
+      {
+        "category": "Home & Living > Bedding > Mosquito Nets",
+        "products": 200,
+        "top_score": 78.51,
+        "average_score": 58.75
+      },
+      {
+        "category": "Home & Living > Bedding > Others",
+        "products": 200,
+        "top_score": 83.91,
+        "average_score": 60.16
+      },
+      {
+        "category": "Home & Living > Bedding > Pillows",
+        "products": 200,
+        "top_score": 80.83,
+        "average_score": 64.99
+      },
+      {
+        "category": "Home & Living > Decoration > Candles & Candleholders",
+        "products": 200,
+        "top_score": 74.37,
+        "average_score": 60.93
+      },
+      {
+        "category": "Home & Living > Decoration > Carpets & Rugs",
+        "products": 200,
+        "top_score": 80.58,
+        "average_score": 64.18
+      },
+      {
+        "category": "Home & Living > Decoration > Clocks",
+        "products": 200,
+        "top_score": 78.64,
+        "average_score": 62.44
+      },
+      {
+        "category": "Home & Living > Decoration > Curtains & Blinds",
+        "products": 200,
+        "top_score": 82.38,
+        "average_score": 65.23
+      },
+      {
+        "category": "Home & Living > Decoration > Floor Mats",
+        "products": 200,
+        "top_score": 83.12,
+        "average_score": 63.3
+      },
+      {
+        "category": "Home & Living > Decoration > Flowers",
+        "products": 200,
+        "top_score": 72.56,
+        "average_score": 63.76
+      },
+      {
+        "category": "Home & Living > Decoration > Furniture & Appliance Covers",
+        "products": 200,
+        "top_score": 72.81,
+        "average_score": 62.95
+      },
+      {
+        "category": "Home & Living > Decoration > Mirrors",
+        "products": 200,
+        "top_score": 72.15,
+        "average_score": 58.63
+      },
+      {
+        "category": "Home & Living > Decoration > Others",
+        "products": 200,
+        "top_score": 78.84,
+        "average_score": 63.99
+      },
+      {
+        "category": "Home & Living > Decoration > Photo Frames & Wall Decoration",
+        "products": 200,
+        "top_score": 82.57,
+        "average_score": 63.03
+      },
+      {
+        "category": "Home & Living > Decoration > Table Cloths",
+        "products": 200,
+        "top_score": 92.09,
+        "average_score": 62.95
+      },
+      {
+        "category": "Home & Living > Decoration > Vases & Vessels",
+        "products": 200,
+        "top_score": 71.97,
+        "average_score": 59.42
+      },
+      {
+        "category": "Home & Living > Decoration > Wallpapers & Wall Stickers",
+        "products": 200,
+        "top_score": 84.03,
+        "average_score": 65.92
+      },
+      {
+        "category": "Home & Living > Dinnerware > Bowls",
+        "products": 200,
+        "top_score": 80.82,
+        "average_score": 62.53
+      },
+      {
+        "category": "Home & Living > Dinnerware > Cups, Mugs & Glasses",
+        "products": 200,
+        "top_score": 87.83,
+        "average_score": 67.21
+      },
+      {
+        "category": "Home & Living > Dinnerware > Cutleries",
+        "products": 200,
+        "top_score": 80.44,
+        "average_score": 64.17
+      },
+      {
+        "category": "Home & Living > Dinnerware > Food Covers",
+        "products": 200,
+        "top_score": 69.03,
+        "average_score": 58.14
+      },
+      {
+        "category": "Home & Living > Dinnerware > Jugs, Pitchers & Accessories",
+        "products": 200,
+        "top_score": 80.05,
+        "average_score": 59.65
+      },
+      {
+        "category": "Home & Living > Dinnerware > Others",
+        "products": 200,
+        "top_score": 71.52,
+        "average_score": 60.49
+      },
+      {
+        "category": "Home & Living > Dinnerware > Placemats & Coasters",
+        "products": 200,
+        "top_score": 81.99,
+        "average_score": 62.81
+      },
+      {
+        "category": "Home & Living > Dinnerware > Plates",
+        "products": 200,
+        "top_score": 70.27,
+        "average_score": 62.4
+      },
+      {
+        "category": "Home & Living > Dinnerware > Straws",
+        "products": 200,
+        "top_score": 78.23,
+        "average_score": 61.45
+      },
+      {
+        "category": "Home & Living > Dinnerware > Tea Pots & Sets",
+        "products": 200,
+        "top_score": 85.29,
+        "average_score": 62.08
+      },
+      {
+        "category": "Home & Living > Dinnerware > Water Bottles & Accessories",
+        "products": 200,
+        "top_score": 86.47,
+        "average_score": 68.19
+      },
+      {
+        "category": "Home & Living > Furniture > Bed Frames & Headboards",
+        "products": 200,
+        "top_score": 70.46,
+        "average_score": 61.36
+      },
+      {
+        "category": "Home & Living > Furniture > Benches, Chairs & Stools",
+        "products": 200,
+        "top_score": 88.07,
+        "average_score": 66.71
+      },
+      {
+        "category": "Home & Living > Furniture > Cupboards & Cabinets",
+        "products": 200,
+        "top_score": 79.86,
+        "average_score": 64.45
+      },
+      {
+        "category": "Home & Living > Furniture > Cushions",
+        "products": 200,
+        "top_score": 79.8,
+        "average_score": 63.1
+      },
+      {
+        "category": "Home & Living > Furniture > Desks & Tables",
+        "products": 200,
+        "top_score": 86.09,
+        "average_score": 65.84
+      },
+      {
+        "category": "Home & Living > Furniture > Doorstoppers",
+        "products": 200,
+        "top_score": 86.07,
+        "average_score": 62.27
+      },
+      {
+        "category": "Home & Living > Furniture > Others",
+        "products": 200,
+        "top_score": 79.61,
+        "average_score": 62.88
+      },
+      {
+        "category": "Home & Living > Furniture > Shelves & Racks",
+        "products": 200,
+        "top_score": 85.31,
+        "average_score": 66.53
+      },
+      {
+        "category": "Home & Living > Furniture > Sofas",
+        "products": 200,
+        "top_score": 74.04,
+        "average_score": 63.85
+      },
+      {
+        "category": "Home & Living > Furniture > Wardrobes",
+        "products": 200,
+        "top_score": 77.42,
+        "average_score": 61.07
+      },
+      {
+        "category": "Home & Living > Hand Warmers, Hot Water Bags & Ice Bags",
+        "products": 200,
+        "top_score": 68.56,
+        "average_score": 58.23
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Basins, Buckets & Water Dippers",
+        "products": 200,
+        "top_score": 83.13,
+        "average_score": 62.01
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Brooms",
+        "products": 200,
+        "top_score": 80.34,
+        "average_score": 60.72
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Cleaning Agents",
+        "products": 200,
+        "top_score": 90.98,
+        "average_score": 67.93
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Cleaning Brushes",
+        "products": 200,
+        "top_score": 88.19,
+        "average_score": 65.64
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Cleaning Cloths",
+        "products": 200,
+        "top_score": 82.38,
+        "average_score": 64.13
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Clotheslines & Drying Racks",
+        "products": 200,
+        "top_score": 84.99,
+        "average_score": 65.2
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Dusters",
+        "products": 200,
+        "top_score": 80.1,
+        "average_score": 60.39
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Laundry Care",
+        "products": 200,
+        "top_score": 86.9,
+        "average_score": 70.86
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Mops",
+        "products": 200,
+        "top_score": 86.84,
+        "average_score": 65.81
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Others",
+        "products": 200,
+        "top_score": 86.33,
+        "average_score": 63.0
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Pest & Weed Control",
+        "products": 200,
+        "top_score": 84.68,
+        "average_score": 66.59
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Plastic Bags & Trash Bags",
+        "products": 200,
+        "top_score": 84.93,
+        "average_score": 64.75
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Sponges & Scouring Pads",
+        "products": 200,
+        "top_score": 83.15,
+        "average_score": 63.4
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Tissue & Paper Towels",
+        "products": 200,
+        "top_score": 86.51,
+        "average_score": 70.26
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Toilet Paper",
+        "products": 200,
+        "top_score": 83.67,
+        "average_score": 61.47
+      },
+      {
+        "category": "Home & Living > Home Care Supplies > Trash & Recycling Bins",
+        "products": 200,
+        "top_score": 79.86,
+        "average_score": 62.88
+      },
+      {
+        "category": "Home & Living > Home Fragrance & Aromatherapy > Air Fresheners & Home Fragrance",
+        "products": 200,
+        "top_score": 86.91,
+        "average_score": 65.33
+      },
+      {
+        "category": "Home & Living > Home Fragrance & Aromatherapy > Diffusers, Humidifiers & Oil Burners",
+        "products": 200,
+        "top_score": 81.41,
+        "average_score": 60.09
+      },
+      {
+        "category": "Home & Living > Home Fragrance & Aromatherapy > Essential Oils",
+        "products": 200,
+        "top_score": 87.62,
+        "average_score": 57.61
+      },
+      {
+        "category": "Home & Living > Home Fragrance & Aromatherapy > Others",
+        "products": 173,
+        "top_score": 64.69,
+        "average_score": 53.65
+      },
+      {
+        "category": "Home & Living > Home Organizers > Desk Organizers",
+        "products": 200,
+        "top_score": 79.26,
+        "average_score": 63.8
+      },
+      {
+        "category": "Home & Living > Home Organizers > Hangers & Pegs",
+        "products": 200,
+        "top_score": 84.96,
+        "average_score": 66.5
+      },
+      {
+        "category": "Home & Living > Home Organizers > Hooks",
+        "products": 200,
+        "top_score": 81.15,
+        "average_score": 66.31
+      },
+      {
+        "category": "Home & Living > Home Organizers > Jewelry Organizers",
+        "products": 200,
+        "top_score": 72.23,
+        "average_score": 64.35
+      },
+      {
+        "category": "Home & Living > Home Organizers > Laundry Bags & Baskets",
+        "products": 200,
+        "top_score": 77.46,
+        "average_score": 62.76
+      },
+      {
+        "category": "Home & Living > Home Organizers > Others",
+        "products": 200,
+        "top_score": 88.4,
+        "average_score": 64.1
+      },
+      {
+        "category": "Home & Living > Home Organizers > Shoe Storage Boxes",
+        "products": 200,
+        "top_score": 81.33,
+        "average_score": 61.2
+      },
+      {
+        "category": "Home & Living > Home Organizers > Storage Boxes, Bags & Baskets",
+        "products": 200,
+        "top_score": 81.09,
+        "average_score": 67.2
+      },
+      {
+        "category": "Home & Living > Home Organizers > Tissue Holders",
+        "products": 200,
+        "top_score": 82.59,
+        "average_score": 62.04
+      },
+      {
+        "category": "Home & Living > Home Organizers > Wardrobe Organizers",
+        "products": 200,
+        "top_score": 82.29,
+        "average_score": 63.94
+      },
+      {
+        "category": "Home & Living > Kitchenware > Aluminium Foil",
+        "products": 200,
+        "top_score": 68.64,
+        "average_score": 57.59
+      },
+      {
+        "category": "Home & Living > Kitchenware > Aprons & Kitchen Gloves",
+        "products": 200,
+        "top_score": 85.53,
+        "average_score": 64.09
+      },
+      {
+        "category": "Home & Living > Kitchenware > Bakewares & Decorations",
+        "products": 200,
+        "top_score": 83.43,
+        "average_score": 65.25
+      },
+      {
+        "category": "Home & Living > Kitchenware > Can & Bottle Openers",
+        "products": 200,
+        "top_score": 73.79,
+        "average_score": 61.37
+      },
+      {
+        "category": "Home & Living > Kitchenware > Chopping Boards",
+        "products": 200,
+        "top_score": 89.69,
+        "average_score": 59.56
+      },
+      {
+        "category": "Home & Living > Kitchenware > Cling Wrap",
+        "products": 200,
+        "top_score": 82.23,
+        "average_score": 60.61
+      },
+      {
+        "category": "Home & Living > Kitchenware > Food Storage",
+        "products": 200,
+        "top_score": 85.08,
+        "average_score": 68.94
+      },
+      {
+        "category": "Home & Living > Kitchenware > Graters, Peelers & Cutters",
+        "products": 200,
+        "top_score": 79.41,
+        "average_score": 63.3
+      },
+      {
+        "category": "Home & Living > Kitchenware > Grills & Accessories",
+        "products": 200,
+        "top_score": 79.39,
+        "average_score": 61.71
+      },
+      {
+        "category": "Home & Living > Kitchenware > Kitchen Racks",
+        "products": 200,
+        "top_score": 78.12,
+        "average_score": 65.44
+      },
+      {
+        "category": "Home & Living > Kitchenware > Kitchen Weighing Scales",
+        "products": 200,
+        "top_score": 77.63,
+        "average_score": 60.86
+      },
+      {
+        "category": "Home & Living > Kitchenware > Knives & Kitchen Scissors",
+        "products": 200,
+        "top_score": 80.21,
+        "average_score": 64.02
+      },
+      {
+        "category": "Home & Living > Kitchenware > Lighters, Matches & Fire Starters",
+        "products": 200,
+        "top_score": 68.17,
+        "average_score": 58.53
+      },
+      {
+        "category": "Home & Living > Kitchenware > Measuring Glasses & Spoons",
+        "products": 200,
+        "top_score": 76.2,
+        "average_score": 63.33
+      },
+      {
+        "category": "Home & Living > Kitchenware > Others",
+        "products": 200,
+        "top_score": 84.78,
+        "average_score": 67.34
+      },
+      {
+        "category": "Home & Living > Kitchenware > Pans",
+        "products": 200,
+        "top_score": 88.58,
+        "average_score": 64.28
+      },
+      {
+        "category": "Home & Living > Kitchenware > Pots",
+        "products": 200,
+        "top_score": 76.74,
+        "average_score": 61.55
+      },
+      {
+        "category": "Home & Living > Kitchenware > Sealers",
+        "products": 200,
+        "top_score": 82.35,
+        "average_score": 59.53
+      },
+      {
+        "category": "Home & Living > Kitchenware > Spatulas & Cooking Tweezers",
+        "products": 200,
+        "top_score": 80.93,
+        "average_score": 64.24
+      },
+      {
+        "category": "Home & Living > Kitchenware > Strainers",
+        "products": 200,
+        "top_score": 83.85,
+        "average_score": 64.31
+      },
+      {
+        "category": "Home & Living > Kitchenware > Tea, Coffee & Bartending Equipments",
+        "products": 200,
+        "top_score": 83.24,
+        "average_score": 65.91
+      },
+      {
+        "category": "Home & Living > Kitchenware > Whisks & Beaters",
+        "products": 200,
+        "top_score": 71.57,
+        "average_score": 57.05
+      },
+      {
+        "category": "Home & Living > Lighting",
+        "products": 200,
+        "top_score": 90.13,
+        "average_score": 70.7
+      },
+      {
+        "category": "Home & Living > Others",
+        "products": 200,
+        "top_score": 77.84,
+        "average_score": 62.43
+      },
+      {
+        "category": "Home & Living > Party Supplies > Backdrops & Banners",
+        "products": 200,
+        "top_score": 65.84,
+        "average_score": 59.41
+      },
+      {
+        "category": "Home & Living > Party Supplies > Balloons",
+        "products": 200,
+        "top_score": 68.11,
+        "average_score": 62.01
+      },
+      {
+        "category": "Home & Living > Party Supplies > Cards",
+        "products": 200,
+        "top_score": 68.75,
+        "average_score": 55.98
+      },
+      {
+        "category": "Home & Living > Party Supplies > Disposable Tableware",
+        "products": 200,
+        "top_score": 82.29,
+        "average_score": 63.46
+      },
+      {
+        "category": "Home & Living > Party Supplies > Others",
+        "products": 200,
+        "top_score": 67.85,
+        "average_score": 60.4
+      },
+      {
+        "category": "Home & Living > Party Supplies > Party Hats & Masks",
+        "products": 200,
+        "top_score": 69.12,
+        "average_score": 58.99
+      },
+      {
+        "category": "Home & Living > Party Supplies > Sashes",
+        "products": 75,
+        "top_score": 68.0,
+        "average_score": 52.19
+      },
+      {
+        "category": "Home & Living > Party Supplies > Wooden Clips",
+        "products": 55,
+        "top_score": 64.64,
+        "average_score": 55.18
+      },
+      {
+        "category": "Home & Living > Safety & Security > Door Hardware & Locks",
+        "products": 200,
+        "top_score": 75.01,
+        "average_score": 64.46
+      },
+      {
+        "category": "Home & Living > Safety & Security > Fire Fighting Equipments",
+        "products": 134,
+        "top_score": 66.43,
+        "average_score": 53.43
+      },
+      {
+        "category": "Home & Living > Safety & Security > Others",
+        "products": 200,
+        "top_score": 77.12,
+        "average_score": 57.72
+      },
+      {
+        "category": "Home & Living > Safety & Security > Safes",
+        "products": 154,
+        "top_score": 71.52,
+        "average_score": 57.5
+      },
+      {
+        "category": "Home Appliances > Batteries",
+        "products": 200,
+        "top_score": 75.7,
+        "average_score": 62.31
+      },
+      {
+        "category": "Home Appliances > Electrical Circuitry & Parts > Doorbells",
+        "products": 138,
+        "top_score": 70.31,
+        "average_score": 55.31
+      },
+      {
+        "category": "Home Appliances > Electrical Circuitry & Parts > Electric Sockets & Extension Cords",
+        "products": 200,
+        "top_score": 84.53,
+        "average_score": 65.71
+      },
+      {
+        "category": "Home Appliances > Electrical Circuitry & Parts > Electrical Safety",
+        "products": 200,
+        "top_score": 75.91,
+        "average_score": 63.0
+      },
+      {
+        "category": "Home Appliances > Electrical Circuitry & Parts > Electricity Savers",
+        "products": 153,
+        "top_score": 66.47,
+        "average_score": 53.88
+      },
+      {
+        "category": "Home Appliances > Electrical Circuitry & Parts > House Alarms",
+        "products": 180,
+        "top_score": 69.8,
+        "average_score": 55.6
+      },
+      {
+        "category": "Home Appliances > Electrical Circuitry & Parts > Lightning Protection",
+        "products": 88,
+        "top_score": 65.1,
+        "average_score": 53.65
+      },
+      {
+        "category": "Home Appliances > Electrical Circuitry & Parts > Others",
+        "products": 200,
+        "top_score": 84.48,
+        "average_score": 64.64
+      },
+      {
+        "category": "Home Appliances > Electrical Circuitry & Parts > Switches",
+        "products": 200,
+        "top_score": 74.64,
+        "average_score": 62.96
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Air Fryers",
+        "products": 191,
+        "top_score": 87.98,
+        "average_score": 58.73
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Coffee Machines & Accessories",
+        "products": 200,
+        "top_score": 72.34,
+        "average_score": 64.17
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Deep Fryers",
+        "products": 74,
+        "top_score": 70.09,
+        "average_score": 55.64
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Dishwashers",
+        "products": 24,
+        "top_score": 69.23,
+        "average_score": 60.35
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Food Processors & Meat Grinders",
+        "products": 200,
+        "top_score": 85.82,
+        "average_score": 61.37
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Freezers",
+        "products": 161,
+        "top_score": 70.07,
+        "average_score": 53.84
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Hoods",
+        "products": 141,
+        "top_score": 69.25,
+        "average_score": 57.74
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Juicers, Blenders & Soya Bean Machines",
+        "products": 200,
+        "top_score": 84.4,
+        "average_score": 62.18
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Kettles",
+        "products": 200,
+        "top_score": 78.1,
+        "average_score": 60.79
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Microwaves",
+        "products": 177,
+        "top_score": 88.73,
+        "average_score": 54.92
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Mixers",
+        "products": 200,
+        "top_score": 75.83,
+        "average_score": 57.64
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Multi-function Cookers",
+        "products": 200,
+        "top_score": 89.36,
+        "average_score": 61.83
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Others",
+        "products": 200,
+        "top_score": 85.17,
+        "average_score": 57.19
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Ovens",
+        "products": 122,
+        "top_score": 68.63,
+        "average_score": 55.78
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Pressure Cookers",
+        "products": 58,
+        "top_score": 73.23,
+        "average_score": 56.28
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Refrigerators",
+        "products": 200,
+        "top_score": 78.92,
+        "average_score": 59.22
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Rice Cookers",
+        "products": 200,
+        "top_score": 78.06,
+        "average_score": 62.8
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Slow Cookers & Sous Vide Machines",
+        "products": 27,
+        "top_score": 68.95,
+        "average_score": 58.4
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Specialty Cookware",
+        "products": 200,
+        "top_score": 88.49,
+        "average_score": 62.66
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Stoves, Hobs & Gas Regulators",
+        "products": 200,
+        "top_score": 80.54,
+        "average_score": 64.08
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Toasters",
+        "products": 59,
+        "top_score": 69.5,
+        "average_score": 59.72
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Water Filters, Coolers & Dispensers",
+        "products": 200,
+        "top_score": 86.7,
+        "average_score": 65.5
+      },
+      {
+        "category": "Home Appliances > Kitchen Appliances > Wine Fridges",
+        "products": 13,
+        "top_score": 62.17,
+        "average_score": 55.01
+      },
+      {
+        "category": "Home Appliances > Large Household Appliances > Cooling",
+        "products": 200,
+        "top_score": 87.14,
+        "average_score": 67.27
+      },
+      {
+        "category": "Home Appliances > Large Household Appliances > Futon & Shoe Dryers",
+        "products": 13,
+        "top_score": 66.57,
+        "average_score": 55.75
+      },
+      {
+        "category": "Home Appliances > Large Household Appliances > Heaters",
+        "products": 33,
+        "top_score": 64.62,
+        "average_score": 52.43
+      },
+      {
+        "category": "Home Appliances > Large Household Appliances > Others",
+        "products": 200,
+        "top_score": 77.11,
+        "average_score": 53.73
+      },
+      {
+        "category": "Home Appliances > Large Household Appliances > Washing Machines & Dryers",
+        "products": 200,
+        "top_score": 81.26,
+        "average_score": 63.72
+      },
+      {
+        "category": "Home Appliances > Large Household Appliances > Water Heaters",
+        "products": 193,
+        "top_score": 74.33,
+        "average_score": 57.91
+      },
+      {
+        "category": "Home Appliances > Others",
+        "products": 200,
+        "top_score": 80.46,
+        "average_score": 58.4
+      },
+      {
+        "category": "Home Appliances > Projectors & Accessories > Others",
+        "products": 76,
+        "top_score": 68.88,
+        "average_score": 55.94
+      },
+      {
+        "category": "Home Appliances > Projectors & Accessories > Pointers",
+        "products": 96,
+        "top_score": 70.76,
+        "average_score": 56.32
+      },
+      {
+        "category": "Home Appliances > Projectors & Accessories > Projectors & Projector Screens",
+        "products": 145,
+        "top_score": 73.68,
+        "average_score": 56.73
+      },
+      {
+        "category": "Home Appliances > Remote Controls",
+        "products": 200,
+        "top_score": 73.92,
+        "average_score": 64.79
+      },
+      {
+        "category": "Home Appliances > Small Household Appliances > Air Treatment",
+        "products": 200,
+        "top_score": 88.34,
+        "average_score": 64.8
+      },
+      {
+        "category": "Home Appliances > Small Household Appliances > Foot Baths & Spas",
+        "products": 43,
+        "top_score": 68.12,
+        "average_score": 54.01
+      },
+      {
+        "category": "Home Appliances > Small Household Appliances > Irons & Steamers",
+        "products": 200,
+        "top_score": 83.35,
+        "average_score": 60.77
+      },
+      {
+        "category": "Home Appliances > Small Household Appliances > Others",
+        "products": 200,
+        "top_score": 67.8,
+        "average_score": 58.2
+      },
+      {
+        "category": "Home Appliances > Small Household Appliances > Sewing Machines & Accessories",
+        "products": 200,
+        "top_score": 67.95,
+        "average_score": 60.1
+      },
+      {
+        "category": "Home Appliances > Small Household Appliances > Telephones",
+        "products": 71,
+        "top_score": 69.41,
+        "average_score": 53.62
+      },
+      {
+        "category": "Home Appliances > Small Household Appliances > Vacuum Cleaners & Floor Care Appliances",
+        "products": 200,
+        "top_score": 89.27,
+        "average_score": 67.69
+      },
+      {
+        "category": "Home Appliances > Small Household Appliances > Water Flossers",
+        "products": 48,
+        "top_score": 74.28,
+        "average_score": 58.57
+      },
+      {
+        "category": "Home Appliances > TVs & Accessories > Others",
+        "products": 200,
+        "top_score": 66.67,
+        "average_score": 55.01
+      },
+      {
+        "category": "Home Appliances > TVs & Accessories > TV Antennas",
+        "products": 198,
+        "top_score": 75.28,
+        "average_score": 52.63
+      },
+      {
+        "category": "Home Appliances > TVs & Accessories > TV Boxes & Receivers",
+        "products": 167,
+        "top_score": 69.42,
+        "average_score": 52.97
+      },
+      {
+        "category": "Home Appliances > TVs & Accessories > TV Brackets",
+        "products": 200,
+        "top_score": 83.0,
+        "average_score": 59.33
+      },
+      {
+        "category": "Home Appliances > TVs & Accessories > TVs",
+        "products": 121,
+        "top_score": 76.58,
+        "average_score": 59.77
+      },
+      {
+        "category": "Men Clothes > Costumes",
+        "products": 200,
+        "top_score": 66.59,
+        "average_score": 56.1
+      },
+      {
+        "category": "Men Clothes > Hoodies & Sweatshirts > Hoodies",
+        "products": 200,
+        "top_score": 79.23,
+        "average_score": 58.66
+      },
+      {
+        "category": "Men Clothes > Hoodies & Sweatshirts > Others",
+        "products": 1,
+        "top_score": 55.53,
+        "average_score": 55.53
+      },
+      {
+        "category": "Men Clothes > Hoodies & Sweatshirts > Sweatshirts",
+        "products": 126,
+        "top_score": 70.45,
+        "average_score": 55.42
+      },
+      {
+        "category": "Men Clothes > Innerwear & Underwear > Others",
+        "products": 36,
+        "top_score": 64.92,
+        "average_score": 53.64
+      },
+      {
+        "category": "Men Clothes > Innerwear & Underwear > Thermal Innerwear",
+        "products": 15,
+        "top_score": 64.2,
+        "average_score": 55.15
+      },
+      {
+        "category": "Men Clothes > Innerwear & Underwear > Undershirts",
+        "products": 78,
+        "top_score": 73.56,
+        "average_score": 56.01
+      },
+      {
+        "category": "Men Clothes > Innerwear & Underwear > Underwear",
+        "products": 200,
+        "top_score": 90.68,
+        "average_score": 67.04
+      },
+      {
+        "category": "Men Clothes > Jackets, Coats & Vests > Jackets",
+        "products": 200,
+        "top_score": 81.38,
+        "average_score": 61.97
+      },
+      {
+        "category": "Men Clothes > Jackets, Coats & Vests > Others",
+        "products": 18,
+        "top_score": 65.72,
+        "average_score": 53.78
+      },
+      {
+        "category": "Men Clothes > Jackets, Coats & Vests > Vests",
+        "products": 156,
+        "top_score": 67.36,
+        "average_score": 53.64
+      },
+      {
+        "category": "Men Clothes > Jackets, Coats & Vests > Winter Jackets & Coats",
+        "products": 67,
+        "top_score": 68.87,
+        "average_score": 55.27
+      },
+      {
+        "category": "Men Clothes > Jeans",
+        "products": 200,
+        "top_score": 78.99,
+        "average_score": 64.17
+      },
+      {
+        "category": "Men Clothes > Occupational Attire",
+        "products": 200,
+        "top_score": 73.54,
+        "average_score": 58.27
+      },
+      {
+        "category": "Men Clothes > Others",
+        "products": 124,
+        "top_score": 70.35,
+        "average_score": 53.24
+      },
+      {
+        "category": "Men Clothes > Pants > Cargo",
+        "products": 200,
+        "top_score": 83.72,
+        "average_score": 60.6
+      },
+      {
+        "category": "Men Clothes > Pants > Joggers",
+        "products": 170,
+        "top_score": 71.4,
+        "average_score": 53.89
+      },
+      {
+        "category": "Men Clothes > Pants > Others",
+        "products": 38,
+        "top_score": 68.35,
+        "average_score": 52.48
+      },
+      {
+        "category": "Men Clothes > Pants > Pants",
+        "products": 200,
+        "top_score": 83.67,
+        "average_score": 65.15
+      },
+      {
+        "category": "Men Clothes > Sets",
+        "products": 200,
+        "top_score": 79.29,
+        "average_score": 54.43
+      },
+      {
+        "category": "Men Clothes > Shorts",
+        "products": 200,
+        "top_score": 87.74,
+        "average_score": 66.53
+      },
+      {
+        "category": "Men Clothes > Sleepwear",
+        "products": 144,
+        "top_score": 76.52,
+        "average_score": 53.41
+      },
+      {
+        "category": "Men Clothes > Socks",
+        "products": 200,
+        "top_score": 87.06,
+        "average_score": 66.47
+      },
+      {
+        "category": "Men Clothes > Suits > Others",
+        "products": 5,
+        "top_score": 63.71,
+        "average_score": 51.05
+      },
+      {
+        "category": "Men Clothes > Suits > Suit Jackets & Blazers",
+        "products": 83,
+        "top_score": 69.5,
+        "average_score": 56.11
+      },
+      {
+        "category": "Men Clothes > Suits > Suit Pants",
+        "products": 154,
+        "top_score": 84.97,
+        "average_score": 56.03
+      },
+      {
+        "category": "Men Clothes > Suits > Suit Sets",
+        "products": 52,
+        "top_score": 66.06,
+        "average_score": 55.98
+      },
+      {
+        "category": "Men Clothes > Suits > Suit Vests & Waistcoats",
+        "products": 18,
+        "top_score": 67.46,
+        "average_score": 55.55
+      },
+      {
+        "category": "Men Clothes > Sweaters & Cardigans",
+        "products": 123,
+        "top_score": 70.28,
+        "average_score": 56.97
+      },
+      {
+        "category": "Men Clothes > Tops > Others",
+        "products": 156,
+        "top_score": 70.04,
+        "average_score": 53.36
+      },
+      {
+        "category": "Men Clothes > Tops > Polo Shirts",
+        "products": 200,
+        "top_score": 88.73,
+        "average_score": 66.69
+      },
+      {
+        "category": "Men Clothes > Tops > Shirts",
+        "products": 200,
+        "top_score": 74.97,
+        "average_score": 67.24
+      },
+      {
+        "category": "Men Clothes > Tops > T-Shirts",
+        "products": 200,
+        "top_score": 84.62,
+        "average_score": 69.82
+      },
+      {
+        "category": "Men Clothes > Tops > Tanks",
+        "products": 200,
+        "top_score": 70.88,
+        "average_score": 61.17
+      },
+      {
+        "category": "Men Clothes > Traditional Wear > Bottoms",
+        "products": 68,
+        "top_score": 62.41,
+        "average_score": 50.71
+      },
+      {
+        "category": "Men Clothes > Traditional Wear > Others",
+        "products": 76,
+        "top_score": 68.53,
+        "average_score": 50.51
+      },
+      {
+        "category": "Men Clothes > Traditional Wear > Sets",
+        "products": 60,
+        "top_score": 69.28,
+        "average_score": 51.59
+      },
+      {
+        "category": "Men Clothes > Traditional Wear > Tops",
+        "products": 200,
+        "top_score": 63.39,
+        "average_score": 51.72
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Cables, Chargers & Converters",
+        "products": 200,
+        "top_score": 91.67,
+        "average_score": 74.97
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Cases, Covers, & Skins",
+        "products": 200,
+        "top_score": 91.13,
+        "average_score": 71.93
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Casting Devices",
+        "products": 46,
+        "top_score": 70.25,
+        "average_score": 55.97
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Memory Cards",
+        "products": 200,
+        "top_score": 78.74,
+        "average_score": 59.71
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Mobile Flashes & Selfie Lights",
+        "products": 61,
+        "top_score": 69.41,
+        "average_score": 59.81
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Mobile Lens",
+        "products": 200,
+        "top_score": 88.1,
+        "average_score": 63.12
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Mobile Pouches",
+        "products": 200,
+        "top_score": 76.84,
+        "average_score": 59.23
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Others",
+        "products": 200,
+        "top_score": 82.04,
+        "average_score": 66.35
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Phone Grips",
+        "products": 200,
+        "top_score": 86.76,
+        "average_score": 65.25
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Phone Straps & Keychains",
+        "products": 200,
+        "top_score": 70.56,
+        "average_score": 65.56
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Pocket Wifi",
+        "products": 69,
+        "top_score": 66.11,
+        "average_score": 56.47
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Powerbanks & Batteries",
+        "products": 200,
+        "top_score": 88.13,
+        "average_score": 69.7
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Screen Protectors",
+        "products": 200,
+        "top_score": 91.34,
+        "average_score": 72.42
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Selfie Accessories",
+        "products": 200,
+        "top_score": 84.95,
+        "average_score": 66.24
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Stylus",
+        "products": 200,
+        "top_score": 93.11,
+        "average_score": 64.67
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > USB & Mobile Fans",
+        "products": 200,
+        "top_score": 88.16,
+        "average_score": 68.21
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > USB & Mobile Lights",
+        "products": 157,
+        "top_score": 71.95,
+        "average_score": 57.03
+      },
+      {
+        "category": "Mobile & Gadgets > Accessories > Wearable Accessories",
+        "products": 200,
+        "top_score": 82.96,
+        "average_score": 66.9
+      },
+      {
+        "category": "Mobile & Gadgets > Mobile Phones",
+        "products": 200,
+        "top_score": 80.95,
+        "average_score": 62.2
+      },
+      {
+        "category": "Mobile & Gadgets > Others",
+        "products": 200,
+        "top_score": 82.11,
+        "average_score": 66.23
+      },
+      {
+        "category": "Mobile & Gadgets > Sim Cards",
+        "products": 200,
+        "top_score": 79.04,
+        "average_score": 59.66
+      },
+      {
+        "category": "Mobile & Gadgets > Tablets",
+        "products": 112,
+        "top_score": 79.55,
+        "average_score": 56.96
+      },
+      {
+        "category": "Mobile & Gadgets > Walkie Talkies",
+        "products": 200,
+        "top_score": 68.54,
+        "average_score": 55.24
+      },
+      {
+        "category": "Mobile & Gadgets > Wearable Devices > GPS Trackers",
+        "products": 155,
+        "top_score": 76.69,
+        "average_score": 61.43
+      },
+      {
+        "category": "Mobile & Gadgets > Wearable Devices > Others",
+        "products": 73,
+        "top_score": 66.64,
+        "average_score": 56.23
+      },
+      {
+        "category": "Mobile & Gadgets > Wearable Devices > Smartwatches & Fitness Trackers",
+        "products": 200,
+        "top_score": 85.61,
+        "average_score": 65.12
+      },
+      {
+        "category": "Mobile & Gadgets > Wearable Devices > VR Devices",
+        "products": 52,
+        "top_score": 66.31,
+        "average_score": 54.6
+      },
+      {
+        "category": "Pets > Litter & Toilet > Cat Litter & Boxes",
+        "products": 200,
+        "top_score": 86.0,
+        "average_score": 67.22
+      },
+      {
+        "category": "Pets > Litter & Toilet > Diapers",
+        "products": 154,
+        "top_score": 86.67,
+        "average_score": 58.11
+      },
+      {
+        "category": "Pets > Litter & Toilet > Dog Training Pads & Trays",
+        "products": 200,
+        "top_score": 84.0,
+        "average_score": 61.27
+      },
+      {
+        "category": "Pets > Litter & Toilet > Others",
+        "products": 200,
+        "top_score": 76.69,
+        "average_score": 57.75
+      },
+      {
+        "category": "Pets > Litter & Toilet > Poop Bags & Scoopers",
+        "products": 199,
+        "top_score": 74.15,
+        "average_score": 58.64
+      },
+      {
+        "category": "Pets > Litter & Toilet > Small Pet Bedding & Litter",
+        "products": 147,
+        "top_score": 68.19,
+        "average_score": 53.76
+      },
+      {
+        "category": "Pets > Others",
+        "products": 200,
+        "top_score": 72.07,
+        "average_score": 53.08
+      },
+      {
+        "category": "Pets > Pet Accessories > Aquarium Needs",
+        "products": 200,
+        "top_score": 81.09,
+        "average_score": 64.73
+      },
+      {
+        "category": "Pets > Pet Accessories > Bowls & Feeders",
+        "products": 200,
+        "top_score": 75.17,
+        "average_score": 65.9
+      },
+      {
+        "category": "Pets > Pet Accessories > Leashes, Collars, Harnesses & Muzzles",
+        "products": 200,
+        "top_score": 72.17,
+        "average_score": 63.9
+      },
+      {
+        "category": "Pets > Pet Accessories > Others",
+        "products": 200,
+        "top_score": 79.31,
+        "average_score": 60.4
+      },
+      {
+        "category": "Pets > Pet Accessories > Pet Furniture",
+        "products": 200,
+        "top_score": 83.06,
+        "average_score": 67.26
+      },
+      {
+        "category": "Pets > Pet Accessories > Toys",
+        "products": 200,
+        "top_score": 87.86,
+        "average_score": 66.3
+      },
+      {
+        "category": "Pets > Pet Accessories > Travel Essentials",
+        "products": 200,
+        "top_score": 72.28,
+        "average_score": 61.63
+      },
+      {
+        "category": "Pets > Pet Clothing & Accessories > Boots, Socks & Paw Protectors",
+        "products": 74,
+        "top_score": 73.01,
+        "average_score": 56.68
+      },
+      {
+        "category": "Pets > Pet Clothing & Accessories > Eyewear",
+        "products": 25,
+        "top_score": 63.53,
+        "average_score": 55.74
+      },
+      {
+        "category": "Pets > Pet Clothing & Accessories > Hair Accessories",
+        "products": 58,
+        "top_score": 67.02,
+        "average_score": 54.99
+      },
+      {
+        "category": "Pets > Pet Clothing & Accessories > Hats",
+        "products": 108,
+        "top_score": 68.39,
+        "average_score": 56.58
+      },
+      {
+        "category": "Pets > Pet Clothing & Accessories > Neck Accessories",
+        "products": 200,
+        "top_score": 72.54,
+        "average_score": 60.02
+      },
+      {
+        "category": "Pets > Pet Clothing & Accessories > Others",
+        "products": 47,
+        "top_score": 65.43,
+        "average_score": 54.26
+      },
+      {
+        "category": "Pets > Pet Clothing & Accessories > Pet Clothing",
+        "products": 200,
+        "top_score": 71.69,
+        "average_score": 63.53
+      },
+      {
+        "category": "Pets > Pet Clothing & Accessories > Wet Weather Gear",
+        "products": 15,
+        "top_score": 64.96,
+        "average_score": 54.45
+      },
+      {
+        "category": "Pets > Pet Food > Aquarium Pet Food",
+        "products": 200,
+        "top_score": 81.43,
+        "average_score": 58.53
+      },
+      {
+        "category": "Pets > Pet Food > Bird Feed",
+        "products": 200,
+        "top_score": 70.73,
+        "average_score": 56.52
+      },
+      {
+        "category": "Pets > Pet Food > Cat Food",
+        "products": 200,
+        "top_score": 86.34,
+        "average_score": 70.02
+      },
+      {
+        "category": "Pets > Pet Food > Cat Treats",
+        "products": 200,
+        "top_score": 84.75,
+        "average_score": 64.2
+      },
+      {
+        "category": "Pets > Pet Food > Dog Food",
+        "products": 200,
+        "top_score": 81.62,
+        "average_score": 64.18
+      },
+      {
+        "category": "Pets > Pet Food > Dog Treats",
+        "products": 200,
+        "top_score": 80.9,
+        "average_score": 62.98
+      },
+      {
+        "category": "Pets > Pet Food > Others",
+        "products": 193,
+        "top_score": 70.74,
+        "average_score": 52.88
+      },
+      {
+        "category": "Pets > Pet Food > Reptile Food",
+        "products": 142,
+        "top_score": 74.21,
+        "average_score": 53.16
+      },
+      {
+        "category": "Pets > Pet Food > Small Pet Food",
+        "products": 200,
+        "top_score": 72.69,
+        "average_score": 57.28
+      },
+      {
+        "category": "Pets > Pet Food > Small Pet Treats",
+        "products": 200,
+        "top_score": 70.63,
+        "average_score": 56.59
+      },
+      {
+        "category": "Pets > Pet Grooming > Claw Care",
+        "products": 132,
+        "top_score": 73.08,
+        "average_score": 57.85
+      },
+      {
+        "category": "Pets > Pet Grooming > Hair Care",
+        "products": 200,
+        "top_score": 88.23,
+        "average_score": 65.88
+      },
+      {
+        "category": "Pets > Pet Grooming > Oral Care",
+        "products": 183,
+        "top_score": 71.06,
+        "average_score": 56.95
+      },
+      {
+        "category": "Pets > Pet Grooming > Others",
+        "products": 200,
+        "top_score": 75.84,
+        "average_score": 60.91
+      },
+      {
+        "category": "Pets > Pet Healthcare > Anti Fleas & Ticks",
+        "products": 200,
+        "top_score": 86.78,
+        "average_score": 57.16
+      },
+      {
+        "category": "Pets > Pet Healthcare > Medication",
+        "products": 144,
+        "top_score": 71.79,
+        "average_score": 54.17
+      },
+      {
+        "category": "Pets > Pet Healthcare > Others",
+        "products": 200,
+        "top_score": 82.79,
+        "average_score": 57.75
+      },
+      {
+        "category": "Pets > Pet Healthcare > Vitamins & Supplements",
+        "products": 200,
+        "top_score": 79.7,
+        "average_score": 61.09
+      },
+      {
+        "category": "Sports & Outdoors > Others",
+        "products": 200,
+        "top_score": 75.73,
+        "average_score": 57.42
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Accessories > Dry Bags",
+        "products": 200,
+        "top_score": 72.69,
+        "average_score": 60.26
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Accessories > Gym Protective Gears",
+        "products": 200,
+        "top_score": 81.15,
+        "average_score": 63.72
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Accessories > Mouthguards & Sport Tapes",
+        "products": 161,
+        "top_score": 78.18,
+        "average_score": 56.95
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Accessories > Others",
+        "products": 200,
+        "top_score": 71.83,
+        "average_score": 61.15
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Accessories > Rain Coats",
+        "products": 200,
+        "top_score": 83.94,
+        "average_score": 62.13
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Accessories > Shoe Bags",
+        "products": 130,
+        "top_score": 80.1,
+        "average_score": 56.85
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Accessories > Sports & Outdoor Hats",
+        "products": 200,
+        "top_score": 81.27,
+        "average_score": 62.45
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Accessories > Sports Headbands",
+        "products": 164,
+        "top_score": 80.86,
+        "average_score": 56.21
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Accessories > Sports Wristbands",
+        "products": 200,
+        "top_score": 68.67,
+        "average_score": 58.41
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Accessories > Stopwatches & Pedometers",
+        "products": 133,
+        "top_score": 71.83,
+        "average_score": 55.47
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Accessories > Training Equipments",
+        "products": 200,
+        "top_score": 79.74,
+        "average_score": 56.95
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Accessories > Umbrellas",
+        "products": 200,
+        "top_score": 85.37,
+        "average_score": 63.99
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Apparels > Bottoms",
+        "products": 200,
+        "top_score": 89.3,
+        "average_score": 66.38
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Apparels > Jackets",
+        "products": 200,
+        "top_score": 79.8,
+        "average_score": 60.7
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Apparels > Jerseys",
+        "products": 200,
+        "top_score": 86.0,
+        "average_score": 64.01
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Apparels > Kid's Sports Apparel",
+        "products": 200,
+        "top_score": 77.76,
+        "average_score": 59.67
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Apparels > Others",
+        "products": 200,
+        "top_score": 85.79,
+        "average_score": 60.01
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Apparels > Sets",
+        "products": 200,
+        "top_score": 78.53,
+        "average_score": 61.28
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Apparels > Sports Bras",
+        "products": 200,
+        "top_score": 81.33,
+        "average_score": 63.61
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Apparels > Swimming Attire",
+        "products": 200,
+        "top_score": 71.52,
+        "average_score": 64.36
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Apparels > T-shirts",
+        "products": 200,
+        "top_score": 77.82,
+        "average_score": 64.89
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Archery",
+        "products": 151,
+        "top_score": 65.74,
+        "average_score": 51.1
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Badminton",
+        "products": 200,
+        "top_score": 71.02,
+        "average_score": 63.44
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Baseball & Softball",
+        "products": 30,
+        "top_score": 70.53,
+        "average_score": 55.76
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Basketball",
+        "products": 151,
+        "top_score": 70.55,
+        "average_score": 56.76
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Billiards",
+        "products": 200,
+        "top_score": 70.73,
+        "average_score": 57.49
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Boardsports",
+        "products": 200,
+        "top_score": 71.18,
+        "average_score": 61.12
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Boating",
+        "products": 164,
+        "top_score": 71.1,
+        "average_score": 55.17
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Boxing & Martial Arts",
+        "products": 200,
+        "top_score": 71.81,
+        "average_score": 59.46
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Camping & Hiking",
+        "products": 200,
+        "top_score": 86.96,
+        "average_score": 68.86
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Cycling",
+        "products": 200,
+        "top_score": 76.85,
+        "average_score": 67.93
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Darts",
+        "products": 89,
+        "top_score": 63.86,
+        "average_score": 51.95
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Fishing",
+        "products": 200,
+        "top_score": 86.87,
+        "average_score": 67.26
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Fitness Equipment",
+        "products": 200,
+        "top_score": 85.55,
+        "average_score": 68.4
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Golf",
+        "products": 200,
+        "top_score": 70.85,
+        "average_score": 62.67
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Ice Skating & Winter Sports",
+        "products": 46,
+        "top_score": 65.47,
+        "average_score": 55.09
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Others",
+        "products": 200,
+        "top_score": 70.48,
+        "average_score": 58.19
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Rock Climbing",
+        "products": 200,
+        "top_score": 71.67,
+        "average_score": 58.91
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Rugby",
+        "products": 10,
+        "top_score": 61.21,
+        "average_score": 55.47
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Shooting & Survival Games",
+        "products": 200,
+        "top_score": 64.7,
+        "average_score": 52.09
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Soccer, Futsal & Sepak Takraw",
+        "products": 200,
+        "top_score": 74.66,
+        "average_score": 61.25
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Squash",
+        "products": 14,
+        "top_score": 67.65,
+        "average_score": 56.09
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Surfing & Wakeboarding",
+        "products": 23,
+        "top_score": 72.13,
+        "average_score": 56.54
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Swimming & Diving",
+        "products": 200,
+        "top_score": 70.91,
+        "average_score": 63.35
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Table Tennis",
+        "products": 200,
+        "top_score": 68.35,
+        "average_score": 56.53
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Tennis",
+        "products": 200,
+        "top_score": 71.15,
+        "average_score": 59.28
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Volleyball",
+        "products": 83,
+        "top_score": 67.61,
+        "average_score": 55.42
+      },
+      {
+        "category": "Sports & Outdoors > Sports & Outdoor Recreation Equipments > Yoga & Pilates",
+        "products": 200,
+        "top_score": 87.5,
+        "average_score": 65.34
+      },
+      {
+        "category": "Sports & Outdoors > Sports Footwear > Badminton Shoes",
+        "products": 170,
+        "top_score": 68.62,
+        "average_score": 55.75
+      },
+      {
+        "category": "Sports & Outdoors > Sports Footwear > Basketball Shoes",
+        "products": 69,
+        "top_score": 70.48,
+        "average_score": 59.94
+      },
+      {
+        "category": "Sports & Outdoors > Sports Footwear > Futsal Shoes",
+        "products": 169,
+        "top_score": 64.33,
+        "average_score": 54.68
+      },
+      {
+        "category": "Sports & Outdoors > Sports Footwear > Hiking Shoes",
+        "products": 200,
+        "top_score": 69.16,
+        "average_score": 57.47
+      },
+      {
+        "category": "Sports & Outdoors > Sports Footwear > Kid's Sport Shoes",
+        "products": 129,
+        "top_score": 67.41,
+        "average_score": 56.89
+      },
+      {
+        "category": "Sports & Outdoors > Sports Footwear > Others",
+        "products": 200,
+        "top_score": 71.99,
+        "average_score": 62.27
+      },
+      {
+        "category": "Sports & Outdoors > Sports Footwear > Running Shoes",
+        "products": 200,
+        "top_score": 84.5,
+        "average_score": 66.39
+      },
+      {
+        "category": "Sports & Outdoors > Sports Footwear > Soccer Shoes",
+        "products": 200,
+        "top_score": 67.62,
+        "average_score": 59.73
+      },
+      {
+        "category": "Sports & Outdoors > Sports Footwear > Tennis Shoes",
+        "products": 41,
+        "top_score": 67.01,
+        "average_score": 57.84
+      },
+      {
+        "category": "Sports & Outdoors > Sports Footwear > Training Shoes",
+        "products": 119,
+        "top_score": 68.73,
+        "average_score": 58.24
+      },
+      {
+        "category": "Sports & Outdoors > Sports Footwear > Volleyball Shoes",
+        "products": 26,
+        "top_score": 60.5,
+        "average_score": 54.81
+      },
+      {
+        "category": "Stationery > Art Supplies > Acrylic Paint",
+        "products": 200,
+        "top_score": 76.71,
+        "average_score": 57.81
+      },
+      {
+        "category": "Stationery > Art Supplies > Canvases & Easels",
+        "products": 186,
+        "top_score": 67.74,
+        "average_score": 53.76
+      },
+      {
+        "category": "Stationery > Art Supplies > Color Pencils",
+        "products": 200,
+        "top_score": 79.58,
+        "average_score": 59.7
+      },
+      {
+        "category": "Stationery > Art Supplies > Crayons & Pastels",
+        "products": 167,
+        "top_score": 69.54,
+        "average_score": 56.2
+      },
+      {
+        "category": "Stationery > Art Supplies > Oil Paint",
+        "products": 74,
+        "top_score": 69.51,
+        "average_score": 53.7
+      },
+      {
+        "category": "Stationery > Art Supplies > Others",
+        "products": 200,
+        "top_score": 81.03,
+        "average_score": 61.21
+      },
+      {
+        "category": "Stationery > Art Supplies > Paint Brushes",
+        "products": 200,
+        "top_score": 70.88,
+        "average_score": 58.22
+      },
+      {
+        "category": "Stationery > Art Supplies > Paint Palettes",
+        "products": 131,
+        "top_score": 68.84,
+        "average_score": 54.86
+      },
+      {
+        "category": "Stationery > Art Supplies > Sketch Books",
+        "products": 200,
+        "top_score": 73.75,
+        "average_score": 57.83
+      },
+      {
+        "category": "Stationery > Art Supplies > Water & Poster Colours",
+        "products": 200,
+        "top_score": 66.55,
+        "average_score": 56.41
+      },
+      {
+        "category": "Stationery > Gift & Wrapping > Bubble Wraps",
+        "products": 200,
+        "top_score": 81.75,
+        "average_score": 58.37
+      },
+      {
+        "category": "Stationery > Gift & Wrapping > Carton Boxes",
+        "products": 200,
+        "top_score": 78.6,
+        "average_score": 60.81
+      },
+      {
+        "category": "Stationery > Gift & Wrapping > Gift Bags",
+        "products": 200,
+        "top_score": 87.2,
+        "average_score": 59.59
+      },
+      {
+        "category": "Stationery > Gift & Wrapping > Gift Boxes",
+        "products": 200,
+        "top_score": 67.14,
+        "average_score": 57.06
+      },
+      {
+        "category": "Stationery > Gift & Wrapping > Gift Wrappers",
+        "products": 200,
+        "top_score": 70.39,
+        "average_score": 59.63
+      },
+      {
+        "category": "Stationery > Gift & Wrapping > Others",
+        "products": 200,
+        "top_score": 69.21,
+        "average_score": 56.45
+      },
+      {
+        "category": "Stationery > Gift & Wrapping > Ribbons",
+        "products": 200,
+        "top_score": 71.83,
+        "average_score": 60.87
+      },
+      {
+        "category": "Stationery > Letters & Envelopes > Envelopes & Angpao",
+        "products": 200,
+        "top_score": 86.81,
+        "average_score": 62.17
+      },
+      {
+        "category": "Stationery > Letters & Envelopes > Others",
+        "products": 64,
+        "top_score": 65.61,
+        "average_score": 52.72
+      },
+      {
+        "category": "Stationery > Letters & Envelopes > Post Cards",
+        "products": 200,
+        "top_score": 64.52,
+        "average_score": 52.26
+      },
+      {
+        "category": "Stationery > Letters & Envelopes > Postage Stamps & Duty Stamps",
+        "products": 175,
+        "top_score": 64.67,
+        "average_score": 51.84
+      },
+      {
+        "category": "Stationery > Notebooks & Papers > Art Paper & Boards",
+        "products": 200,
+        "top_score": 82.11,
+        "average_score": 60.51
+      },
+      {
+        "category": "Stationery > Notebooks & Papers > Book Covers",
+        "products": 130,
+        "top_score": 74.69,
+        "average_score": 54.31
+      },
+      {
+        "category": "Stationery > Notebooks & Papers > Bookmarks",
+        "products": 190,
+        "top_score": 71.18,
+        "average_score": 55.95
+      },
+      {
+        "category": "Stationery > Notebooks & Papers > Labels & Stickers",
+        "products": 200,
+        "top_score": 76.89,
+        "average_score": 68.18
+      },
+      {
+        "category": "Stationery > Notebooks & Papers > Loose Leaf",
+        "products": 123,
+        "top_score": 68.23,
+        "average_score": 54.27
+      },
+      {
+        "category": "Stationery > Notebooks & Papers > Memo & Sticky Notes",
+        "products": 200,
+        "top_score": 72.47,
+        "average_score": 62.28
+      },
+      {
+        "category": "Stationery > Notebooks & Papers > Notebooks & Notepads",
+        "products": 200,
+        "top_score": 81.22,
+        "average_score": 64.09
+      },
+      {
+        "category": "Stationery > Notebooks & Papers > Others",
+        "products": 200,
+        "top_score": 71.04,
+        "average_score": 56.07
+      },
+      {
+        "category": "Stationery > Notebooks & Papers > Printing & Photocopy Paper",
+        "products": 200,
+        "top_score": 79.64,
+        "average_score": 59.25
+      },
+      {
+        "category": "Stationery > Notebooks & Papers > Thermal Paper & Continuous Paper",
+        "products": 200,
+        "top_score": 81.86,
+        "average_score": 62.14
+      },
+      {
+        "category": "Stationery > Others",
+        "products": 200,
+        "top_score": 69.68,
+        "average_score": 58.69
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Calculators",
+        "products": 200,
+        "top_score": 81.93,
+        "average_score": 60.53
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Calendars",
+        "products": 138,
+        "top_score": 73.04,
+        "average_score": 54.61
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Clips, Pins & Tacks",
+        "products": 200,
+        "top_score": 80.88,
+        "average_score": 61.89
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Folders, Paper Organizers & Accessories",
+        "products": 200,
+        "top_score": 79.86,
+        "average_score": 64.8
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Glues",
+        "products": 200,
+        "top_score": 80.07,
+        "average_score": 61.47
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Hole Punchers",
+        "products": 199,
+        "top_score": 73.98,
+        "average_score": 56.31
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Ink Stamps & Pads",
+        "products": 200,
+        "top_score": 67.99,
+        "average_score": 59.44
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Label Printers",
+        "products": 171,
+        "top_score": 81.66,
+        "average_score": 57.53
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Lanyards & Name Tags",
+        "products": 200,
+        "top_score": 70.6,
+        "average_score": 62.93
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Others",
+        "products": 200,
+        "top_score": 85.17,
+        "average_score": 63.03
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Pen Knives & Paper Cutters",
+        "products": 200,
+        "top_score": 78.12,
+        "average_score": 64.34
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Pencil Cases",
+        "products": 200,
+        "top_score": 74.78,
+        "average_score": 63.87
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Rulers, Protractors & Stencils",
+        "products": 200,
+        "top_score": 71.59,
+        "average_score": 60.26
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Scissors",
+        "products": 200,
+        "top_score": 70.07,
+        "average_score": 62.52
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Sharpeners",
+        "products": 200,
+        "top_score": 73.35,
+        "average_score": 59.39
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Staplers & Staples",
+        "products": 200,
+        "top_score": 74.11,
+        "average_score": 60.18
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Strings & Tapes",
+        "products": 200,
+        "top_score": 79.71,
+        "average_score": 64.69
+      },
+      {
+        "category": "Stationery > School & Office Equipment > Writing Boards & Board Stands",
+        "products": 200,
+        "top_score": 76.06,
+        "average_score": 60.23
+      },
+      {
+        "category": "Stationery > Writing & Correction > Eraser & Correction Supplies",
+        "products": 200,
+        "top_score": 75.71,
+        "average_score": 64.16
+      },
+      {
+        "category": "Stationery > Writing & Correction > Highlighters",
+        "products": 200,
+        "top_score": 79.52,
+        "average_score": 59.79
+      },
+      {
+        "category": "Stationery > Writing & Correction > Markers",
+        "products": 200,
+        "top_score": 85.28,
+        "average_score": 63.7
+      },
+      {
+        "category": "Stationery > Writing & Correction > Others",
+        "products": 150,
+        "top_score": 72.35,
+        "average_score": 56.03
+      },
+      {
+        "category": "Stationery > Writing & Correction > Pencils",
+        "products": 200,
+        "top_score": 73.22,
+        "average_score": 63.22
+      },
+      {
+        "category": "Stationery > Writing & Correction > Pens & Inks",
+        "products": 200,
+        "top_score": 78.55,
+        "average_score": 66.98
+      },
+      {
+        "category": "Women Clothes > Costumes",
+        "products": 200,
+        "top_score": 65.35,
+        "average_score": 59.25
+      },
+      {
+        "category": "Women Clothes > Dresses",
+        "products": 200,
+        "top_score": 71.81,
+        "average_score": 66.16
+      },
+      {
+        "category": "Women Clothes > Fabric > Canvas",
+        "products": 27,
+        "top_score": 63.42,
+        "average_score": 53.01
+      },
+      {
+        "category": "Women Clothes > Fabric > Cotton",
+        "products": 200,
+        "top_score": 62.46,
+        "average_score": 54.97
+      },
+      {
+        "category": "Women Clothes > Fabric > Denim",
+        "products": 47,
+        "top_score": 65.97,
+        "average_score": 53.09
+      },
+      {
+        "category": "Women Clothes > Fabric > Leather",
+        "products": 65,
+        "top_score": 67.54,
+        "average_score": 55.17
+      },
+      {
+        "category": "Women Clothes > Fabric > Others",
+        "products": 200,
+        "top_score": 69.24,
+        "average_score": 55.74
+      },
+      {
+        "category": "Women Clothes > Fabric > Velvet, Silk & Satin",
+        "products": 178,
+        "top_score": 63.96,
+        "average_score": 53.07
+      },
+      {
+        "category": "Women Clothes > Fabric > Vinyl & Nylon",
+        "products": 25,
+        "top_score": 63.68,
+        "average_score": 52.51
+      },
+      {
+        "category": "Women Clothes > Fabric > Wool",
+        "products": 14,
+        "top_score": 57.13,
+        "average_score": 51.86
+      },
+      {
+        "category": "Women Clothes > Hoodies & Sweatshirts > Hoodies",
+        "products": 200,
+        "top_score": 72.3,
+        "average_score": 57.41
+      },
+      {
+        "category": "Women Clothes > Hoodies & Sweatshirts > Others",
+        "products": 8,
+        "top_score": 54.77,
+        "average_score": 51.57
+      },
+      {
+        "category": "Women Clothes > Hoodies & Sweatshirts > Sweatshirts",
+        "products": 156,
+        "top_score": 79.34,
+        "average_score": 56.82
+      },
+      {
+        "category": "Women Clothes > Jackets, Coats & Vests > Blazers",
+        "products": 200,
+        "top_score": 73.63,
+        "average_score": 58.41
+      },
+      {
+        "category": "Women Clothes > Jackets, Coats & Vests > Capes",
+        "products": 153,
+        "top_score": 70.27,
+        "average_score": 54.18
+      },
+      {
+        "category": "Women Clothes > Jackets, Coats & Vests > Jackets",
+        "products": 200,
+        "top_score": 73.42,
+        "average_score": 59.24
+      },
+      {
+        "category": "Women Clothes > Jackets, Coats & Vests > Others",
+        "products": 22,
+        "top_score": 56.37,
+        "average_score": 51.52
+      },
+      {
+        "category": "Women Clothes > Jackets, Coats & Vests > Vests",
+        "products": 190,
+        "top_score": 68.65,
+        "average_score": 54.39
+      },
+      {
+        "category": "Women Clothes > Jackets, Coats & Vests > Winter Jackets & Coats",
+        "products": 122,
+        "top_score": 68.05,
+        "average_score": 53.92
+      },
+      {
+        "category": "Women Clothes > Jeans",
+        "products": 200,
+        "top_score": 80.43,
+        "average_score": 64.59
+      },
+      {
+        "category": "Women Clothes > Jumpsuits, Playsuits & Overalls > Jumpsuits",
+        "products": 132,
+        "top_score": 71.81,
+        "average_score": 53.48
+      },
+      {
+        "category": "Women Clothes > Jumpsuits, Playsuits & Overalls > Others",
+        "products": 5,
+        "top_score": 56.44,
+        "average_score": 51.62
+      },
+      {
+        "category": "Women Clothes > Jumpsuits, Playsuits & Overalls > Overalls",
+        "products": 100,
+        "top_score": 71.85,
+        "average_score": 52.83
+      },
+      {
+        "category": "Women Clothes > Jumpsuits, Playsuits & Overalls > Playsuits",
+        "products": 46,
+        "top_score": 65.81,
+        "average_score": 52.28
+      },
+      {
+        "category": "Women Clothes > Lingerie & Underwear > Bra Accessories",
+        "products": 200,
+        "top_score": 81.69,
+        "average_score": 63.73
+      },
+      {
+        "category": "Women Clothes > Lingerie & Underwear > Bras",
+        "products": 200,
+        "top_score": 85.82,
+        "average_score": 69.96
+      },
+      {
+        "category": "Women Clothes > Lingerie & Underwear > Others",
+        "products": 71,
+        "top_score": 67.68,
+        "average_score": 54.29
+      },
+      {
+        "category": "Women Clothes > Lingerie & Underwear > Panties",
+        "products": 200,
+        "top_score": 90.56,
+        "average_score": 70.07
+      },
+      {
+        "category": "Women Clothes > Lingerie & Underwear > Safety Pants",
+        "products": 199,
+        "top_score": 73.68,
+        "average_score": 55.89
+      },
+      {
+        "category": "Women Clothes > Lingerie & Underwear > Sets",
+        "products": 184,
+        "top_score": 70.1,
+        "average_score": 55.43
+      },
+      {
+        "category": "Women Clothes > Lingerie & Underwear > Sexy Lingerie",
+        "products": 200,
+        "top_score": 69.99,
+        "average_score": 62.8
+      },
+      {
+        "category": "Women Clothes > Lingerie & Underwear > Shapewear",
+        "products": 200,
+        "top_score": 78.08,
+        "average_score": 61.74
+      },
+      {
+        "category": "Women Clothes > Lingerie & Underwear > Thermal Innerwear",
+        "products": 36,
+        "top_score": 76.2,
+        "average_score": 56.83
+      },
+      {
+        "category": "Women Clothes > Maternity Wear > Breastfeeding Wear",
+        "products": 88,
+        "top_score": 68.13,
+        "average_score": 52.9
+      },
+      {
+        "category": "Women Clothes > Maternity Wear > Maternity Bottoms",
+        "products": 161,
+        "top_score": 71.03,
+        "average_score": 56.43
+      },
+      {
+        "category": "Women Clothes > Maternity Wear > Maternity Dresses",
+        "products": 169,
+        "top_score": 65.75,
+        "average_score": 52.62
+      },
+      {
+        "category": "Women Clothes > Maternity Wear > Maternity Sets",
+        "products": 23,
+        "top_score": 60.26,
+        "average_score": 54.11
+      },
+      {
+        "category": "Women Clothes > Maternity Wear > Maternity Tops",
+        "products": 20,
+        "top_score": 67.1,
+        "average_score": 56.05
+      },
+      {
+        "category": "Women Clothes > Maternity Wear > Nursing Bras",
+        "products": 70,
+        "top_score": 73.42,
+        "average_score": 57.72
+      },
+      {
+        "category": "Women Clothes > Maternity Wear > Others",
+        "products": 7,
+        "top_score": 68.72,
+        "average_score": 55.28
+      },
+      {
+        "category": "Women Clothes > Others",
+        "products": 200,
+        "top_score": 69.09,
+        "average_score": 53.99
+      },
+      {
+        "category": "Women Clothes > Pants & Leggings > Leggings & Treggings",
+        "products": 200,
+        "top_score": 72.08,
+        "average_score": 56.07
+      },
+      {
+        "category": "Women Clothes > Pants & Leggings > Others",
+        "products": 66,
+        "top_score": 67.28,
+        "average_score": 52.03
+      },
+      {
+        "category": "Women Clothes > Pants & Leggings > Pants",
+        "products": 200,
+        "top_score": 85.94,
+        "average_score": 67.23
+      },
+      {
+        "category": "Women Clothes > Sets > Couple Sets",
+        "products": 84,
+        "top_score": 70.42,
+        "average_score": 52.7
+      },
+      {
+        "category": "Women Clothes > Sets > Family Sets",
+        "products": 120,
+        "top_score": 69.87,
+        "average_score": 56.52
+      },
+      {
+        "category": "Women Clothes > Sets > Individual Sets",
+        "products": 200,
+        "top_score": 78.51,
+        "average_score": 63.04
+      },
+      {
+        "category": "Women Clothes > Sets > Others",
+        "products": 200,
+        "top_score": 66.74,
+        "average_score": 56.16
+      },
+      {
+        "category": "Women Clothes > Shorts > Others",
+        "products": 8,
+        "top_score": 63.88,
+        "average_score": 53.1
+      },
+      {
+        "category": "Women Clothes > Shorts > Shorts",
+        "products": 200,
+        "top_score": 80.83,
+        "average_score": 64.38
+      },
+      {
+        "category": "Women Clothes > Shorts > Skorts",
+        "products": 200,
+        "top_score": 84.55,
+        "average_score": 57.01
+      },
+      {
+        "category": "Women Clothes > Skirts",
+        "products": 200,
+        "top_score": 75.53,
+        "average_score": 64.71
+      },
+      {
+        "category": "Women Clothes > Sleepwear & Pajamas > Kimonos & Robes",
+        "products": 71,
+        "top_score": 66.36,
+        "average_score": 53.44
+      },
+      {
+        "category": "Women Clothes > Sleepwear & Pajamas > Night Dresses",
+        "products": 200,
+        "top_score": 69.74,
+        "average_score": 59.31
+      },
+      {
+        "category": "Women Clothes > Sleepwear & Pajamas > Others",
+        "products": 25,
+        "top_score": 67.11,
+        "average_score": 55.5
+      },
+      {
+        "category": "Women Clothes > Sleepwear & Pajamas > Pajamas",
+        "products": 200,
+        "top_score": 76.63,
+        "average_score": 62.91
+      },
+      {
+        "category": "Women Clothes > Socks & Stockings > Others",
+        "products": 51,
+        "top_score": 68.57,
+        "average_score": 55.46
+      },
+      {
+        "category": "Women Clothes > Socks & Stockings > Pantyhose",
+        "products": 200,
+        "top_score": 82.17,
+        "average_score": 62.55
+      },
+      {
+        "category": "Women Clothes > Socks & Stockings > Socks",
+        "products": 200,
+        "top_score": 82.83,
+        "average_score": 65.64
+      },
+      {
+        "category": "Women Clothes > Sweaters & Cardigans",
+        "products": 200,
+        "top_score": 74.35,
+        "average_score": 63.25
+      },
+      {
+        "category": "Women Clothes > Tops > Bodysuits",
+        "products": 200,
+        "top_score": 69.2,
+        "average_score": 57.94
+      },
+      {
+        "category": "Women Clothes > Tops > Others",
+        "products": 200,
+        "top_score": 76.18,
+        "average_score": 62.83
+      },
+      {
+        "category": "Women Clothes > Tops > Polo Shirts",
+        "products": 200,
+        "top_score": 81.48,
+        "average_score": 62.44
+      },
+      {
+        "category": "Women Clothes > Tops > Shirts & Blouses",
+        "products": 200,
+        "top_score": 84.52,
+        "average_score": 67.24
+      },
+      {
+        "category": "Women Clothes > Tops > T-shirts",
+        "products": 200,
+        "top_score": 80.4,
+        "average_score": 68.27
+      },
+      {
+        "category": "Women Clothes > Tops > Tanks & Camisoles",
+        "products": 200,
+        "top_score": 83.01,
+        "average_score": 66.33
+      },
+      {
+        "category": "Women Clothes > Tops > Tube Tops",
+        "products": 200,
+        "top_score": 73.44,
+        "average_score": 61.11
+      },
+      {
+        "category": "Women Clothes > Traditional Wear > Bottoms",
+        "products": 200,
+        "top_score": 63.09,
+        "average_score": 51.98
+      },
+      {
+        "category": "Women Clothes > Traditional Wear > Dresses",
+        "products": 149,
+        "top_score": 69.2,
+        "average_score": 51.95
+      },
+      {
+        "category": "Women Clothes > Traditional Wear > Others",
+        "products": 97,
+        "top_score": 63.38,
+        "average_score": 51.52
+      },
+      {
+        "category": "Women Clothes > Traditional Wear > Sets",
+        "products": 200,
+        "top_score": 72.89,
+        "average_score": 54.35
+      },
+      {
+        "category": "Women Clothes > Traditional Wear > Tops",
+        "products": 200,
+        "top_score": 63.04,
+        "average_score": 55.07
+      },
+      {
+        "category": "Women Clothes > Wedding Dresses",
+        "products": 102,
+        "top_score": 61.55,
+        "average_score": 51.72
+      }
+    ]
+  },
+  "content_filter": {
+    "accepted": 646839,
+    "title": 2726,
+    "description": 119,
+    "price": 3139,
+    "affiliate": 0,
+    "stock": 0,
+    "commission": 0,
+    "rejected": 5984
+  }
+}

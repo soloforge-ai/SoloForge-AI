@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/affiliate_product.dart';
 import '../services/catalog_service.dart';
+import '../services/discovery/discovery_service.dart';
 
 import '../widgets/product_card.dart';
 import '../widgets/sort_selector.dart';
@@ -19,9 +20,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final CatalogService _catalogService = const CatalogService(
-    assetPath: 'assets/data/catalog.json',
-  );
+  final CatalogService _catalogService =
+    const CatalogService();
+
+  final DiscoveryService _discoveryService =
+    const DiscoveryService();
 
   List<AffiliateProduct> allProducts = [];
   List<AffiliateProduct> products = [];
@@ -32,24 +35,47 @@ class _HomePageState extends State<HomePage> {
 
   String selectedCategory = 'All';
 
-  final List<String> categories = [
-    'All',
-    'Beauty',
-    'Fashion',
-    'Home',
-    'Electronics',
-    'Food',
-    'Pet',
-  ];
+// TODO(Sprint45)
+// จะเปลี่ยนเป็น Dynamic Category
+// จาก DiscoveryService ใน Phase B
+
+  List<String> categories = ['All'];
 
   @override
   void initState() {
     super.initState();
+
+    loadCategories();
     loadProducts();
   }
 
-  Future<void> loadProducts() async {
-    final data = await _catalogService.getProducts();
+  Future<void> loadCategories() async {
+    final data =
+        await _discoveryService.loadCategoryNames();
+
+    if (!mounted) return;
+
+    setState(() {
+      categories = [
+        'All',
+        ...data,
+      ];
+    });
+  }
+
+  Future<void> loadProducts({
+  String category = 'All',
+  }) async {
+    setState(() {
+      loading = true;
+    });
+
+    final data =
+      category == 'All'
+          ? await _catalogService.getProducts()
+          : await _catalogService.getCategory(
+              category,
+            );
 
     if (!mounted) return;
 
@@ -73,14 +99,7 @@ class _HomePageState extends State<HomePage> {
     } else {
       result = List<AffiliateProduct>.from(result);
     }
-    if (selectedCategory != 'All') {
-      result = result.where((product) {
-        return product.category
-            .toLowerCase()
-            .contains(selectedCategory.toLowerCase());
-      }).toList();
-    }
-
+    
     switch (sortType) {
       case SortType.miniBossScore:
         result.sort((a, b) => b.miniBossScore.compareTo(a.miniBossScore));
@@ -173,23 +192,30 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 12),
 
-              CategoryFilterBar(
-                categories: categories,
-                selectedCategory: selectedCategory,
-                onSelected: (category) {
-                  setState(() {
-                    selectedCategory = category;
-                  });
+              if (categories.isNotEmpty)
+                CategoryFilterBar(
+                  categories: categories,
+                  selectedCategory: selectedCategory,
+                  onSelected: (category) async {
+                    setState(() {
+                      selectedCategory = category;
+                    });
 
-                  filterProducts();
-                },
-              ),
+                    if (category == 'All') {
+                      await loadProducts();
+                    } else {
+                      await loadProducts(
+                        category: category,
+                      );
+                    }
+                  },
+                ),
 
               const SizedBox(height: 20),
 
               Text(
                 loading
-                    ? 'Loading Shopee catalog...'
+                    ? 'Loading Products...'
                     : 'พบ ${products.length} รายการ',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
