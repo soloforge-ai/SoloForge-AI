@@ -12,71 +12,78 @@ class AnalysisCard extends StatelessWidget {
 
   Widget _section(
     String title,
-    List<String> items,
+    String value,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.deepPurpleAccent,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        ...items.map(
-          (e) => Text("• $e"),
-        ),
-        const SizedBox(height: 12),
-      ],
+
+          const SizedBox(height: 4),
+
+          Text(
+            value.isEmpty ? "-" : value,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               "AI Analysis",
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            Text(
-              "Category : ${intelligence.category}",
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+            _section(
+              "Category",
+              intelligence.category,
             ),
-
-            const SizedBox(height: 16),
 
             _section(
               "Keywords",
-              intelligence.keywords,
+              intelligence.keywords.join(", "),
             ),
 
             _section(
               "Audience",
-              intelligence.audience,
+              "• ${intelligence.audience.join("\n• ")}",
             ),
 
             _section(
               "Selling Points",
-              intelligence.sellingPoints,
+              intelligence.sellingPoints.join("\n• "),
             ),
 
             _section(
               "Pain Points",
-              intelligence.painPoints,
+              intelligence.painPoints.join("\n• "),
             ),
           ],
         ),

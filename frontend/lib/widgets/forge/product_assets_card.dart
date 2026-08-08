@@ -16,7 +16,9 @@ class ProductAssetsCard extends StatelessWidget {
     String text,
     String label,
   ) async {
-    await Clipboard.setData(ClipboardData(text: text));
+    await Clipboard.setData(
+      ClipboardData(text: text),
+    );
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -33,32 +35,77 @@ class ProductAssetsCard extends StatelessWidget {
     required String title,
     required String value,
   }) {
+    final hasValue = value.trim().isNotEmpty;
+
     return Card(
       elevation: 0,
-      color: Colors.grey.shade600,
       child: Padding(
-        padding: const EdgeInsets.all(13),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  if (hasValue)
+                    SizedBox(
+                      width: double.infinity,
+                      child: SelectableText(
+                        value,
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    )
+                  else
+                    Text(
+                      "Not available",
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
               ),
             ),
-            const SizedBox(height: 1),
-            SelectableText(
-              value,
-              style: const TextStyle(fontSize: 15),
-            ),
-            const SizedBox(height: 1),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton.icon(
-                onPressed: () => _copy(context, value, title),
-                icon: const Icon(Icons.copy, size: 12),
-                label: const Text('Copy'),
+
+            const SizedBox(width: 12),
+
+            FilledButton.icon(
+              onPressed: hasValue
+                  ? () => _copy(
+                        context,
+                        value,
+                        title,
+                      )
+                  : null,
+              icon: const Icon(
+                Icons.copy,
+                size: 16,
+              ),
+              label: const Text("Copy"),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(
+                  92,
+                  40,
+                ),
               ),
             ),
           ],
@@ -76,7 +123,9 @@ class ProductAssetsCard extends StatelessWidget {
           title: 'Affiliate Link',
           value: product.affiliateUrl,
         ),
+
         const SizedBox(height: 10),
+
         _assetTile(
           context,
           title: 'Product Link',
