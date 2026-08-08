@@ -7,11 +7,11 @@ import '../services/discovery/discovery_service.dart';
 import '../widgets/product_card.dart';
 import '../widgets/sort_selector.dart';
 import 'forge_page.dart';
-import 'image_test_page.dart';
 import '../widgets/category_filter_bar.dart';
 
 import 'about_page.dart';
 import '../widgets/home/hero_banner.dart';
+import 'developer_tools_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -128,8 +128,21 @@ class _HomePageState extends State<HomePage> {
   title: const Text('SoloForge AI'),
   actions: [
     IconButton(
-      icon: const Icon(Icons.info_outline),
+      tooltip: "Developer Tools",
+      icon: const Icon(Icons.build),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DeveloperToolsPage(),
+          ),
+        );
+      },
+    ),
+
+    IconButton(
       tooltip: "About",
+      icon: const Icon(Icons.info_outline),
       onPressed: () {
         Navigator.push(
           context,
@@ -147,23 +160,7 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const HeroBanner(),
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                icon: const Icon(Icons.image),
-                label: const Text("Image Engine Test"),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ImageTestPage()),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             SortSelector(
               value: sortType,
@@ -209,13 +206,36 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              Text(
-                loading
-                    ? 'Loading Products...'
-                    : 'พบ ${products.length} รายการ',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+              Card(
+                elevation: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+
+                      _StatItem(
+                        icon: Icons.inventory_2,
+                        title: "Products",
+                        value: "${products.length}",
+                      ),
+
+                      _StatItem(
+                        icon: Icons.category,
+                        title: "Categories",
+                        value: "${categories.length - 1}",
+                      ),
+
+                      _StatItem(
+                        icon: Icons.auto_awesome,
+                        title: "AI Ready",
+                        value: "${products.length}",
+                      ),
+                    ],
+                  ),
+                ),
               ),
               
             const SizedBox(height: 10),
@@ -244,6 +264,51 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+}
+class _StatItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+
+  const _StatItem({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          color: const Color(0xFF7C4DFF),
+          size: 18,
+        ),
+
+        const SizedBox(height: 6),
+
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        const SizedBox(height: 2),
+
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.grey,
+            fontSize: 12,
+          ),
+        ),
+      ],
     );
   }
 }
