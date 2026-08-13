@@ -7,6 +7,7 @@ import '../services/discovery/discovery_service.dart';
 import '../widgets/product_card.dart';
 import '../widgets/sort_selector.dart';
 import 'forge_page.dart';
+import 'asset_forge_page.dart';
 import '../widgets/category_filter_bar.dart';
 
 import 'about_page.dart';
@@ -127,6 +128,19 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
   title: const Text('SoloForge AI'),
   actions: [
+    IconButton(
+      tooltip: 'Asset Forge',
+      icon: const Icon(Icons.auto_awesome),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const AssetForgePage(),
+          ),
+        );
+      },
+    ),
+
     IconButton(
       tooltip: "Developer Tools",
       icon: const Icon(Icons.build),
