@@ -14,57 +14,39 @@ class _AssetForgePageState extends State<AssetForgePage> {
   String style = 'Cute 3D Chibi';
 
   int quantity = 12;
-
   bool isGenerating = false;
-  double progress = 0;
+  double progress = 0.0;
+  String status = 'Ready';
 
-  String status = 'พร้อมสร้าง Asset Pack';
-
-  final TextEditingController messagesController =
-      TextEditingController(
-    text:
-        'สวัสดี\n'
-        'ขอบคุณ\n'
-        'รักนะ\n'
-        'เป็นกำลังใจให้นะ\n'
-        'กอด ๆ\n'
-        'สู้ ๆ\n'
-        'พักผ่อนด้วยนะ\n'
-        'คิดถึงนะ\n'
-        'ยิ้มไว้นะ\n'
-        'เก่งมาก\n'
-        'ขอให้วันนี้เป็นวันที่ดี\n'
-        'ส่งพลังให้นะ',
-  );
+  final TextEditingController messageController =
+      TextEditingController();
 
   @override
   void dispose() {
-    messagesController.dispose();
+    messageController.dispose();
     super.dispose();
   }
 
-  Future<void> generateAssetPack() async {
+  Future<void> generateAssets() async {
     if (isGenerating) return;
 
     setState(() {
       isGenerating = true;
-      progress = 0;
-      status = 'กำลังเตรียม Prompt...';
+      progress = 0.0;
+      status = 'Preparing...';
     });
 
-    final steps = [
-      'กำลังเตรียม Prompt...',
-      'กำลังสร้างภาพ...',
-      'กำลังเตรียม Asset...',
-      'กำลังตัด Asset...',
-      'กำลังตั้งชื่อไฟล์...',
-      'Asset Pack พร้อมแล้ว!',
+    final steps = <String>[
+      'Preparing prompt...',
+      'Generating image...',
+      'Removing background...',
+      'Splitting stickers...',
+      'Naming files...',
+      'Creating asset pack...',
     ];
 
     for (int i = 0; i < steps.length; i++) {
-      await Future.delayed(
-        const Duration(milliseconds: 700),
-      );
+      await Future.delayed(const Duration(milliseconds: 600));
 
       if (!mounted) return;
 
@@ -78,19 +60,12 @@ class _AssetForgePageState extends State<AssetForgePage> {
 
     setState(() {
       isGenerating = false;
+      status = 'Asset Pack Ready!';
+      progress = 1.0;
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'สร้าง Asset Pack สำเร็จ! '
-          'ตอนนี้เป็น Demo Pipeline',
-        ),
-      ),
-    );
   }
 
-  Widget buildSelectField({
+  Widget buildDropdown({
     required String label,
     required String value,
     required List<String> items,
@@ -103,26 +78,30 @@ class _AssetForgePageState extends State<AssetForgePage> {
           label,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 15,
+            fontSize: 14,
           ),
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: value,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(
+          initialValue: value,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 12,
             ),
           ),
-          items: items.map((item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item),
-            );
-          }).toList(),
-          onChanged: onChanged,
+          items: items
+              .map(
+                (item) => DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(item),
+                ),
+              )
+              .toList(),
+          onChanged: isGenerating ? null : onChanged,
         ),
       ],
     );
@@ -132,193 +111,240 @@ class _AssetForgePageState extends State<AssetForgePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('✨ Asset Forge'),
+        title: const Text('Asset Forge'),
+        centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // HEADER
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(18),
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Asset Forge',
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'SoloForge Asset Forge',
                         style: TextStyle(
-                          fontSize: 26,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 8),
                       Text(
-                        'สร้าง Asset Pack จาก Character + Theme + Style',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                        ),
+                        'Create an asset pack from one simple form.',
                       ),
                     ],
                   ),
                 ),
               ),
 
+              const SizedBox(height: 20),
+
+              buildDropdown(
+                label: 'Character',
+                value: character,
+                items: const [
+                  'Pearli',
+                  'Aira',
+                  'CEO',
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      character = value;
+                    });
+                  }
+                },
+              ),
+
               const SizedBox(height: 16),
 
-              // SETTINGS
+              buildDropdown(
+                label: 'Product',
+                value: product,
+                items: const [
+                  'Sticker',
+                  'Wallpaper',
+                  'Social Media',
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      product = value;
+                    });
+                  }
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              buildDropdown(
+                label: 'Theme',
+                value: theme,
+                items: const [
+                  'Healing & Encouragement',
+                  'Love',
+                  'Abundance',
+                  'Manifestation',
+                  'Good Morning',
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      theme = value;
+                    });
+                  }
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              buildDropdown(
+                label: 'Style',
+                value: style,
+                items: const [
+                  'Cute 3D Chibi',
+                  'Cute 2D',
+                  'Luxury',
+                  'Celestial',
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      style = value;
+                    });
+                  }
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              Text(
+                'Quantity: $quantity',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              Slider(
+                value: quantity.toDouble(),
+                min: 4,
+                max: 24,
+                divisions: 5,
+                label: '$quantity',
+                onChanged: isGenerating
+                    ? null
+                    : (value) {
+                        setState(() {
+                          quantity = value.round();
+                        });
+                      },
+              ),
+
+              const SizedBox(height: 10),
+
+              TextField(
+                controller: messageController,
+                enabled: !isGenerating,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Sticker messages',
+                  hintText: 'เช่น สู้ ๆ นะ, ขอบคุณนะ, รักนะ',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
-                        '⚙️ Asset Settings',
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      // CHARACTER
-                      buildSelectField(
-                        label: 'Character',
-                        value: character,
-                        items: const [
-                          'Pearli',
-                          'Aira',
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setState(() {
-                            character = value;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // PRODUCT
-                      buildSelectField(
-                        label: 'Product',
-                        value: product,
-                        items: const [
-                          'Sticker',
-                          'Social Post',
-                          'Wallpaper',
-                          'Emoji',
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setState(() {
-                            product = value;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // THEME
-                      buildSelectField(
-                        label: 'Theme',
-                        value: theme,
-                        items: const [
-                          'Healing & Encouragement',
-                          'Love',
-                          'Abundance',
-                          'Motivation',
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setState(() {
-                            theme = value;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // STYLE
-                      buildSelectField(
-                        label: 'Style',
-                        value: style,
-                        items: const [
-                          'Cute 3D Chibi',
-                          'Soft Kawaii',
-                          'Luxury Spiritual',
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setState(() {
-                            style = value;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      // QUANTITY
-                      const Text(
-                        'Quantity',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-
                       Row(
                         children: [
+                          const Icon(Icons.auto_awesome),
+                          const SizedBox(width: 10),
                           Expanded(
-                            child: Slider(
-                              value: quantity.toDouble(),
-                              min: 4,
-                              max: 24,
-                              divisions: 5,
-                              label: '$quantity',
-                              onChanged: (value) {
-                                setState(() {
-                                  quantity = value.round();
-                                });
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            width: 45,
                             child: Text(
-                              '$quantity',
-                              textAlign: TextAlign.center,
+                              status,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
+                          Text(
+                            '${(progress * 100).round()}%',
+                          ),
                         ],
                       ),
-
                       const SizedBox(height: 12),
+                      LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 8,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
-                      // MESSAGES
+              const SizedBox(height: 20),
+
+              SizedBox(
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: isGenerating ? null : generateAssets,
+                  icon: Icon(
+                    isGenerating
+                        ? Icons.hourglass_top
+                        : Icons.auto_awesome,
+                  ),
+                  label: Text(
+                    isGenerating
+                        ? 'Generating...'
+                        : 'Generate Asset Pack',
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              Card(
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       const Text(
-                        'Messages',
+                        'Current Configuration',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 15,
                         ),
                       ),
-
-                      const SizedBox(height: 8),
-
-                      TextField(
-                        controller:
+                      const SizedBox(height: 10),
+                      Text('Character: $character'),
+                      Text('Product: $product'),
+                      Text('Theme: $theme'),
+                      Text('Style: $style'),
+                      Text('Quantity: $quantity'),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
