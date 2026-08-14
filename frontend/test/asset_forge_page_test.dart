@@ -31,10 +31,9 @@ void main() {
 
     expect(find.text('Generating...'), findsOneWidget);
 
-    // Each pipeline stage schedules the next stage only after its delay.
-    // pump() must therefore advance the fake clock in smaller increments;
-    // jumping directly by 5 seconds would only complete the first timer.
-    await tester.pumpAndSettle(const Duration(milliseconds: 100));
+    // The simulated pipeline has 6 stages with a 600 ms delay each,
+    // so advance the fake clock beyond the full 3.6 second pipeline.
+    await tester.pump(const Duration(seconds: 4));
 
     expect(find.text('Asset Pack Ready!'), findsOneWidget);
     expect(find.text('Generate Asset Pack'), findsOneWidget);
