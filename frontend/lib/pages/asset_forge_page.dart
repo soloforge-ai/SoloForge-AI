@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 
 const String assetForgeApiUrl = String.fromEnvironment(
   'ASSET_FORGE_API_URL',
-  defaultValue: '',
+  defaultValue: 'https://asset-forge.onrender.com',
 );
 
 class AssetForgePage extends StatefulWidget {
