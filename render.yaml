@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: soloforge-asset-forge
+    runtime: docker
+    dockerfilePath: ./backend/asset_forge/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_IMAGE_MODEL
+        value: gemini-3.1-flash-image
