@@ -1,0 +1,32 @@
+name: Asset Forge Backend Test
+
+on:
+  push:
+    branches:
+      - feature/asset-forge-mvp
+    paths:
+      - 'backend/asset_forge/**'
+      - '.github/workflows/asset-forge-backend-test.yml'
+  pull_request:
+    branches:
+      - main
+      - feature/asset-forge-mvp
+    paths:
+      - 'backend/asset_forge/**'
+      - '.github/workflows/asset-forge-backend-test.yml'
+  workflow_dispatch:
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile backend Python
+        run: python -m compileall -q backend/asset_forge/main.py
