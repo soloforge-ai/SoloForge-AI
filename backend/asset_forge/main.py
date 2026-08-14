@@ -5,6 +5,7 @@ import io
 import math
 import os
 import zipfile
+from pathlib import Path
 from typing import List
 
 from fastapi import FastAPI, HTTPException
@@ -16,7 +17,7 @@ from google import genai
 from google.genai import types
 
 
-app = FastAPI(title="SoloForge Asset Forge API", version="0.1.0")
+app = FastAPI(title="SoloForge Asset Forge API", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,6 +26,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
 
 
 class AssetForgeRequest(BaseModel):
@@ -49,12 +53,42 @@ def _grid(quantity: int) -> tuple[int, int]:
     return columns, rows
 
 
-def _build_prompt(request: AssetForgeRequest, columns: int, rows: int) -> str:
+def _character_key(character: str) -> str:
+    return "".join(ch.lower() if ch.isalnum() else "_" for ch in character).strip("_")
+
+
+def _load_character_reference(character: str) -> bytes | None:
+    key = _character_key(character)
+    reference_dir = CHARACTER_REFERENCE_DIR / key
+
+    for filename in ("master.png", "master.jpg", "master.jpeg", "reference.png", "reference.jpg"):
+        path = reference_dir / filename
+        if path.exists() and path.is_file():
+            return path.read_bytes()
+
+    return None
+
+
+def _build_prompt(request: AssetForgeRequest, columns: int, rows: int, has_reference: bool) -> str:
+    reference_instruction = """
+CHARACTER REFERENCE:
+- A master reference image of the character is provided with this request.
+- Treat that image as the authoritative character design.
+- Preserve the same face, hairstyle, eye colors, skin tone, costume, wings, halo, jewelry, proportions, and signature accessories.
+- Do not redesign, age, simplify, or substitute the character.
+- Only change pose, facial expression, and gesture as needed for the sticker pack.
+""" if has_reference else """
+CHARACTER REFERENCE:
+- No master reference image is currently available.
+- Use the character name and style direction only.
+"""
+
     return f"""
 Create a commercial-quality sticker sheet for the character {request.character}.
 Theme: {request.theme}.
 Visual style: {request.style}.
 Product: {request.product}.
+{reference_instruction}
 
 IMPORTANT LAYOUT:
 - Create exactly {request.quantity} separate sticker poses in a clean {columns} columns x {rows} rows grid.
@@ -71,15 +105,22 @@ Character direction: {request.character} should look cute, friendly, polished an
 """.strip()
 
 
-def _generate_sheet(prompt: str) -> bytes:
+def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not configured on the Asset Forge server.")
 
     client = genai.Client(api_key=api_key)
+    contents: list[object] = []
+
+    if reference_bytes is not None:
+        contents.append(types.Part.from_bytes(data=reference_bytes, mime_type="image/png"))
+
+    contents.append(prompt)
+
     response = client.models.generate_content(
         model=os.getenv("GEMINI_IMAGE_MODEL", "gemini-3.1-flash-image"),
-        contents=prompt,
+        contents=contents,
         config=types.GenerateContentConfig(
             response_modalities=["IMAGE"],
             response_format={"image": {"aspect_ratio": "1:1", "image_size": "1K"}},
@@ -116,13 +157,11 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
         crop = source.crop((left, top, right, bottom))
         processed = remove(crop)
 
-        # Trim transparent margins so the final sticker is easier to use.
         alpha = processed.getchannel("A")
         bbox = alpha.getbbox()
         if bbox:
             processed = processed.crop(bbox)
 
-        # Add a small transparent safety margin.
         margin = max(8, min(processed.size) // 20)
         canvas = Image.new(
             "RGBA",
@@ -155,9 +194,19 @@ def health() -> dict[str, str]:
 
 @app.post("/v1/asset-forge/generate", response_model=AssetForgeResponse)
 def generate_asset_pack(request: AssetForgeRequest) -> AssetForgeResponse:
+    reference_bytes = _load_character_reference(request.character)
+
+    # Pearli must use the locked master reference. This prevents accidental generation
+    # of a visually different Pearli before the character library is configured.
+    if _character_key(request.character) == "pearli" and reference_bytes is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Pearli master reference is missing. Upload backend/asset_forge/characters/pearli/master.png before generating assets.",
+        )
+
     columns, rows = _grid(request.quantity)
-    prompt = _build_prompt(request, columns, rows)
-    source_bytes = _generate_sheet(prompt)
+    prompt = _build_prompt(request, columns, rows, reference_bytes is not None)
+    source_bytes = _generate_sheet(prompt, reference_bytes)
     files, source_bytes = _process_sheet(source_bytes, request)
     zip_bytes = _zip_files(files, request)
 
