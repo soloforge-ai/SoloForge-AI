@@ -31,12 +31,10 @@ void main() {
 
     expect(find.text('Generating...'), findsOneWidget);
 
-    await tester.pump(const Duration(milliseconds: 600));
-    await tester.pump(const Duration(milliseconds: 600));
-    await tester.pump(const Duration(milliseconds: 600));
-    await tester.pump(const Duration(milliseconds: 600));
-    await tester.pump(const Duration(milliseconds: 600));
-    await tester.pump(const Duration(milliseconds: 600));
+    // The simulated pipeline has six 600 ms stages (3.6 seconds total).
+    // Give the async state update a small amount of extra time to complete.
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pump();
 
     expect(find.text('Asset Pack Ready!'), findsOneWidget);
     expect(find.text('Generate Asset Pack'), findsOneWidget);
