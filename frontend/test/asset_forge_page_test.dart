@@ -31,9 +31,11 @@ void main() {
 
     expect(find.text('Generating...'), findsOneWidget);
 
-    // The simulated pipeline has 6 stages with a 600 ms delay each,
-    // so advance the fake clock beyond the full 3.6 second pipeline.
+    // The simulated pipeline has 6 stages with a 600 ms delay each.
+    // Advance beyond the full 3.6 second pipeline, then flush the
+    // resulting microtasks so the final setState is rendered.
     await tester.pump(const Duration(seconds: 4));
+    await tester.pump();
 
     expect(find.text('Asset Pack Ready!'), findsOneWidget);
     expect(find.text('Generate Asset Pack'), findsOneWidget);
