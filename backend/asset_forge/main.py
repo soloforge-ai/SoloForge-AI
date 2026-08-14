@@ -19,7 +19,7 @@ from google import genai
 from google.genai import types
 
 
-app = FastAPI(title="SoloForge Asset Forge API", version="0.4.0")
+app = FastAPI(title="SoloForge Asset Forge API", version="0.4.1")
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,19 +30,13 @@ app.add_middleware(
 )
 
 
-# Local references are preferred when they exist inside the backend container.
 CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
 
-# SoloForge already keeps the canonical character library in the Flutter frontend.
 CHARACTER_LIBRARY_BASE_URL = (
     "https://raw.githubusercontent.com/soloforge-ai/SoloForge-AI/main/"
     "frontend/assets/characters"
 )
 
-# Keep one lightweight rembg model session alive for the whole server process.
-# Creating/removing a model session for every sticker is extremely expensive on
-# a small Render CPU instance. u2netp is intentionally used here because the
-# Asset Forge input is clean, grid-based sticker artwork and speed matters.
 _REMBG_SESSION = None
 
 
@@ -156,12 +150,15 @@ def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
 
     contents.append(prompt)
 
+    # Asset Forge is intentionally pinned to Gemini 2.5 Flash Image.
+    # Gemini 2.5 supports aspect_ratio; image_size is a Gemini 3.x-only option,
+    # so do not send image_size here.
     response = client.models.generate_content(
-        model=os.getenv("GEMINI_IMAGE_MODEL", "gemini-3.1-flash-image"),
+        model="gemini-2.5-flash-image",
         contents=contents,
         config=types.GenerateContentConfig(
             response_modalities=["IMAGE"],
-            response_format={"image": {"aspect_ratio": "1:1", "image_size": "1K"}},
+            response_format={"image": {"aspect_ratio": "1:1"}},
         ),
     )
 
@@ -184,9 +181,6 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
     files: list[tuple[str, bytes]] = []
     rembg_session = _get_rembg_session()
 
-    # Reuse the same lightweight rembg session for every crop. The old code
-    # called remove() without a shared session, which can repeatedly initialize
-    # model state and becomes painfully slow on Render Free.
     for index in range(request.quantity):
         row = index // columns
         column = index % columns
