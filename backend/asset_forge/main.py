@@ -19,7 +19,7 @@ from google import genai
 from google.genai import types
 
 
-app = FastAPI(title="SoloForge Asset Forge API", version="0.4.2")
+app = FastAPI(title="SoloForge Asset Forge API", version="0.4.3")
 
 app.add_middleware(
     CORSMiddleware,
@@ -165,13 +165,15 @@ def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
         contents.append(prompt)
 
         # Asset Forge is intentionally pinned to Gemini 2.5 Flash Image.
-        # Gemini 2.5 supports aspect_ratio; image_size is a Gemini 3.x-only option.
+        # Do not pass response_format here: the installed google-genai SDK
+        # rejects that field in GenerateContentConfig. Gemini 2.5 Flash Image
+        # defaults to a square 1:1 output when no input image size is forcing
+        # another ratio, and the prompt explicitly requests a square sheet.
         response = client.models.generate_content(
             model="gemini-2.5-flash-image",
             contents=contents,
             config=types.GenerateContentConfig(
                 response_modalities=["IMAGE"],
-                response_format={"image": {"aspect_ratio": "1:1"}},
             ),
         )
 
@@ -186,8 +188,6 @@ def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
     except HTTPException:
         raise
     except Exception as exc:
-        # Do not hide the actual provider error behind a generic HTTP 500.
-        # This makes Render logs and the Flutter error message actionable.
         error_text = str(exc).strip() or exc.__class__.__name__
         raise HTTPException(
             status_code=502,
