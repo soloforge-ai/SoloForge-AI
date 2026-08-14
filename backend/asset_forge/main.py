@@ -14,12 +14,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from PIL import Image
-from rembg import remove
+from rembg import new_session, remove
 from google import genai
 from google.genai import types
 
 
-app = FastAPI(title="SoloForge Asset Forge API", version="0.3.0")
+app = FastAPI(title="SoloForge Asset Forge API", version="0.4.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,12 +34,23 @@ app.add_middleware(
 CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
 
 # SoloForge already keeps the canonical character library in the Flutter frontend.
-# This fixed public repository path lets the Render backend reuse those masters
-# without duplicating binary assets into the backend image.
 CHARACTER_LIBRARY_BASE_URL = (
     "https://raw.githubusercontent.com/soloforge-ai/SoloForge-AI/main/"
     "frontend/assets/characters"
 )
+
+# Keep one lightweight rembg model session alive for the whole server process.
+# Creating/removing a model session for every sticker is extremely expensive on
+# a small Render CPU instance. u2netp is intentionally used here because the
+# Asset Forge input is clean, grid-based sticker artwork and speed matters.
+_REMBG_SESSION = None
+
+
+def _get_rembg_session():
+    global _REMBG_SESSION
+    if _REMBG_SESSION is None:
+        _REMBG_SESSION = new_session("u2netp")
+    return _REMBG_SESSION
 
 
 class AssetForgeRequest(BaseModel):
@@ -78,8 +89,6 @@ def _load_character_reference(character: str) -> bytes | None:
         if path.exists() and path.is_file():
             return path.read_bytes()
 
-    # Reuse the canonical master already stored in frontend/assets/characters.
-    # This is intentionally a fixed GitHub URL rather than user-controlled input.
     for filename in ("master.png", "master.jpg", "master.jpeg"):
         url = f"{CHARACTER_LIBRARY_BASE_URL}/{key}/references/{filename}"
         try:
@@ -173,7 +182,11 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
     cell_height = source.height // rows
 
     files: list[tuple[str, bytes]] = []
+    rembg_session = _get_rembg_session()
 
+    # Reuse the same lightweight rembg session for every crop. The old code
+    # called remove() without a shared session, which can repeatedly initialize
+    # model state and becomes painfully slow on Render Free.
     for index in range(request.quantity):
         row = index // columns
         column = index % columns
@@ -183,7 +196,7 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
         bottom = source.height if row == rows - 1 else (row + 1) * cell_height
 
         crop = source.crop((left, top, right, bottom))
-        processed = remove(crop)
+        processed = remove(crop, session=rembg_session)
 
         alpha = processed.getchannel("A")
         bbox = alpha.getbbox()
@@ -224,8 +237,6 @@ def health() -> dict[str, str]:
 def generate_asset_pack(request: AssetForgeRequest) -> AssetForgeResponse:
     reference_bytes = _load_character_reference(request.character)
 
-    # Pearli must use the locked master reference. This prevents accidental generation
-    # of a visually different Pearli before the character library is configured.
     if _character_key(request.character) == "pearli" and reference_bytes is None:
         raise HTTPException(
             status_code=409,
