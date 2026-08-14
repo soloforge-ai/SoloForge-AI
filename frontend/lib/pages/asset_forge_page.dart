@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+// Keep the production endpoint explicit. It can still be overridden at build
+// time with --dart-define=ASSET_FORGE_API_URL=...
 const String assetForgeApiUrl = String.fromEnvironment(
   'ASSET_FORGE_API_URL',
   defaultValue: 'https://soloforge-asset-forge.onrender.com',
@@ -12,8 +14,7 @@ const String assetForgeApiUrl = String.fromEnvironment(
 class AssetForgePage extends StatefulWidget {
   const AssetForgePage({super.key, this.useBackend});
 
-  /// Override backend usage in tests. Production keeps the real backend by
-  /// default, while widget tests can exercise the deterministic simulation.
+  /// Tests can set false to use the deterministic local simulation.
   final bool? useBackend;
 
   @override
@@ -35,8 +36,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
 
   final TextEditingController messageController = TextEditingController();
 
-  bool get hasBackend =>
-      widget.useBackend ?? assetForgeApiUrl.trim().isNotEmpty;
+  bool get hasBackend => widget.useBackend ?? true;
 
   @override
   void dispose() {
@@ -44,16 +44,14 @@ class _AssetForgePageState extends State<AssetForgePage> {
     super.dispose();
   }
 
-  List<String> _messages() {
-    return messageController.text
-        .split(RegExp(r'[,\n]'))
-        .map((value) => value.trim())
-        .where((value) => value.isNotEmpty)
-        .toList();
-  }
+  List<String> _messages() => messageController.text
+      .split(RegExp(r'[,\n]'))
+      .map((value) => value.trim())
+      .where((value) => value.isNotEmpty)
+      .toList();
 
   Future<void> _simulatePipeline() async {
-    final steps = <String>[
+    const steps = <String>[
       'Preparing prompt...',
       'Generating image...',
       'Removing background...',
@@ -65,7 +63,6 @@ class _AssetForgePageState extends State<AssetForgePage> {
     for (int i = 0; i < steps.length; i++) {
       await Future.delayed(const Duration(milliseconds: 600));
       if (!mounted) return;
-
       setState(() {
         status = steps[i];
         progress = (i + 1) / steps.length;
@@ -85,17 +82,10 @@ class _AssetForgePageState extends State<AssetForgePage> {
     });
   }
 
-  Future<void> _generateWithBackend() async {
-    final baseUrl = assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
-
-    setState(() {
-      status = 'Connecting to Asset Forge server...';
-      progress = 0.1;
-    });
-
-    final response = await http
+  Future<http.Response> _postGenerate(Uri uri) async {
+    return http
         .post(
-          Uri.parse('$baseUrl/v1/asset-forge/generate'),
+          uri,
           headers: const {'Content-Type': 'application/json'},
           body: jsonEncode({
             'character': character,
@@ -107,6 +97,45 @@ class _AssetForgePageState extends State<AssetForgePage> {
           }),
         )
         .timeout(const Duration(minutes: 5));
+  }
+
+  Future<void> _generateWithBackend() async {
+    final baseUrl = assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
+    final uri = Uri.parse('$baseUrl/v1/asset-forge/generate');
+
+    setState(() {
+      status = 'Connecting to Asset Forge server...';
+      progress = 0.1;
+    });
+
+    // Render's free service can sleep. Give it a short wake-up window before
+    // sending the real generation request. The health endpoint is lightweight.
+    try {
+      await http.get(Uri.parse('$baseUrl/health')).timeout(
+        const Duration(seconds: 20),
+      );
+    } on TimeoutException {
+      // The generation request below has its own timeout and remains the source
+      // of truth; a slow health check must not prevent generation.
+    } on Object {
+      // A transient health-check failure should not hide the real API error.
+    }
+
+    if (!mounted) return;
+    setState(() {
+      status = 'Generating with Asset Forge...';
+      progress = 0.2;
+    });
+
+    http.Response response;
+    try {
+      response = await _postGenerate(uri);
+    } on SocketException catch (error) {
+      throw Exception(
+        'เชื่อมต่อ Asset Forge ไม่ได้ (${error.message}). '
+        'ถ้า Render เพิ่งตื่น ให้กด Generate อีกครั้ง',
+      );
+    }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       String message = 'Asset Forge server returned ${response.statusCode}.';
@@ -176,29 +205,16 @@ class _AssetForgePageState extends State<AssetForgePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           initialValue: value,
           decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
           items: items
-              .map(
-                (item) => DropdownMenuItem<String>(
-                  value: item,
-                  child: Text(item),
-                ),
-              )
+              .map((item) => DropdownMenuItem<String>(value: item, child: Text(item)))
               .toList(),
           onChanged: isGenerating ? null : onChanged,
         ),
@@ -209,10 +225,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Asset Forge'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Asset Forge'), centerTitle: true),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -225,26 +238,14 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'SoloForge Asset Forge',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      const Text('SoloForge Asset Forge', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      Text(
-                        hasBackend
-                            ? 'Real AI pipeline connected.'
-                            : 'MVP simulation mode — backend not connected yet.',
-                      ),
+                      Text(hasBackend ? 'Real AI pipeline connected.' : 'MVP simulation mode.'),
                     ],
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
               buildDropdown(
                 label: 'Character',
                 value: character,
@@ -253,9 +254,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   if (value != null) setState(() => character = value);
                 },
               ),
-
               const SizedBox(height: 16),
-
               buildDropdown(
                 label: 'Product',
                 value: product,
@@ -264,60 +263,35 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   if (value != null) setState(() => product = value);
                 },
               ),
-
               const SizedBox(height: 16),
-
               buildDropdown(
                 label: 'Theme',
                 value: theme,
-                items: const [
-                  'Healing & Encouragement',
-                  'Love',
-                  'Abundance',
-                  'Manifestation',
-                  'Good Morning',
-                ],
+                items: const ['Healing & Encouragement', 'Love', 'Abundance', 'Manifestation', 'Good Morning'],
                 onChanged: (value) {
                   if (value != null) setState(() => theme = value);
                 },
               ),
-
               const SizedBox(height: 16),
-
               buildDropdown(
                 label: 'Style',
                 value: style,
-                items: const [
-                  'Cute 3D Chibi',
-                  'Cute 2D',
-                  'Luxury',
-                  'Celestial',
-                ],
+                items: const ['Cute 3D Chibi', 'Cute 2D', 'Luxury', 'Celestial'],
                 onChanged: (value) {
                   if (value != null) setState(() => style = value);
                 },
               ),
-
               const SizedBox(height: 20),
-
-              Text(
-                'Quantity: $quantity',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-
+              Text('Quantity: $quantity', style: const TextStyle(fontWeight: FontWeight.bold)),
               Slider(
                 value: quantity.toDouble(),
                 min: 4,
                 max: 24,
                 divisions: 5,
                 label: '$quantity',
-                onChanged: isGenerating
-                    ? null
-                    : (value) => setState(() => quantity = value.round()),
+                onChanged: isGenerating ? null : (value) => setState(() => quantity = value.round()),
               ),
-
               const SizedBox(height: 10),
-
               TextField(
                 controller: messageController,
                 enabled: !isGenerating,
@@ -325,14 +299,10 @@ class _AssetForgePageState extends State<AssetForgePage> {
                 decoration: InputDecoration(
                   labelText: 'Sticker messages',
                   hintText: 'เช่น สู้ ๆ นะ, ขอบคุณนะ, รักนะ',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-
               const SizedBox(height: 24),
-
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -340,63 +310,34 @@ class _AssetForgePageState extends State<AssetForgePage> {
                     children: [
                       Row(
                         children: [
-                          Icon(
-                            isGenerating
-                                ? Icons.auto_awesome
-                                : Icons.check_circle_outline,
-                          ),
+                          Icon(isGenerating ? Icons.auto_awesome : Icons.check_circle_outline),
                           const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              status,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
+                          Expanded(child: Text(status, style: const TextStyle(fontWeight: FontWeight.bold))),
                           Text('${(progress * 100).round()}%'),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 8,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                      LinearProgressIndicator(value: progress, minHeight: 8, borderRadius: BorderRadius.circular(10)),
                       if (errorMessage != null) ...[
                         const SizedBox(height: 12),
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: Text(
-                            errorMessage!,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                          ),
+                          child: Text(errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                         ),
                       ],
                     ],
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
               SizedBox(
                 height: 52,
                 child: ElevatedButton.icon(
                   onPressed: isGenerating ? null : generateAssets,
-                  icon: Icon(
-                    isGenerating
-                        ? Icons.hourglass_top
-                        : Icons.auto_awesome,
-                  ),
-                  label: Text(
-                    isGenerating ? 'Generating...' : 'Generate Asset Pack',
-                  ),
+                  icon: Icon(isGenerating ? Icons.hourglass_top : Icons.auto_awesome),
+                  label: Text(isGenerating ? 'Generating...' : 'Generate Asset Pack'),
                 ),
               ),
-
               if (generatedFiles.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 Card(
@@ -405,22 +346,16 @@ class _AssetForgePageState extends State<AssetForgePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Generated ${generatedFiles.length} files',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        Text('Generated ${generatedFiles.length} files', style: const TextStyle(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         ...generatedFiles.take(6).map(Text.new),
-                        if (generatedFiles.length > 6)
-                          Text('…and ${generatedFiles.length - 6} more'),
+                        if (generatedFiles.length > 6) Text('…and ${generatedFiles.length - 6} more'),
                       ],
                     ),
                   ),
                 ),
               ],
-
               const SizedBox(height: 20),
-
               Card(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: Padding(
@@ -428,10 +363,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Current Configuration',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      const Text('Current Configuration', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 10),
                       Text('Character: $character'),
                       Text('Product: $product'),
