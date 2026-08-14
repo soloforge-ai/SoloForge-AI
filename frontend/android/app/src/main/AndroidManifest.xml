@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Asset Forge production API requires network access in release APKs. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:label="SoloForge AI"
         android:name="${applicationName}"
