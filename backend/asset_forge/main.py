@@ -19,7 +19,7 @@ from google import genai
 from google.genai import types
 
 
-app = FastAPI(title="SoloForge Asset Forge API", version="0.4.1")
+app = FastAPI(title="SoloForge Asset Forge API", version="0.4.2")
 
 app.add_middleware(
     CORSMiddleware,
@@ -110,12 +110,25 @@ CHARACTER REFERENCE:
 - Use the character name and style direction only.
 """
 
+    message_block = "\n".join(
+        f"{index + 1}. {message.strip()}"
+        for index, message in enumerate(request.messages)
+        if message.strip()
+    )
+    if not message_block:
+        message_block = "No specific sticker messages were supplied. Create distinct expressive poses."
+
     return f"""
 Create a commercial-quality sticker sheet for the character {request.character}.
 Theme: {request.theme}.
 Visual style: {request.style}.
 Product: {request.product}.
 {reference_instruction}
+
+STICKER MESSAGE INTENT:
+The app will add the exact Thai text later. Do NOT render text, letters, captions, speech bubbles, logos, or watermarks in the artwork.
+Use these messages only to determine the matching emotion, facial expression, pose, and gesture:
+{message_block}
 
 IMPORTANT LAYOUT:
 - Create exactly {request.quantity} separate sticker poses in a clean {columns} columns x {rows} rows grid.
@@ -137,39 +150,49 @@ def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
     if not api_key:
         raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not configured on the Asset Forge server.")
 
-    client = genai.Client(api_key=api_key)
-    contents: list[object] = []
+    try:
+        client = genai.Client(api_key=api_key)
+        contents: list[object] = []
 
-    if reference_bytes is not None:
-        try:
-            reference_image = Image.open(io.BytesIO(reference_bytes))
-            mime_type = "image/png" if reference_image.format == "PNG" else "image/jpeg"
-        except Exception as exc:
-            raise HTTPException(status_code=500, detail=f"Invalid character master image: {exc}") from exc
-        contents.append(types.Part.from_bytes(data=reference_bytes, mime_type=mime_type))
+        if reference_bytes is not None:
+            try:
+                reference_image = Image.open(io.BytesIO(reference_bytes))
+                mime_type = "image/png" if reference_image.format == "PNG" else "image/jpeg"
+            except Exception as exc:
+                raise HTTPException(status_code=500, detail=f"Invalid character master image: {exc}") from exc
+            contents.append(types.Part.from_bytes(data=reference_bytes, mime_type=mime_type))
 
-    contents.append(prompt)
+        contents.append(prompt)
 
-    # Asset Forge is intentionally pinned to Gemini 2.5 Flash Image.
-    # Gemini 2.5 supports aspect_ratio; image_size is a Gemini 3.x-only option,
-    # so do not send image_size here.
-    response = client.models.generate_content(
-        model="gemini-2.5-flash-image",
-        contents=contents,
-        config=types.GenerateContentConfig(
-            response_modalities=["IMAGE"],
-            response_format={"image": {"aspect_ratio": "1:1"}},
-        ),
-    )
+        # Asset Forge is intentionally pinned to Gemini 2.5 Flash Image.
+        # Gemini 2.5 supports aspect_ratio; image_size is a Gemini 3.x-only option.
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-image",
+            contents=contents,
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE"],
+                response_format={"image": {"aspect_ratio": "1:1"}},
+            ),
+        )
 
-    for part in response.parts:
-        if part.inline_data is not None:
-            image = part.as_image()
-            buffer = io.BytesIO()
-            image.save(buffer, format="PNG")
-            return buffer.getvalue()
+        for part in response.parts:
+            if part.inline_data is not None:
+                image = part.as_image()
+                buffer = io.BytesIO()
+                image.save(buffer, format="PNG")
+                return buffer.getvalue()
 
-    raise HTTPException(status_code=502, detail="Gemini did not return an image.")
+        raise HTTPException(status_code=502, detail="Gemini returned no image data.")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        # Do not hide the actual provider error behind a generic HTTP 500.
+        # This makes Render logs and the Flutter error message actionable.
+        error_text = str(exc).strip() or exc.__class__.__name__
+        raise HTTPException(
+            status_code=502,
+            detail=f"Gemini image generation failed: {error_text[:1200]}",
+        ) from exc
 
 
 def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[list[tuple[str, bytes]], bytes]:
@@ -229,24 +252,33 @@ def health() -> dict[str, str]:
 
 @app.post("/v1/asset-forge/generate", response_model=AssetForgeResponse)
 def generate_asset_pack(request: AssetForgeRequest) -> AssetForgeResponse:
-    reference_bytes = _load_character_reference(request.character)
+    try:
+        reference_bytes = _load_character_reference(request.character)
 
-    if _character_key(request.character) == "pearli" and reference_bytes is None:
-        raise HTTPException(
-            status_code=409,
-            detail="Pearli master reference is missing from the SoloForge character library.",
+        if _character_key(request.character) == "pearli" and reference_bytes is None:
+            raise HTTPException(
+                status_code=409,
+                detail="Pearli master reference is missing from the SoloForge character library.",
+            )
+
+        columns, rows = _grid(request.quantity)
+        prompt = _build_prompt(request, columns, rows, reference_bytes is not None)
+        source_bytes = _generate_sheet(prompt, reference_bytes)
+        files, source_bytes = _process_sheet(source_bytes, request)
+        zip_bytes = _zip_files(files, request)
+
+        pack_name = f"{request.character}_{request.product}_{request.quantity}pack".replace(" ", "_")
+        return AssetForgeResponse(
+            asset_pack_name=pack_name,
+            files=[name for name, _ in files],
+            zip_base64=base64.b64encode(zip_bytes).decode("ascii"),
+            source_image_base64=base64.b64encode(source_bytes).decode("ascii"),
         )
-
-    columns, rows = _grid(request.quantity)
-    prompt = _build_prompt(request, columns, rows, reference_bytes is not None)
-    source_bytes = _generate_sheet(prompt, reference_bytes)
-    files, source_bytes = _process_sheet(source_bytes, request)
-    zip_bytes = _zip_files(files, request)
-
-    pack_name = f"{request.character}_{request.product}_{request.quantity}pack".replace(" ", "_")
-    return AssetForgeResponse(
-        asset_pack_name=pack_name,
-        files=[name for name, _ in files],
-        zip_base64=base64.b64encode(zip_bytes).decode("ascii"),
-        source_image_base64=base64.b64encode(source_bytes).decode("ascii"),
-    )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        error_text = str(exc).strip() or exc.__class__.__name__
+        raise HTTPException(
+            status_code=500,
+            detail=f"Asset Forge processing failed: {error_text[:1200]}",
+        ) from exc
