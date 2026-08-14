@@ -4,6 +4,8 @@ import base64
 import io
 import math
 import os
+import urllib.error
+import urllib.request
 import zipfile
 from pathlib import Path
 from typing import List
@@ -17,7 +19,7 @@ from google import genai
 from google.genai import types
 
 
-app = FastAPI(title="SoloForge Asset Forge API", version="0.2.0")
+app = FastAPI(title="SoloForge Asset Forge API", version="0.3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,7 +30,16 @@ app.add_middleware(
 )
 
 
+# Local references are preferred when they exist inside the backend container.
 CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
+
+# SoloForge already keeps the canonical character library in the Flutter frontend.
+# This fixed public repository path lets the Render backend reuse those masters
+# without duplicating binary assets into the backend image.
+CHARACTER_LIBRARY_BASE_URL = (
+    "https://raw.githubusercontent.com/soloforge-ai/SoloForge-AI/main/"
+    "frontend/assets/characters"
+)
 
 
 class AssetForgeRequest(BaseModel):
@@ -58,6 +69,7 @@ def _character_key(character: str) -> str:
 
 
 def _load_character_reference(character: str) -> bytes | None:
+    """Load a character master from the backend first, then SoloForge's library."""
     key = _character_key(character)
     reference_dir = CHARACTER_REFERENCE_DIR / key
 
@@ -65,6 +77,18 @@ def _load_character_reference(character: str) -> bytes | None:
         path = reference_dir / filename
         if path.exists() and path.is_file():
             return path.read_bytes()
+
+    # Reuse the canonical master already stored in frontend/assets/characters.
+    # This is intentionally a fixed GitHub URL rather than user-controlled input.
+    for filename in ("master.png", "master.jpg", "master.jpeg"):
+        url = f"{CHARACTER_LIBRARY_BASE_URL}/{key}/references/{filename}"
+        try:
+            with urllib.request.urlopen(url, timeout=15) as response:
+                data = response.read()
+            if data:
+                return data
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+            continue
 
     return None
 
@@ -114,7 +138,12 @@ def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
     contents: list[object] = []
 
     if reference_bytes is not None:
-        contents.append(types.Part.from_bytes(data=reference_bytes, mime_type="image/png"))
+        try:
+            reference_image = Image.open(io.BytesIO(reference_bytes))
+            mime_type = "image/png" if reference_image.format == "PNG" else "image/jpeg"
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Invalid character master image: {exc}") from exc
+        contents.append(types.Part.from_bytes(data=reference_bytes, mime_type=mime_type))
 
     contents.append(prompt)
 
@@ -143,7 +172,6 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
     cell_width = source.width // columns
     cell_height = source.height // rows
 
-    messages = [m.strip() for m in request.messages if m.strip()]
     files: list[tuple[str, bytes]] = []
 
     for index in range(request.quantity):
@@ -201,7 +229,7 @@ def generate_asset_pack(request: AssetForgeRequest) -> AssetForgeResponse:
     if _character_key(request.character) == "pearli" and reference_bytes is None:
         raise HTTPException(
             status_code=409,
-            detail="Pearli master reference is missing. Upload backend/asset_forge/characters/pearli/master.png before generating assets.",
+            detail="Pearli master reference is missing from the SoloForge character library.",
         )
 
     columns, rows = _grid(request.quantity)
