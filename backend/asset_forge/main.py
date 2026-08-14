@@ -5,6 +5,7 @@ import io
 import math
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -15,11 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from PIL import Image
 from rembg import new_session, remove
-from google import genai
-from google.genai import types
 
 
-app = FastAPI(title="SoloForge Asset Forge API", version="0.4.3")
+app = FastAPI(title="SoloForge Asset Forge API", version="0.5.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -146,53 +145,82 @@ Character direction: {request.character} should look cute, friendly, polished an
 
 
 def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
-    api_key = os.getenv("GEMINI_API_KEY")
+    """Generate one image sheet through Pollinations.
+
+    We intentionally keep this as a provider boundary so the rest of Asset Forge
+    (background removal, splitting, naming and ZIP creation) stays unchanged.
+    """
+    api_key = os.getenv("POLLINATIONS_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not configured on the Asset Forge server.")
-
-    try:
-        client = genai.Client(api_key=api_key)
-        contents: list[object] = []
-
-        if reference_bytes is not None:
-            try:
-                reference_image = Image.open(io.BytesIO(reference_bytes))
-                mime_type = "image/png" if reference_image.format == "PNG" else "image/jpeg"
-            except Exception as exc:
-                raise HTTPException(status_code=500, detail=f"Invalid character master image: {exc}") from exc
-            contents.append(types.Part.from_bytes(data=reference_bytes, mime_type=mime_type))
-
-        contents.append(prompt)
-
-        # Asset Forge is intentionally pinned to Gemini 2.5 Flash Image.
-        # Do not pass response_format here: the installed google-genai SDK
-        # rejects that field in GenerateContentConfig. Gemini 2.5 Flash Image
-        # defaults to a square 1:1 output when no input image size is forcing
-        # another ratio, and the prompt explicitly requests a square sheet.
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-image",
-            contents=contents,
-            config=types.GenerateContentConfig(
-                response_modalities=["IMAGE"],
-            ),
+        raise HTTPException(
+            status_code=503,
+            detail="POLLINATIONS_API_KEY is not configured on the Asset Forge server.",
         )
 
-        for part in response.parts:
-            if part.inline_data is not None:
-                image = part.as_image()
-                buffer = io.BytesIO()
-                image.save(buffer, format="PNG")
-                return buffer.getvalue()
+    model = os.getenv("POLLINATIONS_IMAGE_MODEL", "flux").strip() or "flux"
+    width = int(os.getenv("POLLINATIONS_IMAGE_WIDTH", "1024"))
+    height = int(os.getenv("POLLINATIONS_IMAGE_HEIGHT", "1024"))
 
-        raise HTTPException(status_code=502, detail="Gemini returned no image data.")
-    except HTTPException:
-        raise
-    except Exception as exc:
-        error_text = str(exc).strip() or exc.__class__.__name__
+    # First MVP test deliberately uses text-to-image only. Character reference
+    # support can be wired to Pollinations image-to-image after one clean
+    # generation succeeds end-to-end.
+    del reference_bytes
+
+    query = urllib.parse.urlencode(
+        {
+            "model": model,
+            "width": width,
+            "height": height,
+        }
+    )
+    url = f"https://gen.pollinations.ai/image/{urllib.parse.quote(prompt, safe='')}?{query}"
+
+    request = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Accept": "image/png,image/jpeg;q=0.9,*/*;q=0.8",
+            "User-Agent": "SoloForge-Asset-Forge/0.5",
+        },
+        method="GET",
+    )
+
+    timeout_seconds = int(os.getenv("POLLINATIONS_TIMEOUT_SECONDS", "240"))
+
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            data = response.read()
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
         raise HTTPException(
             status_code=502,
-            detail=f"Gemini image generation failed: {error_text[:1200]}",
+            detail=f"Pollinations image generation failed ({exc.code}): {body[:1200]}",
         ) from exc
+    except (urllib.error.URLError, TimeoutError) as exc:
+        raise HTTPException(
+            status_code=504,
+            detail=f"Pollinations image generation timed out or could not connect: {exc}",
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Pollinations image generation failed: {str(exc)[:1200]}",
+        ) from exc
+
+    if not data:
+        raise HTTPException(status_code=502, detail="Pollinations returned an empty image response.")
+
+    # Validate the response before passing it to the image-processing pipeline.
+    try:
+        with Image.open(io.BytesIO(data)) as image:
+            image.verify()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Pollinations returned data that is not a valid image: {exc}",
+        ) from exc
+
+    return data
 
 
 def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[list[tuple[str, bytes]], bytes]:
