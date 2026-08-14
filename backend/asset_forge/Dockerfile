@@ -1,8 +1,7 @@
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PORT=8080
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
@@ -20,6 +19,8 @@ RUN python -c "from rembg import new_session; new_session('u2netp')"
 
 COPY main.py ./
 
-EXPOSE 8080
+EXPOSE 10000
 
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
+# Render injects PORT at runtime. Fall back to its documented default (10000).
+# Use exec so uvicorn becomes PID 1 and Render can observe the web process.
+CMD ["sh", "-c", "exec python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000} --log-level info"]
