@@ -31,10 +31,10 @@ void main() {
 
     expect(find.text('Generating...'), findsOneWidget);
 
-    // The simulated pipeline has six 600 ms stages (3.6 seconds total).
-    // Use a generous timeout so the test is not sensitive to CI scheduling.
-    await tester.pump(const Duration(seconds: 5));
-    await tester.pump();
+    // Each pipeline stage schedules the next stage only after its delay.
+    // pump() must therefore advance the fake clock in smaller increments;
+    // jumping directly by 5 seconds would only complete the first timer.
+    await tester.pumpAndSettle(const Duration(milliseconds: 100));
 
     expect(find.text('Asset Pack Ready!'), findsOneWidget);
     expect(find.text('Generate Asset Pack'), findsOneWidget);
