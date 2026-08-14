@@ -26,7 +26,12 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Generate Asset Pack'));
+    // The button sits below the fold in the default 800x600 test viewport.
+    // Bring it into view before tapping so the test exercises the real tap.
+    final generateButton = find.text('Generate Asset Pack');
+    await tester.ensureVisible(generateButton);
+    await tester.pumpAndSettle();
+    await tester.tap(generateButton);
     await tester.pump();
 
     expect(find.text('Generating...'), findsOneWidget);
