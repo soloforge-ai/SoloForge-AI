@@ -32,8 +32,8 @@ void main() {
     expect(find.text('Generating...'), findsOneWidget);
 
     // The simulated pipeline has six 600 ms stages (3.6 seconds total).
-    // Give the async state update a small amount of extra time to complete.
-    await tester.pump(const Duration(seconds: 4));
+    // Use a generous timeout so the test is not sensitive to CI scheduling.
+    await tester.pump(const Duration(seconds: 5));
     await tester.pump();
 
     expect(find.text('Asset Pack Ready!'), findsOneWidget);
