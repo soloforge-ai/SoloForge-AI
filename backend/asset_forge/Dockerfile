@@ -13,6 +13,10 @@ RUN apt-get update \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Pre-download the lightweight u2netp model during image build so the first
+# production request does not have to download a model from Render at runtime.
+RUN python -c "from rembg import new_session; new_session('u2netp')"
+
 COPY main.py ./
 
 EXPOSE 8080
