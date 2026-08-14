@@ -22,7 +22,10 @@ void main() {
   testWidgets('Generate Asset Pack completes the simulated pipeline', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: AssetForgePage(),
+        // Widget tests must not make a real HTTP request. The production page
+        // still uses the real Render backend because useBackend defaults to
+        // the configured ASSET_FORGE_API_URL.
+        home: AssetForgePage(useBackend: false),
       ),
     );
 
