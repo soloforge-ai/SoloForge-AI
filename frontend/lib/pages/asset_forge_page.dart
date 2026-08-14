@@ -10,7 +10,11 @@ const String assetForgeApiUrl = String.fromEnvironment(
 );
 
 class AssetForgePage extends StatefulWidget {
-  const AssetForgePage({super.key});
+  const AssetForgePage({super.key, this.useBackend});
+
+  /// Override backend usage in tests. Production keeps the real backend by
+  /// default, while widget tests can exercise the deterministic simulation.
+  final bool? useBackend;
 
   @override
   State<AssetForgePage> createState() => _AssetForgePageState();
@@ -31,7 +35,8 @@ class _AssetForgePageState extends State<AssetForgePage> {
 
   final TextEditingController messageController = TextEditingController();
 
-  bool get hasBackend => assetForgeApiUrl.trim().isNotEmpty;
+  bool get hasBackend =>
+      widget.useBackend ?? assetForgeApiUrl.trim().isNotEmpty;
 
   @override
   void dispose() {
