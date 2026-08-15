@@ -8,6 +8,7 @@ import '../widgets/product_card.dart';
 import '../widgets/sort_selector.dart';
 import 'forge_page.dart';
 import 'asset_forge_page.dart';
+import 'pollinations_test_page.dart';
 import '../widgets/category_filter_bar.dart';
 
 import 'about_page.dart';
@@ -22,11 +23,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final CatalogService _catalogService =
-    const CatalogService();
+  final CatalogService _catalogService = const CatalogService();
 
-  final DiscoveryService _discoveryService =
-    const DiscoveryService();
+  final DiscoveryService _discoveryService = const DiscoveryService();
 
   List<AffiliateProduct> allProducts = [];
   List<AffiliateProduct> products = [];
@@ -37,10 +36,9 @@ class _HomePageState extends State<HomePage> {
 
   String selectedCategory = 'All';
 
-// TODO(Sprint45)
-// จะเปลี่ยนเป็น Dynamic Category
-// จาก DiscoveryService ใน Phase B
-
+  // TODO(Sprint45)
+  // จะเปลี่ยนเป็น Dynamic Category
+  // จาก DiscoveryService ใน Phase B
   List<String> categories = ['All'];
 
   @override
@@ -52,32 +50,23 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> loadCategories() async {
-    final data =
-        await _discoveryService.loadCategoryNames();
+    final data = await _discoveryService.loadCategoryNames();
 
     if (!mounted) return;
 
     setState(() {
-      categories = [
-        'All',
-        ...data,
-      ];
+      categories = ['All', ...data];
     });
   }
 
-  Future<void> loadProducts({
-  String category = 'All',
-  }) async {
+  Future<void> loadProducts({String category = 'All'}) async {
     setState(() {
       loading = true;
     });
 
-    final data =
-      category == 'All'
-          ? await _catalogService.getProducts()
-          : await _catalogService.getCategory(
-              category,
-            );
+    final data = category == 'All'
+        ? await _catalogService.getProducts()
+        : await _catalogService.getCategory(category);
 
     if (!mounted) return;
 
@@ -101,7 +90,7 @@ class _HomePageState extends State<HomePage> {
     } else {
       result = List<AffiliateProduct>.from(result);
     }
-    
+
     switch (sortType) {
       case SortType.miniBossScore:
         result.sort((a, b) => b.miniBossScore.compareTo(a.miniBossScore));
@@ -126,48 +115,58 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-  title: const Text('SoloForge AI'),
-  actions: [
-    IconButton(
-      tooltip: 'Asset Forge',
-      icon: const Icon(Icons.auto_awesome),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AssetForgePage(),
+        title: const Text('SoloForge AI'),
+        actions: [
+          IconButton(
+            tooltip: 'Asset Forge',
+            icon: const Icon(Icons.auto_awesome),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AssetForgePage(),
+                ),
+              );
+            },
           ),
-        );
-      },
-    ),
-
-    IconButton(
-      tooltip: "Developer Tools",
-      icon: const Icon(Icons.build),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const DeveloperToolsPage(),
+          IconButton(
+            tooltip: 'Pollinations Test',
+            icon: const Icon(Icons.image_search),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PollinationsTestPage(),
+                ),
+              );
+            },
           ),
-        );
-      },
-    ),
-
-    IconButton(
-      tooltip: "About",
-      icon: const Icon(Icons.info_outline),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AboutPage(),
+          IconButton(
+            tooltip: 'Developer Tools',
+            icon: const Icon(Icons.build),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const DeveloperToolsPage(),
+                ),
+              );
+            },
           ),
-        );
-      },
-    ),
-  ],
-),
+          IconButton(
+            tooltip: 'About',
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AboutPage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -175,7 +174,6 @@ class _HomePageState extends State<HomePage> {
           children: [
             const HeroBanner(),
             const SizedBox(height: 16),
-
             SortSelector(
               value: sortType,
               onChanged: (value) {
@@ -200,58 +198,49 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 12),
+            if (categories.isNotEmpty)
+              CategoryFilterBar(
+                categories: categories,
+                selectedCategory: selectedCategory,
+                onSelected: (category) async {
+                  setState(() {
+                    selectedCategory = category;
+                  });
 
-              if (categories.isNotEmpty)
-                CategoryFilterBar(
-                  categories: categories,
-                  selectedCategory: selectedCategory,
-                  onSelected: (category) async {
-                    setState(() {
-                      selectedCategory = category;
-                    });
-
-                    if (category == 'All') {
-                      await loadProducts();
-                    } else {
-                      await loadProducts(
-                        category: category,
-                      );
-                    }
-                  },
-                ),
-
-              const SizedBox(height: 16),
-
-              Card(
-                elevation: 0,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-
-                      _StatItem(
-                        icon: Icons.inventory_2,
-                        title: "Products",
-                        value: "${products.length}",
-                      ),
-
-                      _StatItem(
-                        icon: Icons.category,
-                        title: "Categories",
-                        value: "${categories.length - 1}",
-                      ),
-
-                      _StatItem(
-                        icon: Icons.auto_awesome,
-                        title: "AI Ready",
-                        value: "${products.length}",
-                      ),
-                    ],
-                  ),
+                  if (category == 'All') {
+                    await loadProducts();
+                  } else {
+                    await loadProducts(category: category);
+                  }
+                },
+              ),
+            const SizedBox(height: 16),
+            Card(
+              elevation: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _StatItem(
+                      icon: Icons.inventory_2,
+                      title: 'Products',
+                      value: '${products.length}',
+                    ),
+                    _StatItem(
+                      icon: Icons.category,
+                      title: 'Categories',
+                      value: '${categories.length - 1}',
+                    ),
+                    _StatItem(
+                      icon: Icons.auto_awesome,
+                      title: 'AI Ready',
+                      value: '${products.length}',
+                    ),
+                  ],
                 ),
               ),
-              
+            ),
             const SizedBox(height: 10),
             Expanded(
               child: loading
@@ -281,6 +270,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
 class _StatItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -302,9 +292,7 @@ class _StatItem extends StatelessWidget {
           color: const Color(0xFF7C4DFF),
           size: 18,
         ),
-
         const SizedBox(height: 6),
-
         Text(
           value,
           style: const TextStyle(
@@ -312,9 +300,7 @@ class _StatItem extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-
         const SizedBox(height: 2),
-
         Text(
           title,
           style: const TextStyle(
