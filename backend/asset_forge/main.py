@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import base64
 import io
+import json
 import math
 import os
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 import zipfile
 from pathlib import Path
 from typing import List
@@ -17,7 +19,7 @@ from pydantic import BaseModel, Field
 from PIL import Image, ImageDraw
 
 
-app = FastAPI(title="SoloForge Asset Forge API", version="0.6.0")
+app = FastAPI(title="SoloForge Asset Forge API", version="0.7.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -86,8 +88,7 @@ def _load_character_reference(character: str) -> bytes | None:
 def _build_prompt(request: AssetForgeRequest, columns: int, rows: int, has_reference: bool) -> str:
     reference_instruction = """
 CHARACTER REFERENCE:
-- A master reference image of the character is available in the character library.
-- Treat that image as the authoritative character design.
+- The attached master reference image is the authoritative character design.
 - Preserve the same face, hairstyle, eye colors, skin tone, costume, wings, halo, jewelry, proportions, and signature accessories.
 - Do not redesign, age, simplify, or substitute the character.
 - Only change pose, facial expression, and gesture as needed for the sticker pack.
@@ -130,34 +131,114 @@ Character direction: {request.character} should look cute, friendly, polished an
 """.strip()
 
 
+def _prepare_reference(reference_bytes: bytes) -> bytes:
+    """Keep the reference small enough for the 512 MB Render instance."""
+    with Image.open(io.BytesIO(reference_bytes)) as image:
+        image = image.convert("RGB")
+        image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+        output = io.BytesIO()
+        image.save(output, format="JPEG", quality=88, optimize=True)
+        return output.getvalue()
+
+
+def _multipart_body(fields: dict[str, str], file_field: str, filename: str, file_bytes: bytes, content_type: str) -> tuple[bytes, str]:
+    boundary = f"----SoloForgeBoundary{uuid.uuid4().hex}"
+    chunks: list[bytes] = []
+
+    for name, value in fields.items():
+        chunks.extend([
+            f"--{boundary}\r\n".encode(),
+            f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode(),
+            value.encode("utf-8"),
+            b"\r\n",
+        ])
+
+    chunks.extend([
+        f"--{boundary}\r\n".encode(),
+        f'Content-Disposition: form-data; name="{file_field}"; filename="{filename}"\r\n'.encode(),
+        f"Content-Type: {content_type}\r\n\r\n".encode(),
+        file_bytes,
+        b"\r\n",
+        f"--{boundary}--\r\n".encode(),
+    ])
+    return b"".join(chunks), boundary
+
+
+def _extract_image_response(data: bytes) -> bytes:
+    """Accept Pollinations OpenAI-compatible JSON responses with URL or base64 image data."""
+    try:
+        payload = json.loads(data.decode("utf-8"))
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Pollinations returned a non-JSON image response: {exc}") from exc
+
+    items = payload.get("data") or []
+    if not items:
+        raise HTTPException(status_code=502, detail=f"Pollinations returned no image data: {str(payload)[:1000]}")
+
+    item = items[0] or {}
+    b64 = item.get("b64_json")
+    if b64:
+        try:
+            return base64.b64decode(b64)
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Pollinations returned invalid base64 image data: {exc}") from exc
+
+    image_url = item.get("url")
+    if image_url:
+        try:
+            with urllib.request.urlopen(image_url, timeout=60) as response:
+                return response.read()
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Could not download Pollinations generated image: {exc}") from exc
+
+    raise HTTPException(status_code=502, detail=f"Pollinations image response had no url or b64_json: {str(item)[:1000]}")
+
+
 def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
-    """Generate one image sheet through Pollinations."""
+    """Generate one image sheet through Pollinations, using image editing when a master exists."""
     api_key = os.getenv("POLLINATIONS_API_KEY")
     if not api_key:
         raise HTTPException(status_code=503, detail="POLLINATIONS_API_KEY is not configured on the Asset Forge server.")
 
-    model = os.getenv("POLLINATIONS_IMAGE_MODEL", "flux").strip() or "flux"
+    model = os.getenv("POLLINATIONS_IMAGE_EDIT_MODEL", "kontext").strip() or "kontext"
     width = int(os.getenv("POLLINATIONS_IMAGE_WIDTH", "1024"))
     height = int(os.getenv("POLLINATIONS_IMAGE_HEIGHT", "1024"))
-
-    # MVP uses text-to-image only. Reference-image generation will be added after
-    # the low-memory end-to-end pipeline is stable.
-    del reference_bytes
-
-    query = urllib.parse.urlencode({"model": model, "width": width, "height": height})
-    url = f"https://gen.pollinations.ai/image/{urllib.parse.quote(prompt, safe='')}?{query}"
-    request = urllib.request.Request(
-        url,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Accept": "image/png,image/jpeg;q=0.9,*/*;q=0.8",
-            "User-Agent": "SoloForge-Asset-Forge/0.6",
-        },
-        method="GET",
-    )
-
     timeout_seconds = int(os.getenv("POLLINATIONS_TIMEOUT_SECONDS", "240"))
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "application/json",
+        "User-Agent": "SoloForge-Asset-Forge/0.7",
+    }
+
     try:
+        if reference_bytes is not None:
+            # Pollinations supports multipart image editing with one or more reference images.
+            compact_reference = _prepare_reference(reference_bytes)
+            body, boundary = _multipart_body(
+                {
+                    "prompt": prompt,
+                    "model": model,
+                    "size": f"{width}x{height}",
+                },
+                "image",
+                "character-reference.jpg",
+                compact_reference,
+                "image/jpeg",
+            )
+            headers["Content-Type"] = f"multipart/form-data; boundary={boundary}"
+            request = urllib.request.Request(
+                "https://gen.pollinations.ai/v1/images/edits",
+                data=body,
+                headers=headers,
+                method="POST",
+            )
+        else:
+            query = urllib.parse.urlencode({"model": "flux", "width": width, "height": height})
+            url = f"https://gen.pollinations.ai/image/{urllib.parse.quote(prompt, safe='')}?{query}"
+            headers["Accept"] = "image/png,image/jpeg;q=0.9,*/*;q=0.8"
+            request = urllib.request.Request(url, headers=headers, method="GET")
+
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
             data = response.read()
     except urllib.error.HTTPError as exc:
@@ -170,6 +251,10 @@ def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
 
     if not data:
         raise HTTPException(status_code=502, detail="Pollinations returned an empty image response.")
+
+    # Image edit/generation endpoints return OpenAI-compatible JSON. The legacy GET path returns raw image bytes.
+    if reference_bytes is not None:
+        data = _extract_image_response(data)
 
     try:
         with Image.open(io.BytesIO(data)) as image:
