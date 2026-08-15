@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_theme.dart';
+
 class CategoryFilterBar extends StatelessWidget {
   const CategoryFilterBar({
     super.key,
@@ -41,17 +43,17 @@ class CategoryFilterBar extends StatelessWidget {
               materialTapTargetSize:
                   MaterialTapTargetSize.shrinkWrap,
               visualDensity: VisualDensity.compact,
-              selectedColor: Colors.deepPurple,
-              backgroundColor: const Color(0xFF2A2630),
+              selectedColor: AshColors.oxblood,
+              backgroundColor: AshColors.blackPlum,
               side: BorderSide(
                 color: selected
-                    ? Colors.deepPurpleAccent
-                    : Colors.grey.shade700,
+                    ? AshColors.velvetRed
+                    : AshColors.indigoMist.withValues(alpha: 0.55),
               ),
               labelStyle: TextStyle(
                 color: selected
-                    ? Colors.white
-                    : Colors.white70,
+                    ? AshColors.boneWhite
+                    : AshColors.smokeSilver,
                 fontWeight: selected
                     ? FontWeight.bold
                     : FontWeight.normal,
