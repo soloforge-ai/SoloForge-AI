@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_theme.dart';
+
 class HeroBanner extends StatelessWidget {
   const HeroBanner({super.key});
 
@@ -15,12 +17,24 @@ class HeroBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
           colors: [
-            Color(0xFF7C4DFF),
-            Color(0xFF5B2EFF),
+            AshColors.blackPlum,
+            AshColors.deepIndigo,
+            AshColors.oxblood,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        border: Border.all(
+          color: AshColors.indigoMist,
+          width: 0.6,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33541C2A),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -35,7 +49,7 @@ class HeroBanner extends StatelessWidget {
                       .textTheme
                       .titleLarge
                       ?.copyWith(
-                        color: Colors.white,
+                        color: AshColors.boneWhite,
                         fontWeight: FontWeight.bold,
                       ),
                 ),
@@ -45,7 +59,7 @@ class HeroBanner extends StatelessWidget {
                 const Text(
                   "Build AI Products Faster",
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AshColors.boneWhite,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -56,7 +70,7 @@ class HeroBanner extends StatelessWidget {
                 const Text(
                   "Discover • Analyze • Forge",
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: AshColors.smokeSilver,
                     fontSize: 13,
                   ),
                 ),
@@ -81,8 +95,8 @@ class HeroBanner extends StatelessWidget {
                 ),
               ),
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF7C4DFF),
+                backgroundColor: AshColors.boneWhite,
+                foregroundColor: AshColors.oxblood,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 18,
                 ),
