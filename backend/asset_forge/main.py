@@ -8,6 +8,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+from pathlib import Path
 from typing import List
 
 from fastapi import FastAPI, HTTPException
@@ -27,7 +28,6 @@ app.add_middleware(
 )
 
 CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
-
 CHARACTER_LIBRARY_BASE_URL = (
     "https://raw.githubusercontent.com/soloforge-ai/SoloForge-AI/main/"
     "frontend/assets/characters"
@@ -63,7 +63,7 @@ def _character_key(character: str) -> str:
 def _load_character_reference(character: str) -> bytes | None:
     """Load a character master from the backend first, then SoloForge's library."""
     key = _character_key(character)
-    reference_dir = Path(__file__).resolve().parent / "characters" / key
+    reference_dir = CHARACTER_REFERENCE_DIR / key
 
     for filename in ("master.png", "master.jpg", "master.jpeg", "reference.png", "reference.jpg"):
         path = reference_dir / filename
@@ -86,7 +86,7 @@ def _load_character_reference(character: str) -> bytes | None:
 def _build_prompt(request: AssetForgeRequest, columns: int, rows: int, has_reference: bool) -> str:
     reference_instruction = """
 CHARACTER REFERENCE:
-- A master reference image of the character is provided with this request.
+- A master reference image of the character is available in the character library.
 - Treat that image as the authoritative character design.
 - Preserve the same face, hairstyle, eye colors, skin tone, costume, wings, halo, jewelry, proportions, and signature accessories.
 - Do not redesign, age, simplify, or substitute the character.
@@ -181,26 +181,18 @@ def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
 
 
 def _remove_simple_background(image: Image.Image, threshold: int = 48) -> Image.Image:
-    """Low-memory background removal for flat/light sticker-sheet backgrounds.
-
-    The generated sheet is instructed to use a simple light background. We flood-fill
-    connected background regions from the four corners and turn matching pixels transparent.
-    This avoids loading an ONNX segmentation model and is designed for Render's 512MB tier.
-    """
+    """Low-memory removal for flat/light backgrounds on generated sticker cells."""
     rgba = image.convert("RGBA")
     transparent = (255, 255, 255, 0)
     draw = ImageDraw.Draw(rgba)
-
-    # Flood-fill from corners. Pillow performs the scan in native code and keeps
-    # memory usage far below an ONNX background-removal model.
-    corners = [(0, 0), (rgba.width - 1, 0), (0, rgba.height - 1), (rgba.width - 1, rgba.height - 1)]
+    corners = [
+        (0, 0),
+        (rgba.width - 1, 0),
+        (0, rgba.height - 1),
+        (rgba.width - 1, rgba.height - 1),
+    ]
     for point in corners:
-        try:
-            draw.floodfill(rgba, point, transparent, thresh=threshold)
-        except TypeError:
-            # Compatibility fallback for older Pillow versions.
-            draw.floodfill(rgba, point, transparent, thresh=threshold)
-
+        draw.floodfill(rgba, point, transparent, thresh=threshold)
     return rgba
 
 
@@ -228,7 +220,11 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
             processed = processed.crop(bbox)
 
         margin = max(8, min(processed.size) // 20)
-        canvas = Image.new("RGBA", (processed.width + margin * 2, processed.height + margin * 2), (255, 255, 255, 0))
+        canvas = Image.new(
+            "RGBA",
+            (processed.width + margin * 2, processed.height + margin * 2),
+            (255, 255, 255, 0),
+        )
         canvas.alpha_composite(processed, (margin, margin))
 
         filename = f"{index + 1:02d}_{request.character.lower()}_sticker.png"
