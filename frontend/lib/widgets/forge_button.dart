@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_theme.dart';
+
 class ForgeButton extends StatelessWidget {
   const ForgeButton({
     super.key,
@@ -18,13 +20,13 @@ class ForgeButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           gradient: const LinearGradient(
             colors: [
-              Color(0xFF8A5CFF),
-              Color(0xFF6C4DFF),
+              AshColors.deepIndigo,
+              AshColors.oxblood,
             ],
           ),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x446C4DFF),
+              color: Color(0x44541C2A),
               blurRadius: 12,
               offset: Offset(0, 4),
             ),
@@ -35,7 +37,7 @@ class ForgeButton extends StatelessWidget {
           style: FilledButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
-            foregroundColor: Colors.white,
+            foregroundColor: AshColors.boneWhite,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(22),
             ),
