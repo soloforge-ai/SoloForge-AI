@@ -260,8 +260,8 @@ class _StatItem extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(
-          Icons.auto_awesome,
+        Icon(
+          icon,
           color: AshColors.deepIndigo,
           size: 18,
         ),
