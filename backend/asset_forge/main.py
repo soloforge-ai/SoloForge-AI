@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 from PIL import Image, ImageDraw
 
 
-app = FastAPI(title="SoloForge Asset Forge API", version="0.7.1")
+app = FastAPI(title="SoloForge Asset Forge API", version="0.7.2")
 
 app.add_middleware(
     CORSMiddleware,
@@ -88,9 +88,10 @@ def _load_character_reference(character: str) -> bytes | None:
 def _build_prompt(request: AssetForgeRequest, columns: int, rows: int, has_reference: bool) -> str:
     reference_instruction = """
 CHARACTER REFERENCE:
-- The attached master reference image is the authoritative character design.
-- Preserve the same face, hairstyle, eye colors, skin tone, costume, wings, halo, jewelry, proportions, and signature accessories.
-- Do not redesign, age, simplify, or substitute the character.
+- The attached master reference image is authoritative for the character's face, hairstyle, eye colors, skin tone, costume, proportions, and signature accessories.
+- Preserve those core identity features consistently in every cell.
+- IMPORTANT: Do NOT preserve or copy any wings, halo, angel features, bird wings, or other fantasy appendages that may appear in the reference image. The SoloForge AI CEO character has NO wings.
+- The CEO must always appear as a human-like cute 3D chibi male mascot with no wings and no halo.
 - Only change pose, facial expression, and gesture as needed for the sticker pack.
 """ if has_reference else """
 CHARACTER REFERENCE:
@@ -104,12 +105,21 @@ CHARACTER REFERENCE:
         if message.strip()
     ) or "No specific sticker messages were supplied. Create distinct expressive poses."
 
+    no_wings_rule = """
+NON-NEGOTIABLE CEO IDENTITY RULE:
+- The CEO has NO wings.
+- Never generate angel wings, bird wings, feathers attached to the body, a halo, angelic appendages, or fantasy wings.
+- Do not infer wings from the reference image.
+- If the reference image contains wings, remove them from the generated character while keeping the face, hair, glasses, outfit, and body proportions consistent.
+""" if request.character.strip().lower() == "ceo" else ""
+
     return f"""
 Create a commercial-quality sticker sheet for the character {request.character}.
 Theme: {request.theme}.
 Visual style: {request.style}.
 Product: {request.product}.
 {reference_instruction}
+{no_wings_rule}
 
 STICKER MESSAGE INTENT:
 The app will add the exact Thai text later. Do NOT render text, letters, captions, speech bubbles, logos, or watermarks in the artwork.
@@ -213,7 +223,6 @@ def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
 
     try:
         if reference_bytes is not None:
-            # Pollinations supports multipart image editing with one or more reference images.
             compact_reference = _prepare_reference(reference_bytes)
             body, boundary = _multipart_body(
                 {
