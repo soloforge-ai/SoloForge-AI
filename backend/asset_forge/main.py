@@ -37,7 +37,7 @@ CHARACTER_LIBRARY_BASE_URL = (
 
 
 class AssetForgeRequest(BaseModel):
-    character: str = Field(default="Pearli", min_length=1, max_length=80)
+    character: str = Field(default="CEO", min_length=1, max_length=80)
     product: str = Field(default="Sticker", min_length=1, max_length=80)
     theme: str = Field(default="Healing & Encouragement", min_length=1, max_length=120)
     style: str = Field(default="Cute 3D Chibi", min_length=1, max_length=120)
