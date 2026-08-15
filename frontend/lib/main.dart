@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'core/theme/app_theme.dart';
 import 'pages/home_page.dart';
 
 void main() {
@@ -13,7 +14,7 @@ class SoloForgeApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'SoloForge AI',
-      theme: ThemeData.dark(),
+      theme: SoloForgeTheme.dark(),
       home: const HomePage(),
     );
   }
