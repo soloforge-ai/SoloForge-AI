@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 from PIL import Image, ImageDraw
 
 
-app = FastAPI(title="SoloForge Asset Forge API", version="0.7.0")
+app = FastAPI(title="SoloForge Asset Forge API", version="0.7.1")
 
 app.add_middleware(
     CORSMiddleware,
@@ -252,7 +252,6 @@ def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
     if not data:
         raise HTTPException(status_code=502, detail="Pollinations returned an empty image response.")
 
-    # Image edit/generation endpoints return OpenAI-compatible JSON. The legacy GET path returns raw image bytes.
     if reference_bytes is not None:
         data = _extract_image_response(data)
 
@@ -269,7 +268,6 @@ def _remove_simple_background(image: Image.Image, threshold: int = 48) -> Image.
     """Low-memory removal for flat/light backgrounds on generated sticker cells."""
     rgba = image.convert("RGBA")
     transparent = (255, 255, 255, 0)
-    draw = ImageDraw.Draw(rgba)
     corners = [
         (0, 0),
         (rgba.width - 1, 0),
@@ -277,7 +275,7 @@ def _remove_simple_background(image: Image.Image, threshold: int = 48) -> Image.
         (rgba.width - 1, rgba.height - 1),
     ]
     for point in corners:
-        draw.floodfill(rgba, point, transparent, thresh=threshold)
+        ImageDraw.floodfill(rgba, point, transparent, thresh=threshold)
     return rgba
 
 
