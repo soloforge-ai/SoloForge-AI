@@ -8,17 +8,15 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
-from pathlib import Path
 from typing import List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from PIL import Image
-from rembg import new_session, remove
+from PIL import Image, ImageDraw
 
 
-app = FastAPI(title="SoloForge Asset Forge API", version="0.5.0")
+app = FastAPI(title="SoloForge Asset Forge API", version="0.6.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,22 +26,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
 
 CHARACTER_LIBRARY_BASE_URL = (
     "https://raw.githubusercontent.com/soloforge-ai/SoloForge-AI/main/"
     "frontend/assets/characters"
 )
-
-_REMBG_SESSION = None
-
-
-def _get_rembg_session():
-    global _REMBG_SESSION
-    if _REMBG_SESSION is None:
-        _REMBG_SESSION = new_session("u2netp")
-    return _REMBG_SESSION
 
 
 class AssetForgeRequest(BaseModel):
@@ -75,7 +63,7 @@ def _character_key(character: str) -> str:
 def _load_character_reference(character: str) -> bytes | None:
     """Load a character master from the backend first, then SoloForge's library."""
     key = _character_key(character)
-    reference_dir = CHARACTER_REFERENCE_DIR / key
+    reference_dir = Path(__file__).resolve().parent / "characters" / key
 
     for filename in ("master.png", "master.jpg", "master.jpeg", "reference.png", "reference.jpg"):
         path = reference_dir / filename
@@ -113,9 +101,7 @@ CHARACTER REFERENCE:
         f"{index + 1}. {message.strip()}"
         for index, message in enumerate(request.messages)
         if message.strip()
-    )
-    if not message_block:
-        message_block = "No specific sticker messages were supplied. Create distinct expressive poses."
+    ) or "No specific sticker messages were supplied. Create distinct expressive poses."
 
     return f"""
 Create a commercial-quality sticker sheet for the character {request.character}.
@@ -145,82 +131,77 @@ Character direction: {request.character} should look cute, friendly, polished an
 
 
 def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
-    """Generate one image sheet through Pollinations.
-
-    We intentionally keep this as a provider boundary so the rest of Asset Forge
-    (background removal, splitting, naming and ZIP creation) stays unchanged.
-    """
+    """Generate one image sheet through Pollinations."""
     api_key = os.getenv("POLLINATIONS_API_KEY")
     if not api_key:
-        raise HTTPException(
-            status_code=503,
-            detail="POLLINATIONS_API_KEY is not configured on the Asset Forge server.",
-        )
+        raise HTTPException(status_code=503, detail="POLLINATIONS_API_KEY is not configured on the Asset Forge server.")
 
     model = os.getenv("POLLINATIONS_IMAGE_MODEL", "flux").strip() or "flux"
     width = int(os.getenv("POLLINATIONS_IMAGE_WIDTH", "1024"))
     height = int(os.getenv("POLLINATIONS_IMAGE_HEIGHT", "1024"))
 
-    # First MVP test deliberately uses text-to-image only. Character reference
-    # support can be wired to Pollinations image-to-image after one clean
-    # generation succeeds end-to-end.
+    # MVP uses text-to-image only. Reference-image generation will be added after
+    # the low-memory end-to-end pipeline is stable.
     del reference_bytes
 
-    query = urllib.parse.urlencode(
-        {
-            "model": model,
-            "width": width,
-            "height": height,
-        }
-    )
+    query = urllib.parse.urlencode({"model": model, "width": width, "height": height})
     url = f"https://gen.pollinations.ai/image/{urllib.parse.quote(prompt, safe='')}?{query}"
-
     request = urllib.request.Request(
         url,
         headers={
             "Authorization": f"Bearer {api_key}",
             "Accept": "image/png,image/jpeg;q=0.9,*/*;q=0.8",
-            "User-Agent": "SoloForge-Asset-Forge/0.5",
+            "User-Agent": "SoloForge-Asset-Forge/0.6",
         },
         method="GET",
     )
 
     timeout_seconds = int(os.getenv("POLLINATIONS_TIMEOUT_SECONDS", "240"))
-
     try:
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
             data = response.read()
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
-        raise HTTPException(
-            status_code=502,
-            detail=f"Pollinations image generation failed ({exc.code}): {body[:1200]}",
-        ) from exc
+        raise HTTPException(status_code=502, detail=f"Pollinations image generation failed ({exc.code}): {body[:1200]}") from exc
     except (urllib.error.URLError, TimeoutError) as exc:
-        raise HTTPException(
-            status_code=504,
-            detail=f"Pollinations image generation timed out or could not connect: {exc}",
-        ) from exc
+        raise HTTPException(status_code=504, detail=f"Pollinations image generation timed out or could not connect: {exc}") from exc
     except Exception as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Pollinations image generation failed: {str(exc)[:1200]}",
-        ) from exc
+        raise HTTPException(status_code=502, detail=f"Pollinations image generation failed: {str(exc)[:1200]}") from exc
 
     if not data:
         raise HTTPException(status_code=502, detail="Pollinations returned an empty image response.")
 
-    # Validate the response before passing it to the image-processing pipeline.
     try:
         with Image.open(io.BytesIO(data)) as image:
             image.verify()
     except Exception as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Pollinations returned data that is not a valid image: {exc}",
-        ) from exc
+        raise HTTPException(status_code=502, detail=f"Pollinations returned data that is not a valid image: {exc}") from exc
 
     return data
+
+
+def _remove_simple_background(image: Image.Image, threshold: int = 48) -> Image.Image:
+    """Low-memory background removal for flat/light sticker-sheet backgrounds.
+
+    The generated sheet is instructed to use a simple light background. We flood-fill
+    connected background regions from the four corners and turn matching pixels transparent.
+    This avoids loading an ONNX segmentation model and is designed for Render's 512MB tier.
+    """
+    rgba = image.convert("RGBA")
+    transparent = (255, 255, 255, 0)
+    draw = ImageDraw.Draw(rgba)
+
+    # Flood-fill from corners. Pillow performs the scan in native code and keeps
+    # memory usage far below an ONNX background-removal model.
+    corners = [(0, 0), (rgba.width - 1, 0), (0, rgba.height - 1), (rgba.width - 1, rgba.height - 1)]
+    for point in corners:
+        try:
+            draw.floodfill(rgba, point, transparent, thresh=threshold)
+        except TypeError:
+            # Compatibility fallback for older Pillow versions.
+            draw.floodfill(rgba, point, transparent, thresh=threshold)
+
+    return rgba
 
 
 def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[list[tuple[str, bytes]], bytes]:
@@ -230,8 +211,6 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
     cell_height = source.height // rows
 
     files: list[tuple[str, bytes]] = []
-    rembg_session = _get_rembg_session()
-
     for index in range(request.quantity):
         row = index // columns
         column = index % columns
@@ -241,7 +220,7 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
         bottom = source.height if row == rows - 1 else (row + 1) * cell_height
 
         crop = source.crop((left, top, right, bottom))
-        processed = remove(crop, session=rembg_session)
+        processed = _remove_simple_background(crop)
 
         alpha = processed.getchannel("A")
         bbox = alpha.getbbox()
@@ -249,11 +228,7 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
             processed = processed.crop(bbox)
 
         margin = max(8, min(processed.size) // 20)
-        canvas = Image.new(
-            "RGBA",
-            (processed.width + margin * 2, processed.height + margin * 2),
-            (255, 255, 255, 0),
-        )
+        canvas = Image.new("RGBA", (processed.width + margin * 2, processed.height + margin * 2), (255, 255, 255, 0))
         canvas.alpha_composite(processed, (margin, margin))
 
         filename = f"{index + 1:02d}_{request.character.lower()}_sticker.png"
@@ -282,12 +257,8 @@ def health() -> dict[str, str]:
 def generate_asset_pack(request: AssetForgeRequest) -> AssetForgeResponse:
     try:
         reference_bytes = _load_character_reference(request.character)
-
         if _character_key(request.character) == "pearli" and reference_bytes is None:
-            raise HTTPException(
-                status_code=409,
-                detail="Pearli master reference is missing from the SoloForge character library.",
-            )
+            raise HTTPException(status_code=409, detail="Pearli master reference is missing from the SoloForge character library.")
 
         columns, rows = _grid(request.quantity)
         prompt = _build_prompt(request, columns, rows, reference_bytes is not None)
@@ -306,7 +277,4 @@ def generate_asset_pack(request: AssetForgeRequest) -> AssetForgeResponse:
         raise
     except Exception as exc:
         error_text = str(exc).strip() or exc.__class__.__name__
-        raise HTTPException(
-            status_code=500,
-            detail=f"Asset Forge processing failed: {error_text[:1200]}",
-        ) from exc
+        raise HTTPException(status_code=500, detail=f"Asset Forge processing failed: {error_text[:1200]}") from exc
