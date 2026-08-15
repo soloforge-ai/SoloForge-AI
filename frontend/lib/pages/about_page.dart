@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../models/version_info.dart';
 import '../services/version_service.dart';
@@ -43,14 +44,13 @@ class AboutPage extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-
                 // -----------------------
-                // Logo
+                // ASH Symbol Mark
                 // -----------------------
-
-                Image.asset(
-                  "assets/branding/logo.png",
-                  width: 120,
+                SvgPicture.asset(
+                  "assets/branding/logo_symbol.svg",
+                  width: 140,
+                  height: 140,
                 ),
 
                 const SizedBox(height: 20),
@@ -69,19 +69,11 @@ class AboutPage extends StatelessWidget {
 
                 const SizedBox(height: 30),
 
-                // -----------------------
-                // Version Card
-                // -----------------------
-
                 VersionCard(
                   version: version,
                 ),
 
                 const SizedBox(height: 24),
-
-                // -----------------------
-                // Update Button
-                // -----------------------
 
                 SizedBox(
                   width: double.infinity,
@@ -102,31 +94,22 @@ class AboutPage extends StatelessWidget {
 
                 const SizedBox(height: 30),
 
-                // -----------------------
-                // Release Notes
-                // -----------------------
-
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-
                         Text(
                           "Release Notes",
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge,
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
 
                         const SizedBox(height: 16),
 
                         Text(
                           version.fullVersion,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium,
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
 
                         const SizedBox(height: 12),
@@ -136,7 +119,7 @@ class AboutPage extends StatelessWidget {
                         const Text("• Version Card"),
                         const Text("• Version Service"),
                         const Text("• Update Service"),
-
+                        const Text("• ASH Signature Branding"),
                       ],
                     ),
                   ),
@@ -155,7 +138,6 @@ class AboutPage extends StatelessWidget {
                   "© 2026 SoloForge AI",
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
-
               ],
             ),
           );
