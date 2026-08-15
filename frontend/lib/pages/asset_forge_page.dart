@@ -22,7 +22,8 @@ class AssetForgePage extends StatefulWidget {
 }
 
 class _AssetForgePageState extends State<AssetForgePage> {
-  String character = 'Pearli';
+  // CEO is the primary Asset Forge character for the current MVP.
+  String character = 'CEO';
   String product = 'Sticker';
   String theme = 'Healing & Encouragement';
   String style = 'Cute 3D Chibi';
@@ -262,7 +263,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
               buildDropdown(
                 label: 'Character',
                 value: character,
-                items: const ['Pearli', 'Aira', 'CEO'],
+                items: const ['CEO', 'Pearli', 'Aira'],
                 onChanged: (value) { if (value != null) setState(() => character = value); },
               ),
               const SizedBox(height: 16),
