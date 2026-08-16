@@ -299,7 +299,7 @@ class _CompactProductCard extends StatelessWidget {
                         ? Image.network(
                             product.images.first,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const _ImageFallback(),
+                            errorBuilder: (_, _, _) => const _ImageFallback(),
                           )
                         : const _ImageFallback(),
                   ),
