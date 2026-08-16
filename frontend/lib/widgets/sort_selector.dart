@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_theme.dart';
+
 enum SortType {
   miniBossScore,
   soldScore,
@@ -35,30 +37,31 @@ class SortSelector extends StatelessWidget {
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
-      color: Theme.of(context).cardColor,
+      color: AshColors.blackPlum,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AshColors.indigoMist.withValues(alpha: 0.7)),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Row(
           children: [
-            const Icon(Icons.star, color: Colors.amber, size: 19),
+            const Icon(Icons.star_rounded, color: AshColors.velvetRed, size: 18),
             const SizedBox(width: 6),
             const Text(
               'Sort',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
             ),
             const Spacer(),
             DropdownButtonHideUnderline(
               child: DropdownButton<SortType>(
                 value: value,
                 isDense: true,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 items: SortType.values.map((e) {
                   return DropdownMenuItem(
                     value: e,
-                    child: Text(
-                      _label(e),
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                    child: Text(_label(e), style: const TextStyle(fontSize: 12)),
                   );
                 }).toList(),
                 onChanged: (v) {
