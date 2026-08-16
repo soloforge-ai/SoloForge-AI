@@ -4,15 +4,13 @@ import '../core/theme/app_theme.dart';
 import '../models/affiliate_product.dart';
 import '../services/catalog_service.dart';
 import '../services/discovery/discovery_service.dart';
-
-import '../widgets/product_card.dart';
-import '../widgets/sort_selector.dart';
-import 'forge_page.dart';
 import '../widgets/category_filter_bar.dart';
-
-import 'about_page.dart';
 import '../widgets/home/hero_banner.dart';
+import '../widgets/sort_selector.dart';
+import 'about_page.dart';
 import 'developer_tools_page.dart';
+import 'forge_page.dart';
+import 'sticker_forge_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -31,12 +29,7 @@ class _HomePageState extends State<HomePage> {
   String keyword = '';
   SortType sortType = SortType.miniBossScore;
   bool loading = true;
-
   String selectedCategory = 'All';
-
-  // TODO(Sprint45)
-  // จะเปลี่ยนเป็น Dynamic Category
-  // จาก DiscoveryService ใน Phase B
   List<String> categories = ['All'];
 
   @override
@@ -48,44 +41,30 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> loadCategories() async {
     final data = await _discoveryService.loadCategoryNames();
-
     if (!mounted) return;
-
-    setState(() {
-      categories = ['All', ...data];
-    });
+    setState(() => categories = ['All', ...data]);
   }
 
   Future<void> loadProducts({String category = 'All'}) async {
-    setState(() {
-      loading = true;
-    });
-
+    setState(() => loading = true);
     final data = category == 'All'
         ? await _catalogService.getProducts()
         : await _catalogService.getCategory(category);
-
     if (!mounted) return;
-
-    setState(() {
-      allProducts = data;
-      loading = false;
-    });
-
+    allProducts = data;
+    loading = false;
     filterProducts();
   }
 
   void filterProducts() {
     final normalizedKeyword = keyword.trim().toLowerCase();
-    var result = allProducts;
+    var result = List<AffiliateProduct>.from(allProducts);
 
     if (normalizedKeyword.isNotEmpty) {
       result = result.where((product) {
         return product.title.toLowerCase().contains(normalizedKeyword) ||
             product.shopName.toLowerCase().contains(normalizedKeyword);
       }).toList();
-    } else {
-      result = List<AffiliateProduct>.from(result);
     }
 
     switch (sortType) {
@@ -103,9 +82,22 @@ class _HomePageState extends State<HomePage> {
         break;
     }
 
-    setState(() {
-      products = result;
-    });
+    if (!mounted) return;
+    setState(() => products = result);
+  }
+
+  void openStickerForge() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const StickerForgePage()),
+    );
+  }
+
+  void openProductForge(AffiliateProduct product) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ForgePage(product: product)),
+    );
   }
 
   @override
@@ -115,127 +107,159 @@ class _HomePageState extends State<HomePage> {
         title: const Text('SoloForge AI'),
         actions: [
           IconButton(
-            tooltip: "Developer Tools",
+            tooltip: 'Developer Tools',
             icon: const Icon(Icons.build),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const DeveloperToolsPage(),
-                ),
+                MaterialPageRoute(builder: (_) => const DeveloperToolsPage()),
               );
             },
           ),
           IconButton(
-            tooltip: "About",
+            tooltip: 'About',
             icon: const Icon(Icons.info_outline),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const AboutPage(),
-                ),
+                MaterialPageRoute(builder: (_) => const AboutPage()),
               );
             },
           ),
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const HeroBanner(),
-            const SizedBox(height: 16),
-            SortSelector(
-              value: sortType,
-              onChanged: (value) {
-                setState(() {
-                  sortType = value;
-                });
-                filterProducts();
-              },
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              onChanged: (value) {
-                keyword = value;
-                filterProducts();
-              },
-              decoration: InputDecoration(
-                hintText: 'Search by product title or shop name...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+            HeroBanner(onPressed: openStickerForge),
+            const SizedBox(height: 5),
+            SizedBox(
+              height: 38,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SortSelector(
+                      value: sortType,
+                      onChanged: (value) {
+                        setState(() => sortType = value);
+                        filterProducts();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    height: 38,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: AshColors.blackPlum,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AshColors.indigoMist.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${products.length}',
+                        style: const TextStyle(
+                          color: AshColors.boneWhite,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            if (categories.isNotEmpty)
-              CategoryFilterBar(
-                categories: categories,
-                selectedCategory: selectedCategory,
-                onSelected: (category) async {
-                  setState(() {
-                    selectedCategory = category;
-                  });
-
-                  if (category == 'All') {
-                    await loadProducts();
-                  } else {
-                    await loadProducts(category: category);
-                  }
+            const SizedBox(height: 5),
+            SizedBox(
+              height: 42,
+              child: TextField(
+                onChanged: (value) {
+                  keyword = value;
+                  filterProducts();
                 },
-              ),
-            const SizedBox(height: 16),
-            Card(
-              elevation: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _StatItem(
-                      icon: Icons.inventory_2,
-                      title: "Products",
-                      value: "${products.length}",
-                    ),
-                    _StatItem(
-                      icon: Icons.category,
-                      title: "Categories",
-                      value: "${categories.length - 1}",
-                    ),
-                    _StatItem(
-                      icon: Icons.auto_awesome,
-                      title: "AI Ready",
-                      value: "${products.length}",
-                    ),
-                  ],
+                decoration: InputDecoration(
+                  hintText: 'Search product or shop...',
+                  prefixIcon: const Icon(Icons.search, size: 19),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10),
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 4),
+            if (categories.isNotEmpty)
+              SizedBox(
+                height: 36,
+                child: CategoryFilterBar(
+                  categories: categories,
+                  selectedCategory: selectedCategory,
+                  onSelected: (category) async {
+                    setState(() => selectedCategory = category);
+                    await loadProducts(category: category);
+                  },
+                ),
+              ),
+            const SizedBox(height: 3),
+            Row(
+              children: [
+                const Icon(
+                  Icons.inventory_2_outlined,
+                  size: 15,
+                  color: AshColors.indigoMist,
+                ),
+                const SizedBox(width: 5),
+                const Text(
+                  'Products',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AshColors.boneWhite,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${products.length} • MiniBoss priority',
+                  style: const TextStyle(
+                    fontSize: 9,
+                    color: AshColors.smokeSilver,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
             Expanded(
               child: loading
                   ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      itemCount: products.length,
-                      itemBuilder: (context, index) {
-                        final product = products[index];
-
-                        return ProductCard(
-                          product: product,
-                          onForge: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ForgePage(product: product),
+                  : products.isEmpty
+                      ? const Center(child: Text('No products found.'))
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            final columns = constraints.maxWidth >= 720 ? 3 : 2;
+                            return GridView.builder(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: columns,
+                                crossAxisSpacing: 7,
+                                mainAxisSpacing: 7,
+                                childAspectRatio: columns == 2 ? 0.86 : 0.90,
                               ),
+                              itemCount: products.length,
+                              itemBuilder: (context, index) {
+                                final product = products[index];
+                                return _CompactProductCard(
+                                  product: product,
+                                  onForge: () => openProductForge(product),
+                                );
+                              },
                             );
                           },
-                        );
-                      },
-                    ),
+                        ),
             ),
           ],
         ),
@@ -244,45 +268,119 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _StatItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
+class _CompactProductCard extends StatelessWidget {
+  final AffiliateProduct product;
+  final VoidCallback onForge;
 
-  const _StatItem({
-    required this.icon,
-    required this.title,
-    required this.value,
+  const _CompactProductCard({
+    required this.product,
+    required this.onForge,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: AshColors.deepIndigo,
-          size: 18,
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: AshColors.boneWhite,
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onForge,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 7,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: product.images.isNotEmpty
+                        ? Image.network(
+                            product.images.first,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const _ImageFallback(),
+                          )
+                        : const _ImageFallback(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                product.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  height: 1.08,
+                  fontWeight: FontWeight.w800,
+                  color: AshColors.boneWhite,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                product.shopName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 9,
+                  color: AshColors.smokeSilver,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Row(
+                children: [
+                  const Icon(Icons.star_rounded, size: 12, color: AshColors.indigoMist),
+                  const SizedBox(width: 2),
+                  Text(
+                    product.miniBossScore.toStringAsFixed(0),
+                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700),
+                  ),
+                  const Spacer(),
+                  Text(
+                    product.priceText,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: AshColors.boneWhite,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              SizedBox(
+                width: double.infinity,
+                height: 27,
+                child: FilledButton.icon(
+                  onPressed: onForge,
+                  icon: const Icon(Icons.auto_awesome, size: 12),
+                  label: const Text('SoloForge AI', style: TextStyle(fontSize: 10)),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          title,
-          style: const TextStyle(
-            color: AshColors.smokeSilver,
-            fontSize: 12,
-          ),
-        ),
-      ],
+      ),
+    );
+  }
+}
+
+class _ImageFallback extends StatelessWidget {
+  const _ImageFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AshColors.blackPlum,
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.image_not_supported_outlined,
+        color: AshColors.smokeSilver,
+        size: 26,
+      ),
     );
   }
 }

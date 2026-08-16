@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_theme.dart';
+
 enum SortType {
   miniBossScore,
   soldScore,
@@ -20,13 +22,13 @@ class SortSelector extends StatelessWidget {
   String _label(SortType type) {
     switch (type) {
       case SortType.miniBossScore:
-        return "MiniBoss";
+        return 'MiniBoss';
       case SortType.soldScore:
-        return "Sold";
+        return 'Sold';
       case SortType.priceScore:
-        return "Price";
+        return 'Price';
       case SortType.commissionScore:
-        return "Commission";
+        return 'Commission';
     }
   }
 
@@ -34,44 +36,36 @@ class SortSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: Theme.of(context).cardColor,
+      margin: EdgeInsets.zero,
+      color: AshColors.blackPlum,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AshColors.indigoMist.withValues(alpha: 0.7)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 8,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Row(
           children: [
-            const Icon(
-              Icons.star,
-              color: Colors.amber,
-            ),
-
-            const SizedBox(width: 8),
-
+            const Icon(Icons.star_rounded, color: AshColors.velvetRed, size: 18),
+            const SizedBox(width: 6),
             const Text(
-              "Sort by",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              'Sort',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
             ),
-
             const Spacer(),
-
             DropdownButtonHideUnderline(
               child: DropdownButton<SortType>(
                 value: value,
-                borderRadius: BorderRadius.circular(16),
+                isDense: true,
+                borderRadius: BorderRadius.circular(14),
                 items: SortType.values.map((e) {
                   return DropdownMenuItem(
                     value: e,
-                    child: Text(_label(e)),
+                    child: Text(_label(e), style: const TextStyle(fontSize: 12)),
                   );
                 }).toList(),
                 onChanged: (v) {
-                  if (v != null) {
-                    onChanged(v);
-                  }
+                  if (v != null) onChanged(v);
                 },
               ),
             ),
