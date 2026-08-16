@@ -11,9 +11,9 @@ class HeroBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         gradient: const LinearGradient(
           colors: [
             AshColors.blackPlum,
@@ -27,8 +27,8 @@ class HeroBanner extends StatelessWidget {
         boxShadow: const [
           BoxShadow(
             color: Color(0x33541C2A),
-            blurRadius: 18,
-            offset: Offset(0, 8),
+            blurRadius: 16,
+            offset: Offset(0, 6),
           ),
         ],
       ),
@@ -43,16 +43,16 @@ class HeroBanner extends StatelessWidget {
                   '⚡ SoloForge AI',
                   style: TextStyle(
                     color: AshColors.boneWhite,
-                    fontSize: 20,
+                    fontSize: 19,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 3),
                 Text(
                   'Build AI Products Faster',
                   style: TextStyle(
                     color: AshColors.boneWhite,
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -61,28 +61,28 @@ class HeroBanner extends StatelessWidget {
                   'Discover • Analyze • Forge',
                   style: TextStyle(
                     color: AshColors.smokeSilver,
-                    fontSize: 13,
+                    fontSize: 12,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           SizedBox(
-            height: 34,
+            height: 36,
             child: FilledButton.icon(
               onPressed: onPressed,
-              icon: const Icon(Icons.auto_awesome, size: 16),
+              icon: const Icon(Icons.emoji_emotions_outlined, size: 16),
               label: const Text(
-                'Start',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                'สร้างสติ๊กเกอร์',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: AshColors.boneWhite,
                 foregroundColor: AshColors.oxblood,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(22),
                 ),
               ),
             ),
