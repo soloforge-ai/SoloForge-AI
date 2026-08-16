@@ -3,16 +3,15 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 
 class HeroBanner extends StatelessWidget {
-  const HeroBanner({super.key});
+  final VoidCallback? onPressed;
+
+  const HeroBanner({super.key, this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 10,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
@@ -24,10 +23,7 @@ class HeroBanner extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(
-          color: AshColors.indigoMist,
-          width: 0.6,
-        ),
+        border: Border.all(color: AshColors.indigoMist, width: 0.6),
         boxShadow: const [
           BoxShadow(
             color: Color(0x33541C2A),
@@ -38,37 +34,31 @@ class HeroBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "⚡ SoloForge AI",
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(
-                        color: AshColors.boneWhite,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  '⚡ SoloForge AI',
+                  style: TextStyle(
+                    color: AshColors.boneWhite,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-
-                const SizedBox(height: 4),
-
-                const Text(
-                  "Build AI Products Faster",
+                SizedBox(height: 4),
+                Text(
+                  'Build AI Products Faster',
                   style: TextStyle(
                     color: AshColors.boneWhite,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
-                const SizedBox(height: 2),
-
-                const Text(
-                  "Discover • Analyze • Forge",
+                SizedBox(height: 2),
+                Text(
+                  'Discover • Analyze • Forge',
                   style: TextStyle(
                     color: AshColors.smokeSilver,
                     fontSize: 13,
@@ -77,29 +67,20 @@ class HeroBanner extends StatelessWidget {
               ],
             ),
           ),
-
-          const SizedBox(width: 16),
-
+          const SizedBox(width: 12),
           SizedBox(
             height: 34,
             child: FilledButton.icon(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.auto_awesome,
-                size: 16,
-              ),
+              onPressed: onPressed,
+              icon: const Icon(Icons.auto_awesome, size: 16),
               label: const Text(
-                "Start",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                'Start',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: AshColors.boneWhite,
                 foregroundColor: AshColors.oxblood,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
