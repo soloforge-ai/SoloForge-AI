@@ -139,7 +139,7 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const HeroBanner(),
+            HeroBanner(onPressed: openStickerForge),
             const SizedBox(height: 10),
             _QuickCreateCard(onStickerForge: openStickerForge),
             const SizedBox(height: 10),
@@ -197,9 +197,7 @@ class _HomePageState extends State<HomePage> {
               child: loading
                   ? const Center(child: CircularProgressIndicator())
                   : products.isEmpty
-                      ? const Center(
-                          child: Text('No products found.'),
-                        )
+                      ? const Center(child: Text('No products found.'))
                       : LayoutBuilder(
                           builder: (context, constraints) {
                             final columns = constraints.maxWidth >= 720 ? 3 : 2;
