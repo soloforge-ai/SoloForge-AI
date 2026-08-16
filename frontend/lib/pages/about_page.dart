@@ -18,9 +18,7 @@ class AboutPage extends StatelessWidget {
         future: VersionService().loadVersion(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -33,44 +31,50 @@ class AboutPage extends StatelessWidget {
           }
 
           if (!snapshot.hasData) {
-            return const Center(
-              child: Text('No Version Information'),
-            );
+            return const Center(child: Text('No Version Information'));
           }
 
           final version = snapshot.data!;
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
             child: Column(
               children: [
-                SvgPicture.asset(
-                  'assets/branding/logo_symbol.svg',
-                  width: 140,
-                  height: 140,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF17131A),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFF596989)),
+                  ),
+                  child: SvgPicture.asset(
+                    'assets/branding/logo_master.svg',
+                    width: double.infinity,
+                    height: 105,
+                    fit: BoxFit.contain,
+                  ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 Text(
                   version.appName,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   'Built for Solo Creators',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                const SizedBox(height: 30),
-                VersionCard(version: version),
                 const SizedBox(height: 24),
+                VersionCard(version: version),
+                const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            'Update server is not configured yet.',
-                          ),
+                          content: Text('Update server is not configured yet.'),
                         ),
                       );
                     },
@@ -78,7 +82,7 @@ class AboutPage extends StatelessWidget {
                     label: const Text('Check for Updates'),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 24),
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
@@ -105,7 +109,7 @@ class AboutPage extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
                 Text(
                   'Powered by ${version.company}',
                   style: Theme.of(context).textTheme.bodySmall,
