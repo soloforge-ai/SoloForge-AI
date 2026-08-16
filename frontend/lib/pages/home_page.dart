@@ -42,21 +42,15 @@ class _HomePageState extends State<HomePage> {
   Future<void> loadCategories() async {
     final data = await _discoveryService.loadCategoryNames();
     if (!mounted) return;
-
-    setState(() {
-      categories = ['All', ...data];
-    });
+    setState(() => categories = ['All', ...data]);
   }
 
   Future<void> loadProducts({String category = 'All'}) async {
     setState(() => loading = true);
-
     final data = category == 'All'
         ? await _catalogService.getProducts()
         : await _catalogService.getCategory(category);
-
     if (!mounted) return;
-
     allProducts = data;
     loading = false;
     filterProducts();
@@ -135,17 +129,17 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             HeroBanner(onPressed: openStickerForge),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 44,
+            const SizedBox(height: 5),
+            SizedBox(
+              height: 38,
+              child: Row(
+                children: [
+                  Expanded(
                     child: SortSelector(
                       value: sortType,
                       onChanged: (value) {
@@ -154,34 +148,34 @@ class _HomePageState extends State<HomePage> {
                       },
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  height: 44,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: AshColors.blackPlum,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: AshColors.indigoMist.withValues(alpha: 0.7),
+                  const SizedBox(width: 6),
+                  Container(
+                    height: 38,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: AshColors.blackPlum,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AshColors.indigoMist.withValues(alpha: 0.7),
+                      ),
                     ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${products.length} items',
-                      style: const TextStyle(
-                        color: AshColors.smokeSilver,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                    child: Center(
+                      child: Text(
+                        '${products.length}',
+                        style: const TextStyle(
+                          color: AshColors.boneWhite,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 7),
+            const SizedBox(height: 5),
             SizedBox(
-              height: 48,
+              height: 42,
               child: TextField(
                 onChanged: (value) {
                   keyword = value;
@@ -189,18 +183,18 @@ class _HomePageState extends State<HomePage> {
                 },
                 decoration: InputDecoration(
                   hintText: 'Search product or shop...',
-                  prefixIcon: const Icon(Icons.search),
+                  prefixIcon: const Icon(Icons.search, size: 19),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10),
                 ),
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             if (categories.isNotEmpty)
               SizedBox(
-                height: 40,
+                height: 36,
                 child: CategoryFilterBar(
                   categories: categories,
                   selectedCategory: selectedCategory,
@@ -210,34 +204,34 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
               ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 3),
             Row(
               children: [
                 const Icon(
                   Icons.inventory_2_outlined,
-                  size: 17,
+                  size: 15,
                   color: AshColors.indigoMist,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 5),
                 const Text(
                   'Products',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: AshColors.boneWhite,
                   ),
                 ),
                 const Spacer(),
-                const Text(
-                  'MiniBoss priority',
-                  style: TextStyle(
-                    fontSize: 11,
+                Text(
+                  '${products.length} • MiniBoss priority',
+                  style: const TextStyle(
+                    fontSize: 9,
                     color: AshColors.smokeSilver,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Expanded(
               child: loading
                   ? const Center(child: CircularProgressIndicator())
@@ -247,13 +241,13 @@ class _HomePageState extends State<HomePage> {
                           builder: (context, constraints) {
                             final columns = constraints.maxWidth >= 720 ? 3 : 2;
                             return GridView.builder(
-                              padding: const EdgeInsets.only(bottom: 18),
+                              padding: const EdgeInsets.only(bottom: 12),
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: columns,
-                                crossAxisSpacing: 8,
-                                mainAxisSpacing: 8,
-                                childAspectRatio: columns == 2 ? 0.70 : 0.78,
+                                crossAxisSpacing: 7,
+                                mainAxisSpacing: 7,
+                                childAspectRatio: columns == 2 ? 0.86 : 0.90,
                               ),
                               itemCount: products.length,
                               itemBuilder: (context, index) {
@@ -291,14 +285,14 @@ class _CompactProductCard extends StatelessWidget {
       child: InkWell(
         onTap: onForge,
         child: Padding(
-          padding: const EdgeInsets.all(7),
+          padding: const EdgeInsets.all(6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 flex: 7,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(9),
+                  borderRadius: BorderRadius.circular(8),
                   child: SizedBox(
                     width: double.infinity,
                     child: product.images.isNotEmpty
@@ -311,14 +305,14 @@ class _CompactProductCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 product.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 12,
-                  height: 1.12,
+                  fontSize: 11,
+                  height: 1.08,
                   fontWeight: FontWeight.w800,
                   color: AshColors.boneWhite,
                 ),
@@ -329,47 +323,40 @@ class _CompactProductCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 10,
+                  fontSize: 9,
                   color: AshColors.smokeSilver,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               Row(
                 children: [
-                  const Icon(
-                    Icons.star_rounded,
-                    size: 14,
-                    color: AshColors.indigoMist,
-                  ),
+                  const Icon(Icons.star_rounded, size: 12, color: AshColors.indigoMist),
                   const SizedBox(width: 2),
                   Text(
                     product.miniBossScore.toStringAsFixed(0),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700),
                   ),
                   const Spacer(),
                   Text(
                     product.priceText,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w900,
                       color: AshColors.boneWhite,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 4),
               SizedBox(
                 width: double.infinity,
-                height: 30,
+                height: 27,
                 child: FilledButton.icon(
                   onPressed: onForge,
-                  icon: const Icon(Icons.auto_awesome, size: 13),
-                  label: const Text('AI Forge', style: TextStyle(fontSize: 11)),
+                  icon: const Icon(Icons.auto_awesome, size: 12),
+                  label: const Text('AI Forge', style: TextStyle(fontSize: 10)),
                   style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
                   ),
                 ),
               ),
@@ -392,7 +379,7 @@ class _ImageFallback extends StatelessWidget {
       child: const Icon(
         Icons.image_not_supported_outlined,
         color: AshColors.smokeSilver,
-        size: 30,
+        size: 26,
       ),
     );
   }
