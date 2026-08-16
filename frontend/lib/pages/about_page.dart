@@ -12,7 +12,7 @@ class AboutPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("About AI Forge"),
+        title: const Text('About SoloForge AI'),
       ),
       body: FutureBuilder<VersionInfo>(
         future: VersionService().loadVersion(),
@@ -26,7 +26,7 @@ class AboutPage extends StatelessWidget {
           if (snapshot.hasError) {
             return Center(
               child: Text(
-                "Error\n\n${snapshot.error}",
+                'Error\n\n${snapshot.error}',
                 textAlign: TextAlign.center,
               ),
             );
@@ -34,7 +34,7 @@ class AboutPage extends StatelessWidget {
 
           if (!snapshot.hasData) {
             return const Center(
-              child: Text("No Version Information"),
+              child: Text('No Version Information'),
             );
           }
 
@@ -44,37 +44,24 @@ class AboutPage extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                // -----------------------
-                // ASH Symbol Mark
-                // -----------------------
                 SvgPicture.asset(
-                  "assets/branding/logo_symbol.svg",
+                  'assets/branding/logo_symbol.svg',
                   width: 140,
                   height: 140,
                 ),
-
                 const SizedBox(height: 20),
-
                 Text(
                   version.appName,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
-                  "Built for Solo Creators",
+                  'Built for Solo Creators',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
-
                 const SizedBox(height: 30),
-
-                VersionCard(
-                  version: version,
-                ),
-
+                VersionCard(version: version),
                 const SizedBox(height: 24),
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -82,18 +69,16 @@ class AboutPage extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                            "Update server is not configured yet.",
+                            'Update server is not configured yet.',
                           ),
                         ),
                       );
                     },
                     icon: const Icon(Icons.system_update),
-                    label: const Text("Check for Updates"),
+                    label: const Text('Check for Updates'),
                   ),
                 ),
-
                 const SizedBox(height: 30),
-
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
@@ -101,41 +86,33 @@ class AboutPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Release Notes",
+                          'Release Notes',
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
-
                         const SizedBox(height: 16),
-
                         Text(
                           version.fullVersion,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
-
                         const SizedBox(height: 12),
-
-                        const Text("• Version Center Foundation"),
-                        const Text("• About Page"),
-                        const Text("• Version Card"),
-                        const Text("• Version Service"),
-                        const Text("• Update Service"),
-                        const Text("• ASH Signature Branding"),
+                        const Text('• Version Center Foundation'),
+                        const Text('• About Page'),
+                        const Text('• Version Card'),
+                        const Text('• Version Service'),
+                        const Text('• Update Service'),
+                        const Text('• ASH Signature Branding'),
                       ],
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 40),
-
                 Text(
-                  "Powered by ${version.company}",
+                  'Powered by ${version.company}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
-                  "© 2026 SoloForge AI",
+                  '© 2026 SoloForge AI',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
