@@ -12,7 +12,7 @@ class AboutPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("About AI Forge"),
+        title: const Text("About SoloForge AI"),
       ),
       body: FutureBuilder<VersionInfo>(
         future: VersionService().loadVersion(),

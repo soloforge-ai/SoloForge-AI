@@ -47,7 +47,7 @@ class ForgeButton extends StatelessWidget {
             size: 16,
           ),
           label: const Text(
-            "AI Forge",
+            "SoloForge AI",
             style: TextStyle(
               fontWeight: FontWeight.bold,
             ),
