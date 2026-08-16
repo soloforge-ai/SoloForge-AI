@@ -135,64 +135,109 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             HeroBanner(onPressed: openStickerForge),
-            const SizedBox(height: 10),
-            _QuickCreateCard(onStickerForge: openStickerForge),
-            const SizedBox(height: 10),
-            SortSelector(
-              value: sortType,
-              onChanged: (value) {
-                setState(() => sortType = value);
-                filterProducts();
-              },
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              onChanged: (value) {
-                keyword = value;
-                filterProducts();
-              },
-              decoration: InputDecoration(
-                hintText: 'Search by product title or shop name...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (categories.isNotEmpty)
-              CategoryFilterBar(
-                categories: categories,
-                selectedCategory: selectedCategory,
-                onSelected: (category) async {
-                  setState(() => selectedCategory = category);
-                  await loadProducts(category: category);
-                },
-              ),
             const SizedBox(height: 8),
             Row(
               children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 44,
+                    child: SortSelector(
+                      value: sortType,
+                      onChanged: (value) {
+                        setState(() => sortType = value);
+                        filterProducts();
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: AshColors.blackPlum,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AshColors.indigoMist.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${products.length} items',
+                      style: const TextStyle(
+                        color: AshColors.smokeSilver,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 7),
+            SizedBox(
+              height: 48,
+              child: TextField(
+                onChanged: (value) {
+                  keyword = value;
+                  filterProducts();
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search product or shop...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            if (categories.isNotEmpty)
+              SizedBox(
+                height: 40,
+                child: CategoryFilterBar(
+                  categories: categories,
+                  selectedCategory: selectedCategory,
+                  onSelected: (category) async {
+                    setState(() => selectedCategory = category);
+                    await loadProducts(category: category);
+                  },
+                ),
+              ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(
+                  Icons.inventory_2_outlined,
+                  size: 17,
+                  color: AshColors.indigoMist,
+                ),
+                const SizedBox(width: 6),
                 const Text(
                   'Products',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: AshColors.boneWhite,
                   ),
                 ),
                 const Spacer(),
-                Text(
-                  '${products.length} items',
-                  style: const TextStyle(color: AshColors.smokeSilver),
+                const Text(
+                  'MiniBoss priority',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AshColors.smokeSilver,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Expanded(
               child: loading
                   ? const Center(child: CircularProgressIndicator())
@@ -206,9 +251,9 @@ class _HomePageState extends State<HomePage> {
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: columns,
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 10,
-                                childAspectRatio: columns == 2 ? 0.72 : 0.78,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                                childAspectRatio: columns == 2 ? 0.70 : 0.78,
                               ),
                               itemCount: products.length,
                               itemBuilder: (context, index) {
@@ -224,72 +269,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _QuickCreateCard extends StatelessWidget {
-  final VoidCallback onStickerForge;
-
-  const _QuickCreateCard({required this.onStickerForge});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AshColors.blackPlum,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AshColors.indigoMist.withValues(alpha: 0.7)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AshColors.oxblood,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.emoji_emotions_outlined,
-              color: AshColors.boneWhite,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Sticker Forge',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AshColors.boneWhite,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'สร้างสติ๊กเกอร์แพ็กจาก CEO / Pearli / Aira',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AshColors.smokeSilver,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: onStickerForge,
-            icon: const Icon(Icons.auto_awesome, size: 16),
-            label: const Text('Create'),
-          ),
-        ],
       ),
     );
   }
@@ -312,14 +291,14 @@ class _CompactProductCard extends StatelessWidget {
       child: InkWell(
         onTap: onForge,
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(7),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 flex: 7,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(9),
                   child: SizedBox(
                     width: double.infinity,
                     child: product.images.isNotEmpty
@@ -332,41 +311,41 @@ class _CompactProductCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 7),
+              const SizedBox(height: 6),
               Text(
                 product.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 13,
-                  height: 1.15,
+                  fontSize: 12,
+                  height: 1.12,
                   fontWeight: FontWeight.w800,
                   color: AshColors.boneWhite,
                 ),
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 2),
               Text(
                 product.shopName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 10,
                   color: AshColors.smokeSilver,
                 ),
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 4),
               Row(
                 children: [
                   const Icon(
                     Icons.star_rounded,
-                    size: 15,
+                    size: 14,
                     color: AshColors.indigoMist,
                   ),
-                  const SizedBox(width: 3),
+                  const SizedBox(width: 2),
                   Text(
                     product.miniBossScore.toStringAsFixed(0),
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -374,23 +353,23 @@ class _CompactProductCard extends StatelessWidget {
                   Text(
                     product.priceText,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w900,
                       color: AshColors.boneWhite,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               SizedBox(
                 width: double.infinity,
-                height: 32,
+                height: 30,
                 child: FilledButton.icon(
                   onPressed: onForge,
-                  icon: const Icon(Icons.auto_awesome, size: 14),
-                  label: const Text('AI Forge'),
+                  icon: const Icon(Icons.auto_awesome, size: 13),
+                  label: const Text('AI Forge', style: TextStyle(fontSize: 11)),
                   style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
                   ),
                 ),
               ),
@@ -413,7 +392,7 @@ class _ImageFallback extends StatelessWidget {
       child: const Icon(
         Icons.image_not_supported_outlined,
         color: AshColors.smokeSilver,
-        size: 32,
+        size: 30,
       ),
     );
   }
