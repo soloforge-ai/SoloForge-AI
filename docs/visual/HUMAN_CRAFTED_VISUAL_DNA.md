@@ -134,6 +134,6 @@ An image should pass only when:
 
 ## Relationship to SoloForge Content Bible
 
-The Content Bible defines the 4-image content structure: Hook → Emotion → Product → CTA. The Human-Crafted Visual DNA controls the visual execution of those content roles. fileciteturn131file0L1-L25
+The Content Bible defines the 4-image content structure: Hook → Emotion → Product → CTA. The Human-Crafted Visual DNA controls the visual execution of those content roles.
 
-For CEO content, the existing Content Bible requires the same character, 30 cm scale, face, glasses, suit, and proportions across posts. This remains a hard consistency requirement. fileciteturn131file1L1-L25
+For CEO content, the existing Content Bible requires the same character, 30 cm scale, face, glasses, suit, and proportions across posts. This remains a hard consistency requirement.
