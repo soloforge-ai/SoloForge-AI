@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../ai/product_intelligence.dart';
+import '../../core/theme/app_theme.dart';
 
 class AnalysisCard extends StatelessWidget {
   final ProductIntelligence intelligence;
@@ -22,17 +23,16 @@ class AnalysisCard extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color: Colors.deepPurpleAccent,
+              color: AshColors.velvetRed,
               fontWeight: FontWeight.bold,
               fontSize: 13,
             ),
           ),
-
           const SizedBox(height: 4),
-
           Text(
             value.isEmpty ? "-" : value,
             style: const TextStyle(
+              color: AshColors.boneWhite,
               fontSize: 15,
               height: 1.4,
             ),
@@ -54,33 +54,22 @@ class AnalysisCard extends StatelessWidget {
             const Text(
               "AI Analysis",
               style: TextStyle(
+                color: AshColors.boneWhite,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 20),
-
-            _section(
-              "Category",
-              intelligence.category,
-            ),
-
-            _section(
-              "Keywords",
-              intelligence.keywords.join(", "),
-            ),
-
+            _section("Category", intelligence.category),
+            _section("Keywords", intelligence.keywords.join(", ")),
             _section(
               "Audience",
               "• ${intelligence.audience.join("\n• ")}",
             ),
-
             _section(
               "Selling Points",
               intelligence.sellingPoints.join("\n• "),
             ),
-
             _section(
               "Pain Points",
               intelligence.painPoints.join("\n• "),

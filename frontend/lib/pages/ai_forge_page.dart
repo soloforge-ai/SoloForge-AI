@@ -49,7 +49,7 @@ class _AIForgePageState extends State<AIForgePage> {
     final product = widget.product;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("AI Forge")),
+      appBar: AppBar(title: const Text("SoloForge AI")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: ListView(

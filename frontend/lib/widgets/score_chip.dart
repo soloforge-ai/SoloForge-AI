@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_theme.dart';
+
 class ScoreChip extends StatelessWidget {
   const ScoreChip({
     super.key,
     required this.label,
     required this.value,
-    this.color = Colors.deepPurple,
+    this.color = AshColors.deepIndigo,
   });
 
   final String label;

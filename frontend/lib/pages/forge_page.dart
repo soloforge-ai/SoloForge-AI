@@ -107,7 +107,7 @@ class _ForgePageState extends State<ForgePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Forge'),
+        title: const Text('SoloForge AI'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

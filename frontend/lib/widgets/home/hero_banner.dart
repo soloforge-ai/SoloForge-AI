@@ -1,93 +1,83 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_theme.dart';
+
 class HeroBanner extends StatelessWidget {
-  const HeroBanner({super.key});
+  final VoidCallback? onPressed;
+
+  const HeroBanner({super.key, this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 10,
-      ),
+      height: 70,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         gradient: const LinearGradient(
           colors: [
-            Color(0xFF7C4DFF),
-            Color(0xFF5B2EFF),
+            AshColors.blackPlum,
+            AshColors.deepIndigo,
+            AshColors.oxblood,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        border: Border.all(color: AshColors.indigoMist, width: 0.6),
       ),
       child: Row(
         children: [
-          Expanded(
+          const Icon(
+            Icons.auto_awesome,
+            color: AshColors.boneWhite,
+            size: 22,
+          ),
+          const SizedBox(width: 9),
+          const Expanded(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "⚡ SoloForge AI",
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-
-                const SizedBox(height: 4),
-
-                const Text(
-                  "Build AI Products Faster",
+                  'SoloForge AI',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AshColors.boneWhite,
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-
-                const SizedBox(height: 2),
-
-                const Text(
-                  "Discover • Analyze • Forge",
+                SizedBox(height: 2),
+                Text(
+                  'Create content faster',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
+                    color: AshColors.smokeSilver,
+                    fontSize: 10,
                   ),
                 ),
               ],
             ),
           ),
-
-          const SizedBox(width: 16),
-
+          const SizedBox(width: 8),
           SizedBox(
-            height: 34,
+            height: 40,
             child: FilledButton.icon(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.auto_awesome,
-                size: 16,
-              ),
+              onPressed: onPressed,
+              icon: const Icon(Icons.emoji_emotions_outlined, size: 16),
               label: const Text(
-                "Start",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                'สร้างสติ๊กเกอร์',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
               ),
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF7C4DFF),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                ),
+                backgroundColor: AshColors.boneWhite,
+                foregroundColor: AshColors.oxblood,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(20),
                 ),
               ),
             ),
