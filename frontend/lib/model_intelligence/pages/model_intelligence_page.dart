@@ -120,6 +120,8 @@ class _ModelIntelligencePageState extends State<ModelIntelligencePage> {
       }
     }
 
+    final filters = ['All', ...counts.keys.toList()..sort()];
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
@@ -145,9 +147,7 @@ class _ModelIntelligencePageState extends State<ModelIntelligencePage> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: [
-                'All', ...counts.keys.toList()..sort()
-              ].map((filter) {
+              children: filters.map((filter) {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
