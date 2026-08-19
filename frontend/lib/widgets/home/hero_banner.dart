@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
 class HeroBanner extends StatelessWidget {
-  const HeroBanner({super.key});
+  final VoidCallback onStart;
+
+  const HeroBanner({
+    super.key,
+    required this.onStart,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -9,7 +14,7 @@ class HeroBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
         horizontal: 18,
-        vertical: 10,
+        vertical: 14,
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
@@ -39,22 +44,18 @@ class HeroBanner extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                 ),
-
                 const SizedBox(height: 4),
-
                 const Text(
-                  "Build AI Products Faster",
+                  "Turn Products Into Content",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 2),
-
                 const Text(
-                  "Discover • Analyze • Forge",
+                  "Discover • Analyze • Create",
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
@@ -63,29 +64,23 @@ class HeroBanner extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(width: 16),
-
           SizedBox(
-            height: 34,
+            height: 36,
             child: FilledButton.icon(
-              onPressed: () {},
+              onPressed: onStart,
               icon: const Icon(
-                Icons.auto_awesome,
+                Icons.arrow_downward,
                 size: 16,
               ),
               label: const Text(
-                "Start",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                "Explore",
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF7C4DFF),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
