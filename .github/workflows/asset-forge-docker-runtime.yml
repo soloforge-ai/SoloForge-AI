@@ -37,7 +37,7 @@ jobs:
             -e POLLINATIONS_CLIENT_ID=test \
             -e POLLINATIONS_REDIRECT_URI=https://example.com/auth/pollinations/callback \
             soloforge-asset-forge-test \
-            python -c "from main import app; print(app.title); print([r.path for r in app.routes])"
+            python -c "from main import app; print(app.title); print([getattr(r, 'path', None) for r in app.routes if getattr(r, 'path', None)])"
 
       - name: Start Uvicorn container
         run: |
