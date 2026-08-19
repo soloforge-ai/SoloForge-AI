@@ -13,8 +13,8 @@ COPY backend/asset_forge/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/asset_forge/main.py ./main.py
-COPY backend/pollinations_oauth.py ./pollinations_oauth.py
-COPY backend/pollinations_oauth_router.py ./pollinations_oauth_router.py
+COPY backend/pollinations_oauth.py ./backend/pollinations_oauth.py
+COPY backend/pollinations_oauth_router.py ./backend/pollinations_oauth_router.py
 COPY backend/asset_forge/characters ./characters
 
 EXPOSE 10000
