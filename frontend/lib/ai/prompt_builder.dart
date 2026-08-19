@@ -1,3 +1,4 @@
+import '../models/content_brief.dart';
 import '../models/product.dart';
 import 'platforms.dart';
 import 'templates.dart';
@@ -8,11 +9,20 @@ class PromptBuilder {
   static String buildCaptionPrompt({
     required Product product,
     required PlatformType platform,
+    required ContentBrief brief,
   }) {
     final template = _getTemplate(platform);
 
     return '''
 $template
+
+==============================
+Content Brief
+==============================
+
+Goal: ${brief.goal}
+Selling Angle: ${brief.angle}
+Tone: ${brief.tone}
 
 ==============================
 Product Information
@@ -73,7 +83,8 @@ Write high-quality affiliate marketing content.
 
 Requirements:
 
-- Focus on the product benefits.
+- Follow the selected content goal, selling angle, and tone.
+- Focus on verified product benefits.
 - Use the product metadata as the primary context.
 - Naturally use the provided keywords.
 - Match the writing style for the selected platform.
@@ -90,19 +101,14 @@ Generate the best possible content.
     switch (platform) {
       case PlatformType.tiktok:
         return PromptTemplates.tiktokCaption;
-
       case PlatformType.facebook:
         return PromptTemplates.facebookCaption;
-
       case PlatformType.instagram:
         return PromptTemplates.facebookCaption;
-
       case PlatformType.lemon8:
         return PromptTemplates.lemon8Caption;
-
       case PlatformType.youtube:
         return PromptTemplates.youtubeShortScript;
-
       case PlatformType.x:
         return PromptTemplates.facebookCaption;
     }
