@@ -5,9 +5,11 @@ import '../ai/content_engine.dart';
 import '../ai/platforms.dart';
 import '../ai/product_intelligence.dart';
 import '../models/affiliate_product.dart';
+import '../models/content_brief.dart';
 import '../models/generated_content.dart';
 
 import '../widgets/forge/analysis_card.dart';
+import '../widgets/forge/content_brief_card.dart';
 import '../widgets/forge/content_studio.dart';
 import '../widgets/forge/miniboss_card.dart';
 import '../widgets/forge/product_assets_card.dart';
@@ -42,6 +44,12 @@ class _ForgePageState extends State<ForgePage> {
     PlatformType.youtube,
   ];
 
+  ContentBrief brief = const ContentBrief(
+    goal: 'Sell',
+    angle: 'Best Value',
+    tone: 'Engaging',
+  );
+
   bool isGenerating = false;
 
   late final ProductIntelligence intelligence;
@@ -62,6 +70,7 @@ class _ForgePageState extends State<ForgePage> {
       final GeneratedContent content = await ContentEngine.generateContent(
         product: widget.product.toProduct(),
         platform: platforms[selectedPlatform],
+        brief: brief,
       );
 
       if (!mounted) return;
@@ -133,6 +142,39 @@ class _ForgePageState extends State<ForgePage> {
             const SizedBox(height: 20),
 
             PromptStudio(product: product),
+
+            const SizedBox(height: 20),
+
+            ContentBriefCard(
+              brief: brief,
+              onGoalChanged: (value) {
+                setState(() {
+                  brief = ContentBrief(
+                    goal: value,
+                    angle: brief.angle,
+                    tone: brief.tone,
+                  );
+                });
+              },
+              onAngleChanged: (value) {
+                setState(() {
+                  brief = ContentBrief(
+                    goal: brief.goal,
+                    angle: value,
+                    tone: brief.tone,
+                  );
+                });
+              },
+              onToneChanged: (value) {
+                setState(() {
+                  brief = ContentBrief(
+                    goal: brief.goal,
+                    angle: brief.angle,
+                    tone: value,
+                  );
+                });
+              },
+            ),
 
             const SizedBox(height: 24),
 
