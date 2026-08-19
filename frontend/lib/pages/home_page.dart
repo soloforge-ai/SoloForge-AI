@@ -121,6 +121,90 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  Widget _workflowControls() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SortSelector(
+          value: sortType,
+          onChanged: (value) {
+            setState(() {
+              sortType = value;
+            });
+            filterProducts();
+          },
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          onChanged: (value) {
+            keyword = value;
+            filterProducts();
+          },
+          decoration: InputDecoration(
+            hintText: 'Search by product title or shop name...',
+            prefixIcon: const Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (categories.isNotEmpty)
+          CategoryFilterBar(
+            categories: categories,
+            selectedCategory: selectedCategory,
+            onSelected: (category) async {
+              setState(() {
+                selectedCategory = category;
+              });
+
+              if (category == 'All') {
+                await loadProducts();
+              } else {
+                await loadProducts(category: category);
+              }
+            },
+          ),
+        const SizedBox(height: 16),
+        Card(
+          elevation: 0,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _StatItem(
+                  icon: Icons.inventory_2,
+                  title: 'Products',
+                  value: '${products.length}',
+                ),
+                _StatItem(
+                  icon: Icons.category,
+                  title: 'Categories',
+                  value: '${categories.length - 1}',
+                ),
+                _StatItem(
+                  icon: Icons.auto_awesome,
+                  title: 'AI Ready',
+                  value: '${products.length}',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _openForge(AffiliateProduct product) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ForgePage(product: product),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -161,94 +245,31 @@ class _HomePageState extends State<HomePage> {
             HeroBanner(onStart: _exploreProducts),
             const SizedBox(height: 16),
             Expanded(
-              child: ListView(
+              child: CustomScrollView(
                 controller: _scrollController,
-                children: [
-                  SortSelector(
-                    value: sortType,
-                    onChanged: (value) {
-                      setState(() {
-                        sortType = value;
-                      });
-                      filterProducts();
-                    },
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: _workflowControls(),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    onChanged: (value) {
-                      keyword = value;
-                      filterProducts();
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Search by product title or shop name...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 10),
                   ),
-                  const SizedBox(height: 12),
-                  if (categories.isNotEmpty)
-                    CategoryFilterBar(
-                      categories: categories,
-                      selectedCategory: selectedCategory,
-                      onSelected: (category) async {
-                        setState(() {
-                          selectedCategory = category;
-                        });
-
-                        if (category == 'All') {
-                          await loadProducts();
-                        } else {
-                          await loadProducts(category: category);
-                        }
-                      },
-                    ),
-                  const SizedBox(height: 16),
-                  Card(
-                    elevation: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _StatItem(
-                            icon: Icons.inventory_2,
-                            title: 'Products',
-                            value: '${products.length}',
-                          ),
-                          _StatItem(
-                            icon: Icons.category,
-                            title: 'Categories',
-                            value: '${categories.length - 1}',
-                          ),
-                          _StatItem(
-                            icon: Icons.auto_awesome,
-                            title: 'AI Ready',
-                            value: '${products.length}',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
                   if (loading)
-                    const Padding(
-                      padding: EdgeInsets.all(40),
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
                       child: Center(child: CircularProgressIndicator()),
                     )
                   else
-                    ...products.map(
-                      (product) => ProductCard(
-                        product: product,
-                        onForge: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ForgePage(product: product),
-                            ),
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final product = products[index];
+                          return ProductCard(
+                            product: product,
+                            onForge: () => _openForge(product),
                           );
                         },
+                        childCount: products.length,
                       ),
                     ),
                 ],
