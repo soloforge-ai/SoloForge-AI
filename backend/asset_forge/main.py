@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from PIL import Image, ImageDraw
 
-from backend.pollinations_oauth_router import router as pollinations_oauth_router
+from pollinations_oauth_router import router as pollinations_oauth_router
 
 
 app = FastAPI(title="SoloForge Asset Forge API", version="0.7.2")
@@ -179,16 +179,13 @@ def _multipart_body(fields: dict[str, str], file_field: str, filename: str, file
 
 
 def _extract_image_response(data: bytes) -> bytes:
-    """Accept Pollinations OpenAI-compatible JSON responses with URL or base64 image data."""
     try:
         payload = json.loads(data.decode("utf-8"))
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Pollinations returned a non-JSON image response: {exc}") from exc
-
     items = payload.get("data") or []
     if not items:
         raise HTTPException(status_code=502, detail=f"Pollinations returned no image data: {str(payload)[:1000]}")
-
     item = items[0] or {}
     b64 = item.get("b64_json")
     if b64:
@@ -196,7 +193,6 @@ def _extract_image_response(data: bytes) -> bytes:
             return base64.b64decode(b64)
         except Exception as exc:
             raise HTTPException(status_code=502, detail=f"Pollinations returned invalid base64 image data: {exc}") from exc
-
     image_url = item.get("url")
     if image_url:
         try:
@@ -204,54 +200,29 @@ def _extract_image_response(data: bytes) -> bytes:
                 return response.read()
         except Exception as exc:
             raise HTTPException(status_code=502, detail=f"Could not download Pollinations generated image: {exc}") from exc
-
     raise HTTPException(status_code=502, detail=f"Pollinations image response had no url or b64_json: {str(item)[:1000]}")
 
 
 def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
-    """Generate one image sheet through Pollinations, using image editing when a master exists."""
     api_key = os.getenv("POLLINATIONS_API_KEY")
     if not api_key:
         raise HTTPException(status_code=503, detail="POLLINATIONS_API_KEY is not configured on the Asset Forge server.")
-
     model = os.getenv("POLLINATIONS_IMAGE_EDIT_MODEL", "kontext").strip() or "kontext"
     width = int(os.getenv("POLLINATIONS_IMAGE_WIDTH", "1024"))
     height = int(os.getenv("POLLINATIONS_IMAGE_HEIGHT", "1024"))
     timeout_seconds = int(os.getenv("POLLINATIONS_TIMEOUT_SECONDS", "240"))
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Accept": "application/json",
-        "User-Agent": "SoloForge-Asset-Forge/0.7",
-    }
-
+    headers = {"Authorization": f"Bearer {api_key}", "Accept": "application/json", "User-Agent": "SoloForge-Asset-Forge/0.7"}
     try:
         if reference_bytes is not None:
             compact_reference = _prepare_reference(reference_bytes)
-            body, boundary = _multipart_body(
-                {
-                    "prompt": prompt,
-                    "model": model,
-                    "size": f"{width}x{height}",
-                },
-                "image",
-                "character-reference.jpg",
-                compact_reference,
-                "image/jpeg",
-            )
+            body, boundary = _multipart_body({"prompt": prompt, "model": model, "size": f"{width}x{height}"}, "image", "character-reference.jpg", compact_reference, "image/jpeg")
             headers["Content-Type"] = f"multipart/form-data; boundary={boundary}"
-            request = urllib.request.Request(
-                "https://gen.pollinations.ai/v1/images/edits",
-                data=body,
-                headers=headers,
-                method="POST",
-            )
+            request = urllib.request.Request("https://gen.pollinations.ai/v1/images/edits", data=body, headers=headers, method="POST")
         else:
             query = urllib.parse.urlencode({"model": "flux", "width": width, "height": height})
             url = f"https://gen.pollinations.ai/image/{urllib.parse.quote(prompt, safe='')}?{query}"
             headers["Accept"] = "image/png,image/jpeg;q=0.9,*/*;q=0.8"
             request = urllib.request.Request(url, headers=headers, method="GET")
-
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
             data = response.read()
     except urllib.error.HTTPError as exc:
@@ -261,32 +232,22 @@ def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
         raise HTTPException(status_code=504, detail=f"Pollinations image generation timed out or could not connect: {exc}") from exc
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Pollinations image generation failed: {str(exc)[:1200]}") from exc
-
     if not data:
         raise HTTPException(status_code=502, detail="Pollinations returned an empty image response.")
-
     if reference_bytes is not None:
         data = _extract_image_response(data)
-
     try:
         with Image.open(io.BytesIO(data)) as image:
             image.verify()
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Pollinations returned data that is not a valid image: {exc}") from exc
-
     return data
 
 
 def _remove_simple_background(image: Image.Image, threshold: int = 48) -> Image.Image:
-    """Low-memory removal for flat/light backgrounds on generated sticker cells."""
     rgba = image.convert("RGBA")
     transparent = (255, 255, 255, 0)
-    corners = [
-        (0, 0),
-        (rgba.width - 1, 0),
-        (0, rgba.height - 1),
-        (rgba.width - 1, rgba.height - 1),
-    ]
+    corners = [(0, 0), (rgba.width - 1, 0), (0, rgba.height - 1), (rgba.width - 1, rgba.height - 1)]
     for point in corners:
         ImageDraw.floodfill(rgba, point, transparent, thresh=threshold)
     return rgba
@@ -297,7 +258,6 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
     source = Image.open(io.BytesIO(source_bytes)).convert("RGBA")
     cell_width = source.width // columns
     cell_height = source.height // rows
-
     files: list[tuple[str, bytes]] = []
     for index in range(request.quantity):
         row = index // columns
@@ -306,28 +266,19 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
         top = row * cell_height
         right = source.width if column == columns - 1 else (column + 1) * cell_width
         bottom = source.height if row == rows - 1 else (row + 1) * cell_height
-
         crop = source.crop((left, top, right, bottom))
         processed = _remove_simple_background(crop)
-
         alpha = processed.getchannel("A")
         bbox = alpha.getbbox()
         if bbox:
             processed = processed.crop(bbox)
-
         margin = max(8, min(processed.size) // 20)
-        canvas = Image.new(
-            "RGBA",
-            (processed.width + margin * 2, processed.height + margin * 2),
-            (255, 255, 255, 0),
-        )
+        canvas = Image.new("RGBA", (processed.width + margin * 2, processed.height + margin * 2), (255, 255, 255, 0))
         canvas.alpha_composite(processed, (margin, margin))
-
         filename = f"{index + 1:02d}_{request.character.lower()}_sticker.png"
         output = io.BytesIO()
         canvas.save(output, format="PNG", optimize=True)
         files.append((filename, output.getvalue()))
-
     return files, source_bytes
 
 
@@ -351,20 +302,13 @@ def generate_asset_pack(request: AssetForgeRequest) -> AssetForgeResponse:
         reference_bytes = _load_character_reference(request.character)
         if _character_key(request.character) == "pearli" and reference_bytes is None:
             raise HTTPException(status_code=409, detail="Pearli master reference is missing from the SoloForge character library.")
-
         columns, rows = _grid(request.quantity)
         prompt = _build_prompt(request, columns, rows, reference_bytes is not None)
         source_bytes = _generate_sheet(prompt, reference_bytes)
         files, source_bytes = _process_sheet(source_bytes, request)
         zip_bytes = _zip_files(files, request)
-
         pack_name = f"{request.character}_{request.product}_{request.quantity}pack".replace(" ", "_")
-        return AssetForgeResponse(
-            asset_pack_name=pack_name,
-            files=[name for name, _ in files],
-            zip_base64=base64.b64encode(zip_bytes).decode("ascii"),
-            source_image_base64=base64.b64encode(source_bytes).decode("ascii"),
-        )
+        return AssetForgeResponse(asset_pack_name=pack_name, files=[name for name, _ in files], zip_base64=base64.b64encode(zip_bytes).decode("ascii"), source_image_base64=base64.b64encode(source_bytes).decode("ascii"))
     except HTTPException:
         raise
     except Exception as exc:
