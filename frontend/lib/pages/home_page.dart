@@ -3,17 +3,13 @@ import 'package:flutter/material.dart';
 import '../models/affiliate_product.dart';
 import '../services/catalog_service.dart';
 import '../services/discovery/discovery_service.dart';
-
 import '../widgets/product_card.dart';
 import '../widgets/sort_selector.dart';
+import '../widgets/category_filter_bar.dart';
+import '../widgets/home/hero_banner.dart';
 import 'forge_page.dart';
 import 'asset_forge_page.dart';
-import 'pollinations_test_page.dart';
-import '../widgets/category_filter_bar.dart';
-
 import 'about_page.dart';
-import '../widgets/home/hero_banner.dart';
-import 'developer_tools_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,8 +20,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final CatalogService _catalogService = const CatalogService();
-
   final DiscoveryService _discoveryService = const DiscoveryService();
+  final ScrollController _scrollController = ScrollController();
 
   List<AffiliateProduct> allProducts = [];
   List<AffiliateProduct> products = [];
@@ -33,7 +29,6 @@ class _HomePageState extends State<HomePage> {
   String keyword = '';
   SortType sortType = SortType.miniBossScore;
   bool loading = true;
-
   String selectedCategory = 'All';
 
   // TODO(Sprint45)
@@ -44,7 +39,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-
     loadCategories();
     loadProducts();
   }
@@ -111,6 +105,106 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _exploreProducts() {
+    if (!_scrollController.hasClients) return;
+
+    _scrollController.animateTo(
+      180,
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Widget _workflowControls() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SortSelector(
+          value: sortType,
+          onChanged: (value) {
+            setState(() {
+              sortType = value;
+            });
+            filterProducts();
+          },
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          onChanged: (value) {
+            keyword = value;
+            filterProducts();
+          },
+          decoration: InputDecoration(
+            hintText: 'Search by product title or shop name...',
+            prefixIcon: const Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (categories.isNotEmpty)
+          CategoryFilterBar(
+            categories: categories,
+            selectedCategory: selectedCategory,
+            onSelected: (category) async {
+              setState(() {
+                selectedCategory = category;
+              });
+
+              if (category == 'All') {
+                await loadProducts();
+              } else {
+                await loadProducts(category: category);
+              }
+            },
+          ),
+        const SizedBox(height: 16),
+        Card(
+          elevation: 0,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _StatItem(
+                  icon: Icons.inventory_2,
+                  title: 'Products',
+                  value: '${products.length}',
+                ),
+                _StatItem(
+                  icon: Icons.category,
+                  title: 'Categories',
+                  value: '${categories.length - 1}',
+                ),
+                _StatItem(
+                  icon: Icons.auto_awesome,
+                  title: 'AI Ready',
+                  value: '${products.length}',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _openForge(AffiliateProduct product) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ForgePage(product: product),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,30 +219,6 @@ class _HomePageState extends State<HomePage> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => const AssetForgePage(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            tooltip: 'Pollinations Test',
-            icon: const Icon(Icons.image_search),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PollinationsTestPage(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            tooltip: 'Developer Tools',
-            icon: const Icon(Icons.build),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const DeveloperToolsPage(),
                 ),
               );
             },
@@ -172,97 +242,38 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const HeroBanner(),
+            HeroBanner(onStart: _exploreProducts),
             const SizedBox(height: 16),
-            SortSelector(
-              value: sortType,
-              onChanged: (value) {
-                setState(() {
-                  sortType = value;
-                });
-                filterProducts();
-              },
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              onChanged: (value) {
-                keyword = value;
-                filterProducts();
-              },
-              decoration: InputDecoration(
-                hintText: 'Search by product title or shop name...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (categories.isNotEmpty)
-              CategoryFilterBar(
-                categories: categories,
-                selectedCategory: selectedCategory,
-                onSelected: (category) async {
-                  setState(() {
-                    selectedCategory = category;
-                  });
-
-                  if (category == 'All') {
-                    await loadProducts();
-                  } else {
-                    await loadProducts(category: category);
-                  }
-                },
-              ),
-            const SizedBox(height: 16),
-            Card(
-              elevation: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _StatItem(
-                      icon: Icons.inventory_2,
-                      title: 'Products',
-                      value: '${products.length}',
-                    ),
-                    _StatItem(
-                      icon: Icons.category,
-                      title: 'Categories',
-                      value: '${categories.length - 1}',
-                    ),
-                    _StatItem(
-                      icon: Icons.auto_awesome,
-                      title: 'AI Ready',
-                      value: '${products.length}',
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
             Expanded(
-              child: loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      itemCount: products.length,
-                      itemBuilder: (context, index) {
-                        final product = products[index];
-
-                        return ProductCard(
-                          product: product,
-                          onForge: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ForgePage(product: product),
-                              ),
-                            );
-                          },
-                        );
-                      },
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: _workflowControls(),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 10),
+                  ),
+                  if (loading)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final product = products[index];
+                          return ProductCard(
+                            product: product,
+                            onForge: () => _openForge(product),
+                          );
+                        },
+                        childCount: products.length,
+                      ),
                     ),
+                ],
+              ),
             ),
           ],
         ),
