@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from PIL import Image, ImageDraw
 
-from pollinations_oauth_router import router as pollinations_oauth_router
+from backend.pollinations_oauth_router import router as pollinations_oauth_router
 
 
 app = FastAPI(title="SoloForge Asset Forge API", version="0.7.2")
