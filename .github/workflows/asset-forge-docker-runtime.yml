@@ -1,0 +1,91 @@
+name: Asset Forge Docker Runtime
+
+on:
+  push:
+    branches:
+      - feature/pollinations-byop-oauth-phase2c
+    paths:
+      - 'backend/asset_forge/**'
+      - 'backend/pollinations_oauth.py'
+      - 'backend/pollinations_oauth_router.py'
+      - '.github/workflows/asset-forge-docker-runtime.yml'
+  pull_request:
+    branches:
+      - feature/asset-forge-mvp
+      - main
+    paths:
+      - 'backend/asset_forge/**'
+      - 'backend/pollinations_oauth.py'
+      - 'backend/pollinations_oauth_router.py'
+      - '.github/workflows/asset-forge-docker-runtime.yml'
+  workflow_dispatch:
+
+jobs:
+  docker-runtime-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -f backend/asset_forge/Dockerfile -t soloforge-asset-forge-test .
+
+      - name: Verify FastAPI import and routes
+        run: |
+          docker run --rm \
+            -e POLLINATIONS_CLIENT_ID=test \
+            -e POLLINATIONS_REDIRECT_URI=https://example.com/auth/pollinations/callback \
+            soloforge-asset-forge-test \
+            python -c "from main import app; print(app.title); print([r.path for r in app.routes])"
+
+      - name: Start Uvicorn container
+        run: |
+          docker run -d --name soloforge-asset-forge-test -p 10000:10000 \
+            -e POLLINATIONS_CLIENT_ID=test \
+            -e POLLINATIONS_REDIRECT_URI=https://example.com/auth/pollinations/callback \
+            soloforge-asset-forge-test
+
+      - name: Wait for health endpoint
+        run: |
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:10000/health; then
+              echo
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs soloforge-asset-forge-test
+          exit 1
+
+      - name: Verify OAuth status route
+        run: |
+          curl --fail --silent http://127.0.0.1:10000/auth/pollinations/status
+
+      - name: Verify OAuth login route
+        run: |
+          curl --fail --silent --show-error --include \
+            --cookie-jar /tmp/oauth-cookies.txt \
+            http://127.0.0.1:10000/auth/pollinations/login \
+            > /tmp/oauth-login.txt
+          grep -Eq '^HTTP/.* 302' /tmp/oauth-login.txt
+          grep -Eq '^location: https://enter\.pollinations\.ai/authorize\?' /tmp/oauth-login.txt || \
+            grep -Eq '^Location: https://enter\.pollinations\.ai/authorize\?' /tmp/oauth-login.txt
+          grep -Eq '__Host-soloforge_oauth_state' /tmp/oauth-login.txt
+          grep -Eq 'HttpOnly' /tmp/oauth-login.txt
+          grep -Eq 'Secure' /tmp/oauth-login.txt
+          grep -Eq 'SameSite=Lax' /tmp/oauth-login.txt
+
+      - name: Verify OAuth callback rejects missing state/code
+        run: |
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            'http://127.0.0.1:10000/auth/pollinations/callback')
+          test "$status" = "400"
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs soloforge-asset-forge-test || true
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f soloforge-asset-forge-test || true
