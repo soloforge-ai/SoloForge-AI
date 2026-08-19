@@ -3,9 +3,16 @@ services:
     name: soloforge-asset-forge
     runtime: docker
     dockerfilePath: ./backend/asset_forge/Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_IMAGE_MODEL
         value: gemini-2.5-flash-image
+      - key: POLLINATIONS_CLIENT_ID
+        sync: false
+      - key: POLLINATIONS_REDIRECT_URI
+        value: https://soloforge-asset-forge.onrender.com/auth/pollinations/callback
+      - key: POLLINATIONS_SESSION_COOKIE_SECURE
+        value: "true"
