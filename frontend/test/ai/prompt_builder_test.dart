@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../lib/ai/platforms.dart';
-import '../../lib/ai/prompt_builder.dart';
-import '../../lib/models/content_brief.dart';
-import '../../lib/models/product.dart';
+import 'package:frontend/ai/platforms.dart';
+import 'package:frontend/ai/prompt_builder.dart';
+import 'package:frontend/models/content_brief.dart';
+import 'package:frontend/models/product.dart';
 
 void main() {
   test('prompt includes the selected content brief', () {
