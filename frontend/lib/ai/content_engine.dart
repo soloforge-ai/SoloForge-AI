@@ -1,3 +1,4 @@
+import '../models/content_brief.dart';
 import '../models/generated_content.dart';
 import '../models/product.dart';
 import 'platforms.dart';
@@ -14,13 +15,21 @@ class ContentEngine {
   static Future<GeneratedContent> generateContent({
     required Product product,
     required PlatformType platform,
+    ContentBrief? brief,
     AIProvider? provider,
   }) async {
     final enrichedProduct = const ProductEnricher().enrich(product);
+    final contentBrief = brief ??
+        const ContentBrief(
+          goal: 'Sell',
+          angle: 'Best Value',
+          tone: 'Engaging',
+        );
 
     final prompt = PromptBuilder.buildCaptionPrompt(
       product: enrichedProduct,
       platform: platform,
+      brief: contentBrief,
     );
 
     try {
