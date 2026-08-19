@@ -29,6 +29,12 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Flutter version
         run: flutter --version
 
@@ -43,3 +49,13 @@ jobs:
 
       - name: Build Flutter Web
         run: flutter build web --release
+
+      - name: Build Android APK
+        run: flutter build apk --debug
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: soloforge-phase-a2-debug-apk
+          path: frontend/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
