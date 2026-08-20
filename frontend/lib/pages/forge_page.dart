@@ -50,6 +50,7 @@ class _ForgePageState extends State<ForgePage> {
     tone: 'Engaging',
   );
 
+  GeneratedContent? latestGeneratedContent;
   bool isGenerating = false;
 
   late final ProductIntelligence intelligence;
@@ -76,6 +77,7 @@ class _ForgePageState extends State<ForgePage> {
       if (!mounted) return;
 
       setState(() {
+        latestGeneratedContent = content;
         hookController.text = content.hook;
         captionController.text = content.caption;
         hashtagController.text = content.hashtags.join(' ');
@@ -86,6 +88,13 @@ class _ForgePageState extends State<ForgePage> {
         setState(() => isGenerating = false);
       }
     }
+  }
+
+  void _updateBrief(ContentBrief nextBrief) {
+    setState(() {
+      brief = nextBrief;
+      latestGeneratedContent = null;
+    });
   }
 
   void copyToClipboard(String text) {
@@ -141,38 +150,34 @@ class _ForgePageState extends State<ForgePage> {
 
             const SizedBox(height: 20),
 
-            PromptStudio(product: product),
-
-            const SizedBox(height: 20),
-
             ContentBriefCard(
               brief: brief,
               onGoalChanged: (value) {
-                setState(() {
-                  brief = ContentBrief(
+                _updateBrief(
+                  ContentBrief(
                     goal: value,
                     angle: brief.angle,
                     tone: brief.tone,
-                  );
-                });
+                  ),
+                );
               },
               onAngleChanged: (value) {
-                setState(() {
-                  brief = ContentBrief(
+                _updateBrief(
+                  ContentBrief(
                     goal: brief.goal,
                     angle: value,
                     tone: brief.tone,
-                  );
-                });
+                  ),
+                );
               },
               onToneChanged: (value) {
-                setState(() {
-                  brief = ContentBrief(
+                _updateBrief(
+                  ContentBrief(
                     goal: brief.goal,
                     angle: brief.angle,
                     tone: value,
-                  );
-                });
+                  ),
+                );
               },
             ),
 
@@ -194,6 +199,7 @@ class _ForgePageState extends State<ForgePage> {
               onPlatformChanged: (i) {
                 setState(() {
                   selectedPlatform = i;
+                  latestGeneratedContent = null;
                 });
               },
               onGenerate: generateContent,
@@ -208,6 +214,15 @@ ${hashtagController.text}
 ${ctaController.text}
 ''',
               ),
+            ),
+
+            const SizedBox(height: 20),
+
+            PromptStudio(
+              product: product,
+              brief: brief,
+              platform: platforms[selectedPlatform],
+              generatedContent: latestGeneratedContent,
             ),
           ],
         ),
