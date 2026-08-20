@@ -7,21 +7,32 @@ import secrets
 import threading
 import time
 from dataclasses import dataclass
+from urllib.parse import urlencode
 
-from fastapi import APIRouter, Cookie, HTTPException
+from fastapi import APIRouter, Cookie, Header, HTTPException, Query
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from backend.pollinations_oauth import PollinationsOAuthConfig, build_authorization_url, create_pkce_transaction, exchange_authorization_code
+from backend.pollinations_oauth import (
+    PollinationsOAuthConfig,
+    build_authorization_url,
+    create_pkce_transaction,
+    exchange_authorization_code,
+)
 
 router = APIRouter(prefix="/auth/pollinations", tags=["pollinations-auth"])
 _TRANSACTION_TTL_SECONDS = 600
+_HANDOFF_TTL_SECONDS = 120
 _SESSION_COOKIE = "__Host-soloforge_session"
 _STATE_COOKIE = "__Host-soloforge_oauth_state"
+_DEFAULT_MOBILE_RETURN_TO = "soloforge://oauth/pollinations"
+
 
 @dataclass
 class _OAuthTransaction:
     verifier: str
     created_at: float
+    return_to: str | None = None
+
 
 @dataclass
 class _OAuthSession:
@@ -29,9 +40,18 @@ class _OAuthSession:
     expires_at: float
     scope: str
 
+
+@dataclass
+class _MobileHandoff:
+    session_id: str
+    created_at: float
+
+
 _lock = threading.RLock()
 _transactions: dict[str, _OAuthTransaction] = {}
 _sessions: dict[str, _OAuthSession] = {}
+_handoffs: dict[str, _MobileHandoff] = {}
+
 
 def _cleanup() -> None:
     now = time.time()
@@ -42,21 +62,57 @@ def _cleanup() -> None:
         for session_id, session in list(_sessions.items()):
             if session.expires_at <= now:
                 _sessions.pop(session_id, None)
+        for code, handoff in list(_handoffs.items()):
+            if now - handoff.created_at > _HANDOFF_TTL_SECONDS:
+                _handoffs.pop(code, None)
+
 
 def _cookie_secure() -> bool:
     return os.getenv("POLLINATIONS_SESSION_COOKIE_SECURE", "true").strip().lower() == "true"
 
+
 def _set_state_cookie(response: RedirectResponse, state: str) -> None:
-    response.set_cookie(key=_STATE_COOKIE, value=state, path="/", secure=_cookie_secure(), httponly=True, samesite="lax", max_age=_TRANSACTION_TTL_SECONDS)
+    response.set_cookie(
+        key=_STATE_COOKIE,
+        value=state,
+        path="/",
+        secure=_cookie_secure(),
+        httponly=True,
+        samesite="lax",
+        max_age=_TRANSACTION_TTL_SECONDS,
+    )
+
 
 def _set_session_cookie(response: RedirectResponse, session_id: str) -> None:
-    response.set_cookie(key=_SESSION_COOKIE, value=session_id, path="/", secure=_cookie_secure(), httponly=True, samesite="lax")
+    response.set_cookie(
+        key=_SESSION_COOKIE,
+        value=session_id,
+        path="/",
+        secure=_cookie_secure(),
+        httponly=True,
+        samesite="lax",
+    )
+
 
 def _clear_state_cookie(response: RedirectResponse) -> None:
-    response.delete_cookie(key=_STATE_COOKIE, path="/", secure=_cookie_secure(), httponly=True, samesite="lax")
+    response.delete_cookie(
+        key=_STATE_COOKIE,
+        path="/",
+        secure=_cookie_secure(),
+        httponly=True,
+        samesite="lax",
+    )
+
 
 def _clear_session_cookie(response: JSONResponse) -> None:
-    response.delete_cookie(key=_SESSION_COOKIE, path="/", secure=_cookie_secure(), httponly=True, samesite="lax")
+    response.delete_cookie(
+        key=_SESSION_COOKIE,
+        path="/",
+        secure=_cookie_secure(),
+        httponly=True,
+        samesite="lax",
+    )
+
 
 def _get_session(session_id: str | None) -> _OAuthSession | None:
     if not session_id:
@@ -65,22 +121,67 @@ def _get_session(session_id: str | None) -> _OAuthSession | None:
     with _lock:
         return _sessions.get(session_id)
 
+
+def _session_id_from_authorization(authorization: str | None) -> str | None:
+    if not authorization:
+        return None
+    scheme, _, value = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not value.strip():
+        return None
+    return value.strip()
+
+
+def _validate_return_to(return_to: str | None) -> str | None:
+    if not return_to:
+        return None
+    allowed = os.getenv(
+        "POLLINATIONS_MOBILE_RETURN_TO",
+        _DEFAULT_MOBILE_RETURN_TO,
+    ).strip()
+    if return_to != allowed:
+        raise HTTPException(status_code=400, detail="Unsupported mobile return URL.")
+    return return_to
+
+
 @router.get("/login")
-def pollinations_login() -> RedirectResponse:
+def pollinations_login(
+    client: str | None = Query(default=None),
+    return_to: str | None = Query(default=None),
+) -> RedirectResponse:
     try:
         config = PollinationsOAuthConfig.from_env()
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    mobile_return_to = None
+    if client == "mobile":
+        mobile_return_to = _validate_return_to(return_to or _DEFAULT_MOBILE_RETURN_TO)
+
     verifier, challenge, state = create_pkce_transaction()
     with _lock:
-        _transactions[state] = _OAuthTransaction(verifier=verifier, created_at=time.time())
-    authorization_url = build_authorization_url(config, code_challenge=challenge, state=state)
+        _transactions[state] = _OAuthTransaction(
+            verifier=verifier,
+            created_at=time.time(),
+            return_to=mobile_return_to,
+        )
+
+    authorization_url = build_authorization_url(
+        config,
+        code_challenge=challenge,
+        state=state,
+    )
     response = RedirectResponse(url=authorization_url, status_code=302)
     _set_state_cookie(response, state)
     return response
 
+
 @router.get("/callback")
-def pollinations_callback(code: str | None = None, state: str | None = None, error: str | None = None, oauth_state: str | None = Cookie(default=None, alias=_STATE_COOKIE)):
+def pollinations_callback(
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    oauth_state: str | None = Cookie(default=None, alias=_STATE_COOKIE),
+):
     _cleanup()
     if error:
         raise HTTPException(status_code=400, detail="Pollinations authorization was denied or failed.")
@@ -88,15 +189,22 @@ def pollinations_callback(code: str | None = None, state: str | None = None, err
         raise HTTPException(status_code=400, detail="Missing OAuth callback parameters.")
     if not oauth_state or not secrets.compare_digest(state, oauth_state):
         raise HTTPException(status_code=400, detail="OAuth state does not match this browser session.")
+
     with _lock:
         transaction = _transactions.pop(state, None)
     if transaction is None:
         raise HTTPException(status_code=400, detail="Invalid or expired OAuth state.")
+
     try:
         config = PollinationsOAuthConfig.from_env()
-        payload = exchange_authorization_code(config, code=code, code_verifier=transaction.verifier)
+        payload = exchange_authorization_code(
+            config,
+            code=code,
+            code_verifier=transaction.verifier,
+        )
     except (RuntimeError, ValueError) as exc:
         raise HTTPException(status_code=502, detail="Pollinations token exchange failed.") from exc
+
     session_id = secrets.token_urlsafe(32)
     expires_in = int(payload.get("expires_in", 604800))
     with _lock:
@@ -105,27 +213,82 @@ def pollinations_callback(code: str | None = None, state: str | None = None, err
             expires_at=time.time() + max(60, expires_in),
             scope=str(payload.get("scope", "")),
         )
+
+    if transaction.return_to:
+        handoff_code = secrets.token_urlsafe(32)
+        with _lock:
+            _handoffs[handoff_code] = _MobileHandoff(
+                session_id=session_id,
+                created_at=time.time(),
+            )
+        separator = "&" if "?" in transaction.return_to else "?"
+        target = f"{transaction.return_to}{separator}{urlencode({'code': handoff_code})}"
+        response = RedirectResponse(url=target, status_code=302)
+        _clear_state_cookie(response)
+        return response
+
     response = RedirectResponse(url="/auth/pollinations/status", status_code=302)
     _set_session_cookie(response, session_id)
     _clear_state_cookie(response)
     return response
 
+
+@router.post("/mobile/exchange")
+def pollinations_mobile_exchange(code: str = Query(..., min_length=1)) -> dict[str, object]:
+    _cleanup()
+    with _lock:
+        handoff = _handoffs.pop(code, None)
+    if handoff is None:
+        raise HTTPException(status_code=400, detail="Invalid or expired mobile handoff code.")
+
+    session = _get_session(handoff.session_id)
+    if session is None:
+        raise HTTPException(status_code=401, detail="Pollinations session has expired.")
+
+    return {
+        "session_token": handoff.session_id,
+        "expires_at": int(session.expires_at),
+        "scope": session.scope,
+    }
+
+
 @router.get("/status")
-def pollinations_status(session_id: str | None = Cookie(default=None, alias=_SESSION_COOKIE)) -> dict[str, object]:
-    session = _get_session(session_id)
+def pollinations_status(
+    session_id: str | None = Cookie(default=None, alias=_SESSION_COOKIE),
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    bearer_session_id = _session_id_from_authorization(authorization)
+    session = _get_session(bearer_session_id or session_id)
     if session is None:
         return {"connected": False}
-    return {"connected": True, "expires_at": int(session.expires_at), "scope": session.scope}
+    return {
+        "connected": True,
+        "expires_at": int(session.expires_at),
+        "scope": session.scope,
+    }
+
 
 @router.post("/logout")
-def pollinations_logout(session_id: str | None = Cookie(default=None, alias=_SESSION_COOKIE)) -> JSONResponse:
-    if session_id:
+def pollinations_logout(
+    session_id: str | None = Cookie(default=None, alias=_SESSION_COOKIE),
+    authorization: str | None = Header(default=None),
+) -> JSONResponse:
+    resolved_session_id = _session_id_from_authorization(authorization) or session_id
+    if resolved_session_id:
         with _lock:
-            _sessions.pop(session_id, None)
+            _sessions.pop(resolved_session_id, None)
     response = JSONResponse({"connected": False})
     _clear_session_cookie(response)
     return response
 
+
 def get_pollinations_access_token(session_id: str | None) -> str | None:
     session = _get_session(session_id)
     return session.access_token if session else None
+
+
+def get_pollinations_access_token_from_authorization(
+    authorization: str | None,
+) -> str | None:
+    session_id = _session_id_from_authorization(authorization)
+    return get_pollinations_access_token(session_id)
