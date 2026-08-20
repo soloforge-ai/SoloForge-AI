@@ -13,13 +13,18 @@ import zipfile
 from pathlib import Path
 from typing import List
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from PIL import Image, ImageDraw
 
+from backend.pollinations_oauth_router import (
+    get_pollinations_access_token_from_authorization,
+    router as pollinations_oauth_router,
+)
 
-app = FastAPI(title="SoloForge Asset Forge API", version="0.7.2")
+
+app = FastAPI(title="SoloForge Asset Forge API", version="0.8.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,6 +33,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(pollinations_oauth_router)
 
 CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
 CHARACTER_LIBRARY_BASE_URL = (
@@ -204,21 +211,21 @@ def _extract_image_response(data: bytes) -> bytes:
     raise HTTPException(status_code=502, detail=f"Pollinations image response had no url or b64_json: {str(item)[:1000]}")
 
 
-def _generate_sheet(prompt: str, reference_bytes: bytes | None) -> bytes:
-    """Generate one image sheet through Pollinations, using image editing when a master exists."""
-    api_key = os.getenv("POLLINATIONS_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=503, detail="POLLINATIONS_API_KEY is not configured on the Asset Forge server.")
-
+def _generate_sheet(
+    prompt: str,
+    reference_bytes: bytes | None,
+    access_token: str,
+) -> bytes:
+    """Generate one image sheet through Pollinations using the connected user's token."""
     model = os.getenv("POLLINATIONS_IMAGE_EDIT_MODEL", "kontext").strip() or "kontext"
     width = int(os.getenv("POLLINATIONS_IMAGE_WIDTH", "1024"))
     height = int(os.getenv("POLLINATIONS_IMAGE_HEIGHT", "1024"))
     timeout_seconds = int(os.getenv("POLLINATIONS_TIMEOUT_SECONDS", "240"))
 
     headers = {
-        "Authorization": f"Bearer {api_key}",
+        "Authorization": f"Bearer {access_token}",
         "Accept": "application/json",
-        "User-Agent": "SoloForge-Asset-Forge/0.7",
+        "User-Agent": "SoloForge-Asset-Forge/0.8",
     }
 
     try:
@@ -342,7 +349,17 @@ def health() -> dict[str, str]:
 
 
 @app.post("/v1/asset-forge/generate", response_model=AssetForgeResponse)
-def generate_asset_pack(request: AssetForgeRequest) -> AssetForgeResponse:
+def generate_asset_pack(
+    request: AssetForgeRequest,
+    authorization: str | None = Header(default=None),
+) -> AssetForgeResponse:
+    access_token = get_pollinations_access_token_from_authorization(authorization)
+    if not access_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Connect Pollinations before generating assets.",
+        )
+
     try:
         reference_bytes = _load_character_reference(request.character)
         if _character_key(request.character) == "pearli" and reference_bytes is None:
@@ -350,7 +367,7 @@ def generate_asset_pack(request: AssetForgeRequest) -> AssetForgeResponse:
 
         columns, rows = _grid(request.quantity)
         prompt = _build_prompt(request, columns, rows, reference_bytes is not None)
-        source_bytes = _generate_sheet(prompt, reference_bytes)
+        source_bytes = _generate_sheet(prompt, reference_bytes, access_token)
         files, source_bytes = _process_sheet(source_bytes, request)
         zip_bytes = _zip_files(files, request)
 
