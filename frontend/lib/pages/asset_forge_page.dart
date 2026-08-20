@@ -19,7 +19,6 @@ class AssetForgePage extends StatefulWidget {
 }
 
 class _AssetForgePageState extends State<AssetForgePage> {
-  // CEO is the primary Asset Forge character for the current MVP.
   String character = 'CEO';
   String product = 'Sticker';
   String theme = 'Healing & Encouragement';
@@ -48,7 +47,9 @@ class _AssetForgePageState extends State<AssetForgePage> {
   @override
   void initState() {
     super.initState();
-    unawaited(_initializePollinations());
+    if (hasBackend) {
+      unawaited(_initializePollinations());
+    }
   }
 
   Future<void> _initializePollinations() async {
