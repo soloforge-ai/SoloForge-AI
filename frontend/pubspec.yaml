@@ -51,6 +51,7 @@ flutter:
     - assets/data/categories/Sports_and_Outdoors/
     - assets/data/categories/Stationery/
     - assets/data/categories/Women_Clothes/
+    - shorebird.yaml
 
 flutter_launcher_icons:
   android: true
