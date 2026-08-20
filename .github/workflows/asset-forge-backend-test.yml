@@ -8,6 +8,7 @@ on:
       - 'backend/asset_forge/**'
       - 'backend/pollinations_oauth.py'
       - 'backend/pollinations_oauth_router.py'
+      - 'backend/tests/**'
       - '.github/workflows/asset-forge-backend-test.yml'
   pull_request:
     branches:
@@ -17,11 +18,12 @@ on:
       - 'backend/asset_forge/**'
       - 'backend/pollinations_oauth.py'
       - 'backend/pollinations_oauth_router.py'
+      - 'backend/tests/**'
       - '.github/workflows/asset-forge-backend-test.yml'
   workflow_dispatch:
 
 jobs:
-  syntax-check:
+  backend-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,8 +34,17 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install backend test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/asset_forge/requirements.txt pytest httpx
+
       - name: Compile backend Python
         run: |
           python -m compileall -q backend/asset_forge/main.py
           python -m compileall -q backend/pollinations_oauth.py
           python -m compileall -q backend/pollinations_oauth_router.py
+          python -m compileall -q backend/tests
+
+      - name: Run OAuth and session contract tests
+        run: python -m pytest -q backend/tests/test_pollinations_oauth_session_contract.py
