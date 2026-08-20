@@ -100,9 +100,12 @@ class PollinationsSessionService {
       );
     }
 
-    final exchangeUri = Uri.parse('$_baseUrl/auth/pollinations/mobile/exchange')
-        .replace(queryParameters: {'code': code});
-    final response = await _client.post(exchangeUri);
+    final exchangeUri = Uri.parse('$_baseUrl/auth/pollinations/mobile/exchange');
+    final response = await _client.post(
+      exchangeUri,
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'code': code}),
+    );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw PollinationsSessionException(_errorMessage(response));
     }
