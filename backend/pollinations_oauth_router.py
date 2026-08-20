@@ -11,6 +11,7 @@ from urllib.parse import urlencode
 
 from fastapi import APIRouter, Cookie, Header, HTTPException, Query
 from fastapi.responses import JSONResponse, RedirectResponse
+from pydantic import BaseModel, Field
 
 from backend.pollinations_oauth import (
     PollinationsOAuthConfig,
@@ -45,6 +46,16 @@ class _OAuthSession:
 class _MobileHandoff:
     session_id: str
     created_at: float
+
+
+class MobileExchangeRequest(BaseModel):
+    """One-time mobile OAuth handoff payload.
+
+    Keep the handoff code in the request body so it is less likely to be
+    persisted by reverse-proxy/access logs than a query-string credential.
+    """
+
+    code: str = Field(min_length=1, max_length=512)
 
 
 _lock = threading.RLock()
@@ -234,10 +245,10 @@ def pollinations_callback(
 
 
 @router.post("/mobile/exchange")
-def pollinations_mobile_exchange(code: str = Query(..., min_length=1)) -> dict[str, object]:
+def pollinations_mobile_exchange(payload: MobileExchangeRequest) -> dict[str, object]:
     _cleanup()
     with _lock:
-        handoff = _handoffs.pop(code, None)
+        handoff = _handoffs.pop(payload.code, None)
     if handoff is None:
         raise HTTPException(status_code=400, detail="Invalid or expired mobile handoff code.")
 
