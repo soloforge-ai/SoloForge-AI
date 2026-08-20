@@ -7,10 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-const String assetForgeApiUrl = String.fromEnvironment(
-  'ASSET_FORGE_API_URL',
-  defaultValue: 'https://soloforge-asset-forge.onrender.com',
-);
+import '../services/pollinations_session_service.dart';
 
 class AssetForgePage extends StatefulWidget {
   const AssetForgePage({super.key, this.useBackend});
@@ -31,21 +28,127 @@ class _AssetForgePageState extends State<AssetForgePage> {
   int quantity = 12;
   bool isGenerating = false;
   bool isSaving = false;
+  bool isConnectingPollinations = false;
+  bool isPollinationsConnected = false;
   double progress = 0.0;
   String status = 'Ready';
+  String pollinationsStatus = 'Not connected';
   String? errorMessage;
   List<String> generatedFiles = const [];
   String? zipBase64;
   String? sourceImageBase64;
 
   final TextEditingController messageController = TextEditingController();
+  final PollinationsSessionService _pollinationsSession =
+      PollinationsSessionService();
 
   bool get hasBackend =>
       widget.useBackend ?? assetForgeApiUrl.trim().isNotEmpty;
 
   @override
+  void initState() {
+    super.initState();
+    unawaited(_initializePollinations());
+  }
+
+  Future<void> _initializePollinations() async {
+    await _pollinationsSession.startListening(
+      onCallback: _handlePollinationsCallback,
+    );
+    await _refreshPollinationsStatus();
+  }
+
+  Future<void> _handlePollinationsCallback(Uri uri) async {
+    if (!_pollinationsSession.isPollinationsCallback(uri)) return;
+    if (mounted) {
+      setState(() {
+        isConnectingPollinations = true;
+        pollinationsStatus = 'Finishing connection...';
+        errorMessage = null;
+      });
+    }
+
+    try {
+      final session = await _pollinationsSession.handleCallback(uri);
+      if (!mounted) return;
+      setState(() {
+        isPollinationsConnected = session.connected;
+        isConnectingPollinations = false;
+        pollinationsStatus = session.connected ? 'Connected' : 'Not connected';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        isPollinationsConnected = false;
+        isConnectingPollinations = false;
+        pollinationsStatus = 'Connection failed';
+        errorMessage = error.toString();
+      });
+    }
+  }
+
+  Future<void> _refreshPollinationsStatus() async {
+    try {
+      final session = await _pollinationsSession.status();
+      if (!mounted) return;
+      setState(() {
+        isPollinationsConnected = session.connected;
+        pollinationsStatus = session.connected ? 'Connected' : 'Not connected';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        isPollinationsConnected = false;
+        pollinationsStatus = 'Not connected';
+      });
+    }
+  }
+
+  Future<void> _connectPollinations() async {
+    if (isConnectingPollinations) return;
+    setState(() {
+      isConnectingPollinations = true;
+      pollinationsStatus = 'Opening Pollinations...';
+      errorMessage = null;
+    });
+    try {
+      await _pollinationsSession.connect();
+      if (!mounted) return;
+      setState(() {
+        pollinationsStatus = 'Waiting for authorization...';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        isConnectingPollinations = false;
+        pollinationsStatus = 'Connection failed';
+        errorMessage = error.toString();
+      });
+    }
+  }
+
+  Future<void> _disconnectPollinations() async {
+    setState(() {
+      isConnectingPollinations = true;
+      errorMessage = null;
+    });
+    try {
+      await _pollinationsSession.disconnect();
+    } finally {
+      if (mounted) {
+        setState(() {
+          isConnectingPollinations = false;
+          isPollinationsConnected = false;
+          pollinationsStatus = 'Not connected';
+        });
+      }
+    }
+  }
+
+  @override
   void dispose() {
     messageController.dispose();
+    unawaited(_pollinationsSession.dispose());
     super.dispose();
   }
 
@@ -91,6 +194,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
 
   Future<void> _generateWithBackend() async {
     final baseUrl = assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
+    final authHeaders = await _pollinationsSession.authorizationHeaders();
 
     setState(() {
       status = 'Connecting to Asset Forge server...';
@@ -100,7 +204,10 @@ class _AssetForgePageState extends State<AssetForgePage> {
     final response = await http
         .post(
           Uri.parse('$baseUrl/v1/asset-forge/generate'),
-          headers: const {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders,
+          },
           body: jsonEncode({
             'character': character,
             'product': product,
@@ -111,6 +218,10 @@ class _AssetForgePageState extends State<AssetForgePage> {
           }),
         )
         .timeout(const Duration(minutes: 5));
+
+    if (response.statusCode == 401) {
+      await _refreshPollinationsStatus();
+    }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       String message = 'Asset Forge server returned ${response.statusCode}.';
@@ -148,8 +259,12 @@ class _AssetForgePageState extends State<AssetForgePage> {
     try {
       final bytes = base64Decode(zipBase64!);
       final directory = await getTemporaryDirectory();
-      final safeCharacter = character.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
-      final filename = '${safeCharacter}_${product.toLowerCase()}_${quantity}pack.zip';
+      final safeCharacter = character.toLowerCase().replaceAll(
+            RegExp(r'[^a-z0-9]+'),
+            '_',
+          );
+      final filename =
+          '${safeCharacter}_${product.toLowerCase()}_${quantity}pack.zip';
       final file = File('${directory.path}/$filename');
       await file.writeAsBytes(bytes, flush: true);
 
@@ -178,6 +293,12 @@ class _AssetForgePageState extends State<AssetForgePage> {
 
   Future<void> generateAssets() async {
     if (isGenerating) return;
+    if (hasBackend && !isPollinationsConnected) {
+      setState(() {
+        errorMessage = 'Connect Pollinations before generating assets.';
+      });
+      return;
+    }
 
     setState(() {
       isGenerating = true;
@@ -221,18 +342,81 @@ class _AssetForgePageState extends State<AssetForgePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           initialValue: value,
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
-          items: items.map((item) => DropdownMenuItem<String>(value: item, child: Text(item))).toList(),
+          items: items
+              .map(
+                (item) => DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(item),
+                ),
+              )
+              .toList(),
           onChanged: isGenerating ? null : onChanged,
         ),
       ],
+    );
+  }
+
+  Widget _buildPollinationsCard() {
+    final connected = isPollinationsConnected;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  connected ? Icons.cloud_done_outlined : Icons.cloud_off_outlined,
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Pollinations',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Text(pollinationsStatus),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              connected
+                  ? 'Your Pollinations account will be used for generation.'
+                  : 'Connect your Pollinations account before generating real assets.',
+              style: const TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: isConnectingPollinations
+                  ? null
+                  : connected
+                      ? _disconnectPollinations
+                      : _connectPollinations,
+              icon: Icon(connected ? Icons.link_off : Icons.link),
+              label: Text(
+                isConnectingPollinations
+                    ? 'Please wait...'
+                    : connected
+                        ? 'Disconnect Pollinations'
+                        : 'Connect Pollinations',
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -252,50 +436,88 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('SoloForge Asset Forge', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'SoloForge Asset Forge',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      Text(hasBackend ? 'Real AI pipeline connected.' : 'MVP simulation mode — backend not connected yet.'),
+                      Text(
+                        hasBackend
+                            ? 'Real AI pipeline connected.'
+                            : 'MVP simulation mode — backend not connected yet.',
+                      ),
                     ],
                   ),
                 ),
               ),
+              if (hasBackend) ...[
+                const SizedBox(height: 12),
+                _buildPollinationsCard(),
+              ],
               const SizedBox(height: 20),
               buildDropdown(
                 label: 'Character',
                 value: character,
                 items: const ['CEO', 'Pearli', 'Aira'],
-                onChanged: (value) { if (value != null) setState(() => character = value); },
+                onChanged: (value) {
+                  if (value != null) setState(() => character = value);
+                },
               ),
               const SizedBox(height: 16),
               buildDropdown(
                 label: 'Product',
                 value: product,
                 items: const ['Sticker', 'Wallpaper', 'Social Media'],
-                onChanged: (value) { if (value != null) setState(() => product = value); },
+                onChanged: (value) {
+                  if (value != null) setState(() => product = value);
+                },
               ),
               const SizedBox(height: 16),
               buildDropdown(
                 label: 'Theme',
                 value: theme,
-                items: const ['Healing & Encouragement', 'Love', 'Abundance', 'Manifestation', 'Good Morning'],
-                onChanged: (value) { if (value != null) setState(() => theme = value); },
+                items: const [
+                  'Healing & Encouragement',
+                  'Love',
+                  'Abundance',
+                  'Manifestation',
+                  'Good Morning',
+                ],
+                onChanged: (value) {
+                  if (value != null) setState(() => theme = value);
+                },
               ),
               const SizedBox(height: 16),
               buildDropdown(
                 label: 'Style',
                 value: style,
-                items: const ['Cute 3D Chibi', 'Cute 2D', 'Luxury', 'Celestial'],
-                onChanged: (value) { if (value != null) setState(() => style = value); },
+                items: const [
+                  'Cute 3D Chibi',
+                  'Cute 2D',
+                  'Luxury',
+                  'Celestial',
+                ],
+                onChanged: (value) {
+                  if (value != null) setState(() => style = value);
+                },
               ),
               const SizedBox(height: 20),
-              Text('Quantity: $quantity', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Quantity: $quantity',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               Slider(
                 value: quantity.toDouble(),
                 min: 4,
                 max: 24,
                 divisions: 5,
                 label: '$quantity',
-                onChanged: isGenerating ? null : (value) => setState(() => quantity = value.round()),
+                onChanged: isGenerating
+                    ? null
+                    : (value) => setState(() => quantity = value.round()),
               ),
               const SizedBox(height: 10),
               TextField(
@@ -305,7 +527,9 @@ class _AssetForgePageState extends State<AssetForgePage> {
                 decoration: InputDecoration(
                   labelText: 'Sticker messages',
                   hintText: 'เช่น สู้ ๆ นะ, ขอบคุณนะ, รักนะ',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -316,19 +540,38 @@ class _AssetForgePageState extends State<AssetForgePage> {
                     children: [
                       Row(
                         children: [
-                          Icon(isGenerating ? Icons.auto_awesome : Icons.check_circle_outline),
+                          Icon(
+                            isGenerating
+                                ? Icons.auto_awesome
+                                : Icons.check_circle_outline,
+                          ),
                           const SizedBox(width: 10),
-                          Expanded(child: Text(status, style: const TextStyle(fontWeight: FontWeight.bold))),
+                          Expanded(
+                            child: Text(
+                              status,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
                           Text('${(progress * 100).round()}%'),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      LinearProgressIndicator(value: progress, minHeight: 8, borderRadius: BorderRadius.circular(10)),
+                      LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 8,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       if (errorMessage != null) ...[
                         const SizedBox(height: 12),
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: Text(errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                          child: Text(
+                            errorMessage!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
                         ),
                       ],
                     ],
@@ -339,9 +582,16 @@ class _AssetForgePageState extends State<AssetForgePage> {
               SizedBox(
                 height: 52,
                 child: ElevatedButton.icon(
-                  onPressed: isGenerating ? null : generateAssets,
-                  icon: Icon(isGenerating ? Icons.hourglass_top : Icons.auto_awesome),
-                  label: Text(isGenerating ? 'Generating...' : 'Generate Asset Pack'),
+                  onPressed: isGenerating ||
+                          (hasBackend && !isPollinationsConnected)
+                      ? null
+                      : generateAssets,
+                  icon: Icon(
+                    isGenerating ? Icons.hourglass_top : Icons.auto_awesome,
+                  ),
+                  label: Text(
+                    isGenerating ? 'Generating...' : 'Generate Asset Pack',
+                  ),
                 ),
               ),
               if (generatedFiles.isNotEmpty) ...[
@@ -352,26 +602,44 @@ class _AssetForgePageState extends State<AssetForgePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Generated ${generatedFiles.length} files', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text(
+                          'Generated ${generatedFiles.length} files',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 8),
-                        ...generatedFiles.take(6).map((name) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 3),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.image_outlined, size: 18),
-                              const SizedBox(width: 8),
-                              Expanded(child: Text(name)),
-                            ],
-                          ),
-                        )),
-                        if (generatedFiles.length > 6) Text('…and ${generatedFiles.length - 6} more'),
+                        ...generatedFiles.take(6).map(
+                              (name) => Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 3),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.image_outlined,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text(name)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        if (generatedFiles.length > 6)
+                          Text('…and ${generatedFiles.length - 6} more'),
                         const SizedBox(height: 16),
                         SizedBox(
                           height: 50,
                           child: ElevatedButton.icon(
                             onPressed: isSaving ? null : _downloadZip,
-                            icon: Icon(isSaving ? Icons.hourglass_top : Icons.download_rounded),
-                            label: Text(isSaving ? 'Preparing ZIP...' : 'Download Asset Pack (.ZIP)'),
+                            icon: Icon(
+                              isSaving
+                                  ? Icons.hourglass_top
+                                  : Icons.download_rounded,
+                            ),
+                            label: Text(
+                              isSaving
+                                  ? 'Preparing ZIP...'
+                                  : 'Download Asset Pack (.ZIP)',
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -392,7 +660,10 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Current Configuration', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Current Configuration',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 10),
                       Text('Character: $character'),
                       Text('Product: $product'),
