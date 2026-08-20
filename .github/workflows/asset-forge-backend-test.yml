@@ -6,6 +6,8 @@ on:
       - feature/asset-forge-mvp
     paths:
       - 'backend/asset_forge/**'
+      - 'backend/pollinations_oauth.py'
+      - 'backend/pollinations_oauth_router.py'
       - '.github/workflows/asset-forge-backend-test.yml'
   pull_request:
     branches:
@@ -13,6 +15,8 @@ on:
       - feature/asset-forge-mvp
     paths:
       - 'backend/asset_forge/**'
+      - 'backend/pollinations_oauth.py'
+      - 'backend/pollinations_oauth_router.py'
       - '.github/workflows/asset-forge-backend-test.yml'
   workflow_dispatch:
 
@@ -29,4 +33,7 @@ jobs:
           python-version: '3.12'
 
       - name: Compile backend Python
-        run: python -m compileall -q backend/asset_forge/main.py
+        run: |
+          python -m compileall -q backend/asset_forge/main.py
+          python -m compileall -q backend/pollinations_oauth.py
+          python -m compileall -q backend/pollinations_oauth_router.py
