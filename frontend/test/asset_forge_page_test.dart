@@ -7,7 +7,7 @@ void main() {
   testWidgets('Asset Forge page renders the MVP controls', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: AssetForgePage(),
+        home: AssetForgePage(useBackend: false),
       ),
     );
 
@@ -22,15 +22,13 @@ void main() {
   testWidgets('Generate Asset Pack completes the simulated pipeline', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
-        // Widget tests must not make a real HTTP request. The production page
-        // still uses the real Render backend because useBackend defaults to
-        // the configured ASSET_FORGE_API_URL.
+        // Widget tests must not make a real HTTP request or invoke native OAuth
+        // plugins. Production still uses the real Render backend because
+        // useBackend defaults to the configured ASSET_FORGE_API_URL.
         home: AssetForgePage(useBackend: false),
       ),
     );
 
-    // The button sits below the fold in the default 800x600 test viewport.
-    // Bring it into view before tapping so the test exercises the real tap.
     final generateButton = find.text('Generate Asset Pack');
     await tester.ensureVisible(generateButton);
     await tester.pumpAndSettle();
@@ -39,9 +37,6 @@ void main() {
 
     expect(find.text('Generating...'), findsOneWidget);
 
-    // The simulated pipeline has 6 stages with a 600 ms delay each.
-    // Advance one stage at a time because each Future.delayed schedules
-    // the next timer only after its previous continuation runs.
     for (int i = 0; i < 6; i++) {
       await tester.pump(const Duration(milliseconds: 600));
     }
