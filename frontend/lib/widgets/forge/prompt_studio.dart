@@ -1,7 +1,10 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../../ai/platforms.dart';
 import '../../models/affiliate_product.dart';
+import '../../models/content_brief.dart';
+import '../../models/generated_content.dart';
 import '../../services/prompt_engine/prompt_context.dart';
 import '../../services/prompt_engine/image_prompt_service.dart';
 import '../../services/prompt_engine/video_prompt_service.dart';
@@ -10,10 +13,16 @@ import 'content_field.dart';
 
 class PromptStudio extends StatefulWidget {
   final AffiliateProduct product;
+  final ContentBrief brief;
+  final PlatformType platform;
+  final GeneratedContent? generatedContent;
 
   const PromptStudio({
     super.key,
     required this.product,
+    required this.brief,
+    required this.platform,
+    this.generatedContent,
   });
 
   @override
@@ -29,16 +38,22 @@ class _PromptStudioState extends State<PromptStudio> {
   final _videoService = const VideoPromptService();
   final _voiceService = const VoicePromptService();
 
+  PromptContext _buildContext() {
+    return PromptContext(
+      product: widget.product,
+      brief: widget.brief,
+      platform: widget.platform,
+      generatedContent: widget.generatedContent,
+    );
+  }
+
   void _generateAll() {
-    final context = PromptContext(product: widget.product);
+    final context = _buildContext();
 
     setState(() {
-      _imageController.text =
-          _imageService.buildProductPrompt(context);
-      _videoController.text =
-          _videoService.buildProductVideoPrompt(context);
-      _voiceController.text =
-          _voiceService.buildNarrationPrompt(context);
+      _imageController.text = _imageService.buildProductPrompt(context);
+      _videoController.text = _videoService.buildProductVideoPrompt(context);
+      _voiceController.text = _voiceService.buildNarrationPrompt(context);
     });
   }
 
@@ -71,6 +86,13 @@ class _PromptStudioState extends State<PromptStudio> {
             Text(
               'AI Prompt Studio',
               style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.generatedContent?.isNotEmpty == true
+                  ? 'Creative prompts will use your latest content result.'
+                  : 'Generate content first for the richest creative context.',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
