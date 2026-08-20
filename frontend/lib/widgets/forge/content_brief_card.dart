@@ -17,7 +17,12 @@ class ContentBriefCard extends StatelessWidget {
   });
 
   static const _goals = ['Sell', 'Educate', 'Engage'];
-  static const _angles = ['Best Value', 'Problem → Solution', 'Key Benefit', 'Lifestyle'];
+  static const _angles = [
+    'Best Value',
+    'Problem → Solution',
+    'Key Benefit',
+    'Lifestyle',
+  ];
   static const _tones = ['Engaging', 'Friendly', 'Premium', 'Direct'];
 
   Widget _selector(
@@ -27,17 +32,21 @@ class ContentBriefCard extends StatelessWidget {
     List<String> options,
     ValueChanged<String> onChanged,
   ) {
-    return Expanded(
-      child: DropdownButtonFormField<String>(
-        initialValue: value,
-        decoration: InputDecoration(labelText: label),
-        items: options
-            .map((option) => DropdownMenuItem(value: option, child: Text(option)))
-            .toList(),
-        onChanged: (next) {
-          if (next != null) onChanged(next);
-        },
-      ),
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: InputDecoration(labelText: label),
+      items: options
+          .map(
+            (option) => DropdownMenuItem(
+              value: option,
+              child: Text(option, overflow: TextOverflow.ellipsis),
+            ),
+          )
+          .toList(),
+      onChanged: (next) {
+        if (next != null) onChanged(next);
+      },
     );
   }
 
@@ -56,14 +65,54 @@ class ContentBriefCard extends StatelessWidget {
             const SizedBox(height: 6),
             const Text('กำหนดเป้าหมายก่อนให้ SoloForge สร้างคอนเทนต์'),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                _selector(context, 'Goal', brief.goal, _goals, onGoalChanged),
-                const SizedBox(width: 12),
-                _selector(context, 'Angle', brief.angle, _angles, onAngleChanged),
-                const SizedBox(width: 12),
-                _selector(context, 'Tone', brief.tone, _tones, onToneChanged),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final selectors = [
+                  _selector(
+                    context,
+                    'Goal',
+                    brief.goal,
+                    _goals,
+                    onGoalChanged,
+                  ),
+                  _selector(
+                    context,
+                    'Angle',
+                    brief.angle,
+                    _angles,
+                    onAngleChanged,
+                  ),
+                  _selector(
+                    context,
+                    'Tone',
+                    brief.tone,
+                    _tones,
+                    onToneChanged,
+                  ),
+                ];
+
+                if (constraints.maxWidth < 700) {
+                  return Column(
+                    children: [
+                      selectors[0],
+                      const SizedBox(height: 12),
+                      selectors[1],
+                      const SizedBox(height: 12),
+                      selectors[2],
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: selectors[0]),
+                    const SizedBox(width: 12),
+                    Expanded(child: selectors[1]),
+                    const SizedBox(width: 12),
+                    Expanded(child: selectors[2]),
+                  ],
+                );
+              },
             ),
           ],
         ),
