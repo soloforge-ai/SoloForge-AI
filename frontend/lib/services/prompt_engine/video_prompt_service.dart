@@ -7,16 +7,27 @@ class VideoPromptService {
   String buildProductVideoPrompt(PromptContext context) {
     final template = const PromptTemplate(
       system: 'You are a professional AI video prompt engineer.',
-
       instruction:
           'Generate a cinematic commercial video prompt for an AI video model.',
-
       style:
           'Cinematic, realistic, smooth camera movement, premium lighting, 4K quality.',
     );
 
-    final content =
-        '''
+    final campaignContext = context.hasCampaignContext
+        ? '''
+
+Campaign Context:
+Goal: ${context.goal}
+Selling Angle: ${context.angle}
+Tone: ${context.tone}
+Platform: ${context.platformName}
+Hook: ${context.hook}
+Caption: ${context.caption}
+Call To Action: ${context.callToAction}
+'''
+        : '';
+
+    final content = '''
 Subject:
 ${context.title}
 
@@ -33,7 +44,7 @@ Lighting:
 Soft studio lighting with subtle rim light.
 
 Mood:
-${context.mood.isEmpty ? "Premium" : context.mood}
+${context.tone.isNotEmpty ? context.tone : (context.mood.isEmpty ? "Premium" : context.mood)}
 
 Target Audience:
 ${context.audience.isEmpty ? "General" : context.audience}
@@ -49,6 +60,7 @@ Output Quality:
 
 Negative Prompt:
 Low quality, blurry, watermark, distorted, extra objects, bad anatomy, noisy background.
+$campaignContext
 ''';
 
     return template.build(content: content);
