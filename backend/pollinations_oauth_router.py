@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import json
 import os
 import secrets
 import threading
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Cookie, Header, HTTPException, Query
@@ -62,6 +67,125 @@ _lock = threading.RLock()
 _transactions: dict[str, _OAuthTransaction] = {}
 _sessions: dict[str, _OAuthSession] = {}
 _handoffs: dict[str, _MobileHandoff] = {}
+
+
+def _supabase_config() -> tuple[str, str] | None:
+    url = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
+    key = os.getenv("SUPABASE_SECRET_KEY", "").strip()
+    if not url or not key:
+        return None
+    return url, key
+
+
+def _supabase_request(
+    method: str,
+    path: str,
+    *,
+    body: dict[str, object] | None = None,
+    prefer: str | None = None,
+) -> bytes | None:
+    config = _supabase_config()
+    if config is None:
+        return None
+
+    base_url, secret_key = config
+    headers = {
+        "apikey": secret_key,
+        "Authorization": f"Bearer {secret_key}",
+        "Accept": "application/json",
+    }
+    data = None
+    if body is not None:
+        headers["Content-Type"] = "application/json"
+        data = json.dumps(body).encode("utf-8")
+    if prefer:
+        headers["Prefer"] = prefer
+
+    request = urllib.request.Request(
+        f"{base_url}/rest/v1/{path}",
+        data=data,
+        headers=headers,
+        method=method,
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return response.read()
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        raise RuntimeError("Supabase session store is unavailable.") from exc
+
+
+def _persist_session(session_id: str, session: _OAuthSession) -> None:
+    if _supabase_config() is None:
+        return
+
+    expires_at = datetime.fromtimestamp(session.expires_at, tz=timezone.utc).isoformat()
+    _supabase_request(
+        "POST",
+        "pollinations_sessions?on_conflict=session_id",
+        body={
+            "session_id": session_id,
+            "access_token": session.access_token,
+            "token_type": "Bearer",
+            "scope": session.scope,
+            "expires_at": expires_at,
+            "updated_at": datetime.now(tz=timezone.utc).isoformat(),
+        },
+        prefer="resolution=merge-duplicates,return=minimal",
+    )
+
+
+def _load_persisted_session(session_id: str) -> _OAuthSession | None:
+    if _supabase_config() is None:
+        return None
+
+    encoded = urllib.parse.quote(session_id, safe="")
+    raw = _supabase_request(
+        "GET",
+        "pollinations_sessions"
+        f"?session_id=eq.{encoded}&select=access_token,expires_at,scope&limit=1",
+    )
+    if not raw:
+        return None
+
+    try:
+        rows = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("Supabase returned an invalid session payload.") from exc
+
+    if not rows:
+        return None
+
+    row = rows[0]
+    expires_text = str(row.get("expires_at") or "")
+    try:
+        expires_at = datetime.fromisoformat(expires_text.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+    if expires_at <= time.time():
+        _delete_persisted_session(session_id)
+        return None
+
+    token = str(row.get("access_token") or "")
+    if not token:
+        return None
+
+    return _OAuthSession(
+        access_token=token,
+        expires_at=expires_at,
+        scope=str(row.get("scope") or ""),
+    )
+
+
+def _delete_persisted_session(session_id: str) -> None:
+    if _supabase_config() is None:
+        return
+    encoded = urllib.parse.quote(session_id, safe="")
+    _supabase_request(
+        "DELETE",
+        f"pollinations_sessions?session_id=eq.{encoded}",
+        prefer="return=minimal",
+    )
 
 
 def _cleanup() -> None:
@@ -130,7 +254,18 @@ def _get_session(session_id: str | None) -> _OAuthSession | None:
         return None
     _cleanup()
     with _lock:
-        return _sessions.get(session_id)
+        session = _sessions.get(session_id)
+    if session is not None:
+        return session
+
+    try:
+        session = _load_persisted_session(session_id)
+    except RuntimeError:
+        return None
+    if session is not None:
+        with _lock:
+            _sessions[session_id] = session
+    return session
 
 
 def _session_id_from_authorization(authorization: str | None) -> str | None:
@@ -218,12 +353,22 @@ def pollinations_callback(
 
     session_id = secrets.token_urlsafe(32)
     expires_in = int(payload.get("expires_in", 604800))
+    session = _OAuthSession(
+        access_token=payload["access_token"],
+        expires_at=time.time() + max(60, expires_in),
+        scope=str(payload.get("scope", "")),
+    )
     with _lock:
-        _sessions[session_id] = _OAuthSession(
-            access_token=payload["access_token"],
-            expires_at=time.time() + max(60, expires_in),
-            scope=str(payload.get("scope", "")),
-        )
+        _sessions[session_id] = session
+    try:
+        _persist_session(session_id, session)
+    except RuntimeError as exc:
+        with _lock:
+            _sessions.pop(session_id, None)
+        raise HTTPException(
+            status_code=503,
+            detail="Could not persist Pollinations session. Please try again.",
+        ) from exc
 
     if transaction.return_to:
         handoff_code = secrets.token_urlsafe(32)
@@ -288,6 +433,10 @@ def pollinations_logout(
     if resolved_session_id:
         with _lock:
             _sessions.pop(resolved_session_id, None)
+        try:
+            _delete_persisted_session(resolved_session_id)
+        except RuntimeError:
+            pass
     response = JSONResponse({"connected": False})
     _clear_session_cookie(response)
     return response
