@@ -1,8 +1,9 @@
 # SoloForge AI Memory Foundation v1
 
-Status: PROPOSED
-Version: 1.0.0-draft
+Status: APPROVED
+Version: 1.0.0
 Owner: Project Owner
+Approved: 2026-08-21
 
 ---
 
@@ -403,7 +404,7 @@ These may be evaluated only after v1 produces useful durable memory and retrieva
 
 ## 15. Implementation Gates
 
-Implementation may begin only after project-owner approval of this specification.
+Implementation is authorized by project-owner approval dated 2026-08-21.
 
 Recommended implementation order:
 
