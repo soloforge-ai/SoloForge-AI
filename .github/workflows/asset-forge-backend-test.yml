@@ -46,5 +46,8 @@ jobs:
           python -m compileall -q backend/pollinations_oauth_router.py
           python -m compileall -q backend/tests
 
-      - name: Run OAuth and session contract tests
-        run: python -m pytest -q backend/tests/test_pollinations_oauth_session_contract.py
+      - name: Run backend contract and image regression tests
+        run: |
+          python -m pytest -q \
+            backend/tests/test_pollinations_oauth_session_contract.py \
+            backend/tests/test_background_removal_regression.py
