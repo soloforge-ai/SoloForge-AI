@@ -398,10 +398,22 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
     return files, source_bytes
 
 
-def _zip_files(files: list[tuple[str, bytes]], request: AssetForgeRequest) -> bytes:
+def _zip_files(
+    files: list[tuple[str, bytes]],
+    request: AssetForgeRequest,
+    source_bytes: bytes,
+) -> bytes:
+    """Package processed stickers together with the original generated master sheet."""
     pack_name = f"{request.character}_{request.product}_{request.quantity}pack".replace(" ", "_")
     output = io.BytesIO()
+
+    with Image.open(io.BytesIO(source_bytes)) as source_image:
+        master_output = io.BytesIO()
+        source_image.convert("RGBA").save(master_output, format="PNG", optimize=True)
+        master_png = master_output.getvalue()
+
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(f"{pack_name}/master/original_sheet.png", master_png)
         for filename, data in files:
             archive.writestr(f"{pack_name}/{filename}", data)
     return output.getvalue()
@@ -433,7 +445,7 @@ def generate_asset_pack(
         prompt = _build_prompt(request, columns, rows, reference_bytes is not None)
         source_bytes = _generate_sheet(prompt, reference_bytes, access_token)
         files, source_bytes = _process_sheet(source_bytes, request)
-        zip_bytes = _zip_files(files, request)
+        zip_bytes = _zip_files(files, request, source_bytes)
 
         pack_name = f"{request.character}_{request.product}_{request.quantity}pack".replace(" ", "_")
         return AssetForgeResponse(
