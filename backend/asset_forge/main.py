@@ -282,13 +282,15 @@ def _generate_sheet(
 
 def _remove_simple_background(
     image: Image.Image,
-    threshold: int = 24,
+    threshold: int = 8,
 ) -> Image.Image:
     """
     Remove only background pixels connected to the outer border.
 
-    This version is more conservative than Pillow floodfill and is designed
-    to preserve light-colored subjects such as the SoloForge CEO's white suit.
+    Keep the tolerance intentionally strict so near-white foreground details
+    (for example the CEO's white suit) are not flooded away with a white
+    background. The generated sheets use a simple light background, so an
+    8-level RGB tolerance is sufficient while preserving off-white clothing.
     """
     rgba = image.convert("RGBA")
     pixels = rgba.load()
