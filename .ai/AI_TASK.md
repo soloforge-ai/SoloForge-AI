@@ -1,6 +1,6 @@
 # SoloForge AI Task Board
 
-Version: v1.0.0
+Version: v1.1.0
 
 ---
 
@@ -8,29 +8,31 @@ Version: v1.0.0
 
 This document represents the current working state of the SoloForge AI project.
 
-It provides AI assistants with a concise snapshot of the current sprint, active tasks, priorities, and completion criteria.
+It provides AI assistants with a concise snapshot of the active work, priorities, and completion criteria.
 
 This document should remain short and should only contain information relevant to the current development cycle.
 
 ---
 
-# Current Sprint
-
-Sprint 42
+# Current Work
 
 Title
 
-SoloForge AI Development Protocol v1.0
+Memory Foundation v1 — Architecture Foundation
 
 Status
 
 In Progress
 
+Previous Milestone
+
+Sprint 42 — SoloForge AI Development Protocol v1.0 — Completed
+
 ---
 
-# Sprint Goal
+# Goal
 
-Establish a standardized AI development workflow that enables AI assistants to understand and contribute to the project without requiring repeated explanations.
+Create the minimum memory infrastructure required for SoloForge AI to preserve decisions, versions, status, events, and reusable context without forcing the user to repeat established information.
 
 ---
 
@@ -38,34 +40,54 @@ Establish a standardized AI development workflow that enables AI assistants to u
 
 Priority 1
 
-Complete the SoloForge AI Development Protocol v1.0.
+Audit and normalize existing sources of project context and state.
 
 Priority 2
 
-Validate consistency across all AI protocol documents.
+Define Memory Foundation v1 contracts without duplicating existing scanner or documentation systems.
 
 Priority 3
 
-Prepare the project for Sprint 43.
+Prepare an implementation plan before adding runtime memory behavior.
 
 ---
 
 # In Progress
 
-- AI Development Protocol
-- AI Documentation Standardization
+- Memory Foundation architecture audit
+- Source-of-truth normalization
+- Decision / Version / Status memory design
+
+---
+
+# Completed
+
+- Sprint 42 Development Protocol v1.0
+- Identified stale Sprint 42 state in AI_CONTEXT.md and AI_TASK.md
+- Identified CURRENT_SPRINT semantic conflict
+- Confirmed Project Scanner already provides reusable project intelligence
 
 ---
 
 # TODO
 
-- Review AI_RULES.md
-- Review PROTOCOL.md
-- Review AI_CONTEXT.md
-- Validate cross-document consistency
-- Finalize Sprint 42 documentation
-- Commit Sprint 42 changes
-- Create Git Tag: sprint-42
+- Keep docs/CURRENT_SPRINT.md human-maintained
+- Prevent Project Scanner from overwriting human sprint state
+- Define Memory Event contract
+- Define Decision Memory contract
+- Define Version / Status semantics
+- Define unified retrieval contract
+- Map existing SoloForge systems to memory event sources and consumers
+
+---
+
+# Out of Scope
+
+- Vector DB
+- Graph DB
+- autonomous memory deletion
+- memory visualization / 3D brain
+- unrelated product features
 
 ---
 
@@ -75,38 +97,15 @@ None
 
 ---
 
-# Completed
-
-- AI_RULES.md
-- PROTOCOL.md
-- AI_CONTEXT.md
-- README.md
-
----
-
-# Next Sprint
-
-Sprint 43
-
-Candidate Features
-
-- Prompt Library
-- Content Planner
-- Asset Manager
-- AI Router
-- Project Scanner v2
-
----
-
 # Success Criteria
 
-Sprint 42 is complete when:
+Memory Foundation v1 architecture is ready when:
 
-- AI protocol documents are finalized.
-- Documentation is internally consistent.
-- AI assistants can understand the project without repeated explanations.
-- Development workflow is standardized.
-- Sprint 42 is committed and tagged.
+- human sprint state has one clear source of truth
+- generated scanner output cannot overwrite that state
+- memory contracts are documented and versionable
+- existing SoloForge systems can be mapped to memory events without architectural duplication
+- implementation can begin with a small reversible scope
 
 ---
 
@@ -118,17 +117,16 @@ When starting a new task:
 2. Read AI_CONTEXT.md.
 3. Follow AI_RULES.md.
 4. Review this task board.
-5. Focus only on the current sprint objectives.
+5. Read docs/CURRENT_SPRINT.md for human sprint state.
+6. Prefer ACTIVE/current decisions over stale or superseded context.
 
-Do not begin future sprint features unless explicitly requested.
+Do not begin advanced memory features or unrelated product features unless explicitly requested.
 
 ---
 
 # Notes
 
-This file represents only the current development state.
-
-Do not use this file for long-term planning.
+This file represents only the current AI working state.
 
 Long-term planning belongs in:
 
@@ -137,6 +135,8 @@ docs/ROADMAP.md
 Human sprint documentation belongs in:
 
 docs/CURRENT_SPRINT.md
+
+Generated scanner reports belong in scanner output or explicitly generated project-intelligence documents and must not replace human sprint state.
 
 ---
 
