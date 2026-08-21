@@ -1,5 +1,5 @@
 name: frontend
-description: "A new Flutter project."
+description: "SoloForge AI"
 publish_to: 'none'
 version: 1.0.0+2
 
@@ -59,5 +59,5 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/branding/app_icon.png
-  adaptive_icon_background: "#121212"
-  adaptive_icon_foreground: assets/branding/app_icon.png
+  adaptive_icon_background: "#0D0C0F"
+  adaptive_icon_foreground: assets/branding/logo_symbol.png
