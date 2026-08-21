@@ -170,6 +170,35 @@ def test_bearer_session_status_and_logout(monkeypatch):
     assert after_logout.json() == {"connected": False}
 
 
+def test_status_restores_persisted_session_after_backend_restart(monkeypatch):
+    client = _client(monkeypatch)
+    persisted = router_module._OAuthSession(
+        access_token="sk_persisted_secret",
+        expires_at=router_module.time.time() + 600,
+        scope="profile usage",
+    )
+    monkeypatch.setattr(
+        router_module,
+        "_load_persisted_session",
+        lambda session_id: persisted if session_id == "persisted-session" else None,
+    )
+
+    with router_module._lock:
+        router_module._sessions.clear()
+
+    response = client.get(
+        "/auth/pollinations/status",
+        headers={"Authorization": "Bearer persisted-session"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["connected"] is True
+    assert response.json()["scope"] == "profile usage"
+    assert "access_token" not in response.json()
+    with router_module._lock:
+        assert router_module._sessions["persisted-session"] == persisted
+
+
 def test_asset_generation_requires_connected_pollinations_session():
     client = TestClient(asset_forge_app)
     response = client.post(
