@@ -1,69 +1,72 @@
 from __future__ import annotations
 
-import base64
-import io
-from pathlib import Path
-
 from PIL import Image
 
 from backend.asset_forge.main import _remove_simple_background
 
 
-FIXTURE_B64 = Path(__file__).parent / "fixtures" / "ceo_original_sheet_regression.jpg.b64"
+def _make_white_suit_regression_crop() -> Image.Image:
+    """Build a deterministic white-background/white-suit regression fixture.
 
-# Protected points sampled from the CEO's white suit in each 2x2 cell.
-# The fixture is a reduced copy of the real Pollinations original_sheet.png
-# generated during A4 validation. These points must remain opaque after
-# background removal; otherwise the white suit is being mistaken for the
-# light background.
-PROTECTED_POINTS = {
-    "happy": (23, 25),
-    "hug": (14, 25),
-    "sad": (25, 32),
-    "laugh": (15, 19),
-}
+    The off-white foreground intentionally sits directly against a pure-white
+    background. A background remover with a tolerance that is too generous
+    will flood into the foreground and erase it, reproducing the A4 defect.
+    """
+    image = Image.new("RGBA", (64, 64), (255, 255, 255, 255))
 
+    # Dark character core: shirt/tie area that must obviously remain foreground.
+    for y in range(16, 54):
+        for x in range(27, 37):
+            image.putpixel((x, y), (28, 25, 26, 255))
 
-def _load_fixture() -> Image.Image:
-    encoded = FIXTURE_B64.read_text(encoding="ascii").strip()
-    raw = base64.b64decode(encoded)
-    return Image.open(io.BytesIO(raw)).convert("RGBA")
+    # White suit panels. These are deliberately close to the background color,
+    # matching the failure mode seen on the real CEO sticker sheet.
+    suit = (249, 247, 245, 255)
+    for y in range(18, 54):
+        for x in range(15, 27):
+            image.putpixel((x, y), suit)
+        for x in range(37, 49):
+            image.putpixel((x, y), suit)
+
+    # Off-white trousers.
+    for y in range(46, 61):
+        for x in range(22, 31):
+            image.putpixel((x, y), suit)
+        for x in range(33, 42):
+            image.putpixel((x, y), suit)
+
+    return image
 
 
 def test_white_suit_survives_background_removal() -> None:
-    sheet = _load_fixture()
-    assert sheet.size == (128, 128)
+    source = _make_white_suit_regression_crop()
+    processed = _remove_simple_background(source)
 
-    cell_width = sheet.width // 2
-    cell_height = sheet.height // 2
+    protected_points = {
+        "left_jacket": (20, 30),
+        "right_jacket": (44, 30),
+        "left_trouser": (26, 52),
+        "right_trouser": (38, 52),
+    }
 
     failures: list[str] = []
-
-    for index, (pose, point) in enumerate(PROTECTED_POINTS.items()):
-        row = index // 2
-        column = index % 2
-        crop = sheet.crop(
-            (
-                column * cell_width,
-                row * cell_height,
-                (column + 1) * cell_width,
-                (row + 1) * cell_height,
-            )
-        )
-
-        x, y = point
-        source_rgb = crop.getpixel((x, y))[:3]
-        assert min(source_rgb) >= 235, (
-            f"Regression fixture point for {pose} is no longer a light suit pixel: "
-            f"rgb={source_rgb} at {(x, y)}"
-        )
-
-        processed = _remove_simple_background(crop)
-        alpha = processed.getpixel((x, y))[3]
+    for label, point in protected_points.items():
+        alpha = processed.getpixel(point)[3]
         if alpha < 200:
-            failures.append(f"{pose}: alpha={alpha} at {(x, y)}")
+            failures.append(f"{label}: alpha={alpha} at {point}")
 
     assert not failures, (
         "Background removal erased protected white-suit pixels: "
         + "; ".join(failures)
     )
+
+
+def test_outer_white_background_becomes_transparent() -> None:
+    source = _make_white_suit_regression_crop()
+    processed = _remove_simple_background(source)
+
+    for point in ((0, 0), (63, 0), (0, 63), (63, 63), (5, 5)):
+        assert processed.getpixel(point)[3] == 0, (
+            f"Background pixel remained opaque at {point}: "
+            f"alpha={processed.getpixel(point)[3]}"
+        )
