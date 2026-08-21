@@ -64,23 +64,30 @@ class PollinationsSessionService {
   }
 
   Future<void> connect() async {
-    final loginUri = Uri.parse('$_baseUrl/auth/pollinations/login').replace(
-      queryParameters: const {
-        'client': 'mobile',
-        'return_to': _returnTo,
-      },
-    );
+  final existingSession = await status();
 
-    final opened = await launchUrl(
-      loginUri,
-      mode: LaunchMode.externalApplication,
-    );
-    if (!opened) {
-      throw const PollinationsSessionException(
-        'Could not open the Pollinations authorization page.',
-      );
-    }
+  if (existingSession.connected) {
+    return;
   }
+
+  final loginUri = Uri.parse('$_baseUrl/auth/pollinations/login').replace(
+    queryParameters: const {
+      'client': 'mobile',
+      'return_to': _returnTo,
+    },
+  );
+
+  final opened = await launchUrl(
+    loginUri,
+    mode: LaunchMode.externalApplication,
+  );
+
+  if (!opened) {
+    throw const PollinationsSessionException(
+      'Could not open the Pollinations authorization page.',
+    );
+  }
+}
 
   bool isPollinationsCallback(Uri uri) {
     return uri.scheme == 'soloforge' &&
