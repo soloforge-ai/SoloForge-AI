@@ -280,18 +280,82 @@ def _generate_sheet(
     return data
 
 
-def _remove_simple_background(image: Image.Image, threshold: int = 48) -> Image.Image:
-    """Low-memory removal for flat/light backgrounds on generated sticker cells."""
+def _remove_simple_background(
+    image: Image.Image,
+    threshold: int = 24,
+) -> Image.Image:
+    """
+    Remove only background pixels connected to the outer border.
+
+    This version is more conservative than Pillow floodfill and is designed
+    to preserve light-colored subjects such as the SoloForge CEO's white suit.
+    """
     rgba = image.convert("RGBA")
-    transparent = (255, 255, 255, 0)
-    corners = [
+    pixels = rgba.load()
+    width, height = rgba.size
+
+    if width == 0 or height == 0:
+        return rgba
+
+    sample_points = [
         (0, 0),
-        (rgba.width - 1, 0),
-        (0, rgba.height - 1),
-        (rgba.width - 1, rgba.height - 1),
+        (width - 1, 0),
+        (0, height - 1),
+        (width - 1, height - 1),
     ]
-    for point in corners:
-        ImageDraw.floodfill(rgba, point, transparent, thresh=threshold)
+
+    samples = [pixels[x, y][:3] for x, y in sample_points]
+    bg_r = sum(c[0] for c in samples) // len(samples)
+    bg_g = sum(c[1] for c in samples) // len(samples)
+    bg_b = sum(c[2] for c in samples) // len(samples)
+
+    def is_background(x: int, y: int) -> bool:
+        r, g, b, _ = pixels[x, y]
+
+        distance = max(
+            abs(r - bg_r),
+            abs(g - bg_g),
+            abs(b - bg_b),
+        )
+
+        return distance <= threshold
+
+    visited = bytearray(width * height)
+    stack: list[tuple[int, int]] = []
+
+    def enqueue(x: int, y: int) -> None:
+        index = y * width + x
+        if visited[index]:
+            return
+        if not is_background(x, y):
+            return
+
+        visited[index] = 1
+        stack.append((x, y))
+
+    for x in range(width):
+        enqueue(x, 0)
+        enqueue(x, height - 1)
+
+    for y in range(height):
+        enqueue(0, y)
+        enqueue(width - 1, y)
+
+    while stack:
+        x, y = stack.pop()
+
+        r, g, b, _ = pixels[x, y]
+        pixels[x, y] = (r, g, b, 0)
+
+        if x > 0:
+            enqueue(x - 1, y)
+        if x + 1 < width:
+            enqueue(x + 1, y)
+        if y > 0:
+            enqueue(x, y - 1)
+        if y + 1 < height:
+            enqueue(x, y + 1)
+
     return rgba
 
 
