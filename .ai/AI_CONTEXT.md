@@ -18,7 +18,7 @@ PROTOCOL.md
 
 # SoloForge AI Context
 
-Version: v1.0.0
+Version: v1.1.0
 
 ---
 
@@ -44,13 +44,17 @@ Status
 
 Active Development
 
-Current Sprint
-
-Sprint 42
-
 Current Objective
 
-Establish SoloForge AI Development Protocol v1.0 as the standard workflow for all AI-assisted development.
+Establish Memory Foundation v1 so SoloForge AI can preserve current decisions, project state, and reusable context without requiring repeated explanations.
+
+Sprint 42 Status
+
+Completed.
+
+The SoloForge AI Development Protocol v1.0 was established in Sprint 42 and remains the standard workflow for AI-assisted development.
+
+For the active development cycle, read AI_TASK.md and docs/CURRENT_SPRINT.md.
 
 ---
 
@@ -166,7 +170,7 @@ Business logic should remain separated from UI whenever possible.
 
 # Current Systems
 
-Completed
+Established Foundations
 
 - Developer Launcher
 - Project Scanner
@@ -174,18 +178,13 @@ Completed
 - Product Intelligence
 - MiniBoss Engine
 - Frontend Foundation
+- SoloForge AI Development Protocol v1.0
 
-In Progress
+Active Infrastructure Direction
 
-- SoloForge AI Development Protocol
+- Memory Foundation v1
 
-Planned
-
-- Prompt Library
-- Content Planner
-- Asset Manager
-- AI Router
-- Workflow Automation
+Memory Foundation should extend existing context, scanner, documentation, and runtime systems rather than duplicate them.
 
 ---
 
@@ -227,6 +226,8 @@ AI Documentation
 
 Generated documentation should remain synchronized with the project.
 
+Generated project intelligence must not overwrite human sprint state.
+
 ---
 
 # Engineering Standards
@@ -265,13 +266,17 @@ Do not rewrite completed systems unless requested.
 
 Keep documentation synchronized with implementation.
 
+Do not treat generated scanner output as authoritative human sprint state.
+
 ---
 
 # Current Focus
 
-The current priority is building a standardized AI development workflow.
+The current priority is Memory Foundation v1.
 
-No new product features should be added until Sprint 42 is completed.
+The foundation should first establish reliable decision, version, status, event, and retrieval contracts before advanced memory features are considered.
+
+Do not add Vector DB, Graph DB, autonomous memory deletion, or 3D brain visualization as part of the foundation unless explicitly approved.
 
 ---
 
@@ -286,14 +291,15 @@ Every AI assistant should
 - preserve architecture
 - minimize unnecessary changes
 - explain important technical decisions
+- prefer current ACTIVE decisions over superseded context
 
 ---
 
 # Future Direction
 
-SoloForge AI is evolving toward an AI Operating System capable of coordinating multiple AI tools through a unified development workflow.
+SoloForge AI is evolving toward a learning AI Creator Operating System capable of coordinating multiple AI tools and agents through a shared external memory layer.
 
-The protocol introduced in Sprint 42 will become the foundation for future automation and AI integration.
+AI models should remain replaceable reasoning engines. SoloForge-owned context, decisions, experience, and project knowledge should remain portable across models.
 
 ---
 
