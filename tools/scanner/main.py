@@ -93,9 +93,12 @@ def main():
         docs_dir / "ROADMAP.md",
     )
 
+    # Scanner-generated implementation report.
+    # Human-approved current development state lives in
+    # docs/CURRENT_SPRINT.md and must never be overwritten here.
     CurrentSprintWriter().write(
         inventory,
-        docs_dir / "CURRENT_SPRINT.md",
+        output_dir / "IMPLEMENTATION_STATUS.md",
     )
 
     ProjectIndexWriter().write(
