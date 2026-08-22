@@ -44,5 +44,8 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check requests
+
       - name: Run Memory Foundation tests
         run: python -m unittest -v test_memory.py test_memory_e2e.py test_pollinations_memory.py test_character_memory.py
