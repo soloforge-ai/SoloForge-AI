@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Asset Forge production API requires network access in release APKs. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:label="SoloForge AI"
         android:name="${applicationName}"
@@ -23,6 +26,15 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="soloforge"
+                    android:host="oauth"
+                    android:path="/pollinations" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

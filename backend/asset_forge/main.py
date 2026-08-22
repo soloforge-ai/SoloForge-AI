@@ -1,0 +1,463 @@
+from __future__ import annotations
+
+import base64
+import io
+import json
+import math
+import os
+import urllib.error
+import urllib.parse
+import urllib.request
+import uuid
+import zipfile
+from pathlib import Path
+from typing import List
+
+from fastapi import FastAPI, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from PIL import Image, ImageDraw
+
+from backend.pollinations_oauth_router import (
+    get_pollinations_access_token_from_authorization,
+    router as pollinations_oauth_router,
+)
+
+
+app = FastAPI(title="SoloForge Asset Forge API", version="0.8.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(pollinations_oauth_router)
+
+CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
+CHARACTER_LIBRARY_BASE_URL = (
+    "https://raw.githubusercontent.com/soloforge-ai/SoloForge-AI/main/"
+    "frontend/assets/characters"
+)
+
+
+class AssetForgeRequest(BaseModel):
+    character: str = Field(default="CEO", min_length=1, max_length=80)
+    product: str = Field(default="Sticker", min_length=1, max_length=80)
+    theme: str = Field(default="Healing & Encouragement", min_length=1, max_length=120)
+    style: str = Field(default="Cute 3D Chibi", min_length=1, max_length=120)
+    quantity: int = Field(default=12, ge=4, le=24)
+    messages: List[str] = Field(default_factory=list, max_length=24)
+
+
+class AssetForgeResponse(BaseModel):
+    asset_pack_name: str
+    files: List[str]
+    zip_base64: str
+    source_image_base64: str
+
+
+def _grid(quantity: int) -> tuple[int, int]:
+    columns = min(6, max(2, math.ceil(math.sqrt(quantity))))
+    rows = math.ceil(quantity / columns)
+    return columns, rows
+
+
+def _character_key(character: str) -> str:
+    return "".join(ch.lower() if ch.isalnum() else "_" for ch in character).strip("_")
+
+
+def _load_character_reference(character: str) -> bytes | None:
+    """Load a character master from the backend first, then SoloForge's library."""
+    key = _character_key(character)
+    reference_dir = CHARACTER_REFERENCE_DIR / key
+
+    for filename in ("master.png", "master.jpg", "master.jpeg", "reference.png", "reference.jpg"):
+        path = reference_dir / filename
+        if path.exists() and path.is_file():
+            return path.read_bytes()
+
+    for filename in ("master.png", "master.jpg", "master.jpeg"):
+        url = f"{CHARACTER_LIBRARY_BASE_URL}/{key}/references/{filename}"
+        try:
+            with urllib.request.urlopen(url, timeout=15) as response:
+                data = response.read()
+            if data:
+                return data
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+            continue
+
+    return None
+
+
+def _build_prompt(request: AssetForgeRequest, columns: int, rows: int, has_reference: bool) -> str:
+    reference_instruction = """
+CHARACTER REFERENCE:
+- The attached master reference image is authoritative for the character's face, hairstyle, eye colors, skin tone, costume, proportions, and signature accessories.
+- Preserve those core identity features consistently in every cell.
+- IMPORTANT: Do NOT preserve or copy any wings, halo, angel features, bird wings, or other fantasy appendages that may appear in the reference image. The SoloForge AI CEO character has NO wings.
+- The CEO must always appear as a human-like cute 3D chibi male mascot with no wings and no halo.
+- Only change pose, facial expression, and gesture as needed for the sticker pack.
+""" if has_reference else """
+CHARACTER REFERENCE:
+- No master reference image is currently available.
+- Use the character name and style direction only.
+"""
+
+    message_block = "\n".join(
+        f"{index + 1}. {message.strip()}"
+        for index, message in enumerate(request.messages)
+        if message.strip()
+    ) or "No specific sticker messages were supplied. Create distinct expressive poses."
+
+    no_wings_rule = """
+NON-NEGOTIABLE CEO IDENTITY RULE:
+- The CEO has NO wings.
+- Never generate angel wings, bird wings, feathers attached to the body, a halo, angelic appendages, or fantasy wings.
+- Do not infer wings from the reference image.
+- If the reference image contains wings, remove them from the generated character while keeping the face, hair, glasses, outfit, and body proportions consistent.
+""" if request.character.strip().lower() == "ceo" else ""
+
+    return f"""
+Create a commercial-quality sticker sheet for the character {request.character}.
+Theme: {request.theme}.
+Visual style: {request.style}.
+Product: {request.product}.
+{reference_instruction}
+{no_wings_rule}
+
+STICKER MESSAGE INTENT:
+The app will add the exact Thai text later. Do NOT render text, letters, captions, speech bubbles, logos, or watermarks in the artwork.
+Use these messages only to determine the matching emotion, facial expression, pose, and gesture:
+{message_block}
+
+IMPORTANT LAYOUT:
+- Create exactly {request.quantity} separate sticker poses in a clean {columns} columns x {rows} rows grid.
+- Each pose must be fully visible, centered inside its own equal-sized cell.
+- Keep generous empty space between cells so every sticker can be cropped independently.
+- Use a simple light/white background so background removal is easy.
+- Keep the character design highly consistent across every cell.
+- Do not add borders, frames, grid lines, logos, watermarks, or extra characters.
+- Do not put written words or captions inside the artwork. The app will add text later.
+- Make every pose expressive and clearly different.
+- Square 1:1 composition.
+
+Character direction: {request.character} should look cute, friendly, polished and suitable for a commercial digital sticker pack.
+""".strip()
+
+
+def _prepare_reference(reference_bytes: bytes) -> bytes:
+    """Keep the reference small enough for the 512 MB Render instance."""
+    with Image.open(io.BytesIO(reference_bytes)) as image:
+        image = image.convert("RGB")
+        image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+        output = io.BytesIO()
+        image.save(output, format="JPEG", quality=88, optimize=True)
+        return output.getvalue()
+
+
+def _multipart_body(fields: dict[str, str], file_field: str, filename: str, file_bytes: bytes, content_type: str) -> tuple[bytes, str]:
+    boundary = f"----SoloForgeBoundary{uuid.uuid4().hex}"
+    chunks: list[bytes] = []
+
+    for name, value in fields.items():
+        chunks.extend([
+            f"--{boundary}\r\n".encode(),
+            f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode(),
+            value.encode("utf-8"),
+            b"\r\n",
+        ])
+
+    chunks.extend([
+        f"--{boundary}\r\n".encode(),
+        f'Content-Disposition: form-data; name="{file_field}"; filename="{filename}"\r\n'.encode(),
+        f"Content-Type: {content_type}\r\n\r\n".encode(),
+        file_bytes,
+        b"\r\n",
+        f"--{boundary}--\r\n".encode(),
+    ])
+    return b"".join(chunks), boundary
+
+
+def _extract_image_response(data: bytes) -> bytes:
+    """Accept Pollinations OpenAI-compatible JSON responses with URL or base64 image data."""
+    try:
+        payload = json.loads(data.decode("utf-8"))
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Pollinations returned a non-JSON image response: {exc}") from exc
+
+    items = payload.get("data") or []
+    if not items:
+        raise HTTPException(status_code=502, detail=f"Pollinations returned no image data: {str(payload)[:1000]}")
+
+    item = items[0] or {}
+    b64 = item.get("b64_json")
+    if b64:
+        try:
+            return base64.b64decode(b64)
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Pollinations returned invalid base64 image data: {exc}") from exc
+
+    image_url = item.get("url")
+    if image_url:
+        try:
+            with urllib.request.urlopen(image_url, timeout=60) as response:
+                return response.read()
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Could not download Pollinations generated image: {exc}") from exc
+
+    raise HTTPException(status_code=502, detail=f"Pollinations image response had no url or b64_json: {str(item)[:1000]}")
+
+
+def _generate_sheet(
+    prompt: str,
+    reference_bytes: bytes | None,
+    access_token: str,
+) -> bytes:
+    """Generate one image sheet through Pollinations using the connected user's token."""
+    model = os.getenv("POLLINATIONS_IMAGE_EDIT_MODEL", "kontext").strip() or "kontext"
+    width = int(os.getenv("POLLINATIONS_IMAGE_WIDTH", "1024"))
+    height = int(os.getenv("POLLINATIONS_IMAGE_HEIGHT", "1024"))
+    timeout_seconds = int(os.getenv("POLLINATIONS_TIMEOUT_SECONDS", "240"))
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/json",
+        "User-Agent": "SoloForge-Asset-Forge/0.8",
+    }
+
+    try:
+        if reference_bytes is not None:
+            compact_reference = _prepare_reference(reference_bytes)
+            body, boundary = _multipart_body(
+                {
+                    "prompt": prompt,
+                    "model": model,
+                    "size": f"{width}x{height}",
+                },
+                "image",
+                "character-reference.jpg",
+                compact_reference,
+                "image/jpeg",
+            )
+            headers["Content-Type"] = f"multipart/form-data; boundary={boundary}"
+            request = urllib.request.Request(
+                "https://gen.pollinations.ai/v1/images/edits",
+                data=body,
+                headers=headers,
+                method="POST",
+            )
+        else:
+            query = urllib.parse.urlencode({"model": "flux", "width": width, "height": height})
+            url = f"https://gen.pollinations.ai/image/{urllib.parse.quote(prompt, safe='')}?{query}"
+            headers["Accept"] = "image/png,image/jpeg;q=0.9,*/*;q=0.8"
+            request = urllib.request.Request(url, headers=headers, method="GET")
+
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            data = response.read()
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise HTTPException(status_code=502, detail=f"Pollinations image generation failed ({exc.code}): {body[:1200]}") from exc
+    except (urllib.error.URLError, TimeoutError) as exc:
+        raise HTTPException(status_code=504, detail=f"Pollinations image generation timed out or could not connect: {exc}") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Pollinations image generation failed: {str(exc)[:1200]}") from exc
+
+    if not data:
+        raise HTTPException(status_code=502, detail="Pollinations returned an empty image response.")
+
+    if reference_bytes is not None:
+        data = _extract_image_response(data)
+
+    try:
+        with Image.open(io.BytesIO(data)) as image:
+            image.verify()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Pollinations returned data that is not a valid image: {exc}") from exc
+
+    return data
+
+
+def _remove_simple_background(
+    image: Image.Image,
+    threshold: int = 8,
+) -> Image.Image:
+    """
+    Remove only background pixels connected to the outer border.
+
+    Keep the tolerance intentionally strict so near-white foreground details
+    (for example the CEO's white suit) are not flooded away with a white
+    background. The generated sheets use a simple light background, so an
+    8-level RGB tolerance is sufficient while preserving off-white clothing.
+    """
+    rgba = image.convert("RGBA")
+    pixels = rgba.load()
+    width, height = rgba.size
+
+    if width == 0 or height == 0:
+        return rgba
+
+    sample_points = [
+        (0, 0),
+        (width - 1, 0),
+        (0, height - 1),
+        (width - 1, height - 1),
+    ]
+
+    samples = [pixels[x, y][:3] for x, y in sample_points]
+    bg_r = sum(c[0] for c in samples) // len(samples)
+    bg_g = sum(c[1] for c in samples) // len(samples)
+    bg_b = sum(c[2] for c in samples) // len(samples)
+
+    def is_background(x: int, y: int) -> bool:
+        r, g, b, _ = pixels[x, y]
+
+        distance = max(
+            abs(r - bg_r),
+            abs(g - bg_g),
+            abs(b - bg_b),
+        )
+
+        return distance <= threshold
+
+    visited = bytearray(width * height)
+    stack: list[tuple[int, int]] = []
+
+    def enqueue(x: int, y: int) -> None:
+        index = y * width + x
+        if visited[index]:
+            return
+        if not is_background(x, y):
+            return
+
+        visited[index] = 1
+        stack.append((x, y))
+
+    for x in range(width):
+        enqueue(x, 0)
+        enqueue(x, height - 1)
+
+    for y in range(height):
+        enqueue(0, y)
+        enqueue(width - 1, y)
+
+    while stack:
+        x, y = stack.pop()
+
+        r, g, b, _ = pixels[x, y]
+        pixels[x, y] = (r, g, b, 0)
+
+        if x > 0:
+            enqueue(x - 1, y)
+        if x + 1 < width:
+            enqueue(x + 1, y)
+        if y > 0:
+            enqueue(x, y - 1)
+        if y + 1 < height:
+            enqueue(x, y + 1)
+
+    return rgba
+
+
+def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[list[tuple[str, bytes]], bytes]:
+    columns, rows = _grid(request.quantity)
+    source = Image.open(io.BytesIO(source_bytes)).convert("RGBA")
+    cell_width = source.width // columns
+    cell_height = source.height // rows
+
+    files: list[tuple[str, bytes]] = []
+    for index in range(request.quantity):
+        row = index // columns
+        column = index % columns
+        left = column * cell_width
+        top = row * cell_height
+        right = source.width if column == columns - 1 else (column + 1) * cell_width
+        bottom = source.height if row == rows - 1 else (row + 1) * cell_height
+
+        crop = source.crop((left, top, right, bottom))
+        processed = _remove_simple_background(crop)
+
+        alpha = processed.getchannel("A")
+        bbox = alpha.getbbox()
+        if bbox:
+            processed = processed.crop(bbox)
+
+        margin = max(8, min(processed.size) // 20)
+        canvas = Image.new(
+            "RGBA",
+            (processed.width + margin * 2, processed.height + margin * 2),
+            (255, 255, 255, 0),
+        )
+        canvas.alpha_composite(processed, (margin, margin))
+
+        filename = f"{index + 1:02d}_{request.character.lower()}_sticker.png"
+        output = io.BytesIO()
+        canvas.save(output, format="PNG", optimize=True)
+        files.append((filename, output.getvalue()))
+
+    return files, source_bytes
+
+
+def _zip_files(
+    files: list[tuple[str, bytes]],
+    request: AssetForgeRequest,
+    source_bytes: bytes,
+) -> bytes:
+    """Package processed stickers together with the original generated master sheet."""
+    pack_name = f"{request.character}_{request.product}_{request.quantity}pack".replace(" ", "_")
+    output = io.BytesIO()
+
+    with Image.open(io.BytesIO(source_bytes)) as source_image:
+        master_output = io.BytesIO()
+        source_image.convert("RGBA").save(master_output, format="PNG", optimize=True)
+        master_png = master_output.getvalue()
+
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(f"{pack_name}/master/original_sheet.png", master_png)
+        for filename, data in files:
+            archive.writestr(f"{pack_name}/{filename}", data)
+    return output.getvalue()
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok", "service": "asset-forge"}
+
+
+@app.post("/v1/asset-forge/generate", response_model=AssetForgeResponse)
+def generate_asset_pack(
+    request: AssetForgeRequest,
+    authorization: str | None = Header(default=None),
+) -> AssetForgeResponse:
+    access_token = get_pollinations_access_token_from_authorization(authorization)
+    if not access_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Connect Pollinations before generating assets.",
+        )
+
+    try:
+        reference_bytes = _load_character_reference(request.character)
+        if _character_key(request.character) == "pearli" and reference_bytes is None:
+            raise HTTPException(status_code=409, detail="Pearli master reference is missing from the SoloForge character library.")
+
+        columns, rows = _grid(request.quantity)
+        prompt = _build_prompt(request, columns, rows, reference_bytes is not None)
+        source_bytes = _generate_sheet(prompt, reference_bytes, access_token)
+        files, source_bytes = _process_sheet(source_bytes, request)
+        zip_bytes = _zip_files(files, request, source_bytes)
+
+        pack_name = f"{request.character}_{request.product}_{request.quantity}pack".replace(" ", "_")
+        return AssetForgeResponse(
+            asset_pack_name=pack_name,
+            files=[name for name, _ in files],
+            zip_base64=base64.b64encode(zip_bytes).decode("ascii"),
+            source_image_base64=base64.b64encode(source_bytes).decode("ascii"),
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        error_text = str(exc).strip() or exc.__class__.__name__
+        raise HTTPException(status_code=500, detail=f"Asset Forge processing failed: {error_text[:1200]}") from exc

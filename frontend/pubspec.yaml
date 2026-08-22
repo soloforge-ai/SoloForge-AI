@@ -15,6 +15,9 @@ dependencies:
   flutter_svg: ^2.2.0
   path_provider: ^2.1.5
   share_plus: ^11.0.0
+  app_links: ^6.4.0
+  flutter_secure_storage: ^9.2.4
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -22,18 +25,15 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
 
-
 flutter:
   uses-material-design: true
   assets:
     - assets/data/
-    - assets/data/brand/
     - assets/data/creative/
     - assets/data/creative/styles/
     - assets/data/scenes/
     - assets/characters/ceo/profile.json
     - assets/characters/ceo/references/
-    - assets/characters/ceo/thumbnails/
     - assets/templates/tiktok/
     - assets/data/processed/
     - assets/config/version.json

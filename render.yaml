@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: soloforge-asset-forge
+    runtime: docker
+    dockerfilePath: ./backend/asset_forge/Dockerfile
+    dockerContext: ./backend/asset_forge
+    healthCheckPath: /health
+    envVars:
+      - key: POLLINATIONS_CLIENT_ID
+        sync: false
+      - key: POLLINATIONS_REDIRECT_URI
+        sync: false
+      - key: POLLINATIONS_MOBILE_RETURN_TO
+        value: soloforge://oauth/pollinations
+      - key: POLLINATIONS_IMAGE_EDIT_MODEL
+        value: kontext
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
