@@ -1,0 +1,41 @@
+name: Asset Forge Memory Runtime
+
+on:
+  push:
+    branches:
+      - feature/asset-forge-memory-runtime
+    paths:
+      - 'backend/asset_forge/**'
+      - '.github/workflows/asset-forge-memory-runtime.yml'
+  pull_request:
+    branches:
+      - feature/asset-forge-mvp
+    paths:
+      - 'backend/asset_forge/**'
+      - '.github/workflows/asset-forge-memory-runtime.yml'
+  workflow_dispatch:
+
+jobs:
+  test-runtime-bridge:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/asset_forge
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install runtime dependencies
+        run: pip install -r requirements.txt
+
+      - name: Test Character Memory bridge
+        run: python -m unittest -v test_character_memory_bridge.py
+
+      - name: Import Memory-aware FastAPI runtime
+        run: python -c "import runtime; assert runtime.app is not None"
