@@ -6,39 +6,46 @@
 
 ## Active Initiative
 
-Memory Foundation v1 — Architecture Foundation
+Memory Foundation v1 — Foundation Complete
 
 ## Status
 
-In Progress
+Completed
 
-## Previous Milestone
+## Verification
 
-Sprint 42 — SoloForge AI Development Protocol v1.0 — Completed
+Runtime verification completed successfully on Windows with Python 3.12.
 
-The repository has continued through later implementation work after Sprint 42. Sprint numbers in historical commits remain historical milestones and must not be inferred from scanner file-completeness reports.
+```text
+Ran 12 tests in 0.183s
+OK
+```
 
-## Objective
+Verified capabilities:
 
-Establish the minimum shared memory foundation required for SoloForge AI to preserve current decisions, versions, status, events, and reusable context across AI assistants and future agents.
+- Decision Memory storage and retrieval
+- ACTIVE → SUPERSEDED lifecycle without deleting history
+- owner authority protection for authoritative decisions
+- scoped parallel decisions
+- JSON persistence
+- append-only Memory Events
+- event filtering and retrieval
+- Decision → image generation → runtime event end-to-end flow
+- superseded decisions preserve runtime history
 
-## Current Scope
+## Completed Scope
 
-- Normalize project state sources of truth
-- Preserve human-maintained current work separately from generated scanner reports
-- Define Decision Memory
-- Define Version / Status semantics
-- Define Memory Event contract
-- Define unified retrieval contract
-- Reuse existing Project Scanner and documentation infrastructure
-
-## Out of Scope
-
-- Vector DB
-- Graph DB
-- autonomous memory deletion
-- 3D brain visualization
-- unrelated product features
+- Normalized project state sources of truth
+- Preserved human-maintained current work separately from generated scanner reports
+- Approved Memory Foundation v1 specification
+- Implemented Decision Memory MVP
+- Implemented Version / Status lifecycle semantics
+- Implemented Memory Event MVP
+- Implemented basic retrieval behavior
+- Integrated first runtime producer with image generation events
+- Added runtime test runner
+- Added end-to-end Memory Foundation tests
+- Verified all 12 tests successfully
 
 ## Architecture Rule
 
@@ -48,10 +55,19 @@ This document describes human-approved current development intent.
 
 These are different concepts and must remain separate.
 
+## Out of Scope Retained for Future Evaluation
+
+- Vector DB
+- Graph DB
+- autonomous memory deletion
+- embeddings as a required dependency
+- 3D brain visualization
+- nightly consolidation / dreaming
+
 ## Next Step
 
-Complete Memory Foundation v1 specification before runtime implementation.
+Memory Foundation v1 is complete. Resume the active product roadmap from the appropriate feature branch and treat Memory Foundation as shared infrastructure for future SoloForge systems.
 
 ---
 
-Last normalized during Memory Foundation architecture audit.
+Last updated after successful Memory Foundation v1 runtime and end-to-end verification.
