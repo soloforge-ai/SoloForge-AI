@@ -2,12 +2,25 @@
 
 This module is intentionally transport-focused. The Pollinations credential must
 be supplied through the Render environment and never committed to Git.
+
+Memory integration is optional and additive: callers that do not provide an
+EventMemoryStore keep the existing behavior, while callers that do can capture
+IMAGE_GENERATED and ERROR_OCCURRED observations.
 """
 
+from __future__ import annotations
+
 import os
-from typing import Any
+from time import perf_counter
+from typing import Any, Optional
+from uuid import uuid4
 
 import requests
+
+try:
+    from .memory import EventMemoryStore, MemoryEventName
+except ImportError:  # Allows direct execution/import from the backend directory.
+    from memory import EventMemoryStore, MemoryEventName
 
 
 POLLINATIONS_IMAGE_URL = os.getenv(
@@ -16,34 +29,128 @@ POLLINATIONS_IMAGE_URL = os.getenv(
 POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY")
 
 
-def generate_image(payload: dict[str, Any]) -> dict[str, Any]:
-    if not POLLINATIONS_API_KEY:
-        raise RuntimeError("POLLINATIONS_API_KEY is not configured")
+def generate_image(
+    payload: dict[str, Any],
+    *,
+    event_store: Optional[EventMemoryStore] = None,
+) -> dict[str, Any]:
+    """Generate one image and optionally emit Memory Events.
 
-    prompt = str(payload.get("prompt", "")).strip()
-    if not prompt:
-        raise ValueError("prompt is required")
+    The event store is injected rather than created here so this transport
+    boundary does not own persistence configuration. Existing callers can keep
+    calling ``generate_image(payload)`` unchanged.
+    """
 
-    params = {
-        "model": payload.get("model", "gpt-image-2"),
-        "width": int(payload.get("width", 1024)),
-        "height": int(payload.get("height", 1024)),
-    }
-    for key in ("seed", "negative_prompt"):
-        if payload.get(key) is not None:
-            params[key] = payload[key]
+    generation_id = str(payload.get("generation_id") or f"img-{uuid4().hex}")
+    task_id = _optional_string(payload.get("task_id"))
+    model = str(payload.get("model", "gpt-image-2"))
+    started_at = perf_counter()
 
-    response = requests.get(
-        POLLINATIONS_IMAGE_URL,
-        params={"prompt": prompt, **params},
-        headers={"Authorization": f"Bearer {POLLINATIONS_API_KEY}"},
-        timeout=120,
+    try:
+        if not POLLINATIONS_API_KEY:
+            raise RuntimeError("POLLINATIONS_API_KEY is not configured")
+
+        prompt = str(payload.get("prompt", "")).strip()
+        if not prompt:
+            raise ValueError("prompt is required")
+
+        params = {
+            "model": model,
+            "width": int(payload.get("width", 1024)),
+            "height": int(payload.get("height", 1024)),
+        }
+        for key in ("seed", "negative_prompt"):
+            if payload.get(key) is not None:
+                params[key] = payload[key]
+
+        response = requests.get(
+            POLLINATIONS_IMAGE_URL,
+            params={"prompt": prompt, **params},
+            headers={"Authorization": f"Bearer {POLLINATIONS_API_KEY}"},
+            timeout=120,
+        )
+        response.raise_for_status()
+
+        result = {
+            "generation_id": generation_id,
+            "url": response.url,
+            "model": params["model"],
+            "width": params["width"],
+            "height": params["height"],
+        }
+
+        _append_event(
+            event_store,
+            event_name=MemoryEventName.IMAGE_GENERATED,
+            generation_id=generation_id,
+            result="success",
+            task_id=task_id,
+            model=params["model"],
+            duration_ms=_elapsed_ms(started_at),
+            output_refs=[response.url],
+            metrics={
+                "width": params["width"],
+                "height": params["height"],
+            },
+        )
+        return result
+
+    except Exception as exc:
+        _append_event(
+            event_store,
+            event_name=MemoryEventName.ERROR_OCCURRED,
+            generation_id=generation_id,
+            result="failed",
+            task_id=task_id,
+            model=model,
+            duration_ms=_elapsed_ms(started_at),
+            error={
+                "type": type(exc).__name__,
+                "message": str(exc),
+            },
+        )
+        raise
+
+
+def _append_event(
+    event_store: Optional[EventMemoryStore],
+    *,
+    event_name: MemoryEventName,
+    generation_id: str,
+    result: str,
+    task_id: Optional[str],
+    model: str,
+    duration_ms: int,
+    output_refs: Optional[list[str]] = None,
+    metrics: Optional[dict[str, Any]] = None,
+    error: Optional[dict[str, Any]] = None,
+) -> None:
+    if event_store is None:
+        return
+
+    event_store.append(
+        event_name=event_name,
+        actor="pollinations_image",
+        entity_type="image_generation",
+        entity_id=generation_id,
+        result=result,
+        subject=f"image_generation.{generation_id}",
+        task_id=task_id,
+        model=model,
+        provider="pollinations",
+        output_refs=output_refs,
+        metrics=metrics,
+        error=error,
+        duration_ms=duration_ms,
     )
-    response.raise_for_status()
 
-    return {
-        "url": response.url,
-        "model": params["model"],
-        "width": params["width"],
-        "height": params["height"],
-    }
+
+def _elapsed_ms(started_at: float) -> int:
+    return max(0, int((perf_counter() - started_at) * 1000))
+
+
+def _optional_string(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
