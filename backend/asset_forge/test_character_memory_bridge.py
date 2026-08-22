@@ -20,6 +20,7 @@ class AssetForgeCharacterMemoryBridgeTests(unittest.TestCase):
         self.assertFalse(dna.wings_allowed)
         self.assertIn("Active DNA version: 1.0", context)
         self.assertIn("Canonical height: 30 cm", context)
+        self.assertIn("White Luxury Suit", context)
         self.assertIn("NO wings", context)
         self.assertIn("Glasses are mandatory", context)
 
