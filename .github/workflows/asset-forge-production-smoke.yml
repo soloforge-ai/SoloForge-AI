@@ -1,0 +1,81 @@
+name: Asset Forge Production Smoke
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/asset_forge/**'
+      - 'backend/pollinations_oauth.py'
+      - 'backend/pollinations_oauth_router.py'
+      - '.github/workflows/asset-forge-production-smoke.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '17 2 * * *'
+
+jobs:
+  production-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ASSET_FORGE_BASE_URL: https://soloforge-asset-forge.onrender.com
+    steps:
+      - name: Wait for production health
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..8}; do
+            code=$(curl -sS -o /tmp/health.json -w '%{http_code}' \
+              --connect-timeout 15 --max-time 90 \
+              "$ASSET_FORGE_BASE_URL/health" || true)
+            if [ "$code" = "200" ]; then
+              python - <<'PY'
+import json
+from pathlib import Path
+payload = json.loads(Path('/tmp/health.json').read_text())
+assert payload.get('status') == 'ok', payload
+assert payload.get('service') == 'asset-forge', payload
+print('health ok:', payload)
+PY
+              exit 0
+            fi
+            echo "health attempt $attempt returned HTTP $code; waiting for Render cold start..."
+            sleep 15
+          done
+          echo 'Production health did not become ready in time.'
+          cat /tmp/health.json 2>/dev/null || true
+          exit 1
+
+      - name: Validate OpenAPI production contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 60 "$ASSET_FORGE_BASE_URL/openapi.json" -o /tmp/openapi.json
+          python - <<'PY'
+import json
+from pathlib import Path
+payload = json.loads(Path('/tmp/openapi.json').read_text())
+paths = payload.get('paths', {})
+assert '/health' in paths, paths.keys()
+assert '/v1/asset-forge/generate' in paths, paths.keys()
+assert 'post' in paths['/v1/asset-forge/generate']
+print('openapi contract ok')
+PY
+
+      - name: Validate generation auth guard without spending Pollen
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/generate.json -w '%{http_code}' \
+            --max-time 60 \
+            -H 'Content-Type: application/json' \
+            -d '{"character":"CEO","product":"Sticker","theme":"Healing & Encouragement","style":"Cute 3D Chibi","quantity":4,"messages":[]}' \
+            "$ASSET_FORGE_BASE_URL/v1/asset-forge/generate")
+          test "$code" = '401'
+          python - <<'PY'
+import json
+from pathlib import Path
+payload = json.loads(Path('/tmp/generate.json').read_text())
+assert payload.get('detail') == 'Connect Pollinations before generating assets.', payload
+print('auth guard ok; no generation request was sent to Pollinations')
+PY
