@@ -13,8 +13,10 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY main.py ./
+COPY runtime.py ./
 COPY backend ./backend
+COPY data ./data
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "exec python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000} --log-level info"]
+CMD ["sh", "-c", "exec python -m uvicorn runtime:app --host 0.0.0.0 --port ${PORT:-10000} --log-level info"]
