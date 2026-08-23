@@ -32,15 +32,7 @@ jobs:
             cat /tmp/health.json 2>/dev/null || true
             echo
             if [ "$code" = "200" ]; then
-              if python - <<'PY'
-import json
-from pathlib import Path
-payload = json.loads(Path('/tmp/health.json').read_text())
-assert payload.get('status') == 'ok', payload
-assert payload.get('service') == 'asset-forge', payload
-print('health ok:', payload)
-PY
-              then
+              if python -c "import json; from pathlib import Path; payload=json.loads(Path('/tmp/health.json').read_text()); assert payload.get('status') == 'ok', payload; assert payload.get('service') == 'asset-forge', payload; print('health ok:', payload)"; then
                 exit 0
               fi
             fi
@@ -59,17 +51,7 @@ PY
               "$ASSET_FORGE_BASE_URL/openapi.json" || true)
             echo "openapi attempt $attempt => HTTP $code"
             if [ "$code" = "200" ]; then
-              if python - <<'PY'
-import json
-from pathlib import Path
-payload = json.loads(Path('/tmp/openapi.json').read_text())
-paths = payload.get('paths', {})
-assert '/health' in paths, paths.keys()
-assert '/v1/asset-forge/generate' in paths, paths.keys()
-assert 'post' in paths['/v1/asset-forge/generate']
-print('openapi contract ok')
-PY
-              then
+              if python -c "import json; from pathlib import Path; payload=json.loads(Path('/tmp/openapi.json').read_text()); paths=payload.get('paths', {}); assert '/health' in paths, paths.keys(); assert '/v1/asset-forge/generate' in paths, paths.keys(); assert 'post' in paths['/v1/asset-forge/generate']; print('openapi contract ok')"; then
                 exit 0
               fi
             fi
@@ -93,11 +75,4 @@ PY
           cat /tmp/generate.json 2>/dev/null || true
           echo
           test "$code" = '401'
-          python - <<'PY'
-import json
-from pathlib import Path
-payload = json.loads(Path('/tmp/generate.json').read_text())
-detail = str(payload.get('detail', ''))
-assert 'Connect Pollinations' in detail, payload
-print('auth guard ok; no generation request was sent to Pollinations')
-PY
+          python -c "import json; from pathlib import Path; payload=json.loads(Path('/tmp/generate.json').read_text()); detail=str(payload.get('detail', '')); assert 'Connect Pollinations' in detail, payload; print('auth guard ok; no generation request was sent to Pollinations')"
