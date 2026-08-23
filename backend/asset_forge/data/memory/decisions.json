@@ -1,0 +1,110 @@
+[
+  {
+    "id": "dec-character-ceo-active-version-001",
+    "type": "decision",
+    "subject": "character.ceo.active_version",
+    "content": {
+      "decision_key": "character.ceo.active_version",
+      "decision": "1.0",
+      "reason": "Seeded from the approved SoloForge CEO character profile.",
+      "authority": "project_owner",
+      "scope": "ceo"
+    },
+    "source": "human_approval",
+    "created_at": "2026-08-21T00:00:00Z",
+    "updated_at": "2026-08-21T00:00:00Z",
+    "status": "ACTIVE",
+    "version": "1.0",
+    "supersedes": null
+  },
+  {
+    "id": "dec-character-ceo-height-001",
+    "type": "decision",
+    "subject": "character.ceo.height_cm",
+    "content": {
+      "decision_key": "character.ceo.height_cm",
+      "decision": "30",
+      "reason": "Approved CEO canonical scale.",
+      "authority": "project_owner",
+      "scope": "ceo"
+    },
+    "source": "human_approval",
+    "created_at": "2026-08-21T00:00:00Z",
+    "updated_at": "2026-08-21T00:00:00Z",
+    "status": "ACTIVE",
+    "version": "1.0",
+    "supersedes": null
+  },
+  {
+    "id": "dec-character-ceo-style-001",
+    "type": "decision",
+    "subject": "character.ceo.style",
+    "content": {
+      "decision_key": "character.ceo.style",
+      "decision": "3D Chibi",
+      "reason": "Approved CEO canonical visual style.",
+      "authority": "project_owner",
+      "scope": "ceo"
+    },
+    "source": "human_approval",
+    "created_at": "2026-08-21T00:00:00Z",
+    "updated_at": "2026-08-21T00:00:00Z",
+    "status": "ACTIVE",
+    "version": "1.0",
+    "supersedes": null
+  },
+  {
+    "id": "dec-character-ceo-outfit-001",
+    "type": "decision",
+    "subject": "character.ceo.default_outfit",
+    "content": {
+      "decision_key": "character.ceo.default_outfit",
+      "decision": "White Luxury Suit; Black shirt; Red tie; White pants; Black Leather shoes; Gold SoloForge Pin",
+      "reason": "Approved CEO default outfit from character profile.",
+      "authority": "project_owner",
+      "scope": "ceo"
+    },
+    "source": "human_approval",
+    "created_at": "2026-08-21T00:00:00Z",
+    "updated_at": "2026-08-21T00:00:00Z",
+    "status": "ACTIVE",
+    "version": "1.0",
+    "supersedes": null
+  },
+  {
+    "id": "dec-character-ceo-glasses-001",
+    "type": "decision",
+    "subject": "character.ceo.glasses_required",
+    "content": {
+      "decision_key": "character.ceo.glasses_required",
+      "decision": "true",
+      "reason": "CEO glasses are a required identity feature.",
+      "authority": "project_owner",
+      "scope": "ceo"
+    },
+    "source": "human_approval",
+    "created_at": "2026-08-21T00:00:00Z",
+    "updated_at": "2026-08-21T00:00:00Z",
+    "status": "ACTIVE",
+    "version": "1.0",
+    "supersedes": null
+  },
+  {
+    "id": "dec-character-ceo-wings-001",
+    "type": "decision",
+    "subject": "character.ceo.wings_allowed",
+    "content": {
+      "decision_key": "character.ceo.wings_allowed",
+      "decision": "false",
+      "reason": "The SoloForge CEO is a human-like chibi mascot and has no wings.",
+      "authority": "project_owner",
+      "scope": "ceo"
+    },
+    "source": "human_approval",
+    "created_at": "2026-08-21T00:00:00Z",
+    "updated_at": "2026-08-21T00:00:00Z",
+    "status": "ACTIVE",
+    "version": "1.0",
+    "supersedes": null
+  }
+]
