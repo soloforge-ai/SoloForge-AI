@@ -42,12 +42,15 @@ jobs:
       - name: Compile backend Python
         run: |
           python -m compileall -q backend/asset_forge/main.py
+          python -m compileall -q backend/asset_forge/runtime.py
+          python -m compileall -q backend/asset_forge/backend
           python -m compileall -q backend/pollinations_oauth.py
           python -m compileall -q backend/pollinations_oauth_router.py
           python -m compileall -q backend/tests
 
-      - name: Run backend contract and image regression tests
+      - name: Run backend contract, Memory runtime, and image regression tests
         run: |
           python -m pytest -q \
+            backend/asset_forge/test_character_memory_bridge.py \
             backend/tests/test_pollinations_oauth_session_contract.py \
             backend/tests/test_background_removal_regression.py
