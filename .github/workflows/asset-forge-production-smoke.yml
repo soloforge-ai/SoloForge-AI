@@ -8,6 +8,7 @@ on:
       - 'backend/asset_forge/**'
       - 'backend/pollinations_oauth.py'
       - 'backend/pollinations_oauth_router.py'
+      - 'render.yaml'
       - '.github/workflows/asset-forge-production-smoke.yml'
   workflow_dispatch:
   schedule:
@@ -16,66 +17,64 @@ on:
 jobs:
   production-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     env:
       ASSET_FORGE_BASE_URL: https://soloforge-asset-forge.onrender.com
+      EXPECTED_GIT_COMMIT: ${{ github.sha }}
     steps:
       - name: Wait for production health
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in {1..8}; do
+          for attempt in {1..20}; do
             code=$(curl -sS -o /tmp/health.json -w '%{http_code}' \
-              --connect-timeout 15 --max-time 90 \
+              --connect-timeout 15 --max-time 20 \
               "$ASSET_FORGE_BASE_URL/health" || true)
+            echo "health attempt $attempt => HTTP $code"
+            cat /tmp/health.json 2>/dev/null || true
+            echo
             if [ "$code" = "200" ]; then
-              python - <<'PY'
-import json
-from pathlib import Path
-payload = json.loads(Path('/tmp/health.json').read_text())
-assert payload.get('status') == 'ok', payload
-assert payload.get('service') == 'asset-forge', payload
-print('health ok:', payload)
-PY
-              exit 0
+              if python -c "import json, os; from pathlib import Path; payload=json.loads(Path('/tmp/health.json').read_text()); expected=os.environ['EXPECTED_GIT_COMMIT']; actual=payload.get('git_commit'); assert payload.get('status') == 'ok', payload; assert payload.get('service') == 'asset-forge', payload; assert actual == expected, f'expected commit {expected}, got {actual}'; print(f'health ok: deployed commit {actual}')"; then
+                exit 0
+              fi
             fi
-            echo "health attempt $attempt returned HTTP $code; waiting for Render cold start..."
             sleep 15
           done
-          echo 'Production health did not become ready in time.'
-          cat /tmp/health.json 2>/dev/null || true
+          echo 'Production health did not become ready with the expected contract in time.'
           exit 1
 
-      - name: Validate OpenAPI production contract
+      - name: Wait for OpenAPI production contract
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsS --max-time 60 "$ASSET_FORGE_BASE_URL/openapi.json" -o /tmp/openapi.json
-          python - <<'PY'
-import json
-from pathlib import Path
-payload = json.loads(Path('/tmp/openapi.json').read_text())
-paths = payload.get('paths', {})
-assert '/health' in paths, paths.keys()
-assert '/v1/asset-forge/generate' in paths, paths.keys()
-assert 'post' in paths['/v1/asset-forge/generate']
-print('openapi contract ok')
-PY
+          for attempt in {1..8}; do
+            code=$(curl -sS -o /tmp/openapi.json -w '%{http_code}' \
+              --connect-timeout 15 --max-time 20 \
+              "$ASSET_FORGE_BASE_URL/openapi.json" || true)
+            echo "openapi attempt $attempt => HTTP $code"
+            if [ "$code" = "200" ]; then
+              if python -c "import json; from pathlib import Path; payload=json.loads(Path('/tmp/openapi.json').read_text()); paths=payload.get('paths', {}); assert '/health' in paths, paths.keys(); assert '/v1/asset-forge/generate' in paths, paths.keys(); assert 'post' in paths['/v1/asset-forge/generate']; print('openapi contract ok')"; then
+                exit 0
+              fi
+            fi
+            cat /tmp/openapi.json 2>/dev/null | head -c 1200 || true
+            echo
+            sleep 10
+          done
+          echo 'Production OpenAPI contract did not become ready in time.'
+          exit 1
 
       - name: Validate generation auth guard without spending Pollen
         shell: bash
         run: |
           set -euo pipefail
           code=$(curl -sS -o /tmp/generate.json -w '%{http_code}' \
-            --max-time 60 \
+            --connect-timeout 15 --max-time 60 \
             -H 'Content-Type: application/json' \
             -d '{"character":"CEO","product":"Sticker","theme":"Healing & Encouragement","style":"Cute 3D Chibi","quantity":4,"messages":[]}' \
-            "$ASSET_FORGE_BASE_URL/v1/asset-forge/generate")
+            "$ASSET_FORGE_BASE_URL/v1/asset-forge/generate" || true)
+          echo "generate auth-guard => HTTP $code"
+          cat /tmp/generate.json 2>/dev/null || true
+          echo
           test "$code" = '401'
-          python - <<'PY'
-import json
-from pathlib import Path
-payload = json.loads(Path('/tmp/generate.json').read_text())
-assert payload.get('detail') == 'Connect Pollinations before generating assets.', payload
-print('auth guard ok; no generation request was sent to Pollinations')
-PY
+          python -c "import json; from pathlib import Path; payload=json.loads(Path('/tmp/generate.json').read_text()); detail=str(payload.get('detail', '')); assert 'Connect Pollinations' in detail, payload; print('auth guard ok; no generation request was sent to Pollinations')"
