@@ -423,7 +423,11 @@ def _zip_files(
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "asset-forge"}
+    return {
+        "status": "ok",
+        "service": "asset-forge",
+        "git_commit": os.getenv("RENDER_GIT_COMMIT", "unknown"),
+    }
 
 
 @app.post("/v1/asset-forge/generate", response_model=AssetForgeResponse)
