@@ -8,9 +8,9 @@ import '../widgets/category_filter_bar.dart';
 import '../widgets/home/hero_banner.dart';
 import '../widgets/sort_selector.dart';
 import 'about_page.dart';
+import 'asset_forge_page.dart';
 import 'developer_tools_page.dart';
 import 'forge_page.dart';
-import 'sticker_forge_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -89,7 +89,7 @@ class _HomePageState extends State<HomePage> {
   void openStickerForge() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const StickerForgePage()),
+      MaterialPageRoute(builder: (_) => const AssetForgePage()),
     );
   }
 
