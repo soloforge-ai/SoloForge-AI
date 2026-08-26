@@ -110,7 +110,36 @@ def _supabase_request(
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
             return response.read()
+    except urllib.error.HTTPError as exc:
+        diagnostic: dict[str, object] = {}
+        try:
+            raw_error = exc.read(4096)
+            parsed_error = json.loads(raw_error.decode("utf-8", errors="replace"))
+            if isinstance(parsed_error, dict):
+                for key in ("code", "message", "hint"):
+                    value = parsed_error.get(key)
+                    if value is not None:
+                        diagnostic[key] = value
+        except (UnicodeDecodeError, json.JSONDecodeError, OSError):
+            diagnostic = {"response": "<non-json error omitted>"}
+        print(
+            "supabase_session_store_http_error",
+            {
+                "method": method,
+                "status": exc.code,
+                "reason": str(exc.reason),
+                "diagnostic": diagnostic,
+            },
+        )
+        raise RuntimeError("Supabase session store is unavailable.") from exc
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        print(
+            "supabase_session_store_transport_error",
+            {
+                "method": method,
+                "exception_type": type(exc).__name__,
+            },
+        )
         raise RuntimeError("Supabase session store is unavailable.") from exc
 
 
