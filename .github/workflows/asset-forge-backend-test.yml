@@ -53,4 +53,5 @@ jobs:
           python -m pytest -q \
             backend/asset_forge/test_character_memory_bridge.py \
             backend/tests/test_pollinations_oauth_session_contract.py \
-            backend/tests/test_background_removal_regression.py
+            backend/tests/test_background_removal_regression.py \
+            backend/tests/test_asset_forge_output_quality.py
