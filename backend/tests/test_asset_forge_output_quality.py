@@ -60,6 +60,34 @@ def test_soft_background_removal_preserves_white_suit_and_creates_soft_edge() ->
     )
 
 
+def test_defringe_propagates_foreground_rgb_across_full_soft_edge() -> None:
+    source = Image.new("RGBA", (64, 64), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(source)
+    draw.rectangle((20, 12, 43, 51), fill=(0, 0, 0, 255))
+
+    processed = remove_background_soft(source)
+    alpha = processed.getchannel("A")
+    soft_edge_pixels = []
+    for y in range(processed.height):
+        for x in range(processed.width):
+            a = alpha.getpixel((x, y))
+            if 0 < a < 255:
+                soft_edge_pixels.append(processed.getpixel((x, y)))
+
+    assert soft_edge_pixels, "Expected a non-empty semi-transparent edge."
+    assert all(max(pixel[:3]) <= 8 for pixel in soft_edge_pixels), (
+        "Semi-transparent edge retained light source-background RGB and can halo on dark surfaces."
+    )
+
+    dark = Image.new("RGBA", processed.size, (16, 16, 16, 255))
+    composite = Image.alpha_composite(dark, processed)
+    for y in range(processed.height):
+        for x in range(processed.width):
+            a = alpha.getpixel((x, y))
+            if 0 < a < 255:
+                assert max(composite.getpixel((x, y))[:3]) <= 16
+
+
 def test_standardize_sticker_outputs_fixed_512_canvas_without_crop() -> None:
     processed = remove_background_soft(_make_white_suit_crop())
     standardized = standardize_sticker(processed)
