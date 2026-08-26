@@ -11,7 +11,6 @@ OUTPUT_SIZE = 512
 OUTPUT_PADDING = 40
 BACKGROUND_THRESHOLD = 8
 EDGE_BLUR_RADIUS = 1.15
-DEFRINGE_RADIUS = 2
 
 
 class AssetForgeRequestLike(Protocol):
@@ -100,12 +99,13 @@ def _connected_background_mask(
     return mask
 
 
-def _defringe_rgb(rgba: Image.Image, alpha: Image.Image, radius: int = DEFRINGE_RADIUS) -> Image.Image:
-    """Replace RGB on semi-transparent edge pixels with nearby opaque foreground RGB.
+def _defringe_rgb(rgba: Image.Image, alpha: Image.Image) -> Image.Image:
+    """Propagate foreground RGB through every nonzero soft-edge alpha pixel.
 
-    Feathering a white-background source without this step leaves a visible white
-    halo on dark destinations. Copying the nearest opaque foreground color keeps
-    the alpha transition soft without carrying the original white matte outward.
+    A bounded nearest-neighbour search can miss the outer part of a Gaussian-blurred
+    edge and leave the source background RGB there. A multi-source flood instead
+    starts from the strongest foreground pixels and carries their RGB through each
+    connected nonzero-alpha region, so no part of the soft edge retains a white matte.
     """
     output = rgba.copy()
     source_pixels = rgba.load()
@@ -113,29 +113,50 @@ def _defringe_rgb(rgba: Image.Image, alpha: Image.Image, radius: int = DEFRINGE_
     alpha_pixels = alpha.load()
     width, height = rgba.size
 
+    if width == 0 or height == 0:
+        output.putalpha(alpha)
+        return output
+
+    max_alpha = alpha.getextrema()[1]
+    if max_alpha <= 0:
+        output.putalpha(alpha)
+        return output
+
+    seed_threshold = min(250, max_alpha)
+    propagated: list[tuple[int, int, int] | None] = [None] * (width * height)
+    queue: deque[tuple[int, int]] = deque()
+
     for y in range(height):
+        row = y * width
+        for x in range(width):
+            if alpha_pixels[x, y] >= seed_threshold:
+                propagated[row + x] = source_pixels[x, y][:3]
+                queue.append((x, y))
+
+    while queue:
+        x, y = queue.popleft()
+        color = propagated[y * width + x]
+        if color is None:
+            continue
+
+        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+            if nx < 0 or nx >= width or ny < 0 or ny >= height:
+                continue
+            index = ny * width + nx
+            if alpha_pixels[nx, ny] <= 0 or propagated[index] is not None:
+                continue
+            propagated[index] = color
+            queue.append((nx, ny))
+
+    for y in range(height):
+        row = y * width
         for x in range(width):
             a = alpha_pixels[x, y]
             if a <= 0 or a >= 255:
                 continue
-
-            best: tuple[int, int, int] | None = None
-            best_distance = 10_000
-            for dy in range(-radius, radius + 1):
-                ny = y + dy
-                if ny < 0 or ny >= height:
-                    continue
-                for dx in range(-radius, radius + 1):
-                    nx = x + dx
-                    if nx < 0 or nx >= width or alpha_pixels[nx, ny] < 250:
-                        continue
-                    distance = dx * dx + dy * dy
-                    if distance < best_distance:
-                        best_distance = distance
-                        best = source_pixels[nx, ny][:3]
-
-            if best is not None:
-                output_pixels[x, y] = (*best, source_pixels[x, y][3])
+            color = propagated[row + x]
+            if color is not None:
+                output_pixels[x, y] = (*color, source_pixels[x, y][3])
 
     output.putalpha(alpha)
     return output
@@ -153,7 +174,6 @@ def remove_background_soft(
         return rgba
 
     foreground_mask = _connected_background_mask(rgba, threshold=threshold)
-    alpha = foreground_mask.filter(ImageFilter.GaussianBlur(radius=blur_radius))
 
     original_alpha = rgba.getchannel("A")
     alpha = Image.new("L", rgba.size, 0)
