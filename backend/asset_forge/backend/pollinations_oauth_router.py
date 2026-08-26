@@ -110,7 +110,31 @@ def _supabase_request(
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
             return response.read()
+    except urllib.error.HTTPError as exc:
+        try:
+            response_body = exc.read().decode("utf-8", errors="replace")[:1000]
+        except Exception:
+            response_body = "<unavailable>"
+        if secret_key:
+            response_body = response_body.replace(secret_key, "[REDACTED]")
+        print(
+            "supabase_session_store_http_error",
+            {
+                "method": method,
+                "status": exc.code,
+                "reason": str(exc.reason),
+                "response": response_body,
+            },
+        )
+        raise RuntimeError("Supabase session store is unavailable.") from exc
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        print(
+            "supabase_session_store_transport_error",
+            {
+                "method": method,
+                "exception_type": type(exc).__name__,
+            },
+        )
         raise RuntimeError("Supabase session store is unavailable.") from exc
 
 
