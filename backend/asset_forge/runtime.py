@@ -3,6 +3,7 @@ from __future__ import annotations
 import main as asset_forge_main
 
 from backend.character_memory_bridge import AssetForgeCharacterMemoryBridge
+from backend.output_quality import process_sheet as quality_process_sheet
 
 character_memory_bridge = AssetForgeCharacterMemoryBridge()
 _original_build_prompt = asset_forge_main._build_prompt
@@ -17,4 +18,5 @@ def _memory_aware_build_prompt(request, columns: int, rows: int, has_reference: 
 
 
 asset_forge_main._build_prompt = _memory_aware_build_prompt
+asset_forge_main._process_sheet = quality_process_sheet
 app = asset_forge_main.app
