@@ -27,6 +27,10 @@ jobs:
         working-directory: frontend
         run: flutter pub get
 
+      - name: Regenerate launcher icons
+        working-directory: frontend
+        run: dart run flutter_launcher_icons
+
       - name: Analyze Dart code
         working-directory: frontend
         run: flutter analyze
