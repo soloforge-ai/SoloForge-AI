@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 15
     env:
       ASSET_FORGE_BASE_URL: https://soloforge-asset-forge.onrender.com
-      EXPECTED_GIT_COMMIT: ${{ github.sha }}
+      EXPECTED_GIT_COMMIT: ${{ github.event_name == 'push' && github.sha || '' }}
     steps:
       - name: Wait for production health
         shell: bash
@@ -34,7 +34,7 @@ jobs:
             cat /tmp/health.json 2>/dev/null || true
             echo
             if [ "$code" = "200" ]; then
-              if python -c "import json, os; from pathlib import Path; payload=json.loads(Path('/tmp/health.json').read_text()); expected=os.environ['EXPECTED_GIT_COMMIT']; actual=payload.get('git_commit'); assert payload.get('status') == 'ok', payload; assert payload.get('service') == 'asset-forge', payload; assert actual == expected, f'expected commit {expected}, got {actual}'; print(f'health ok: deployed commit {actual}')"; then
+              if python -c "import json, os; from pathlib import Path; payload=json.loads(Path('/tmp/health.json').read_text()); expected=os.environ.get('EXPECTED_GIT_COMMIT', '').strip(); actual=str(payload.get('git_commit', '')).strip(); assert payload.get('status') == 'ok', payload; assert payload.get('service') == 'asset-forge', payload; assert actual and actual != 'unknown', payload; expected and actual != expected and (_ for _ in ()).throw(AssertionError(f'expected commit {expected}, got {actual}')); print(f'health ok: deployed commit {actual}' + (f' matches expected {expected}' if expected else ''))"; then
                 exit 0
               fi
             fi
