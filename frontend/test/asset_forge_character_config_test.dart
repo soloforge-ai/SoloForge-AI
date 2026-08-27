@@ -12,12 +12,23 @@ void main() {
     expect(config.summary, 'Blue Cat');
   });
 
-  test('SoloForge character keeps canonical identity', () {
+  test('human mascot does not duplicate mascot in backend character', () {
+    const config = AssetForgeCharacterConfig(
+      characterType: 'Human Mascot',
+      primaryColor: 'Blue',
+    );
+
+    expect(config.backendCharacter, 'Blue Human mascot');
+    expect(config.summary, 'Blue Human Mascot');
+  });
+
+  test('SoloForge character keeps canonical identity and summary', () {
     const config = AssetForgeCharacterConfig(
       characterType: 'CEO',
       primaryColor: 'Pink',
     );
 
     expect(config.backendCharacter, 'CEO');
+    expect(config.summary, 'CEO');
   });
 }
