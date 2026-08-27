@@ -31,4 +31,34 @@ void main() {
     expect(config.backendCharacter, 'CEO');
     expect(config.summary, 'CEO');
   });
+
+  test('upstream Pollinations 402 wrapped by backend still shows Pollen CTA', () {
+    expect(
+      AssetForgeCharacterConfig.isPollenPaymentFailure(
+        statusCode: 502,
+        message: 'Pollinations image generation failed (402): Payment Required',
+      ),
+      isTrue,
+    );
+  });
+
+  test('direct 402 shows Pollen CTA', () {
+    expect(
+      AssetForgeCharacterConfig.isPollenPaymentFailure(
+        statusCode: 402,
+        message: 'Asset Forge server returned 402.',
+      ),
+      isTrue,
+    );
+  });
+
+  test('unrelated server error does not show Pollen CTA', () {
+    expect(
+      AssetForgeCharacterConfig.isPollenPaymentFailure(
+        statusCode: 500,
+        message: 'Internal server error',
+      ),
+      isFalse,
+    );
+  });
 }
