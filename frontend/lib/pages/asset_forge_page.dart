@@ -226,11 +226,10 @@ class _AssetForgePageState extends State<AssetForgePage> {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         message = body['detail']?.toString() ?? message;
       } catch (_) {}
-      final normalized = message.toLowerCase();
-      if (response.statusCode == 402 ||
-          normalized.contains('pollen') ||
-          normalized.contains('balance') ||
-          normalized.contains('credit')) {
+      if (AssetForgeCharacterConfig.isPollenPaymentFailure(
+        statusCode: response.statusCode,
+        message: message,
+      )) {
         showEarnPollenHint = true;
       }
       throw Exception(message);
