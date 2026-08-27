@@ -9,12 +9,17 @@ class AssetForgeCharacterConfig {
 
   static const soloForgeCharacters = {'CEO', 'Pearli', 'Aira'};
 
+  bool get isSoloForgeCharacter => soloForgeCharacters.contains(characterType);
+
   String get backendCharacter {
-    if (soloForgeCharacters.contains(characterType)) {
+    if (isSoloForgeCharacter) {
       return characterType;
+    }
+    if (characterType == 'Human Mascot') {
+      return '$primaryColor Human mascot';
     }
     return '$primaryColor $characterType mascot';
   }
 
-  String get summary => '$primaryColor $characterType';
+  String get summary => isSoloForgeCharacter ? characterType : '$primaryColor $characterType';
 }
