@@ -9,7 +9,6 @@ on:
       - 'backend/pollinations_oauth.py'
       - 'backend/pollinations_oauth_router.py'
       - 'render.yaml'
-      - '.github/workflows/asset-forge-production-smoke.yml'
   workflow_dispatch:
   schedule:
     - cron: '17 2 * * *'
