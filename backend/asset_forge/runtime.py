@@ -14,13 +14,28 @@ _GENERIC_MASTER_KEYS = (
     "cat",
     "dog",
     "bear",
-    "rabbit",
-    "robot",
 )
+_GENERIC_CANONICAL_KEYS = frozenset((*_GENERIC_MASTER_KEYS, "human_female", "human_male"))
+
+_GENERIC_REFERENCE_SOURCE = """CHARACTER REFERENCE:
+- The attached master reference image is authoritative for the character's face, hairstyle, eye colors, skin tone, costume, proportions, and signature accessories.
+- Preserve those core identity features consistently in every cell.
+- IMPORTANT: Do NOT preserve or copy any wings, halo, angel features, bird wings, or other fantasy appendages that may appear in the reference image. The SoloForge AI CEO character has NO wings.
+- The CEO must always appear as a human-like cute 3D chibi male mascot with no wings and no halo.
+- Only change pose, facial expression, and gesture as needed for the sticker pack.
+"""
+
+_GENERIC_REFERENCE_REPLACEMENT = """CHARACTER REFERENCE:
+- The attached canonical master reference is authoritative for the character type, face design, proportions, silhouette, and signature structural features.
+- Preserve those identity features consistently in every cell.
+- If the character request includes an explicit color adjective, the requested color is authoritative and may override fur, body, skin, clothing, or accent colors shown in the master reference as appropriate for that character.
+- Do not reinterpret this generic character as the SoloForge CEO and do not apply CEO-specific gender, wing, halo, costume, or identity rules.
+- Only change pose, facial expression, gesture, and requested color treatment as needed for the sticker pack.
+"""
 
 
 def _canonical_master_character(character: str) -> str:
-    """Map user-configured generic characters to one canonical master reference."""
+    """Map supported generic characters to one approved canonical master reference."""
     normalized = character.strip().lower().replace("_", " ").replace("-", " ")
     normalized = " ".join(normalized.split())
 
@@ -34,8 +49,13 @@ def _canonical_master_character(character: str) -> str:
         if key in tokens:
             return key
 
-    # Preserve named SoloForge IP (CEO, Pearli, Aira) and any future exact keys.
+    # Preserve named SoloForge IP (CEO, Pearli, Aira) and unsupported generic
+    # characters on the existing exact-reference / no-reference path.
     return character
+
+
+def _is_generic_master_request(character: str) -> bool:
+    return _canonical_master_character(character) in _GENERIC_CANONICAL_KEYS
 
 
 def _master_aware_load_character_reference(character: str) -> bytes | None:
@@ -51,6 +71,13 @@ def _master_aware_load_character_reference(character: str) -> bytes | None:
 
 def _memory_aware_build_prompt(request, columns: int, rows: int, has_reference: bool) -> str:
     base_prompt = _original_build_prompt(request, columns, rows, has_reference)
+
+    if has_reference and _is_generic_master_request(request.character):
+        base_prompt = base_prompt.replace(
+            _GENERIC_REFERENCE_SOURCE,
+            _GENERIC_REFERENCE_REPLACEMENT,
+        )
+
     memory_context = character_memory_bridge.prompt_context(request.character)
     if not memory_context:
         return base_prompt
