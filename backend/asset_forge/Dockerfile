@@ -16,6 +16,7 @@ COPY main.py ./
 COPY runtime.py ./
 COPY backend ./backend
 COPY data ./data
+COPY characters ./characters
 
 EXPOSE 10000
 
