@@ -2,17 +2,17 @@
   "app_name": "SoloForge AI",
   "company": "SoloForge AI",
 
-  "version": "0.1.0",
+  "version": "0.1.1",
   "channel": "Alpha",
-  "build": 1,
+  "build": 38,
 
-  "release_date": "2026-07-29",
-  "release_time": "15:45 ICT",
+  "release_date": "2026-08-29",
+  "release_time": "18:49 ICT",
 
   "engine": "MiniBoss v1",
 
   "scanner": "v1",
 
   "api_version": "0.0.0",
-  "description": "First Alpha Release"
+  "description": "Asset Forge 3D Chibi Alpha"
 }
