@@ -6,24 +6,33 @@ from typing import Protocol
 
 from PIL import Image, ImageFilter
 
+from .grid_policy import exact_grid
+
 
 OUTPUT_SIZE = 512
 OUTPUT_PADDING = 40
 BACKGROUND_THRESHOLD = 8
 EDGE_BLUR_RADIUS = 1.15
+MIN_CELL_CLEARANCE_RATIO = 0.025
+MIN_FOREGROUND_RATIO = 0.015
+MAX_FOREGROUND_RATIO = 0.72
+MAX_CONTENT_SPAN_RATIO = 0.95
+COMPONENT_ALPHA_THRESHOLD = 64
+MIN_SUBSTANTIAL_COMPONENT_RATIO = 0.02
+SECOND_COMPONENT_RELATIVE_RATIO = 0.35
+CORE_ALPHA_THRESHOLD = 128
+CORE_EROSION_SIZE = 7
+CORE_MIN_COMPONENT_RATIO = 0.012
+CORE_SECOND_RELATIVE_RATIO = 0.28
+
+
+class StickerSheetQualityError(ValueError):
+    """Raised when a generated sheet cannot safely be split into usable stickers."""
 
 
 class AssetForgeRequestLike(Protocol):
     quantity: int
     character: str
-
-
-def _grid(quantity: int) -> tuple[int, int]:
-    import math
-
-    columns = min(6, max(2, math.ceil(math.sqrt(quantity))))
-    rows = math.ceil(quantity / columns)
-    return columns, rows
 
 
 def _sample_background_color(rgba: Image.Image) -> tuple[int, int, int]:
@@ -43,11 +52,7 @@ def _connected_background_mask(
     *,
     threshold: int = BACKGROUND_THRESHOLD,
 ) -> Image.Image:
-    """Return an L mask where border-connected background is 0 and foreground is 255.
-
-    The flood fill remains deliberately strict so near-white foreground details,
-    especially the CEO's white suit, are not erased together with a white sheet.
-    """
+    """Return an L mask where border-connected background is 0 and foreground is 255."""
     width, height = rgba.size
     if width == 0 or height == 0:
         return Image.new("L", rgba.size, 255)
@@ -100,13 +105,7 @@ def _connected_background_mask(
 
 
 def _defringe_rgb(rgba: Image.Image, alpha: Image.Image) -> Image.Image:
-    """Propagate foreground RGB through every nonzero soft-edge alpha pixel.
-
-    A bounded nearest-neighbour search can miss the outer part of a Gaussian-blurred
-    edge and leave the source background RGB there. A multi-source flood instead
-    starts from the strongest foreground pixels and carries their RGB through each
-    connected nonzero-alpha region, so no part of the soft edge retains a white matte.
-    """
+    """Propagate foreground RGB through every nonzero soft-edge alpha pixel."""
     output = rgba.copy()
     source_pixels = rgba.load()
     output_pixels = output.load()
@@ -174,17 +173,139 @@ def remove_background_soft(
         return rgba
 
     foreground_mask = _connected_background_mask(rgba, threshold=threshold)
-
     original_alpha = rgba.getchannel("A")
     alpha = Image.new("L", rgba.size, 0)
     alpha_pixels = alpha.load()
     softened_pixels = foreground_mask.filter(ImageFilter.GaussianBlur(radius=blur_radius)).load()
     original_pixels = original_alpha.load()
+
     for y in range(rgba.height):
         for x in range(rgba.width):
             alpha_pixels[x, y] = min(original_pixels[x, y], softened_pixels[x, y])
 
     return _defringe_rgb(rgba, alpha)
+
+
+def _component_sizes(alpha: Image.Image, *, threshold: int = COMPONENT_ALPHA_THRESHOLD) -> list[int]:
+    """Return connected foreground component sizes, largest first."""
+    width, height = alpha.size
+    pixels = alpha.load()
+    visited = bytearray(width * height)
+    components: list[int] = []
+
+    for y in range(height):
+        for x in range(width):
+            index = y * width + x
+            if visited[index] or pixels[x, y] < threshold:
+                continue
+
+            visited[index] = 1
+            queue: deque[tuple[int, int]] = deque([(x, y)])
+            size = 0
+            while queue:
+                px, py = queue.popleft()
+                size += 1
+                for nx, ny in ((px - 1, py), (px + 1, py), (px, py - 1), (px, py + 1)):
+                    if nx < 0 or nx >= width or ny < 0 or ny >= height:
+                        continue
+                    neighbour = ny * width + nx
+                    if visited[neighbour] or pixels[nx, ny] < threshold:
+                        continue
+                    visited[neighbour] = 1
+                    queue.append((nx, ny))
+            components.append(size)
+
+    components.sort(reverse=True)
+    return components
+
+
+def _has_multiple_substantial_components(
+    components: list[int],
+    *,
+    cell_area: int,
+    min_area_ratio: float,
+    second_relative_ratio: float,
+) -> bool:
+    if len(components) < 2:
+        return False
+    largest, second = components[0], components[1]
+    return (
+        second / max(1, cell_area) >= min_area_ratio
+        and second / max(1, largest) >= second_relative_ratio
+    )
+
+
+def _validate_single_substantial_subject(alpha: Image.Image, *, index: int) -> None:
+    cell_area = max(1, alpha.width * alpha.height)
+
+    components = _component_sizes(alpha)
+    duplicate = _has_multiple_substantial_components(
+        components,
+        cell_area=cell_area,
+        min_area_ratio=MIN_SUBSTANTIAL_COMPONENT_RATIO,
+        second_relative_ratio=SECOND_COMPONENT_RELATIVE_RATIO,
+    )
+
+    if not duplicate and alpha.width >= CORE_EROSION_SIZE and alpha.height >= CORE_EROSION_SIZE:
+        strong = alpha.point(lambda value: 255 if value >= CORE_ALPHA_THRESHOLD else 0)
+        eroded = strong.filter(ImageFilter.MinFilter(size=CORE_EROSION_SIZE))
+        core_components = _component_sizes(eroded, threshold=128)
+        duplicate = _has_multiple_substantial_components(
+            core_components,
+            cell_area=cell_area,
+            min_area_ratio=CORE_MIN_COMPONENT_RATIO,
+            second_relative_ratio=CORE_SECOND_RELATIVE_RATIO,
+        )
+
+    if duplicate:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} contains multiple substantial subjects. "
+            "Each cell must contain exactly one usable sticker character; please regenerate."
+        )
+
+
+def _validate_cell(processed: Image.Image, *, index: int) -> None:
+    """Ensure one sticker is isolated inside a cell before it is exported."""
+    alpha = processed.getchannel("A")
+    bbox = alpha.getbbox()
+    width, height = processed.size
+
+    if not bbox:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} is empty. Please regenerate the sheet."
+        )
+
+    left, top, right, bottom = bbox
+    clearance = max(4, round(min(width, height) * MIN_CELL_CLEARANCE_RATIO))
+    margins = (left, top, width - right, height - bottom)
+    if min(margins) < clearance:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: artwork crosses the boundary of cell {index + 1}. "
+            "The generated sheet cannot be split safely; please regenerate."
+        )
+
+    content_width = right - left
+    content_height = bottom - top
+    if content_width / width > MAX_CONTENT_SPAN_RATIO or content_height / height > MAX_CONTENT_SPAN_RATIO:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} contains oversized or clipped artwork. "
+            "Please regenerate the sheet."
+        )
+
+    strong_foreground = sum(1 for value in alpha.getdata() if value >= 32)
+    foreground_ratio = strong_foreground / max(1, width * height)
+    if foreground_ratio < MIN_FOREGROUND_RATIO:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} does not contain a usable sticker. "
+            "Please regenerate the sheet."
+        )
+    if foreground_ratio > MAX_FOREGROUND_RATIO:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} is dominated by oversized artwork. "
+            "Please regenerate the sheet."
+        )
+
+    _validate_single_substantial_subject(alpha, index=index)
 
 
 def standardize_sticker(
@@ -218,13 +339,16 @@ def process_sheet(
     source_bytes: bytes,
     request: AssetForgeRequestLike,
 ) -> tuple[list[tuple[str, bytes]], bytes]:
-    """Split, matte, defringe, and standardize a generated sticker sheet."""
-    columns, rows = _grid(request.quantity)
+    """Validate, split, matte, defringe, and standardize a generated sticker sheet."""
+    columns, rows = exact_grid(request.quantity)
     source = Image.open(io.BytesIO(source_bytes)).convert("RGBA")
     cell_width = source.width // columns
     cell_height = source.height // rows
 
-    files: list[tuple[str, bytes]] = []
+    if cell_width <= 0 or cell_height <= 0:
+        raise StickerSheetQualityError("Sticker sheet quality check failed: generated sheet dimensions are invalid.")
+
+    processed_cells: list[Image.Image] = []
     for index in range(request.quantity):
         row = index // columns
         column = index % columns
@@ -235,8 +359,12 @@ def process_sheet(
 
         crop = source.crop((left, top, right, bottom))
         processed = remove_background_soft(crop)
-        canvas = standardize_sticker(processed)
+        _validate_cell(processed, index=index)
+        processed_cells.append(processed)
 
+    files: list[tuple[str, bytes]] = []
+    for index, processed in enumerate(processed_cells):
+        canvas = standardize_sticker(processed)
         filename = f"{index + 1:02d}_{request.character.lower()}_sticker.png"
         output = io.BytesIO()
         canvas.save(output, format="PNG", optimize=True)
