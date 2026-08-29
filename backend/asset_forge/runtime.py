@@ -50,7 +50,8 @@ def _canonical_master_character(character: str) -> str:
             return key
 
     # Preserve named SoloForge IP (CEO, Pearli, Aira) and unsupported generic
-    # characters on the existing exact-reference / no-reference path.
+    # characters, including Robot until a clean approved master exists, on the
+    # existing exact-reference / no-reference path.
     return character
 
 
