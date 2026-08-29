@@ -70,17 +70,21 @@ def _master_aware_load_character_reference(character: str) -> bytes | None:
     return None
 
 
+def _generic_reference_safe_prompt(base_prompt: str) -> str:
+    if _GENERIC_REFERENCE_SOURCE not in base_prompt:
+        raise RuntimeError("Generic reference prompt contract changed; refusing to apply an unsafe partial rewrite.")
+    return base_prompt.replace(
+        _GENERIC_REFERENCE_SOURCE,
+        _GENERIC_REFERENCE_REPLACEMENT,
+        1,
+    )
+
+
 def _memory_aware_build_prompt(request, columns: int, rows: int, has_reference: bool) -> str:
     base_prompt = _original_build_prompt(request, columns, rows, has_reference)
 
     if has_reference and _is_generic_master_request(request.character):
-        if _GENERIC_REFERENCE_SOURCE not in base_prompt:
-            raise RuntimeError("Generic reference prompt contract changed; refusing to apply an unsafe partial rewrite.")
-        base_prompt = base_prompt.replace(
-            _GENERIC_REFERENCE_SOURCE,
-            _GENERIC_REFERENCE_REPLACEMENT,
-            1,
-        )
+        base_prompt = _generic_reference_safe_prompt(base_prompt)
 
     memory_context = character_memory_bridge.prompt_context(request.character)
     if not memory_context:
