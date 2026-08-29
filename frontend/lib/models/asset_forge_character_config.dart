@@ -28,10 +28,13 @@ class AssetForgeCharacterConfig {
     if (isSoloForgeCharacter) {
       return characterType;
     }
-    if (characterType == 'Human Mascot') {
-      return '$primaryColor Human mascot';
+    if (characterType == 'Human Male') {
+      return '$primaryColor male human chibi mascot';
     }
-    return '$primaryColor $characterType mascot';
+    if (characterType == 'Human Female') {
+      return '$primaryColor female human chibi mascot';
+    }
+    return '$primaryColor $characterType chibi mascot';
   }
 
   String get summary => isSoloForgeCharacter ? characterType : '$primaryColor $characterType';

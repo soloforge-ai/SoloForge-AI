@@ -22,12 +22,12 @@ class AssetForgePage extends StatefulWidget {
 
 class _AssetForgePageState extends State<AssetForgePage> {
   static final Uri _pollinationsDashboard = Uri.parse('https://enter.pollinations.ai/');
+  static const String style = 'Cute 3D Chibi';
 
   String characterType = 'Cat';
   String primaryColor = 'Blue';
   String product = 'Sticker';
   String theme = 'Healing & Encouragement';
-  String style = 'Cute 3D Chibi';
   int quantity = 4;
 
   bool isGenerating = false;
@@ -417,7 +417,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
               _dropdown(
                 label: 'Character type',
                 value: characterType,
-                items: const ['Cat', 'Dog', 'Bear', 'Rabbit', 'Robot', 'Human Mascot', 'CEO', 'Pearli', 'Aira'],
+                items: const ['Cat', 'Dog', 'Bear', 'Rabbit', 'Robot', 'Human Male', 'Human Female', 'CEO', 'Pearli', 'Aira'],
                 onChanged: (value) {
                   if (value != null) setState(() => characterType = value);
                 },
@@ -433,15 +433,6 @@ class _AssetForgePageState extends State<AssetForgePage> {
               ),
               const SizedBox(height: 12),
               _dropdown(
-                label: 'Style',
-                value: style,
-                items: const ['Cute 3D Chibi', 'Cute 2D', 'Cartoon', 'Luxury'],
-                onChanged: (value) {
-                  if (value != null) setState(() => style = value);
-                },
-              ),
-              const SizedBox(height: 12),
-              _dropdown(
                 label: 'Theme',
                 value: theme,
                 items: const ['Healing & Encouragement', 'Love', 'Abundance', 'Good Morning'],
@@ -449,6 +440,8 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   if (value != null) setState(() => theme = value);
                 },
               ),
+              const SizedBox(height: 12),
+              const Text('Style: Cute 3D Chibi', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               Text('Quantity: $quantity', style: const TextStyle(fontWeight: FontWeight.bold)),
               Slider(

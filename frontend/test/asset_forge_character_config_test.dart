@@ -2,24 +2,34 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/models/asset_forge_character_config.dart';
 
 void main() {
-  test('custom character includes primary color in backend character', () {
+  test('custom character includes primary color and chibi contract in backend character', () {
     const config = AssetForgeCharacterConfig(
       characterType: 'Cat',
       primaryColor: 'Blue',
     );
 
-    expect(config.backendCharacter, 'Blue Cat mascot');
+    expect(config.backendCharacter, 'Blue Cat chibi mascot');
     expect(config.summary, 'Blue Cat');
   });
 
-  test('human mascot does not duplicate mascot in backend character', () {
+  test('human male uses explicit chibi backend identity', () {
     const config = AssetForgeCharacterConfig(
-      characterType: 'Human Mascot',
+      characterType: 'Human Male',
       primaryColor: 'Blue',
     );
 
-    expect(config.backendCharacter, 'Blue Human mascot');
-    expect(config.summary, 'Blue Human Mascot');
+    expect(config.backendCharacter, 'Blue male human chibi mascot');
+    expect(config.summary, 'Blue Human Male');
+  });
+
+  test('human female uses explicit chibi backend identity', () {
+    const config = AssetForgeCharacterConfig(
+      characterType: 'Human Female',
+      primaryColor: 'Pink',
+    );
+
+    expect(config.backendCharacter, 'Pink female human chibi mascot');
+    expect(config.summary, 'Pink Human Female');
   });
 
   test('SoloForge character keeps canonical identity and summary', () {
