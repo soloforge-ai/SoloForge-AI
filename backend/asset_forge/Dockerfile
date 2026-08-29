@@ -16,6 +16,7 @@ COPY main.py ./
 COPY runtime.py ./
 COPY backend ./backend
 COPY data ./data
+# Canonical generic masters are runtime data and must ship in the Render image.
 COPY characters ./characters
 
 EXPOSE 10000
