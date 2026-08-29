@@ -3,7 +3,8 @@ from __future__ import annotations
 import main as asset_forge_main
 
 from backend.character_memory_bridge import AssetForgeCharacterMemoryBridge
-from backend.output_quality import process_sheet as quality_process_sheet
+from backend.grid_policy import exact_grid
+from backend.output_quality import StickerSheetQualityError, process_sheet as quality_process_sheet
 
 character_memory_bridge = AssetForgeCharacterMemoryBridge()
 _original_build_prompt = asset_forge_main._build_prompt
@@ -80,19 +81,77 @@ def _generic_reference_safe_prompt(base_prompt: str) -> str:
     )
 
 
+def _exact_grid(quantity: int) -> tuple[int, int]:
+    try:
+        return exact_grid(quantity)
+    except ValueError as exc:
+        raise asset_forge_main.HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+def _strict_grid_contract(request, columns: int, rows: int) -> str:
+    cell_count = columns * rows
+    return f"""
+STRICT STICKER SHEET CONTRACT — NON-NEGOTIABLE:
+This is NOT a collage, poster, character lineup, hero composition, or sticker collection page.
+It is a machine-splittable sprite sheet with exactly {columns} columns x {rows} rows = {cell_count} equal cells.
+
+GEOMETRY:
+- Create exactly {request.quantity} sticker characters total — no more and no fewer.
+- Put exactly ONE complete full-body character in EACH cell.
+- For a {columns} x {rows} layout, every cell must be occupied exactly once.
+- Place each character at the visual center of its own cell.
+- Keep every character at approximately the same scale and with similar margins.
+- Leave clear blank white space on all four sides of every character.
+- Keep clear blank gutters between every neighbouring cell.
+- No character may touch, overlap, enter, or visually connect to another cell.
+
+FORBIDDEN COMPOSITIONS:
+- NO oversized central hero character.
+- NO large character spanning multiple cells.
+- NO tiny secondary characters around a larger character.
+- NO duplicate miniatures, floating heads, extra faces, body fragments, cut-off characters, or decorative character copies.
+- NO shared ground shadow connecting two characters.
+- NO speech bubbles, text, captions, logos, icons, borders, frames, panel dividers, or decorative elements between cells.
+- NO element of any kind may cross a cell boundary, including hair, ears, antennae, limbs, props, shadows, effects, accessories, tails, or clothing.
+
+OUTPUT BEHAVIOR:
+- Treat each grid cell as a separate independent sticker image that will be automatically cropped by coordinates after generation.
+- The final sheet must still look correct if it is cut into {request.quantity} equal rectangles without any intelligent detection.
+- If a pose is too wide or tall for its cell, simplify or shrink the pose instead of violating the cell boundary.
+- Prefer simple isolated poses over complex compositions.
+
+FINAL SELF-CHECK BEFORE RENDERING:
+1. Count the cells: exactly {cell_count}.
+2. Count the characters: exactly {request.quantity}.
+3. Verify one full character per cell.
+4. Verify no oversized hero and no extra mini characters.
+5. Verify blank gutters exist between all cells.
+6. Verify cutting the sheet into equal cells would produce {request.quantity} usable standalone stickers.
+""".strip()
+
+
 def _memory_aware_build_prompt(request, columns: int, rows: int, has_reference: bool) -> str:
     base_prompt = _original_build_prompt(request, columns, rows, has_reference)
 
     if has_reference and _is_generic_master_request(request.character):
         base_prompt = _generic_reference_safe_prompt(base_prompt)
 
+    prompt_parts = [base_prompt, _strict_grid_contract(request, columns, rows)]
     memory_context = character_memory_bridge.prompt_context(request.character)
-    if not memory_context:
-        return base_prompt
-    return f"{base_prompt}\n\n{memory_context}"
+    if memory_context:
+        prompt_parts.append(memory_context)
+    return "\n\n".join(prompt_parts)
+
+
+def _quality_gated_process_sheet(source_bytes, request):
+    try:
+        return quality_process_sheet(source_bytes, request)
+    except StickerSheetQualityError as exc:
+        raise asset_forge_main.HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 asset_forge_main._load_character_reference = _master_aware_load_character_reference
+asset_forge_main._grid = _exact_grid
 asset_forge_main._build_prompt = _memory_aware_build_prompt
-asset_forge_main._process_sheet = quality_process_sheet
+asset_forge_main._process_sheet = _quality_gated_process_sheet
 app = asset_forge_main.app
