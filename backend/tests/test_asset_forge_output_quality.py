@@ -3,11 +3,18 @@ from __future__ import annotations
 import io
 from dataclasses import dataclass
 
+import pytest
 from PIL import Image, ImageDraw
 
+from backend.asset_forge.backend.grid_policy import (
+    MAX_SUPPORTED_QUANTITY,
+    SUPPORTED_GRID_LAYOUTS,
+    exact_grid,
+)
 from backend.asset_forge.backend.output_quality import (
     OUTPUT_PADDING,
     OUTPUT_SIZE,
+    StickerSheetQualityError,
     process_sheet,
     remove_background_soft,
     standardize_sticker,
@@ -46,6 +53,66 @@ def _make_sheet() -> bytes:
     output = io.BytesIO()
     sheet.save(output, format="PNG")
     return output.getvalue()
+
+
+def _make_bad_central_hero_sheet() -> bytes:
+    """Simulate the Pollinations failure: one large hero crosses the 2x2 split."""
+    sheet = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(sheet)
+
+    for cx, cy in ((96, 96), (416, 96), (96, 416), (416, 416)):
+        draw.ellipse((cx - 44, cy - 58, cx + 44, cy + 58), fill=(20, 20, 24, 255))
+
+    draw.ellipse((176, 104, 336, 264), fill=(10, 10, 14, 255))
+    draw.rounded_rectangle((188, 226, 324, 438), radius=44, fill=(16, 16, 20, 255))
+
+    output = io.BytesIO()
+    sheet.save(output, format="PNG")
+    return output.getvalue()
+
+
+def _make_two_subjects_in_one_cell_sheet(*, shared_shadow: bool = False) -> bytes:
+    """Create duplicate figures; optionally join them only through a thin ground shadow."""
+    sheet = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(sheet)
+    cells = ((0, 0), (256, 0), (0, 256), (256, 256))
+
+    for index, (left, top) in enumerate(cells):
+        if index == 0:
+            draw.ellipse((left + 42, top + 64, left + 112, top + 180), fill=(16, 16, 20, 255))
+            draw.ellipse((left + 144, top + 64, left + 214, top + 180), fill=(20, 20, 24, 255))
+            if shared_shadow:
+                draw.rounded_rectangle(
+                    (left + 36, top + 176, left + 220, top + 180),
+                    radius=2,
+                    fill=(24, 24, 28, 255),
+                )
+        else:
+            draw.ellipse((left + 76, top + 46, left + 180, top + 198), fill=(24, 24, 28, 255))
+
+    output = io.BytesIO()
+    sheet.save(output, format="PNG")
+    return output.getvalue()
+
+
+def test_exact_grid_policy_has_no_unused_cells() -> None:
+    assert SUPPORTED_GRID_LAYOUTS == {
+        4: (2, 2),
+        8: (4, 2),
+        12: (4, 3),
+        16: (4, 4),
+        20: (5, 4),
+        24: (6, 4),
+    }
+    assert MAX_SUPPORTED_QUANTITY == 24
+    for quantity, (columns, rows) in SUPPORTED_GRID_LAYOUTS.items():
+        assert exact_grid(quantity) == (columns, rows)
+        assert columns * rows == quantity
+
+
+def test_exact_grid_policy_rejects_unsupported_pack_size() -> None:
+    with pytest.raises(ValueError, match="Supported pack sizes"):
+        exact_grid(6)
 
 
 def test_soft_background_removal_preserves_white_suit_and_creates_soft_edge() -> None:
@@ -120,3 +187,18 @@ def test_process_sheet_returns_four_standardized_transparent_pngs() -> None:
             alpha_values = set(alpha.getdata())
             assert any(0 < value < 255 for value in alpha_values)
             assert alpha.getbbox() is not None
+
+
+def test_process_sheet_rejects_central_hero_crossing_cell_boundaries() -> None:
+    with pytest.raises(StickerSheetQualityError, match="boundary|oversized|clipped"):
+        process_sheet(_make_bad_central_hero_sheet(), _Request())
+
+
+def test_process_sheet_rejects_two_substantial_subjects_in_one_cell() -> None:
+    with pytest.raises(StickerSheetQualityError, match="multiple substantial subjects"):
+        process_sheet(_make_two_subjects_in_one_cell_sheet(), _Request())
+
+
+def test_process_sheet_rejects_two_subjects_joined_only_by_shared_shadow() -> None:
+    with pytest.raises(StickerSheetQualityError, match="multiple substantial subjects"):
+        process_sheet(_make_two_subjects_in_one_cell_sheet(shared_shadow=True), _Request())
