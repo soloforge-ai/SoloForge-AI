@@ -18,7 +18,7 @@ void main() {
       primaryColor: 'Blue',
     );
 
-    expect(config.backendCharacter, 'Blue Human Male chibi mascot');
+    expect(config.backendCharacter, 'Blue male human chibi mascot');
     expect(config.summary, 'Blue Human Male');
   });
 
@@ -28,7 +28,7 @@ void main() {
       primaryColor: 'Pink',
     );
 
-    expect(config.backendCharacter, 'Pink Human Female chibi mascot');
+    expect(config.backendCharacter, 'Pink female human chibi mascot');
     expect(config.summary, 'Pink Human Female');
   });
 
