@@ -20,6 +20,8 @@ MIN_CELL_CLEARANCE_RATIO = 0.025
 MIN_FOREGROUND_RATIO = 0.015
 MAX_FOREGROUND_RATIO = 0.72
 MAX_CONTENT_SPAN_RATIO = 0.95
+VISIBLE_CONTENT_CONTRAST_THRESHOLD = 12
+MIN_VISIBLE_CONTENT_RATIO = 0.002
 GUTTER_HALF_WIDTH_RATIO = 0.015
 GUTTER_MIN_HALF_WIDTH = 2
 GUTTER_ARTWORK_DARK_THRESHOLD = 238
@@ -197,6 +199,32 @@ def _looks_like_visible_artwork(pixel: tuple[int, int, int, int]) -> bool:
     return darkest < GUTTER_ARTWORK_DARK_THRESHOLD or chroma > GUTTER_ARTWORK_CHROMA_THRESHOLD
 
 
+def _validate_visible_content(crop: Image.Image, *, index: int) -> None:
+    """Reject effectively empty cells using raw visible contrast before background matting."""
+    rgba = crop.convert("RGBA")
+    width, height = rgba.size
+    if width <= 0 or height <= 0:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} is empty. Please regenerate the sheet."
+        )
+
+    bg_r, bg_g, bg_b = _sample_background_color(rgba)
+    visible_pixels = 0
+    for r, g, b, a in rgba.getdata():
+        if a < 32:
+            continue
+        contrast = max(abs(r - bg_r), abs(g - bg_g), abs(b - bg_b))
+        if contrast >= VISIBLE_CONTENT_CONTRAST_THRESHOLD:
+            visible_pixels += 1
+
+    visible_ratio = visible_pixels / max(1, width * height)
+    if visible_ratio < MIN_VISIBLE_CONTENT_RATIO:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} does not contain enough visible sticker content. "
+            "Please regenerate the sheet."
+        )
+
+
 def _validate_blank_gutters(source: Image.Image, *, columns: int, rows: int) -> None:
     """Reject substantial visible artwork crossing an internal machine-split boundary."""
     width, height = source.size
@@ -334,6 +362,7 @@ def process_sheet(
         bottom = source.height if row == rows - 1 else (row + 1) * cell_height
 
         crop = source.crop((left, top, right, bottom))
+        _validate_visible_content(crop, index=index)
         processed = remove_background_soft(crop)
         _validate_cell(processed, index=index)
         processed_cells.append(processed)
