@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -41,6 +42,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
   String? errorMessage;
   List<String> generatedFiles = const [];
   String? zipBase64;
+  Uint8List? previewBytes;
 
   final TextEditingController messageController = TextEditingController();
   final PollinationsSessionService _pollinationsSession = PollinationsSessionService();
@@ -243,6 +245,10 @@ class _AssetForgePageState extends State<AssetForgePage> {
       progress = 1.0;
       generatedFiles = files;
       zipBase64 = body['zip_base64']?.toString();
+      final sourceImage = body['source_image_base64']?.toString();
+      previewBytes = sourceImage == null || sourceImage.isEmpty
+          ? null
+          : base64Decode(sourceImage);
       status = 'Asset Pack Ready!';
       isGenerating = false;
       showEarnPollenHint = false;
@@ -263,6 +269,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
       errorMessage = null;
       generatedFiles = const [];
       zipBase64 = null;
+      previewBytes = null;
       showEarnPollenHint = false;
     });
 
@@ -443,14 +450,9 @@ class _AssetForgePageState extends State<AssetForgePage> {
               const SizedBox(height: 12),
               const Text('Style: Cute 3D Chibi', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              Text('Quantity: $quantity', style: const TextStyle(fontWeight: FontWeight.bold)),
-              Slider(
-                value: quantity.toDouble(),
-                min: 4,
-                max: 12,
-                divisions: 2,
-                label: '$quantity',
-                onChanged: builderEnabled ? (value) => setState(() => quantity = value.round()) : null,
+              const Text(
+                'Demo pack: 4 stickers',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               TextField(
                 controller: messageController,
@@ -520,6 +522,32 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   label: Text(isGenerating ? 'Generating...' : 'Generate Asset Pack'),
                 ),
               ),
+              if (previewBytes != null) ...[
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'Generated Sticker Sheet',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(
+                            previewBytes!,
+                            fit: BoxFit.contain,
+                            gaplessPlayback: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               if (generatedFiles.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Card(
