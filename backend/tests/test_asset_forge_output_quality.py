@@ -100,6 +100,19 @@ def _make_empty_cell_sheet() -> bytes:
     return _png_bytes(sheet)
 
 
+def _make_faint_artifact_empty_cell_sheet() -> bytes:
+    sheet = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(sheet)
+    for left, top in ((0, 0), (256, 0), (0, 256)):
+        draw.ellipse((left + 80, top + 46, left + 176, top + 194), fill=(28, 28, 32, 255))
+
+    # The fourth cell is effectively empty. This faint patch is beyond the
+    # background-removal tolerance, so alpha-only validation used to mistake it
+    # for a real sticker even though it has almost no visible contrast.
+    draw.rectangle((336, 336, 400, 400), fill=(246, 246, 246, 255))
+    return _png_bytes(sheet)
+
+
 def _make_complex_single_character_sheet() -> bytes:
     """Large hands/boots are allowed; v1 does not semantically count subject parts."""
     sheet = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
@@ -213,8 +226,13 @@ def test_process_sheet_rejects_visible_internal_boundary_crossing() -> None:
 
 
 def test_process_sheet_rejects_empty_cell() -> None:
-    with pytest.raises(StickerSheetQualityError, match="empty|usable"):
+    with pytest.raises(StickerSheetQualityError, match="empty|usable|visible"):
         process_sheet(_make_empty_cell_sheet(), _Request())
+
+
+def test_process_sheet_rejects_faint_artifact_instead_of_treating_it_as_sticker() -> None:
+    with pytest.raises(StickerSheetQualityError, match="visible|usable|empty"):
+        process_sheet(_make_faint_artifact_empty_cell_sheet(), _Request())
 
 
 def test_process_sheet_allows_complex_single_character_parts() -> None:
