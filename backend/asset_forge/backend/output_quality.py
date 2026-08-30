@@ -21,11 +21,10 @@ MIN_FOREGROUND_RATIO = 0.015
 MAX_FOREGROUND_RATIO = 0.72
 MAX_CONTENT_SPAN_RATIO = 0.95
 VISIBLE_CONTENT_CONTRAST_THRESHOLD = 12
-MIN_VISIBLE_CONTENT_RATIO = 0.002
+MIN_VISIBLE_CONTENT_RATIO = MIN_FOREGROUND_RATIO
 GUTTER_HALF_WIDTH_RATIO = 0.015
 GUTTER_MIN_HALF_WIDTH = 2
-GUTTER_ARTWORK_DARK_THRESHOLD = 238
-GUTTER_ARTWORK_CHROMA_THRESHOLD = 18
+GUTTER_ARTWORK_CONTRAST_THRESHOLD = 12
 GUTTER_MAX_ARTWORK_RATIO = 0.01
 
 
@@ -189,18 +188,21 @@ def remove_background_soft(
     return _defringe_rgb(rgba, alpha)
 
 
-def _looks_like_visible_artwork(pixel: tuple[int, int, int, int]) -> bool:
-    """Classify clearly visible non-background pixels for blank-gutter validation."""
+def _looks_like_visible_artwork(
+    pixel: tuple[int, int, int, int],
+    background: tuple[int, int, int],
+) -> bool:
+    """Classify gutter artwork by contrast from the sheet's estimated background."""
     r, g, b, a = pixel
     if a < 32:
         return False
-    darkest = min(r, g, b)
-    chroma = max(r, g, b) - darkest
-    return darkest < GUTTER_ARTWORK_DARK_THRESHOLD or chroma > GUTTER_ARTWORK_CHROMA_THRESHOLD
+    bg_r, bg_g, bg_b = background
+    contrast = max(abs(r - bg_r), abs(g - bg_g), abs(b - bg_b))
+    return contrast >= GUTTER_ARTWORK_CONTRAST_THRESHOLD
 
 
-def _validate_visible_content(crop: Image.Image, *, index: int) -> None:
-    """Reject effectively empty cells using raw visible contrast before background matting."""
+def _validate_visible_content(crop: Image.Image, processed: Image.Image, *, index: int) -> None:
+    """Require sticker-sized visible contrast that survives background matting."""
     rgba = crop.convert("RGBA")
     width, height = rgba.size
     if width <= 0 or height <= 0:
@@ -209,16 +211,18 @@ def _validate_visible_content(crop: Image.Image, *, index: int) -> None:
         )
 
     bg_r, bg_g, bg_b = _sample_background_color(rgba)
-    visible_pixels = 0
-    for r, g, b, a in rgba.getdata():
-        if a < 32:
+    processed_alpha = processed.getchannel("A")
+    visible_retained_pixels = 0
+
+    for (r, g, b, source_alpha), retained_alpha in zip(rgba.getdata(), processed_alpha.getdata()):
+        if source_alpha < 32 or retained_alpha < 32:
             continue
         contrast = max(abs(r - bg_r), abs(g - bg_g), abs(b - bg_b))
         if contrast >= VISIBLE_CONTENT_CONTRAST_THRESHOLD:
-            visible_pixels += 1
+            visible_retained_pixels += 1
 
-    visible_ratio = visible_pixels / max(1, width * height)
-    if visible_ratio < MIN_VISIBLE_CONTENT_RATIO:
+    visible_retained_ratio = visible_retained_pixels / max(1, width * height)
+    if visible_retained_ratio < MIN_VISIBLE_CONTENT_RATIO:
         raise StickerSheetQualityError(
             f"Sticker sheet quality check failed: cell {index + 1} does not contain enough visible sticker content. "
             "Please regenerate the sheet."
@@ -238,6 +242,7 @@ def _validate_blank_gutters(source: Image.Image, *, columns: int, rows: int) -> 
         round(min(cell_width, cell_height) * GUTTER_HALF_WIDTH_RATIO),
     )
     pixels = source.load()
+    background = _sample_background_color(source)
 
     def validate_band(left: int, top: int, right: int, bottom: int) -> None:
         left = max(0, left)
@@ -248,7 +253,7 @@ def _validate_blank_gutters(source: Image.Image, *, columns: int, rows: int) -> 
         artwork = 0
         for y in range(top, bottom):
             for x in range(left, right):
-                if _looks_like_visible_artwork(pixels[x, y]):
+                if _looks_like_visible_artwork(pixels[x, y], background):
                     artwork += 1
 
         if artwork / area > GUTTER_MAX_ARTWORK_RATIO:
@@ -362,8 +367,8 @@ def process_sheet(
         bottom = source.height if row == rows - 1 else (row + 1) * cell_height
 
         crop = source.crop((left, top, right, bottom))
-        _validate_visible_content(crop, index=index)
         processed = remove_background_soft(crop)
+        _validate_visible_content(crop, processed, index=index)
         _validate_cell(processed, index=index)
         processed_cells.append(processed)
 
