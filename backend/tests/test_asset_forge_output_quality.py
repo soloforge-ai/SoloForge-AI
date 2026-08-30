@@ -71,6 +71,14 @@ def _make_light_gradient_sheet() -> bytes:
     return _png_bytes(sheet)
 
 
+def _make_uniform_light_gray_background_sheet() -> bytes:
+    sheet = Image.new("RGBA", (512, 512), (237, 237, 237, 255))
+    draw = ImageDraw.Draw(sheet)
+    for left, top in ((0, 0), (256, 0), (0, 256), (256, 256)):
+        draw.ellipse((left + 76, top + 42, left + 180, top + 194), fill=(24, 24, 28, 255))
+    return _png_bytes(sheet)
+
+
 def _make_bad_central_hero_sheet() -> bytes:
     sheet = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
     draw = ImageDraw.Draw(sheet)
@@ -110,6 +118,20 @@ def _make_faint_artifact_empty_cell_sheet() -> bytes:
     # background-removal tolerance, so alpha-only validation used to mistake it
     # for a real sticker even though it has almost no visible contrast.
     draw.rectangle((336, 336, 400, 400), fill=(246, 246, 246, 255))
+    return _png_bytes(sheet)
+
+
+def _make_mixed_artifact_empty_cell_sheet() -> bytes:
+    sheet = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(sheet)
+    for left, top in ((0, 0), (256, 0), (0, 256)):
+        draw.ellipse((left + 80, top + 46, left + 176, top + 194), fill=(28, 28, 32, 255))
+
+    # A large faint patch can satisfy alpha-area checks after matting while a
+    # tiny darker speck can satisfy a separate visible-pixel check. Together
+    # they still must not count as a usable sticker.
+    draw.rectangle((336, 336, 400, 400), fill=(246, 246, 246, 255))
+    draw.rectangle((420, 420, 434, 429), fill=(220, 220, 220, 255))
     return _png_bytes(sheet)
 
 
@@ -215,6 +237,11 @@ def test_process_sheet_allows_smooth_light_background_gradient() -> None:
     assert len(files) == 4
 
 
+def test_process_sheet_allows_uniform_light_gray_background() -> None:
+    files, _ = process_sheet(_make_uniform_light_gray_background_sheet(), _Request())
+    assert len(files) == 4
+
+
 def test_process_sheet_rejects_central_hero_crossing_grid() -> None:
     with pytest.raises(StickerSheetQualityError, match="grid boundary|boundary|oversized|clipped"):
         process_sheet(_make_bad_central_hero_sheet(), _Request())
@@ -233,6 +260,11 @@ def test_process_sheet_rejects_empty_cell() -> None:
 def test_process_sheet_rejects_faint_artifact_instead_of_treating_it_as_sticker() -> None:
     with pytest.raises(StickerSheetQualityError, match="visible|usable|empty"):
         process_sheet(_make_faint_artifact_empty_cell_sheet(), _Request())
+
+
+def test_process_sheet_rejects_mixed_faint_patch_and_tiny_visible_speck() -> None:
+    with pytest.raises(StickerSheetQualityError, match="visible|usable|empty"):
+        process_sheet(_make_mixed_artifact_empty_cell_sheet(), _Request())
 
 
 def test_process_sheet_allows_complex_single_character_parts() -> None:
