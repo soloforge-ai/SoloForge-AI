@@ -18,4 +18,15 @@ void main() {
 
     expect(find.byType(AssetForgePage), findsOneWidget);
   });
+
+  testWidgets('Pollen demo is locked to one four-sticker pack', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: AssetForgePage(useBackend: false),
+      ),
+    );
+
+    expect(find.text('Demo pack: 4 stickers'), findsOneWidget);
+    expect(find.byType(Slider), findsNothing);
+  });
 }
