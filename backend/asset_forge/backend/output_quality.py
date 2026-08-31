@@ -15,6 +15,7 @@ COLORED_CHARACTER_CLEANUP_DEPTH_RATIO = 10 / 128
 COLORED_CHARACTER_GROUND_CLEANUP_DEPTH_RATIO = 18 / 128
 COLORED_CHARACTER_GROUND_START_RATIO = 0.7
 COLORED_CHARACTER_CLEANUP_MAX_CHROMA = 28
+COLORED_CHARACTER_GROUND_SHADOW_MIN_DISTANCE = 32
 EDGE_BLUR_RADIUS = 1.15
 _SUPPORTED_CHARACTER_COLORS = frozenset(
     {"blue", "black", "white", "pink", "red", "green", "purple", "yellow"}
@@ -153,6 +154,11 @@ def _expand_background_into_neutral_islands(
             and chroma <= COLORED_CHARACTER_CLEANUP_MAX_CHROMA
         )
 
+    def is_ground_shadow(x: int, y: int) -> bool:
+        r, g, b, _ = pixels[x, y]
+        distance = max(abs(r - bg_r), abs(g - bg_g), abs(b - bg_b))
+        return distance >= COLORED_CHARACTER_GROUND_SHADOW_MIN_DISTANCE
+
     for y in range(height):
         row = y * width
         for x in range(width):
@@ -162,7 +168,11 @@ def _expand_background_into_neutral_islands(
 
     while queue:
         x, y, depth = queue.popleft()
-        depth_limit = max_ground_depth if y >= ground_start_y else max_depth
+        depth_limit = (
+            max_ground_depth
+            if y >= ground_start_y and is_ground_shadow(x, y)
+            else max_depth
+        )
         if depth >= depth_limit:
             continue
         for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
