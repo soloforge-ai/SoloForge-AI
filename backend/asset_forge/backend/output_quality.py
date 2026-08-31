@@ -10,12 +10,25 @@ from PIL import Image, ImageFilter
 OUTPUT_SIZE = 512
 OUTPUT_PADDING = 40
 BACKGROUND_THRESHOLD = 8
+COLORED_CHARACTER_CLEANUP_THRESHOLD = 72
+COLORED_CHARACTER_CLEANUP_DEPTH_RATIO = 10 / 128
 EDGE_BLUR_RADIUS = 1.15
+_SUPPORTED_CHARACTER_COLORS = frozenset(
+    {"blue", "black", "white", "pink", "red", "green", "purple", "yellow"}
+)
 
 
 class AssetForgeRequestLike(Protocol):
     quantity: int
     character: str
+
+
+def _requested_primary_color(character: str) -> str | None:
+    """Match the prompt builder by taking the first explicit supported color."""
+    for token in character.strip().lower().replace("_", " ").replace("-", " ").split():
+        if token in _SUPPORTED_CHARACTER_COLORS:
+            return token
+    return None
 
 
 def _grid(quantity: int) -> tuple[int, int]:
@@ -99,6 +112,63 @@ def _connected_background_mask(
     return mask
 
 
+def _expand_background_into_neutral_islands(
+    rgba: Image.Image,
+    foreground_mask: Image.Image,
+    *,
+    threshold: int,
+    max_depth: int,
+) -> Image.Image:
+    """Remove light matte islands reachable from already transparent pixels.
+
+    A strict border flood protects white characters, but a foot or its shadow can
+    close a loop around part of the light sheet and leave an opaque white floor
+    remnant. For an explicitly non-white character, start a second flood from
+    every pixel already classified as background. This reaches those remnants
+    without crossing the saturated character into enclosed eye or accessory
+    highlights.
+    """
+    width, height = rgba.size
+    if width == 0 or height == 0:
+        return foreground_mask
+
+    bg_r, bg_g, bg_b = _sample_background_color(rgba)
+    pixels = rgba.load()
+    mask = foreground_mask.copy()
+    mask_pixels = mask.load()
+    queued = bytearray(width * height)
+    queue: deque[tuple[int, int, int]] = deque()
+
+    def is_neutral_background(x: int, y: int) -> bool:
+        r, g, b, _ = pixels[x, y]
+        distance = max(abs(r - bg_r), abs(g - bg_g), abs(b - bg_b))
+        chroma = max(r, g, b) - min(r, g, b)
+        return distance <= threshold and chroma <= 18
+
+    for y in range(height):
+        row = y * width
+        for x in range(width):
+            if mask_pixels[x, y] == 0:
+                queued[row + x] = 1
+                queue.append((x, y, 0))
+
+    while queue:
+        x, y, depth = queue.popleft()
+        if depth >= max_depth:
+            continue
+        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+            if nx < 0 or nx >= width or ny < 0 or ny >= height:
+                continue
+            index = ny * width + nx
+            if queued[index] or not is_neutral_background(nx, ny):
+                continue
+            queued[index] = 1
+            mask_pixels[nx, ny] = 0
+            queue.append((nx, ny, depth + 1))
+
+    return mask
+
+
 def _defringe_rgb(rgba: Image.Image, alpha: Image.Image) -> Image.Image:
     """Propagate foreground RGB through every nonzero soft-edge alpha pixel.
 
@@ -166,6 +236,7 @@ def remove_background_soft(
     image: Image.Image,
     *,
     threshold: int = BACKGROUND_THRESHOLD,
+    cleanup_threshold: int | None = None,
     blur_radius: float = EDGE_BLUR_RADIUS,
 ) -> Image.Image:
     """Remove border-connected light background with a soft, defringed alpha edge."""
@@ -174,6 +245,17 @@ def remove_background_soft(
         return rgba
 
     foreground_mask = _connected_background_mask(rgba, threshold=threshold)
+    if cleanup_threshold is not None:
+        cleanup_depth = max(
+            1,
+            round(min(rgba.width, rgba.height) * COLORED_CHARACTER_CLEANUP_DEPTH_RATIO),
+        )
+        foreground_mask = _expand_background_into_neutral_islands(
+            rgba,
+            foreground_mask,
+            threshold=cleanup_threshold,
+            max_depth=cleanup_depth,
+        )
 
     original_alpha = rgba.getchannel("A")
     alpha = Image.new("L", rgba.size, 0)
@@ -225,6 +307,12 @@ def process_sheet(
     cell_height = source.height // rows
 
     files: list[tuple[str, bytes]] = []
+    primary_color = _requested_primary_color(request.character)
+    cleanup_threshold = (
+        COLORED_CHARACTER_CLEANUP_THRESHOLD
+        if primary_color is not None and primary_color != "white"
+        else None
+    )
     for index in range(request.quantity):
         row = index // columns
         column = index % columns
@@ -234,7 +322,10 @@ def process_sheet(
         bottom = source.height if row == rows - 1 else (row + 1) * cell_height
 
         crop = source.crop((left, top, right, bottom))
-        processed = remove_background_soft(crop)
+        processed = remove_background_soft(
+            crop,
+            cleanup_threshold=cleanup_threshold,
+        )
         canvas = standardize_sticker(processed)
 
         filename = f"{index + 1:02d}_{request.character.lower()}_sticker.png"

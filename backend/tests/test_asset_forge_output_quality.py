@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import base64
 import io
 from dataclasses import dataclass
+from pathlib import Path
 
 from PIL import Image, ImageDraw
 
 from backend.asset_forge.backend.output_quality import (
+    COLORED_CHARACTER_CLEANUP_THRESHOLD,
     OUTPUT_PADDING,
     OUTPUT_SIZE,
     process_sheet,
@@ -120,3 +123,115 @@ def test_process_sheet_returns_four_standardized_transparent_pngs() -> None:
             alpha_values = set(alpha.getdata())
             assert any(0 < value < 255 for value in alpha_values)
             assert alpha.getbbox() is not None
+
+
+def test_red_dog_fixture_removes_reachable_white_floor_without_hollowing_details() -> None:
+    fixture = Path(__file__).parent / "fixtures" / "red_dog_original_sheet.png.b64"
+    request = _Request(quantity=4, character="Red Dog chibi mascot")
+
+    files, _ = process_sheet(base64.b64decode(fixture.read_text()), request)
+
+    assert len(files) == 4
+    retained_neutral_highlights = 0
+    for filename, data in files:
+        image = Image.open(io.BytesIO(data)).convert("RGBA")
+        alpha = image.getchannel("A")
+        assert alpha.getbbox() is not None, filename
+
+        # Any nearly-white matte still touching transparency is background,
+        # not an enclosed eye highlight or collar tag.
+        pixels = image.load()
+        matte_pixels = 0
+        for y in range(image.height):
+            for x in range(image.width):
+                r, g, b, a = pixels[x, y]
+                if a < 32 or min(r, g, b) < 180 or max(r, g, b) - min(r, g, b) > 18:
+                    continue
+                retained_neutral_highlights += 1
+                if any(
+                    0 <= nx < image.width
+                    and 0 <= ny < image.height
+                    and pixels[nx, ny][3] == 0
+                    for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1))
+                ):
+                    matte_pixels += 1
+
+        assert matte_pixels == 0, f"{filename} retained {matte_pixels} reachable matte pixels"
+
+    # The old strict-only flood retained roughly 5,000 light matte pixels in
+    # this fixture. The lower bound protects the enclosed eye/tag highlights.
+    assert 600 <= retained_neutral_highlights < 1500
+
+
+def test_white_primary_color_disables_cleanup_even_with_red_accent() -> None:
+    source = _make_white_suit_crop()
+    request = _Request(quantity=4, character="White dog with red collar")
+
+    # Build a four-cell sheet from the same near-white foreground contract.
+    sheet = Image.new("RGBA", (256, 256), (255, 255, 255, 255))
+    for left, top in ((0, 0), (128, 0), (0, 128), (128, 128)):
+        sheet.alpha_composite(source.resize((128, 128)), (left, top))
+    output = io.BytesIO()
+    sheet.save(output, format="PNG")
+
+    files, _ = process_sheet(output.getvalue(), request)
+
+    for filename, data in files:
+        image = Image.open(io.BytesIO(data)).convert("RGBA")
+        alpha = image.getchannel("A")
+        assert alpha.getbbox() is not None, filename
+        assert sum(value >= 200 for value in alpha.getdata()) > 1000, filename
+
+
+def test_colored_character_cleanup_preserves_white_silhouette_detail_core() -> None:
+    crop = Image.new("RGBA", (128, 128), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(crop)
+    draw.ellipse((28, 24, 100, 108), fill=(220, 30, 35, 255))
+    # A legitimate white tail tip/paw reaches the outer silhouette.
+    draw.ellipse((84, 54, 122, 88), fill=(245, 243, 240, 255))
+
+    processed = remove_background_soft(
+        crop,
+        cleanup_threshold=COLORED_CHARACTER_CLEANUP_THRESHOLD,
+        blur_radius=0,
+    )
+
+    # The cleanup may remove a narrow matte-facing edge, but must not flood
+    # through and erase the entire connected white foreground detail.
+    assert processed.getpixel((100, 71))[3] == 255
+    assert processed.getpixel((108, 71))[3] == 255
+
+
+def test_red_dog_cleanup_scales_to_default_production_sheet_size() -> None:
+    fixture = Path(__file__).parent / "fixtures" / "red_dog_original_sheet.png.b64"
+    source = Image.open(
+        io.BytesIO(base64.b64decode(fixture.read_text()))
+    ).convert("RGBA")
+    production_sheet = source.resize((1024, 1024), Image.Resampling.LANCZOS)
+    encoded = io.BytesIO()
+    production_sheet.save(encoded, format="PNG")
+
+    files, _ = process_sheet(
+        encoded.getvalue(),
+        _Request(quantity=4, character="Red Dog chibi mascot"),
+    )
+
+    assert len(files) == 4
+    for filename, data in files:
+        image = Image.open(io.BytesIO(data)).convert("RGBA")
+        pixels = image.load()
+        reachable_matte = 0
+        for y in range(image.height):
+            for x in range(image.width):
+                r, g, b, a = pixels[x, y]
+                if a < 32 or min(r, g, b) < 180 or max(r, g, b) - min(r, g, b) > 18:
+                    continue
+                if any(
+                    0 <= nx < image.width
+                    and 0 <= ny < image.height
+                    and pixels[nx, ny][3] == 0
+                    for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1))
+                ):
+                    reachable_matte += 1
+
+        assert reachable_matte == 0, f"{filename} retained {reachable_matte} matte edge pixels"
