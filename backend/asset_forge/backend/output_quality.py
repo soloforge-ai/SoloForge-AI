@@ -6,24 +6,35 @@ from typing import Protocol
 
 from PIL import Image, ImageFilter
 
+from .grid_policy import exact_grid
+
 
 OUTPUT_SIZE = 512
 OUTPUT_PADDING = 40
 BACKGROUND_THRESHOLD = 8
 EDGE_BLUR_RADIUS = 1.15
 
+# V1 structural quality gate. Keep this intentionally geometric and cheap:
+# exact grid, blank internal gutters, empty/clipped/oversized cells, and fixed output size.
+MIN_CELL_CLEARANCE_RATIO = 0.025
+MIN_FOREGROUND_RATIO = 0.015
+MAX_FOREGROUND_RATIO = 0.72
+MAX_CONTENT_SPAN_RATIO = 0.95
+VISIBLE_CONTENT_CONTRAST_THRESHOLD = 12
+MIN_VISIBLE_CONTENT_RATIO = MIN_FOREGROUND_RATIO
+GUTTER_HALF_WIDTH_RATIO = 0.015
+GUTTER_MIN_HALF_WIDTH = 2
+GUTTER_ARTWORK_CONTRAST_THRESHOLD = 12
+GUTTER_MAX_ARTWORK_RATIO = 0.01
+
+
+class StickerSheetQualityError(ValueError):
+    """Raised when a generated sheet cannot safely be split into usable stickers."""
+
 
 class AssetForgeRequestLike(Protocol):
     quantity: int
     character: str
-
-
-def _grid(quantity: int) -> tuple[int, int]:
-    import math
-
-    columns = min(6, max(2, math.ceil(math.sqrt(quantity))))
-    rows = math.ceil(quantity / columns)
-    return columns, rows
 
 
 def _sample_background_color(rgba: Image.Image) -> tuple[int, int, int]:
@@ -43,11 +54,7 @@ def _connected_background_mask(
     *,
     threshold: int = BACKGROUND_THRESHOLD,
 ) -> Image.Image:
-    """Return an L mask where border-connected background is 0 and foreground is 255.
-
-    The flood fill remains deliberately strict so near-white foreground details,
-    especially the CEO's white suit, are not erased together with a white sheet.
-    """
+    """Return an L mask where border-connected background is 0 and foreground is 255."""
     width, height = rgba.size
     if width == 0 or height == 0:
         return Image.new("L", rgba.size, 255)
@@ -100,13 +107,7 @@ def _connected_background_mask(
 
 
 def _defringe_rgb(rgba: Image.Image, alpha: Image.Image) -> Image.Image:
-    """Propagate foreground RGB through every nonzero soft-edge alpha pixel.
-
-    A bounded nearest-neighbour search can miss the outer part of a Gaussian-blurred
-    edge and leave the source background RGB there. A multi-source flood instead
-    starts from the strongest foreground pixels and carries their RGB through each
-    connected nonzero-alpha region, so no part of the soft edge retains a white matte.
-    """
+    """Propagate foreground RGB through every nonzero soft-edge alpha pixel."""
     output = rgba.copy()
     source_pixels = rgba.load()
     output_pixels = output.load()
@@ -174,17 +175,142 @@ def remove_background_soft(
         return rgba
 
     foreground_mask = _connected_background_mask(rgba, threshold=threshold)
-
     original_alpha = rgba.getchannel("A")
     alpha = Image.new("L", rgba.size, 0)
     alpha_pixels = alpha.load()
     softened_pixels = foreground_mask.filter(ImageFilter.GaussianBlur(radius=blur_radius)).load()
     original_pixels = original_alpha.load()
+
     for y in range(rgba.height):
         for x in range(rgba.width):
             alpha_pixels[x, y] = min(original_pixels[x, y], softened_pixels[x, y])
 
     return _defringe_rgb(rgba, alpha)
+
+
+def _looks_like_visible_artwork(
+    pixel: tuple[int, int, int, int],
+    background: tuple[int, int, int],
+) -> bool:
+    """Classify gutter artwork by contrast from the sheet's estimated background."""
+    r, g, b, a = pixel
+    if a < 32:
+        return False
+    bg_r, bg_g, bg_b = background
+    contrast = max(abs(r - bg_r), abs(g - bg_g), abs(b - bg_b))
+    return contrast >= GUTTER_ARTWORK_CONTRAST_THRESHOLD
+
+
+def _validate_visible_content(crop: Image.Image, processed: Image.Image, *, index: int) -> None:
+    """Require sticker-sized visible contrast that survives background matting."""
+    rgba = crop.convert("RGBA")
+    width, height = rgba.size
+    if width <= 0 or height <= 0:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} is empty. Please regenerate the sheet."
+        )
+
+    bg_r, bg_g, bg_b = _sample_background_color(rgba)
+    processed_alpha = processed.getchannel("A")
+    visible_retained_pixels = 0
+
+    for (r, g, b, source_alpha), retained_alpha in zip(rgba.getdata(), processed_alpha.getdata()):
+        if source_alpha < 32 or retained_alpha < 32:
+            continue
+        contrast = max(abs(r - bg_r), abs(g - bg_g), abs(b - bg_b))
+        if contrast >= VISIBLE_CONTENT_CONTRAST_THRESHOLD:
+            visible_retained_pixels += 1
+
+    visible_retained_ratio = visible_retained_pixels / max(1, width * height)
+    if visible_retained_ratio < MIN_VISIBLE_CONTENT_RATIO:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} does not contain enough visible sticker content. "
+            "Please regenerate the sheet."
+        )
+
+
+def _validate_blank_gutters(source: Image.Image, *, columns: int, rows: int) -> None:
+    """Reject substantial visible artwork crossing an internal machine-split boundary."""
+    width, height = source.size
+    if width <= 0 or height <= 0:
+        return
+
+    cell_width = width / columns
+    cell_height = height / rows
+    half_width = max(
+        GUTTER_MIN_HALF_WIDTH,
+        round(min(cell_width, cell_height) * GUTTER_HALF_WIDTH_RATIO),
+    )
+    pixels = source.load()
+    background = _sample_background_color(source)
+
+    def validate_band(left: int, top: int, right: int, bottom: int) -> None:
+        left = max(0, left)
+        top = max(0, top)
+        right = min(width, right)
+        bottom = min(height, bottom)
+        area = max(1, (right - left) * (bottom - top))
+        artwork = 0
+        for y in range(top, bottom):
+            for x in range(left, right):
+                if _looks_like_visible_artwork(pixels[x, y], background):
+                    artwork += 1
+
+        if artwork / area > GUTTER_MAX_ARTWORK_RATIO:
+            raise StickerSheetQualityError(
+                "Sticker sheet quality check failed: visible artwork crosses an internal grid boundary. "
+                "The sheet cannot be split safely; please regenerate."
+            )
+
+    for column in range(1, columns):
+        boundary_x = round(column * cell_width)
+        validate_band(boundary_x - half_width, 0, boundary_x + half_width + 1, height)
+
+    for row in range(1, rows):
+        boundary_y = round(row * cell_height)
+        validate_band(0, boundary_y - half_width, width, boundary_y + half_width + 1)
+
+
+def _validate_cell(processed: Image.Image, *, index: int) -> None:
+    """Validate only structural cell geometry; semantic subject counting is prompt-owned in v1."""
+    alpha = processed.getchannel("A")
+    bbox = alpha.getbbox()
+    width, height = processed.size
+
+    if not bbox:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} is empty. Please regenerate the sheet."
+        )
+
+    left, top, right, bottom = bbox
+    clearance = max(4, round(min(width, height) * MIN_CELL_CLEARANCE_RATIO))
+    margins = (left, top, width - right, height - bottom)
+    if min(margins) < clearance:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: artwork reaches the boundary of cell {index + 1}. "
+            "The generated sheet cannot be split safely; please regenerate."
+        )
+
+    content_width = right - left
+    content_height = bottom - top
+    if content_width / width > MAX_CONTENT_SPAN_RATIO or content_height / height > MAX_CONTENT_SPAN_RATIO:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} contains oversized or clipped artwork. "
+            "Please regenerate the sheet."
+        )
+
+    strong_foreground = sum(1 for value in alpha.getdata() if value >= 32)
+    foreground_ratio = strong_foreground / max(1, width * height)
+    if foreground_ratio < MIN_FOREGROUND_RATIO:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} does not contain a usable sticker. "
+            "Please regenerate the sheet."
+        )
+    if foreground_ratio > MAX_FOREGROUND_RATIO:
+        raise StickerSheetQualityError(
+            f"Sticker sheet quality check failed: cell {index + 1} is dominated by oversized artwork. "
+            "Please regenerate the sheet."
+        )
 
 
 def standardize_sticker(
@@ -218,13 +344,20 @@ def process_sheet(
     source_bytes: bytes,
     request: AssetForgeRequestLike,
 ) -> tuple[list[tuple[str, bytes]], bytes]:
-    """Split, matte, defringe, and standardize a generated sticker sheet."""
-    columns, rows = _grid(request.quantity)
+    """Validate structural geometry, split, matte, defringe, and standardize a sticker sheet."""
+    columns, rows = exact_grid(request.quantity)
     source = Image.open(io.BytesIO(source_bytes)).convert("RGBA")
     cell_width = source.width // columns
     cell_height = source.height // rows
 
-    files: list[tuple[str, bytes]] = []
+    if cell_width <= 0 or cell_height <= 0:
+        raise StickerSheetQualityError(
+            "Sticker sheet quality check failed: generated sheet dimensions are invalid. Please regenerate."
+        )
+
+    _validate_blank_gutters(source, columns=columns, rows=rows)
+
+    processed_cells: list[Image.Image] = []
     for index in range(request.quantity):
         row = index // columns
         column = index % columns
@@ -235,8 +368,13 @@ def process_sheet(
 
         crop = source.crop((left, top, right, bottom))
         processed = remove_background_soft(crop)
-        canvas = standardize_sticker(processed)
+        _validate_visible_content(crop, processed, index=index)
+        _validate_cell(processed, index=index)
+        processed_cells.append(processed)
 
+    files: list[tuple[str, bytes]] = []
+    for index, processed in enumerate(processed_cells):
+        canvas = standardize_sticker(processed)
         filename = f"{index + 1:02d}_{request.character.lower()}_sticker.png"
         output = io.BytesIO()
         canvas.save(output, format="PNG", optimize=True)
