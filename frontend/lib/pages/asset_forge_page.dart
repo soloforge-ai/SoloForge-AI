@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
+import 'package:archive/archive.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -23,6 +26,7 @@ class AssetForgePage extends StatefulWidget {
 
 class _AssetForgePageState extends State<AssetForgePage> {
   static final Uri _pollinationsDashboard = Uri.parse('https://enter.pollinations.ai/');
+  static final Uri _backgroundRemover = Uri.parse('https://www.remove.bg/upload');
   static const String style = 'Cute 3D Chibi';
 
   String characterType = 'Cat';
@@ -33,6 +37,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
 
   bool isGenerating = false;
   bool isSaving = false;
+  bool isPreparingCrops = false;
   bool isConnectingPollinations = false;
   bool isPollinationsConnected = false;
   bool showEarnPollenHint = false;
@@ -43,6 +48,10 @@ class _AssetForgePageState extends State<AssetForgePage> {
   List<String> generatedFiles = const [];
   String? zipBase64;
   Uint8List? previewBytes;
+  Uint8List? cleanedSheetBytes;
+  List<Uint8List> croppedStickerBytes = const [];
+  double verticalSplit = 0.5;
+  double horizontalSplit = 0.5;
 
   final TextEditingController messageController = TextEditingController();
   final PollinationsSessionService _pollinationsSession = PollinationsSessionService();
@@ -162,6 +171,148 @@ class _AssetForgePageState extends State<AssetForgePage> {
     }
   }
 
+  Future<void> _shareGeneratedSheet() async {
+    if (previewBytes == null || isSaving) return;
+    setState(() {
+      isSaving = true;
+      errorMessage = null;
+    });
+    try {
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/soloforge_sticker_sheet.png');
+      await file.writeAsBytes(previewBytes!, flush: true);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          title: 'SoloForge Sticker Sheet',
+          text: 'บันทึกภาพนี้ แล้วนำไปลบพื้นหลังในขั้นตอนถัดไป',
+        ),
+      );
+    } catch (error) {
+      if (mounted) setState(() => errorMessage = 'บันทึกชีตไม่สำเร็จ: $error');
+    } finally {
+      if (mounted) setState(() => isSaving = false);
+    }
+  }
+
+  Future<void> _openBackgroundRemover() async {
+    final opened = await launchUrl(_backgroundRemover, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      setState(() => errorMessage = 'เปิดเครื่องมือลบพื้นหลังไม่สำเร็จ กรุณาเปิด remove.bg/upload');
+    }
+  }
+
+  Future<void> _pickCleanedSheet() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+        withData: true,
+      );
+      if (result == null) return;
+      final picked = result.files.single;
+      final bytes = picked.bytes ?? (picked.path == null ? null : await File(picked.path!).readAsBytes());
+      if (bytes == null || bytes.isEmpty) throw Exception('ไม่พบข้อมูลรูปภาพ');
+      setState(() {
+        cleanedSheetBytes = bytes;
+        verticalSplit = 0.5;
+        horizontalSplit = 0.5;
+        errorMessage = null;
+      });
+      await _prepareCrops();
+    } catch (error) {
+      if (mounted) setState(() => errorMessage = 'อัปโหลดภาพไม่สำเร็จ: $error');
+    }
+  }
+
+  Future<Uint8List> _cropPng(ui.Image source, Rect sourceRect) async {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final outputWidth = sourceRect.width.round();
+    final outputHeight = sourceRect.height.round();
+    canvas.drawImageRect(
+      source,
+      sourceRect,
+      Rect.fromLTWH(0, 0, outputWidth.toDouble(), outputHeight.toDouble()),
+      Paint(),
+    );
+    final image = await recorder.endRecording().toImage(outputWidth, outputHeight);
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    if (data == null) throw Exception('แปลงภาพ PNG ไม่สำเร็จ');
+    return data.buffer.asUint8List();
+  }
+
+  Future<void> _prepareCrops() async {
+    final bytes = cleanedSheetBytes;
+    if (bytes == null || isPreparingCrops) return;
+    setState(() => isPreparingCrops = true);
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final width = image.width.toDouble();
+      final height = image.height.toDouble();
+      final splitX = (width * verticalSplit).roundToDouble().clamp(1, width - 1).toDouble();
+      final splitY = (height * horizontalSplit).roundToDouble().clamp(1, height - 1).toDouble();
+      final rects = <Rect>[
+        Rect.fromLTRB(0, 0, splitX, splitY),
+        Rect.fromLTRB(splitX, 0, width, splitY),
+        Rect.fromLTRB(0, splitY, splitX, height),
+        Rect.fromLTRB(splitX, splitY, width, height),
+      ];
+      final crops = <Uint8List>[];
+      for (final rect in rects) {
+        crops.add(await _cropPng(image, rect));
+      }
+      image.dispose();
+      codec.dispose();
+      if (mounted) setState(() => croppedStickerBytes = crops);
+    } catch (error) {
+      if (mounted) setState(() => errorMessage = 'ตัดภาพไม่สำเร็จ: $error');
+    } finally {
+      if (mounted) setState(() => isPreparingCrops = false);
+    }
+  }
+
+  Future<void> _shareCrop(int index) async {
+    if (index >= croppedStickerBytes.length || isSaving) return;
+    setState(() => isSaving = true);
+    try {
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/soloforge_sticker_${index + 1}.png');
+      await file.writeAsBytes(croppedStickerBytes[index], flush: true);
+      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
+    } catch (error) {
+      if (mounted) setState(() => errorMessage = 'บันทึกสติกเกอร์ไม่สำเร็จ: $error');
+    } finally {
+      if (mounted) setState(() => isSaving = false);
+    }
+  }
+
+  Future<void> _shareCroppedZip() async {
+    if (croppedStickerBytes.length != 4 || isSaving) return;
+    setState(() => isSaving = true);
+    try {
+      final archive = Archive();
+      for (var index = 0; index < croppedStickerBytes.length; index++) {
+        final bytes = croppedStickerBytes[index];
+        archive.addFile(ArchiveFile('sticker_${index + 1}.png', bytes.length, bytes));
+      }
+      final zip = ZipEncoder().encode(archive);
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/soloforge_4_stickers.zip');
+      await file.writeAsBytes(zip, flush: true);
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], title: 'SoloForge 4 Sticker Pack'),
+      );
+    } catch (error) {
+      if (mounted) setState(() => errorMessage = 'สร้าง ZIP ไม่สำเร็จ: $error');
+    } finally {
+      if (mounted) setState(() => isSaving = false);
+    }
+  }
+
   List<String> _messages() {
     return messageController.text
         .split(RegExp(r'[,\n]'))
@@ -270,6 +421,8 @@ class _AssetForgePageState extends State<AssetForgePage> {
       generatedFiles = const [];
       zipBase64 = null;
       previewBytes = null;
+      cleanedSheetBytes = null;
+      croppedStickerBytes = const [];
       showEarnPollenHint = false;
     });
 
@@ -409,7 +562,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
                     children: [
                       Text('SoloForge Asset Forge Beta', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                       SizedBox(height: 6),
-                      Text('Connect → Build your character → Generate → Download'),
+                      Text('Create sheet → Remove background → Cut 2×2 → Export'),
                     ],
                   ),
                 ),
@@ -543,6 +696,118 @@ class _AssetForgePageState extends State<AssetForgePage> {
                             gaplessPlayback: true,
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        const Text('ขั้นตอน 2: ลบพื้นหลัง', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 6),
+                        const Text('บันทึกชีต เปิดเครื่องมือที่เตรียมไว้ แล้วดาวน์โหลด PNG โปร่งใสกลับมา'),
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          key: const Key('save-generated-sheet'),
+                          onPressed: isSaving ? null : _shareGeneratedSheet,
+                          icon: const Icon(Icons.save_alt),
+                          label: const Text('1. บันทึกชีต'),
+                        ),
+                        OutlinedButton.icon(
+                          key: const Key('open-background-remover'),
+                          onPressed: _openBackgroundRemover,
+                          icon: const Icon(Icons.open_in_new),
+                          label: const Text('2. เปิดเครื่องมือลบพื้นหลัง'),
+                        ),
+                        FilledButton.tonalIcon(
+                          key: const Key('upload-cleaned-sheet'),
+                          onPressed: _pickCleanedSheet,
+                          icon: const Icon(Icons.upload_file),
+                          label: const Text('3. อัปโหลด PNG ที่ลบพื้นหลังแล้ว'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              if (cleanedSheetBytes != null) ...[
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text('ขั้นตอน 3: ปรับเส้นตัด 2×2', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 10),
+                        CustomPaint(
+                          foregroundPainter: _GridSplitPainter(
+                            verticalSplit: verticalSplit,
+                            horizontalSplit: horizontalSplit,
+                          ),
+                          child: Image.memory(cleanedSheetBytes!, fit: BoxFit.contain, gaplessPlayback: true),
+                        ),
+                        Text('เส้นแนวตั้ง ${(verticalSplit * 100).round()}%'),
+                        Slider(
+                          key: const Key('vertical-grid-slider'),
+                          value: verticalSplit,
+                          min: 0.35,
+                          max: 0.65,
+                          onChanged: isPreparingCrops ? null : (value) => setState(() => verticalSplit = value),
+                          onChangeEnd: (_) => _prepareCrops(),
+                        ),
+                        Text('เส้นแนวนอน ${(horizontalSplit * 100).round()}%'),
+                        Slider(
+                          key: const Key('horizontal-grid-slider'),
+                          value: horizontalSplit,
+                          min: 0.35,
+                          max: 0.65,
+                          onChanged: isPreparingCrops ? null : (value) => setState(() => horizontalSplit = value),
+                          onChangeEnd: (_) => _prepareCrops(),
+                        ),
+                        if (isPreparingCrops) const LinearProgressIndicator(),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              if (croppedStickerBytes.length == 4) ...[
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text('ขั้นตอน 4: ดาวน์โหลดสติกเกอร์', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                          ),
+                          itemCount: 4,
+                          itemBuilder: (context, index) => InkWell(
+                            onTap: isSaving ? null : () => _shareCrop(index),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Image.memory(croppedStickerBytes[index], fit: BoxFit.contain),
+                                const Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Padding(
+                                    padding: EdgeInsets.all(6),
+                                    child: Icon(Icons.download_rounded),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton.icon(
+                          key: const Key('download-cropped-zip'),
+                          onPressed: isSaving ? null : _shareCroppedZip,
+                          icon: const Icon(Icons.folder_zip),
+                          label: Text(isSaving ? 'กำลังเตรียมไฟล์...' : 'ดาวน์โหลดทั้งหมด (.ZIP)'),
+                        ),
                       ],
                     ),
                   ),
@@ -556,14 +821,14 @@ class _AssetForgePageState extends State<AssetForgePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Generated ${generatedFiles.length} files', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text('SoloForge automatic result (${generatedFiles.length} files)', style: const TextStyle(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         ...generatedFiles.take(6).map((name) => Text('• $name')),
                         const SizedBox(height: 12),
                         ElevatedButton.icon(
                           onPressed: isSaving || zipBase64 == null ? null : _saveAndShareZip,
                           icon: const Icon(Icons.download_rounded),
-                          label: Text(isSaving ? 'Preparing ZIP...' : 'Download Asset Pack (.ZIP)'),
+                          label: Text(isSaving ? 'Preparing ZIP...' : 'Download automatic result (.ZIP)'),
                         ),
                       ],
                     ),
@@ -575,5 +840,38 @@ class _AssetForgePageState extends State<AssetForgePage> {
         ),
       ),
     );
+  }
+}
+
+class _GridSplitPainter extends CustomPainter {
+  const _GridSplitPainter({
+    required this.verticalSplit,
+    required this.horizontalSplit,
+  });
+
+  final double verticalSplit;
+  final double horizontalSplit;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.redAccent
+      ..strokeWidth = 2.5;
+    canvas.drawLine(
+      Offset(size.width * verticalSplit, 0),
+      Offset(size.width * verticalSplit, size.height),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(0, size.height * horizontalSplit),
+      Offset(size.width, size.height * horizontalSplit),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _GridSplitPainter oldDelegate) {
+    return verticalSplit != oldDelegate.verticalSplit ||
+        horizontalSplit != oldDelegate.horizontalSplit;
   }
 }
