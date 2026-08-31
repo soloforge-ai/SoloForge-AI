@@ -6,13 +6,37 @@
 
 ## Active Initiative
 
-Memory Foundation v1 — Foundation Complete
+Pollen Demo MVP — Scope-Locked Delivery
 
 ## Status
 
-Completed
+In Progress
 
-## Verification
+## Sprint Outcome
+
+A user can connect Pollinations, generate one four-sticker pack, preview the
+generated sheet, and download the ZIP without automatic retries or additional
+pack-size scope.
+
+## Locked Acceptance Criteria
+
+- Production demo opens successfully.
+- Pollinations connection can be initiated.
+- OAuth callback establishes a usable session.
+- The user can submit the sticker prompt inputs.
+- Generation is locked to a 2x2 pack of four stickers.
+- The generated sheet is shown as a preview.
+- The resulting ZIP can be downloaded or shared.
+
+## Scope Guard
+
+This sprint must not add pack sizes above four, semantic subject detection,
+video or audio generation, SoloForge billing, general authentication, history,
+or unrelated refactors. New findings are recorded as backlog unless they block
+an acceptance criterion, risk credentials, spend Pollen without a result, or
+break production/download behavior.
+
+## Previous Foundation Verification
 
 Runtime verification completed successfully on Windows with Python 3.12.
 
@@ -66,8 +90,10 @@ These are different concepts and must remain separate.
 
 ## Next Step
 
-Memory Foundation v1 is complete. Resume the active product roadmap from the appropriate feature branch and treat Memory Foundation as shared infrastructure for future SoloForge systems.
+Complete and verify the Pollen Demo MVP on `feature/pollen-demo-mvp`. Stop after
+the locked acceptance criteria pass and request owner approval before a live
+Pollen generation or production deployment.
 
 ---
 
-Last updated after successful Memory Foundation v1 runtime and end-to-end verification.
+Last updated for the scope-locked Pollen Demo MVP sprint.
