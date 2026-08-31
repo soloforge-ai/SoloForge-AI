@@ -200,3 +200,38 @@ def test_colored_character_cleanup_preserves_white_silhouette_detail_core() -> N
     # through and erase the entire connected white foreground detail.
     assert processed.getpixel((100, 71))[3] == 255
     assert processed.getpixel((108, 71))[3] == 255
+
+
+def test_red_dog_cleanup_scales_to_default_production_sheet_size() -> None:
+    fixture = Path(__file__).parent / "fixtures" / "red_dog_original_sheet.png.b64"
+    source = Image.open(
+        io.BytesIO(base64.b64decode(fixture.read_text()))
+    ).convert("RGBA")
+    production_sheet = source.resize((1024, 1024), Image.Resampling.LANCZOS)
+    encoded = io.BytesIO()
+    production_sheet.save(encoded, format="PNG")
+
+    files, _ = process_sheet(
+        encoded.getvalue(),
+        _Request(quantity=4, character="Red Dog chibi mascot"),
+    )
+
+    assert len(files) == 4
+    for filename, data in files:
+        image = Image.open(io.BytesIO(data)).convert("RGBA")
+        pixels = image.load()
+        reachable_matte = 0
+        for y in range(image.height):
+            for x in range(image.width):
+                r, g, b, a = pixels[x, y]
+                if a < 32 or min(r, g, b) < 180 or max(r, g, b) - min(r, g, b) > 18:
+                    continue
+                if any(
+                    0 <= nx < image.width
+                    and 0 <= ny < image.height
+                    and pixels[nx, ny][3] == 0
+                    for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1))
+                ):
+                    reachable_matte += 1
+
+        assert reachable_matte == 0, f"{filename} retained {reachable_matte} matte edge pixels"
