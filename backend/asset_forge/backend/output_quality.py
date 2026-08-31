@@ -12,14 +12,22 @@ OUTPUT_PADDING = 40
 BACKGROUND_THRESHOLD = 8
 COLORED_CHARACTER_CLEANUP_THRESHOLD = 72
 EDGE_BLUR_RADIUS = 1.15
-_SUPPORTED_NON_WHITE_COLORS = frozenset(
-    {"blue", "black", "pink", "red", "green", "purple", "yellow"}
+_SUPPORTED_CHARACTER_COLORS = frozenset(
+    {"blue", "black", "white", "pink", "red", "green", "purple", "yellow"}
 )
 
 
 class AssetForgeRequestLike(Protocol):
     quantity: int
     character: str
+
+
+def _requested_primary_color(character: str) -> str | None:
+    """Match the prompt builder by taking the first explicit supported color."""
+    for token in character.strip().lower().replace("_", " ").replace("-", " ").split():
+        if token in _SUPPORTED_CHARACTER_COLORS:
+            return token
+    return None
 
 
 def _grid(quantity: int) -> tuple[int, int]:
@@ -290,12 +298,10 @@ def process_sheet(
     cell_height = source.height // rows
 
     files: list[tuple[str, bytes]] = []
-    character_tokens = set(
-        request.character.strip().lower().replace("_", " ").replace("-", " ").split()
-    )
+    primary_color = _requested_primary_color(request.character)
     cleanup_threshold = (
         COLORED_CHARACTER_CLEANUP_THRESHOLD
-        if character_tokens & _SUPPORTED_NON_WHITE_COLORS
+        if primary_color is not None and primary_color != "white"
         else None
     )
     for index in range(request.quantity):
