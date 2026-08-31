@@ -222,6 +222,23 @@ def test_colored_character_cleanup_removes_warm_ground_shadow_under_feet() -> No
     assert processed.getpixel((42, 106))[3] == 255
 
 
+def test_ground_cleanup_preserves_white_paw_in_lower_region() -> None:
+    crop = Image.new("RGBA", (128, 128), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(crop)
+    draw.ellipse((28, 20, 100, 108), fill=(220, 30, 35, 255))
+    # This exposed white paw sits wholly inside the deeper ground-cleanup band.
+    draw.ellipse((82, 92, 124, 126), fill=(245, 243, 240, 255))
+
+    processed = remove_background_soft(
+        crop,
+        cleanup_threshold=COLORED_CHARACTER_CLEANUP_THRESHOLD,
+        blur_radius=0,
+    )
+
+    assert processed.getpixel((101, 108))[3] == 255
+    assert processed.getpixel((108, 108))[3] == 255
+
+
 def test_red_dog_cleanup_scales_to_default_production_sheet_size() -> None:
     fixture = Path(__file__).parent / "fixtures" / "red_dog_original_sheet.png.b64"
     source = Image.open(
