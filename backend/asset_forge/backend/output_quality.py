@@ -11,7 +11,7 @@ OUTPUT_SIZE = 512
 OUTPUT_PADDING = 40
 BACKGROUND_THRESHOLD = 8
 COLORED_CHARACTER_CLEANUP_THRESHOLD = 72
-COLORED_CHARACTER_CLEANUP_DEPTH = 10
+COLORED_CHARACTER_CLEANUP_DEPTH_RATIO = 10 / 128
 EDGE_BLUR_RADIUS = 1.15
 _SUPPORTED_CHARACTER_COLORS = frozenset(
     {"blue", "black", "white", "pink", "red", "green", "purple", "yellow"}
@@ -246,11 +246,15 @@ def remove_background_soft(
 
     foreground_mask = _connected_background_mask(rgba, threshold=threshold)
     if cleanup_threshold is not None:
+        cleanup_depth = max(
+            1,
+            round(min(rgba.width, rgba.height) * COLORED_CHARACTER_CLEANUP_DEPTH_RATIO),
+        )
         foreground_mask = _expand_background_into_neutral_islands(
             rgba,
             foreground_mask,
             threshold=cleanup_threshold,
-            max_depth=COLORED_CHARACTER_CLEANUP_DEPTH,
+            max_depth=cleanup_depth,
         )
 
     original_alpha = rgba.getchannel("A")
