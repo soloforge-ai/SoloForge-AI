@@ -202,6 +202,26 @@ def test_colored_character_cleanup_preserves_white_silhouette_detail_core() -> N
     assert processed.getpixel((108, 71))[3] == 255
 
 
+def test_colored_character_cleanup_removes_warm_ground_shadow_under_feet() -> None:
+    crop = Image.new("RGBA", (128, 128), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(crop)
+    # A red body and two feet partially enclose a warm grey generated shadow.
+    draw.ellipse((30, 18, 98, 104), fill=(220, 30, 35, 255))
+    draw.ellipse((22, 88, 62, 119), fill=(220, 30, 35, 255))
+    draw.ellipse((66, 88, 106, 119), fill=(220, 30, 35, 255))
+    draw.ellipse((45, 104, 83, 121), fill=(176, 166, 160, 255))
+
+    processed = remove_background_soft(
+        crop,
+        cleanup_threshold=COLORED_CHARACTER_CLEANUP_THRESHOLD,
+        blur_radius=0,
+    )
+
+    assert processed.getpixel((64, 116))[3] == 0
+    assert processed.getpixel((64, 110))[3] == 0
+    assert processed.getpixel((42, 106))[3] == 255
+
+
 def test_red_dog_cleanup_scales_to_default_production_sheet_size() -> None:
     fixture = Path(__file__).parent / "fixtures" / "red_dog_original_sheet.png.b64"
     source = Image.open(
