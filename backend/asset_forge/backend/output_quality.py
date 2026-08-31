@@ -10,8 +10,11 @@ from PIL import Image, ImageFilter
 OUTPUT_SIZE = 512
 OUTPUT_PADDING = 40
 BACKGROUND_THRESHOLD = 8
-COLORED_CHARACTER_CLEANUP_THRESHOLD = 72
+COLORED_CHARACTER_CLEANUP_THRESHOLD = 96
 COLORED_CHARACTER_CLEANUP_DEPTH_RATIO = 10 / 128
+COLORED_CHARACTER_GROUND_CLEANUP_DEPTH_RATIO = 18 / 128
+COLORED_CHARACTER_GROUND_START_RATIO = 0.7
+COLORED_CHARACTER_CLEANUP_MAX_CHROMA = 28
 EDGE_BLUR_RADIUS = 1.15
 _SUPPORTED_CHARACTER_COLORS = frozenset(
     {"blue", "black", "white", "pink", "red", "green", "purple", "yellow"}
@@ -118,6 +121,8 @@ def _expand_background_into_neutral_islands(
     *,
     threshold: int,
     max_depth: int,
+    max_ground_depth: int,
+    ground_start_y: int,
 ) -> Image.Image:
     """Remove light matte islands reachable from already transparent pixels.
 
@@ -143,7 +148,10 @@ def _expand_background_into_neutral_islands(
         r, g, b, _ = pixels[x, y]
         distance = max(abs(r - bg_r), abs(g - bg_g), abs(b - bg_b))
         chroma = max(r, g, b) - min(r, g, b)
-        return distance <= threshold and chroma <= 18
+        return (
+            distance <= threshold
+            and chroma <= COLORED_CHARACTER_CLEANUP_MAX_CHROMA
+        )
 
     for y in range(height):
         row = y * width
@@ -154,7 +162,8 @@ def _expand_background_into_neutral_islands(
 
     while queue:
         x, y, depth = queue.popleft()
-        if depth >= max_depth:
+        depth_limit = max_ground_depth if y >= ground_start_y else max_depth
+        if depth >= depth_limit:
             continue
         for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
             if nx < 0 or nx >= width or ny < 0 or ny >= height:
@@ -250,11 +259,20 @@ def remove_background_soft(
             1,
             round(min(rgba.width, rgba.height) * COLORED_CHARACTER_CLEANUP_DEPTH_RATIO),
         )
+        ground_cleanup_depth = max(
+            cleanup_depth,
+            round(
+                min(rgba.width, rgba.height)
+                * COLORED_CHARACTER_GROUND_CLEANUP_DEPTH_RATIO
+            ),
+        )
         foreground_mask = _expand_background_into_neutral_islands(
             rgba,
             foreground_mask,
             threshold=cleanup_threshold,
             max_depth=cleanup_depth,
+            max_ground_depth=ground_cleanup_depth,
+            ground_start_y=round(rgba.height * COLORED_CHARACTER_GROUND_START_RATIO),
         )
 
     original_alpha = rgba.getchannel("A")
