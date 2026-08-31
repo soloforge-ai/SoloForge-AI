@@ -42,6 +42,10 @@ CHARACTER_LIBRARY_BASE_URL = (
     "frontend/assets/characters"
 )
 
+_SUPPORTED_CHARACTER_COLORS = frozenset(
+    {"blue", "black", "white", "pink", "red", "green", "purple", "yellow"}
+)
+
 
 class AssetForgeRequest(BaseModel):
     character: str = Field(default="CEO", min_length=1, max_length=80)
@@ -69,6 +73,14 @@ def _character_key(character: str) -> str:
     return "".join(ch.lower() if ch.isalnum() else "_" for ch in character).strip("_")
 
 
+def _requested_character_color(character: str) -> str | None:
+    """Return the explicit builder color without guessing from character identity."""
+    for token in character.strip().lower().replace("_", " ").replace("-", " ").split():
+        if token in _SUPPORTED_CHARACTER_COLORS:
+            return token
+    return None
+
+
 def _load_character_reference(character: str) -> bytes | None:
     """Load a character master from the backend first, then SoloForge's library."""
     key = _character_key(character)
@@ -93,6 +105,15 @@ def _load_character_reference(character: str) -> bytes | None:
 
 
 def _build_prompt(request: AssetForgeRequest, columns: int, rows: int, has_reference: bool) -> str:
+    requested_color = _requested_character_color(request.character)
+    color_instruction = f"""
+NON-NEGOTIABLE COLOR OVERRIDE:
+- The requested primary character color is {requested_color.upper()}.
+- Recolor the character's main fur, coat, skin, body, or shell to {requested_color}; this overrides the color shown in the master reference.
+- Apply {requested_color} across the full main body surface in every sticker cell, not only to clothing or accessories.
+- Do not keep the master reference's original main body color. Small natural facial details and highlights may retain neutral colors.
+""" if requested_color else ""
+
     reference_instruction = """
 CHARACTER REFERENCE:
 - The attached master reference image is authoritative for the character's face, hairstyle, eye colors, skin tone, costume, proportions, and signature accessories.
@@ -126,6 +147,7 @@ Theme: {request.theme}.
 Visual style: {request.style}.
 Product: {request.product}.
 {reference_instruction}
+{color_instruction}
 {no_wings_rule}
 
 STICKER MESSAGE INTENT:
