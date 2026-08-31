@@ -11,6 +11,7 @@ OUTPUT_SIZE = 512
 OUTPUT_PADDING = 40
 BACKGROUND_THRESHOLD = 8
 COLORED_CHARACTER_CLEANUP_THRESHOLD = 72
+COLORED_CHARACTER_CLEANUP_DEPTH = 10
 EDGE_BLUR_RADIUS = 1.15
 _SUPPORTED_CHARACTER_COLORS = frozenset(
     {"blue", "black", "white", "pink", "red", "green", "purple", "yellow"}
@@ -116,6 +117,7 @@ def _expand_background_into_neutral_islands(
     foreground_mask: Image.Image,
     *,
     threshold: int,
+    max_depth: int,
 ) -> Image.Image:
     """Remove light matte islands reachable from already transparent pixels.
 
@@ -135,7 +137,7 @@ def _expand_background_into_neutral_islands(
     mask = foreground_mask.copy()
     mask_pixels = mask.load()
     queued = bytearray(width * height)
-    queue: deque[tuple[int, int]] = deque()
+    queue: deque[tuple[int, int, int]] = deque()
 
     def is_neutral_background(x: int, y: int) -> bool:
         r, g, b, _ = pixels[x, y]
@@ -148,10 +150,12 @@ def _expand_background_into_neutral_islands(
         for x in range(width):
             if mask_pixels[x, y] == 0:
                 queued[row + x] = 1
-                queue.append((x, y))
+                queue.append((x, y, 0))
 
     while queue:
-        x, y = queue.popleft()
+        x, y, depth = queue.popleft()
+        if depth >= max_depth:
+            continue
         for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
             if nx < 0 or nx >= width or ny < 0 or ny >= height:
                 continue
@@ -160,7 +164,7 @@ def _expand_background_into_neutral_islands(
                 continue
             queued[index] = 1
             mask_pixels[nx, ny] = 0
-            queue.append((nx, ny))
+            queue.append((nx, ny, depth + 1))
 
     return mask
 
@@ -246,6 +250,7 @@ def remove_background_soft(
             rgba,
             foreground_mask,
             threshold=cleanup_threshold,
+            max_depth=COLORED_CHARACTER_CLEANUP_DEPTH,
         )
 
     original_alpha = rgba.getchannel("A")
