@@ -160,3 +160,23 @@ def test_red_dog_fixture_removes_reachable_white_floor_without_hollowing_details
     # The old strict-only flood retained roughly 5,000 light matte pixels in
     # this fixture. The lower bound protects the enclosed eye/tag highlights.
     assert 600 <= retained_neutral_highlights < 1500
+
+
+def test_white_primary_color_disables_cleanup_even_with_red_accent() -> None:
+    source = _make_white_suit_crop()
+    request = _Request(quantity=4, character="White dog with red collar")
+
+    # Build a four-cell sheet from the same near-white foreground contract.
+    sheet = Image.new("RGBA", (256, 256), (255, 255, 255, 255))
+    for left, top in ((0, 0), (128, 0), (0, 128), (128, 128)):
+        sheet.alpha_composite(source.resize((128, 128)), (left, top))
+    output = io.BytesIO()
+    sheet.save(output, format="PNG")
+
+    files, _ = process_sheet(output.getvalue(), request)
+
+    for filename, data in files:
+        image = Image.open(io.BytesIO(data)).convert("RGBA")
+        alpha = image.getchannel("A")
+        assert alpha.getbbox() is not None, filename
+        assert sum(value >= 200 for value in alpha.getdata()) > 1000, filename
