@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import base64
 import io
 from dataclasses import dataclass
+from pathlib import Path
 
 from PIL import Image, ImageDraw
 
@@ -120,3 +122,41 @@ def test_process_sheet_returns_four_standardized_transparent_pngs() -> None:
             alpha_values = set(alpha.getdata())
             assert any(0 < value < 255 for value in alpha_values)
             assert alpha.getbbox() is not None
+
+
+def test_red_dog_fixture_removes_reachable_white_floor_without_hollowing_details() -> None:
+    fixture = Path(__file__).parent / "fixtures" / "red_dog_original_sheet.png.b64"
+    request = _Request(quantity=4, character="Red Dog chibi mascot")
+
+    files, _ = process_sheet(base64.b64decode(fixture.read_text()), request)
+
+    assert len(files) == 4
+    retained_neutral_highlights = 0
+    for filename, data in files:
+        image = Image.open(io.BytesIO(data)).convert("RGBA")
+        alpha = image.getchannel("A")
+        assert alpha.getbbox() is not None, filename
+
+        # Any nearly-white matte still touching transparency is background,
+        # not an enclosed eye highlight or collar tag.
+        pixels = image.load()
+        matte_pixels = 0
+        for y in range(image.height):
+            for x in range(image.width):
+                r, g, b, a = pixels[x, y]
+                if a < 32 or min(r, g, b) < 180 or max(r, g, b) - min(r, g, b) > 18:
+                    continue
+                retained_neutral_highlights += 1
+                if any(
+                    0 <= nx < image.width
+                    and 0 <= ny < image.height
+                    and pixels[nx, ny][3] == 0
+                    for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1))
+                ):
+                    matte_pixels += 1
+
+        assert matte_pixels == 0, f"{filename} retained {matte_pixels} reachable matte pixels"
+
+    # The old strict-only flood retained roughly 5,000 light matte pixels in
+    # this fixture. The lower bound protects the enclosed eye/tag highlights.
+    assert 600 <= retained_neutral_highlights < 1500
