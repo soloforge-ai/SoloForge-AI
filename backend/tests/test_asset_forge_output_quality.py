@@ -8,6 +8,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 from backend.asset_forge.backend.output_quality import (
+    COLORED_CHARACTER_CLEANUP_THRESHOLD,
     OUTPUT_PADDING,
     OUTPUT_SIZE,
     process_sheet,
@@ -180,3 +181,22 @@ def test_white_primary_color_disables_cleanup_even_with_red_accent() -> None:
         alpha = image.getchannel("A")
         assert alpha.getbbox() is not None, filename
         assert sum(value >= 200 for value in alpha.getdata()) > 1000, filename
+
+
+def test_colored_character_cleanup_preserves_white_silhouette_detail_core() -> None:
+    crop = Image.new("RGBA", (128, 128), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(crop)
+    draw.ellipse((28, 24, 100, 108), fill=(220, 30, 35, 255))
+    # A legitimate white tail tip/paw reaches the outer silhouette.
+    draw.ellipse((84, 54, 122, 88), fill=(245, 243, 240, 255))
+
+    processed = remove_background_soft(
+        crop,
+        cleanup_threshold=COLORED_CHARACTER_CLEANUP_THRESHOLD,
+        blur_radius=0,
+    )
+
+    # The cleanup may remove a narrow matte-facing edge, but must not flood
+    # through and erase the entire connected white foreground detail.
+    assert processed.getpixel((100, 71))[3] == 255
+    assert processed.getpixel((108, 71))[3] == 255
