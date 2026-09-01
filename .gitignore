@@ -5,6 +5,7 @@ __pycache__/
 # Generated data
 data/raw/
 data/processed/
+data/runtime/
 
 # Large generated discovery database
 data/discovery/top_products.json
