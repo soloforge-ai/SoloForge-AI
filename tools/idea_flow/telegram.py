@@ -122,6 +122,8 @@ def run(db_path: str | Path = DEFAULT_DB_PATH) -> None:
     allowed_chat_id = os.environ.get("TELEGRAM_ALLOWED_CHAT_ID", "").strip()
     if not token:
         raise SystemExit("TELEGRAM_BOT_TOKEN is required")
+    if not allowed_chat_id:
+        raise SystemExit("TELEGRAM_ALLOWED_CHAT_ID is required")
 
     offset: int | None = None
     with IdeaFlowService(db_path) as service:
@@ -139,7 +141,7 @@ def run(db_path: str | Path = DEFAULT_DB_PATH) -> None:
                     chat_id = (message.get("chat") or {}).get("id")
                     if not text or chat_id is None:
                         continue
-                    if allowed_chat_id and str(chat_id) != allowed_chat_id:
+                    if str(chat_id) != allowed_chat_id:
                         send(token, chat_id, "Bot นี้เป็น private SoloForge idea inbox")
                         continue
                     actor = f"telegram:{chat_id}"

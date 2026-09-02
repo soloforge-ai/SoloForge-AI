@@ -3,11 +3,12 @@ from __future__ import annotations
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from tools.idea_flow.scoring import score_signal, weighted_score
 from tools.idea_flow.service import IdeaFlowService
-from tools.idea_flow.telegram import handle_text
+from tools.idea_flow.telegram import handle_text, run
 
 
 class IdeaFlowServiceTests(unittest.TestCase):
@@ -99,6 +100,31 @@ class IdeaFlowServiceTests(unittest.TestCase):
         self.assertEqual(score_signal(2.99), "REJECT_CANDIDATE")
         self.assertEqual(score_signal(3.0), "PARK_OR_REVIEW")
         self.assertEqual(score_signal(4.0), "GRADUATE_CANDIDATE")
+
+    def test_invalid_evaluation_does_not_change_status_or_history(self) -> None:
+        idea_id = self.service.capture("Idea")
+        original_history = self.service.history(idea_id)
+        with self.assertRaises(ValueError):
+            self.service.evaluate(idea_id, demand=6, feasibility=5, strategic_fit=5)
+        self.assertEqual(self.service.get(idea_id)["status"], "CAPTURED")
+        self.assertEqual(self.service.history(idea_id), original_history)
+
+    def test_empty_research_does_not_change_status_or_history(self) -> None:
+        idea_id = self.service.capture("Idea")
+        original_history = self.service.history(idea_id)
+        with self.assertRaises(ValueError):
+            self.service.mark_researched(idea_id, "   ", actor="test")
+        self.assertEqual(self.service.get(idea_id)["status"], "CAPTURED")
+        self.assertEqual(self.service.history(idea_id), original_history)
+
+    def test_telegram_requires_allowed_chat_id(self) -> None:
+        with patch.dict(
+            "os.environ",
+            {"TELEGRAM_BOT_TOKEN": "test-token", "TELEGRAM_ALLOWED_CHAT_ID": ""},
+            clear=True,
+        ):
+            with self.assertRaisesRegex(SystemExit, "TELEGRAM_ALLOWED_CHAT_ID is required"):
+                run(self.db_path)
 
     def test_migration_is_idempotent(self) -> None:
         self.service.close()

@@ -115,6 +115,9 @@ class IdeaFlowService:
         return note_id
 
     def mark_researched(self, idea_id: int, research: str, *, actor: str = "manual") -> None:
+        research = research.strip()
+        if not research:
+            raise ValueError("Research cannot be empty")
         current = self._get(idea_id)
         if current["status"] == "CAPTURED":
             self.transition(idea_id, "TRIAGED", actor=actor, reason="research started")
@@ -136,6 +139,8 @@ class IdeaFlowService:
         notes: str = "",
         evaluator: str = "manual",
     ) -> dict[str, object]:
+        value = scoring.weighted_score(demand, feasibility, strategic_fit)
+        signal = scoring.score_signal(value)
         current = self._get(idea_id)
         if current["status"] == "CAPTURED":
             self.transition(idea_id, "TRIAGED", actor=evaluator, reason="evaluation started")
@@ -146,8 +151,6 @@ class IdeaFlowService:
         if current["status"] not in {"TRIAGED", "RESEARCHED"}:
             raise ValueError(f"Cannot evaluate idea in status {current['status']}")
 
-        value = scoring.weighted_score(demand, feasibility, strategic_fit)
-        signal = scoring.score_signal(value)
         now = utc_now()
         with self.con:
             cur = self.con.execute(
