@@ -22,6 +22,7 @@ from backend.pollinations_oauth_router import (
     get_pollinations_access_token_from_authorization,
     router as pollinations_oauth_router,
 )
+from backend.idea_flow_webhook import router as idea_flow_webhook_router
 
 
 app = FastAPI(title="SoloForge Asset Forge API", version="0.8.0")
@@ -35,6 +36,7 @@ app.add_middleware(
 )
 
 app.include_router(pollinations_oauth_router)
+app.include_router(idea_flow_webhook_router)
 
 CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
 CHARACTER_LIBRARY_BASE_URL = (

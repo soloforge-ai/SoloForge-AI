@@ -8,6 +8,8 @@ on:
       - 'backend/asset_forge/**'
       - 'backend/pollinations_oauth.py'
       - 'backend/pollinations_oauth_router.py'
+      - 'backend/idea_flow_webhook.py'
+      - 'supabase/migrations/**'
       - 'backend/tests/**'
       - '.github/workflows/asset-forge-backend-test.yml'
   pull_request:
@@ -18,6 +20,8 @@ on:
       - 'backend/asset_forge/**'
       - 'backend/pollinations_oauth.py'
       - 'backend/pollinations_oauth_router.py'
+      - 'backend/idea_flow_webhook.py'
+      - 'supabase/migrations/**'
       - 'backend/tests/**'
       - '.github/workflows/asset-forge-backend-test.yml'
   workflow_dispatch:
@@ -46,6 +50,7 @@ jobs:
           python -m compileall -q backend/asset_forge/backend
           python -m compileall -q backend/pollinations_oauth.py
           python -m compileall -q backend/pollinations_oauth_router.py
+          python -m compileall -q backend/idea_flow_webhook.py
           python -m compileall -q backend/tests
 
       - name: Run backend contract, Memory runtime, and image regression tests
@@ -53,6 +58,7 @@ jobs:
           python -m pytest -q \
             backend/asset_forge/test_character_memory_bridge.py \
             backend/tests/test_pollinations_oauth_session_contract.py \
+            backend/tests/test_idea_flow_webhook_contract.py \
             backend/tests/test_background_removal_regression.py \
             backend/tests/test_asset_forge_output_quality.py \
             backend/tests/test_asset_forge_prompt_contract.py
