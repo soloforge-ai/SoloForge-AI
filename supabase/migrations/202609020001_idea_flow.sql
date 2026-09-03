@@ -49,8 +49,11 @@ create table if not exists public.idea_flow_evaluations (
 
 create table if not exists public.idea_flow_telegram_updates (
     update_id bigint primary key,
-    status text not null default 'PROCESSING' check (status in ('PROCESSING','READY','DELIVERED')),
+    status text not null default 'PROCESSING' check (
+        status in ('PROCESSING','PROCESSED','SENDING','DELIVERED')
+    ),
     response_text text,
+    result_json jsonb,
     attempt_count integer not null default 1,
     locked_until timestamptz not null default (timezone('utc', now()) + interval '2 minutes'),
     received_at timestamptz not null default timezone('utc', now()),
@@ -96,7 +99,14 @@ begin
 
     if claimed.status = 'DELIVERED' then
         return jsonb_build_object('action', 'DELIVERED');
-    elsif claimed.status = 'READY' then
+    elsif claimed.status = 'PROCESSED' then
+        return jsonb_build_object('action', 'RESUME_RESULT', 'result', claimed.result_json);
+    elsif claimed.status = 'SENDING' and claimed.locked_until <= timezone('utc', now()) then
+        update public.idea_flow_telegram_updates
+        set locked_until = timezone('utc', now()) + interval '2 minutes',
+            attempt_count = attempt_count + 1,
+            updated_at = timezone('utc', now())
+        where update_id = p_update_id;
         return jsonb_build_object(
             'action', 'RETRY_REPLY', 'response_text', claimed.response_text
         );
@@ -127,9 +137,10 @@ begin
         raise exception 'Telegram response cannot be empty';
     end if;
     update public.idea_flow_telegram_updates
-    set status = 'READY', response_text = p_response_text,
+    set status = 'SENDING', response_text = p_response_text,
+        locked_until = timezone('utc', now()) + interval '2 minutes',
         updated_at = timezone('utc', now())
-    where update_id = p_update_id and status = 'PROCESSING';
+    where update_id = p_update_id and status in ('PROCESSING','PROCESSED');
     if not found then
         raise exception 'Telegram update is not processing';
     end if;
@@ -146,7 +157,7 @@ begin
     update public.idea_flow_telegram_updates
     set status = 'DELIVERED', delivered_at = timezone('utc', now()),
         updated_at = timezone('utc', now())
-    where update_id = p_update_id and status = 'READY';
+    where update_id = p_update_id and status = 'SENDING';
     if not found then
         raise exception 'Telegram update reply is not ready';
     end if;
@@ -156,7 +167,8 @@ $$;
 create or replace function public.idea_flow_capture(
     p_body text,
     p_source text,
-    p_actor text
+    p_actor text,
+    p_update_id bigint
 )
 returns bigint
 language plpgsql
@@ -176,6 +188,16 @@ begin
     insert into public.idea_flow_events(
         idea_id, event_type, from_status, to_status, actor, reason
     ) values (new_id, 'CAPTURED', null, 'CAPTURED', p_actor, 'idea captured');
+    update public.idea_flow_telegram_updates
+    set status = 'PROCESSED',
+        result_json = jsonb_build_object(
+            'kind', 'capture', 'idea_id', new_id, 'status', 'CAPTURED'
+        ),
+        updated_at = timezone('utc', now())
+    where update_id = p_update_id and status = 'PROCESSING';
+    if not found then
+        raise exception 'Telegram update is not processing';
+    end if;
     return new_id;
 end;
 $$;
@@ -184,7 +206,8 @@ create or replace function public.idea_flow_transition(
     p_idea_id bigint,
     p_to_status text,
     p_actor text,
-    p_reason text default ''
+    p_reason text default '',
+    p_update_id bigint default null
 )
 returns void
 language plpgsql
@@ -229,13 +252,24 @@ begin
         p_idea_id, 'STATUS_CHANGED', from_state, p_to_status, p_actor,
         nullif(btrim(p_reason), '')
     );
+    update public.idea_flow_telegram_updates
+    set status = 'PROCESSED',
+        result_json = jsonb_build_object(
+            'kind', 'transition', 'idea_id', p_idea_id, 'status', p_to_status
+        ),
+        updated_at = timezone('utc', now())
+    where update_id = p_update_id and status = 'PROCESSING';
+    if not found then
+        raise exception 'Telegram update is not processing';
+    end if;
 end;
 $$;
 
 create or replace function public.idea_flow_mark_researched(
     p_idea_id bigint,
     p_research text,
-    p_actor text
+    p_actor text,
+    p_update_id bigint
 )
 returns void
 language plpgsql
@@ -272,6 +306,16 @@ begin
     insert into public.idea_flow_events(
         idea_id,event_type,from_status,to_status,actor,reason
     ) values (p_idea_id,'STATUS_CHANGED','TRIAGED','RESEARCHED',p_actor,'research recorded');
+    update public.idea_flow_telegram_updates
+    set status = 'PROCESSED',
+        result_json = jsonb_build_object(
+            'kind', 'research', 'idea_id', p_idea_id, 'status', 'RESEARCHED'
+        ),
+        updated_at = timezone('utc', now())
+    where update_id = p_update_id and status = 'PROCESSING';
+    if not found then
+        raise exception 'Telegram update is not processing';
+    end if;
 end;
 $$;
 
@@ -281,7 +325,8 @@ create or replace function public.idea_flow_evaluate(
     p_feasibility integer,
     p_strategic_fit integer,
     p_notes text,
-    p_evaluator text
+    p_evaluator text,
+    p_update_id bigint
 )
 returns jsonb
 language plpgsql
@@ -338,6 +383,17 @@ begin
         p_idea_id,'STATUS_CHANGED',current_state,'EVALUATED',p_evaluator,
         'score=' || score || '; signal=' || score_signal
     );
+    update public.idea_flow_telegram_updates
+    set status = 'PROCESSED',
+        result_json = jsonb_build_object(
+            'kind', 'evaluate', 'idea_id', p_idea_id,
+            'weighted_score', score, 'signal', score_signal
+        ),
+        updated_at = timezone('utc', now())
+    where update_id = p_update_id and status = 'PROCESSING';
+    if not found then
+        raise exception 'Telegram update is not processing';
+    end if;
     return jsonb_build_object(
         'evaluation_id',evaluation_id,'weighted_score',score,'signal',score_signal
     );
@@ -347,15 +403,15 @@ $$;
 revoke all on function public.idea_flow_claim_telegram_update(bigint) from public, anon, authenticated;
 revoke all on function public.idea_flow_prepare_telegram_reply(bigint,text) from public, anon, authenticated;
 revoke all on function public.idea_flow_mark_telegram_delivered(bigint) from public, anon, authenticated;
-revoke all on function public.idea_flow_capture(text,text,text) from public, anon, authenticated;
-revoke all on function public.idea_flow_transition(bigint,text,text,text) from public, anon, authenticated;
-revoke all on function public.idea_flow_mark_researched(bigint,text,text) from public, anon, authenticated;
-revoke all on function public.idea_flow_evaluate(bigint,integer,integer,integer,text,text) from public, anon, authenticated;
+revoke all on function public.idea_flow_capture(text,text,text,bigint) from public, anon, authenticated;
+revoke all on function public.idea_flow_transition(bigint,text,text,text,bigint) from public, anon, authenticated;
+revoke all on function public.idea_flow_mark_researched(bigint,text,text,bigint) from public, anon, authenticated;
+revoke all on function public.idea_flow_evaluate(bigint,integer,integer,integer,text,text,bigint) from public, anon, authenticated;
 
 grant execute on function public.idea_flow_claim_telegram_update(bigint) to service_role;
 grant execute on function public.idea_flow_prepare_telegram_reply(bigint,text) to service_role;
 grant execute on function public.idea_flow_mark_telegram_delivered(bigint) to service_role;
-grant execute on function public.idea_flow_capture(text,text,text) to service_role;
-grant execute on function public.idea_flow_transition(bigint,text,text,text) to service_role;
-grant execute on function public.idea_flow_mark_researched(bigint,text,text) to service_role;
-grant execute on function public.idea_flow_evaluate(bigint,integer,integer,integer,text,text) to service_role;
+grant execute on function public.idea_flow_capture(text,text,text,bigint) to service_role;
+grant execute on function public.idea_flow_transition(bigint,text,text,text,bigint) to service_role;
+grant execute on function public.idea_flow_mark_researched(bigint,text,text,bigint) to service_role;
+grant execute on function public.idea_flow_evaluate(bigint,integer,integer,integer,text,text,bigint) to service_role;

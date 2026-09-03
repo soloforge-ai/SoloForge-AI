@@ -133,11 +133,16 @@ class SupabaseIdeaFlowService:
     def mark_delivered(self, update_id: int) -> None:
         _rpc("idea_flow_mark_telegram_delivered", {"p_update_id": update_id})
 
-    def capture(self, body: str, *, actor: str) -> int:
+    def capture(self, body: str, *, actor: str, update_id: int) -> int:
         return int(
             _rpc(
                 "idea_flow_capture",
-                {"p_body": body, "p_source": "telegram", "p_actor": actor},
+                {
+                    "p_body": body,
+                    "p_source": "telegram",
+                    "p_actor": actor,
+                    "p_update_id": update_id,
+                },
             )
         )
 
@@ -190,10 +195,15 @@ class SupabaseIdeaFlowService:
             or []
         )
 
-    def mark_researched(self, idea_id: int, research: str, *, actor: str) -> None:
+    def mark_researched(self, idea_id: int, research: str, *, actor: str, update_id: int) -> None:
         _rpc(
             "idea_flow_mark_researched",
-            {"p_idea_id": idea_id, "p_research": research, "p_actor": actor},
+            {
+                "p_idea_id": idea_id,
+                "p_research": research,
+                "p_actor": actor,
+                "p_update_id": update_id,
+            },
         )
 
     def evaluate(
@@ -205,6 +215,7 @@ class SupabaseIdeaFlowService:
         strategic_fit: int,
         notes: str,
         evaluator: str,
+        update_id: int,
     ) -> dict[str, object]:
         result = _rpc(
             "idea_flow_evaluate",
@@ -215,13 +226,16 @@ class SupabaseIdeaFlowService:
                 "p_strategic_fit": strategic_fit,
                 "p_notes": notes,
                 "p_evaluator": evaluator,
+                "p_update_id": update_id,
             },
         )
         if not isinstance(result, dict):
             raise RuntimeError("Idea Inbox storage returned an invalid evaluation")
         return result
 
-    def transition(self, idea_id: int, target: str, *, actor: str, reason: str) -> None:
+    def transition(
+        self, idea_id: int, target: str, *, actor: str, reason: str, update_id: int
+    ) -> None:
         _rpc(
             "idea_flow_transition",
             {
@@ -229,16 +243,36 @@ class SupabaseIdeaFlowService:
                 "p_to_status": target,
                 "p_actor": actor,
                 "p_reason": reason,
+                "p_update_id": update_id,
             },
         )
 
 
-def handle_text(service: SupabaseIdeaFlowService, text: str, *, actor: str) -> str:
+def _format_mutation_result(result: dict[str, object]) -> str:
+    kind = result.get("kind")
+    idea_id = result.get("idea_id")
+    if kind == "capture":
+        return f"จับไว้แล้ว ✅ Idea #{idea_id}\nสถานะ: CAPTURED"
+    if kind == "research":
+        return f"#{idea_id} -> RESEARCHED ✅"
+    if kind == "evaluate":
+        return (
+            f"#{idea_id} EVALUATED ✅\nScore: {result['weighted_score']}/5"
+            f"\nSignal: {result['signal']}"
+        )
+    if kind == "transition":
+        return f"#{idea_id} -> {result['status']} ✅"
+    raise RuntimeError("Idea Inbox storage returned an invalid mutation result")
+
+
+def handle_text(
+    service: SupabaseIdeaFlowService, text: str, *, actor: str, update_id: int
+) -> str:
     text = (text or "").strip()
     if not text:
         return "ข้อความว่าง"
     if not text.startswith("/"):
-        idea_id = service.capture(text, actor=actor)
+        idea_id = service.capture(text, actor=actor, update_id=update_id)
         return f"จับไว้แล้ว ✅ Idea #{idea_id}\nสถานะ: CAPTURED"
 
     parts = text.split()
@@ -267,7 +301,9 @@ def handle_text(service: SupabaseIdeaFlowService, text: str, *, actor: str) -> s
         if len(parts) < 3:
             return "ใช้: /research ID TEXT"
         idea_id = int(parts[1])
-        service.mark_researched(idea_id, " ".join(parts[2:]), actor=actor)
+        service.mark_researched(
+            idea_id, " ".join(parts[2:]), actor=actor, update_id=update_id
+        )
         return f"#{idea_id} -> RESEARCHED ✅"
     if cmd == "/score":
         if len(parts) < 5:
@@ -280,6 +316,7 @@ def handle_text(service: SupabaseIdeaFlowService, text: str, *, actor: str) -> s
             strategic_fit=int(parts[4]),
             notes=" ".join(parts[5:]),
             evaluator=actor,
+            update_id=update_id,
         )
         return f"#{idea_id} EVALUATED ✅\nScore: {result['weighted_score']}/5\nSignal: {result['signal']}"
 
@@ -297,7 +334,13 @@ def handle_text(service: SupabaseIdeaFlowService, text: str, *, actor: str) -> s
             return f"ใช้: {cmd} ID [reason]"
         idea_id = int(parts[1])
         target = transitions[cmd]
-        service.transition(idea_id, target, actor=actor, reason=" ".join(parts[2:]))
+        service.transition(
+            idea_id,
+            target,
+            actor=actor,
+            reason=" ".join(parts[2:]),
+            update_id=update_id,
+        )
         return f"#{idea_id} -> {target} ✅"
     return "ไม่รู้จักคำสั่ง\n\n" + HELP
 
@@ -347,10 +390,18 @@ async def telegram_webhook(
         reply = claim.get("response_text")
         if not isinstance(reply, str) or not reply:
             raise HTTPException(status_code=503, detail="Idea Inbox retry state is invalid")
+    elif action == "RESUME_RESULT":
+        result = claim.get("result")
+        if not isinstance(result, dict):
+            raise HTTPException(status_code=503, detail="Idea Inbox result state is invalid")
+        reply = _format_mutation_result(result)
+        await asyncio.to_thread(service.prepare_reply, update_id, reply)
     elif action == "PROCESS":
         actor = f"telegram:{chat_id}"
         try:
-            reply = await asyncio.to_thread(handle_text, service, text, actor=actor)
+            reply = await asyncio.to_thread(
+                handle_text, service, text, actor=actor, update_id=update_id
+            )
         except Exception as exc:
             # Keep details out of HTTP responses and logs; the user receives a generic error.
             print("idea_flow_command_error", {"exception_type": type(exc).__name__})

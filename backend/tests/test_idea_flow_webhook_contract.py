@@ -7,27 +7,33 @@ import backend.asset_forge.backend.idea_flow_webhook as webhook
 
 
 class FakeService:
-    update_states: dict[int, tuple[str, str | None]] = {}
+    update_states: dict[int, dict[str, object]] = {}
     captured: list[tuple[str, str]] = []
 
     def claim_update(self, update_id: int) -> dict[str, object]:
-        status, reply = self.update_states.get(update_id, ("NEW", None))
+        state = self.update_states.get(update_id, {"status": "NEW"})
+        status = state["status"]
         if status == "DELIVERED":
             return {"action": "DELIVERED"}
-        if status == "READY":
-            return {"action": "RETRY_REPLY", "response_text": reply}
-        self.update_states[update_id] = ("PROCESSING", None)
+        if status == "SENDING":
+            return {"action": "RETRY_REPLY", "response_text": state["reply"]}
+        if status == "PROCESSED":
+            return {"action": "RESUME_RESULT", "result": state["result"]}
+        self.update_states[update_id] = {"status": "PROCESSING"}
         return {"action": "PROCESS"}
 
     def prepare_reply(self, update_id: int, response_text: str) -> None:
-        self.update_states[update_id] = ("READY", response_text)
+        self.update_states[update_id].update(status="SENDING", reply=response_text)
 
     def mark_delivered(self, update_id: int) -> None:
-        _, reply = self.update_states[update_id]
-        self.update_states[update_id] = ("DELIVERED", reply)
+        self.update_states[update_id]["status"] = "DELIVERED"
 
-    def capture(self, body: str, *, actor: str) -> int:
+    def capture(self, body: str, *, actor: str, update_id: int) -> int:
         self.captured.append((body, actor))
+        self.update_states[update_id].update(
+            status="PROCESSED",
+            result={"kind": "capture", "idea_id": 42, "status": "CAPTURED"},
+        )
         return 42
 
 
@@ -149,7 +155,31 @@ def test_failed_send_leaves_reply_ready_for_retry(monkeypatch):
     assert second.status_code == 200
     assert len(FakeService.captured) == 1
     assert len(sent) == 2
-    assert FakeService.update_states[89][0] == "DELIVERED"
+    assert FakeService.update_states[89]["status"] == "DELIVERED"
+
+
+def test_reclaimed_processed_mutation_formats_result_without_mutating_again(monkeypatch):
+    FakeService.update_states.clear()
+    FakeService.captured.clear()
+    FakeService.update_states[91] = {
+        "status": "PROCESSED",
+        "result": {"kind": "capture", "idea_id": 42, "status": "CAPTURED"},
+    }
+    sent = []
+    client = _client(monkeypatch)
+    monkeypatch.setattr(webhook, "SupabaseIdeaFlowService", FakeService)
+    monkeypatch.setattr(webhook, "_send_telegram", lambda *args: sent.append(args))
+
+    response = client.post(
+        "/telegram/idea-inbox/webhook",
+        headers={"X-Telegram-Bot-Api-Secret-Token": "webhook-secret"},
+        json=_update(update_id=91),
+    )
+
+    assert response.status_code == 200
+    assert FakeService.captured == []
+    assert len(sent) == 1
+    assert FakeService.update_states[91]["status"] == "DELIVERED"
 
 
 def test_busy_update_returns_retryable_error(monkeypatch):
@@ -172,4 +202,7 @@ def test_research_usage_error_does_not_call_storage():
         def mark_researched(self, *args, **kwargs):
             raise AssertionError("empty research must be rejected before storage")
 
-    assert webhook.handle_text(ResearchService(), "/research 7", actor="test") == "ใช้: /research ID TEXT"
+    assert (
+        webhook.handle_text(ResearchService(), "/research 7", actor="test", update_id=7)
+        == "ใช้: /research ID TEXT"
+    )
