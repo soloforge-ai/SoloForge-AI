@@ -1,11 +1,10 @@
-import io
 import json
 from urllib import request as urllib_request
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-import backend.prawtwan_chat as prawtwan
+import backend.asset_forge.backend.prawtwan_chat as prawtwan
 
 
 class _FakeResponse:
