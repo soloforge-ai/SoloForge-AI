@@ -11,6 +11,7 @@ import 'about_page.dart';
 import 'asset_forge_page.dart';
 import 'developer_tools_page.dart';
 import 'forge_page.dart';
+import 'prawtwan_chat_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -93,6 +94,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void openPrawtwan() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PrawtwanChatPage()),
+    );
+  }
+
   void openProductForge(AffiliateProduct product) {
     Navigator.push(
       context,
@@ -134,6 +142,19 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             HeroBanner(onPressed: openStickerForge),
+            const SizedBox(height: 5),
+            SizedBox(
+              width: double.infinity,
+              height: 38,
+              child: FilledButton.tonalIcon(
+                onPressed: openPrawtwan,
+                icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                label: const Text(
+                  'Chat Prawtwan',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
             const SizedBox(height: 5),
             SizedBox(
               height: 38,
