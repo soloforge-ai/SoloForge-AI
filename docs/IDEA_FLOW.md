@@ -72,7 +72,7 @@ Create a bot with `@BotFather`, then in PowerShell:
 
 ```powershell
 $env:TELEGRAM_BOT_TOKEN="..."
-$env:TELEGRAM_ALLOWED_CHAT_ID="..."   # strongly recommended
+$env:TELEGRAM_ALLOWED_CHAT_ID="..."   # required; bot fails closed without it
 python -m tools.idea_flow.telegram
 ```
 
@@ -82,6 +82,33 @@ Plain messages are captured immediately. Commands support list, search, research
 
 Do not commit bot tokens. Environment variables only.
 Use `TELEGRAM_ALLOWED_CHAT_ID` so the bot behaves as a private inbox.
+
+## Render webhook mode
+
+The Render deployment uses a Telegram webhook and Supabase persistence instead
+of local polling and SQLite. Apply the migration under `supabase/migrations/`,
+then configure these secrets in the `soloforge-asset-forge` Render service:
+
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_ALLOWED_CHAT_ID`
+- `TELEGRAM_WEBHOOK_SECRET`
+- `SUPABASE_URL`
+- `SUPABASE_SECRET_KEY`
+
+The webhook endpoint is:
+
+```text
+/telegram/idea-inbox/webhook
+```
+
+Register it with Telegram only after the Supabase migration and Render deploy
+both succeed. Send `TELEGRAM_WEBHOOK_SECRET` to Telegram as `secret_token` so
+Telegram includes it in the `X-Telegram-Bot-Api-Secret-Token` request header.
+The endpoint rejects missing/incorrect secrets and silently ignores every chat
+except `TELEGRAM_ALLOWED_CHAT_ID`.
+
+Never place secret values in Git, `render.yaml`, command history, screenshots,
+or documentation.
 
 ## Intentionally excluded from V0
 
