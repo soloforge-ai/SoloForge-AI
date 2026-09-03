@@ -172,7 +172,7 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
                       enabled: !_sending,
                       textInputAction: TextInputAction.newline,
                       decoration: const InputDecoration(
-                        hintText: 'พิมพ์ข้อความหรือวางฉากให้น้องพราวอ่าน...',
+                        hintText: 'พิมพ์ข้อความหรือวางฉากให้พี่พราวอ่าน...',
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 10,
