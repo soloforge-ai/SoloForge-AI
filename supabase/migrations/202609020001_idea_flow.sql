@@ -140,9 +140,33 @@ begin
     set status = 'SENDING', response_text = p_response_text,
         locked_until = timezone('utc', now()) + interval '2 minutes',
         updated_at = timezone('utc', now())
-    where update_id = p_update_id and status in ('PROCESSING','PROCESSED');
+    where update_id = p_update_id and status = 'PROCESSING';
     if not found then
         raise exception 'Telegram update is not processing';
+    end if;
+end;
+$$;
+
+create or replace function public.idea_flow_prepare_telegram_result_reply(
+    p_update_id bigint,
+    p_response_text text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    if p_response_text is null or btrim(p_response_text) = '' then
+        raise exception 'Telegram response cannot be empty';
+    end if;
+    update public.idea_flow_telegram_updates
+    set status = 'SENDING', response_text = p_response_text,
+        locked_until = timezone('utc', now()) + interval '2 minutes',
+        updated_at = timezone('utc', now())
+    where update_id = p_update_id and status = 'PROCESSED';
+    if not found then
+        raise exception 'Telegram mutation result is not ready';
     end if;
 end;
 $$;
@@ -402,6 +426,7 @@ $$;
 
 revoke all on function public.idea_flow_claim_telegram_update(bigint) from public, anon, authenticated;
 revoke all on function public.idea_flow_prepare_telegram_reply(bigint,text) from public, anon, authenticated;
+revoke all on function public.idea_flow_prepare_telegram_result_reply(bigint,text) from public, anon, authenticated;
 revoke all on function public.idea_flow_mark_telegram_delivered(bigint) from public, anon, authenticated;
 revoke all on function public.idea_flow_capture(text,text,text,bigint) from public, anon, authenticated;
 revoke all on function public.idea_flow_transition(bigint,text,text,text,bigint) from public, anon, authenticated;
@@ -410,6 +435,7 @@ revoke all on function public.idea_flow_evaluate(bigint,integer,integer,integer,
 
 grant execute on function public.idea_flow_claim_telegram_update(bigint) to service_role;
 grant execute on function public.idea_flow_prepare_telegram_reply(bigint,text) to service_role;
+grant execute on function public.idea_flow_prepare_telegram_result_reply(bigint,text) to service_role;
 grant execute on function public.idea_flow_mark_telegram_delivered(bigint) to service_role;
 grant execute on function public.idea_flow_capture(text,text,text,bigint) to service_role;
 grant execute on function public.idea_flow_transition(bigint,text,text,text,bigint) to service_role;

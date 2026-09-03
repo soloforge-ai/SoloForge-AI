@@ -118,6 +118,9 @@ def _format_list(rows: list[dict[str, object]]) -> str:
 
 
 class SupabaseIdeaFlowService:
+    def __init__(self) -> None:
+        self.mutation_committed = False
+
     def claim_update(self, update_id: int) -> dict[str, object]:
         result = _rpc("idea_flow_claim_telegram_update", {"p_update_id": update_id})
         if not isinstance(result, dict) or not isinstance(result.get("action"), str):
@@ -130,11 +133,17 @@ class SupabaseIdeaFlowService:
             {"p_update_id": update_id, "p_response_text": response_text},
         )
 
+    def prepare_result_reply(self, update_id: int, response_text: str) -> None:
+        _rpc(
+            "idea_flow_prepare_telegram_result_reply",
+            {"p_update_id": update_id, "p_response_text": response_text},
+        )
+
     def mark_delivered(self, update_id: int) -> None:
         _rpc("idea_flow_mark_telegram_delivered", {"p_update_id": update_id})
 
     def capture(self, body: str, *, actor: str, update_id: int) -> int:
-        return int(
+        idea_id = int(
             _rpc(
                 "idea_flow_capture",
                 {
@@ -145,6 +154,8 @@ class SupabaseIdeaFlowService:
                 },
             )
         )
+        self.mutation_committed = True
+        return idea_id
 
     def list(self, status: str | None = None, limit: int = 30) -> list[dict[str, object]]:
         path = "idea_flow_ideas?select=id,title,status&order=id.desc"
@@ -205,6 +216,7 @@ class SupabaseIdeaFlowService:
                 "p_update_id": update_id,
             },
         )
+        self.mutation_committed = True
 
     def evaluate(
         self,
@@ -231,6 +243,7 @@ class SupabaseIdeaFlowService:
         )
         if not isinstance(result, dict):
             raise RuntimeError("Idea Inbox storage returned an invalid evaluation")
+        self.mutation_committed = True
         return result
 
     def transition(
@@ -246,6 +259,7 @@ class SupabaseIdeaFlowService:
                 "p_update_id": update_id,
             },
         )
+        self.mutation_committed = True
 
 
 def _format_mutation_result(result: dict[str, object]) -> str:
@@ -395,18 +409,25 @@ async def telegram_webhook(
         if not isinstance(result, dict):
             raise HTTPException(status_code=503, detail="Idea Inbox result state is invalid")
         reply = _format_mutation_result(result)
-        await asyncio.to_thread(service.prepare_reply, update_id, reply)
+        await asyncio.to_thread(service.prepare_result_reply, update_id, reply)
     elif action == "PROCESS":
         actor = f"telegram:{chat_id}"
+        command_succeeded = False
         try:
             reply = await asyncio.to_thread(
                 handle_text, service, text, actor=actor, update_id=update_id
             )
+            command_succeeded = True
         except Exception as exc:
             # Keep details out of HTTP responses and logs; the user receives a generic error.
             print("idea_flow_command_error", {"exception_type": type(exc).__name__})
             reply = "เกิดข้อผิดพลาดในการประมวลผล กรุณาลองส่งคำสั่งใหม่"
-        await asyncio.to_thread(service.prepare_reply, update_id, reply)
+        prepare = (
+            service.prepare_result_reply
+            if command_succeeded and service.mutation_committed
+            else service.prepare_reply
+        )
+        await asyncio.to_thread(prepare, update_id, reply)
     else:
         raise HTTPException(status_code=503, detail="Idea Inbox update state is invalid")
 

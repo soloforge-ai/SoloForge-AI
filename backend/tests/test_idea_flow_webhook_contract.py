@@ -10,6 +10,9 @@ class FakeService:
     update_states: dict[int, dict[str, object]] = {}
     captured: list[tuple[str, str]] = []
 
+    def __init__(self):
+        self.mutation_committed = False
+
     def claim_update(self, update_id: int) -> dict[str, object]:
         state = self.update_states.get(update_id, {"status": "NEW"})
         status = state["status"]
@@ -23,6 +26,13 @@ class FakeService:
         return {"action": "PROCESS"}
 
     def prepare_reply(self, update_id: int, response_text: str) -> None:
+        if self.update_states[update_id]["status"] != "PROCESSING":
+            raise RuntimeError("update is no longer processing")
+        self.update_states[update_id].update(status="SENDING", reply=response_text)
+
+    def prepare_result_reply(self, update_id: int, response_text: str) -> None:
+        if self.update_states[update_id]["status"] != "PROCESSED":
+            raise RuntimeError("mutation result is not ready")
         self.update_states[update_id].update(status="SENDING", reply=response_text)
 
     def mark_delivered(self, update_id: int) -> None:
@@ -34,6 +44,7 @@ class FakeService:
             status="PROCESSED",
             result={"kind": "capture", "idea_id": 42, "status": "CAPTURED"},
         )
+        self.mutation_committed = True
         return 42
 
 
@@ -180,6 +191,31 @@ def test_reclaimed_processed_mutation_formats_result_without_mutating_again(monk
     assert FakeService.captured == []
     assert len(sent) == 1
     assert FakeService.update_states[91]["status"] == "DELIVERED"
+
+
+def test_lost_mutation_response_preserves_success_for_retry(monkeypatch):
+    class LostResponseService(FakeService):
+        def capture(self, body: str, *, actor: str, update_id: int) -> int:
+            super().capture(body, actor=actor, update_id=update_id)
+            raise RuntimeError("response lost after commit")
+
+    FakeService.update_states.clear()
+    FakeService.captured.clear()
+    sent = []
+    client = _client(monkeypatch)
+    monkeypatch.setattr(webhook, "SupabaseIdeaFlowService", LostResponseService)
+    monkeypatch.setattr(webhook, "_send_telegram", lambda *args: sent.append(args))
+    headers = {"X-Telegram-Bot-Api-Secret-Token": "webhook-secret"}
+
+    first = client.post("/telegram/idea-inbox/webhook", headers=headers, json=_update(update_id=92))
+    second = client.post("/telegram/idea-inbox/webhook", headers=headers, json=_update(update_id=92))
+
+    assert first.status_code == 500
+    assert second.status_code == 200
+    assert len(FakeService.captured) == 1
+    assert len(sent) == 1
+    assert "Idea #42" in sent[0][2]
+    assert FakeService.update_states[92]["status"] == "DELIVERED"
 
 
 def test_busy_update_returns_retryable_error(monkeypatch):
