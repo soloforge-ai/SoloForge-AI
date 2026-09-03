@@ -49,7 +49,13 @@ create table if not exists public.idea_flow_evaluations (
 
 create table if not exists public.idea_flow_telegram_updates (
     update_id bigint primary key,
-    received_at timestamptz not null default timezone('utc', now())
+    status text not null default 'PROCESSING' check (status in ('PROCESSING','READY','DELIVERED')),
+    response_text text,
+    attempt_count integer not null default 1,
+    locked_until timestamptz not null default (timezone('utc', now()) + interval '2 minutes'),
+    received_at timestamptz not null default timezone('utc', now()),
+    updated_at timestamptz not null default timezone('utc', now()),
+    delivered_at timestamptz
 );
 
 create index if not exists idea_flow_events_idea_id_idx
@@ -66,19 +72,84 @@ alter table public.idea_flow_evaluations enable row level security;
 alter table public.idea_flow_telegram_updates enable row level security;
 
 create or replace function public.idea_flow_claim_telegram_update(p_update_id bigint)
-returns boolean
+returns jsonb
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
-    inserted_count integer;
+    claimed public.idea_flow_telegram_updates%rowtype;
 begin
     insert into public.idea_flow_telegram_updates(update_id)
     values (p_update_id)
-    on conflict do nothing;
-    get diagnostics inserted_count = row_count;
-    return inserted_count = 1;
+    on conflict do nothing
+    returning * into claimed;
+
+    if found then
+        return jsonb_build_object('action', 'PROCESS');
+    end if;
+
+    select * into claimed
+    from public.idea_flow_telegram_updates
+    where update_id = p_update_id
+    for update;
+
+    if claimed.status = 'DELIVERED' then
+        return jsonb_build_object('action', 'DELIVERED');
+    elsif claimed.status = 'READY' then
+        return jsonb_build_object(
+            'action', 'RETRY_REPLY', 'response_text', claimed.response_text
+        );
+    elsif claimed.locked_until > timezone('utc', now()) then
+        return jsonb_build_object('action', 'BUSY');
+    end if;
+
+    update public.idea_flow_telegram_updates
+    set attempt_count = attempt_count + 1,
+        locked_until = timezone('utc', now()) + interval '2 minutes',
+        updated_at = timezone('utc', now())
+    where update_id = p_update_id;
+    return jsonb_build_object('action', 'PROCESS');
+end;
+$$;
+
+create or replace function public.idea_flow_prepare_telegram_reply(
+    p_update_id bigint,
+    p_response_text text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    if p_response_text is null or btrim(p_response_text) = '' then
+        raise exception 'Telegram response cannot be empty';
+    end if;
+    update public.idea_flow_telegram_updates
+    set status = 'READY', response_text = p_response_text,
+        updated_at = timezone('utc', now())
+    where update_id = p_update_id and status = 'PROCESSING';
+    if not found then
+        raise exception 'Telegram update is not processing';
+    end if;
+end;
+$$;
+
+create or replace function public.idea_flow_mark_telegram_delivered(p_update_id bigint)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    update public.idea_flow_telegram_updates
+    set status = 'DELIVERED', delivered_at = timezone('utc', now()),
+        updated_at = timezone('utc', now())
+    where update_id = p_update_id and status = 'READY';
+    if not found then
+        raise exception 'Telegram update reply is not ready';
+    end if;
 end;
 $$;
 
@@ -274,12 +345,16 @@ end;
 $$;
 
 revoke all on function public.idea_flow_claim_telegram_update(bigint) from public, anon, authenticated;
+revoke all on function public.idea_flow_prepare_telegram_reply(bigint,text) from public, anon, authenticated;
+revoke all on function public.idea_flow_mark_telegram_delivered(bigint) from public, anon, authenticated;
 revoke all on function public.idea_flow_capture(text,text,text) from public, anon, authenticated;
 revoke all on function public.idea_flow_transition(bigint,text,text,text) from public, anon, authenticated;
 revoke all on function public.idea_flow_mark_researched(bigint,text,text) from public, anon, authenticated;
 revoke all on function public.idea_flow_evaluate(bigint,integer,integer,integer,text,text) from public, anon, authenticated;
 
 grant execute on function public.idea_flow_claim_telegram_update(bigint) to service_role;
+grant execute on function public.idea_flow_prepare_telegram_reply(bigint,text) to service_role;
+grant execute on function public.idea_flow_mark_telegram_delivered(bigint) to service_role;
 grant execute on function public.idea_flow_capture(text,text,text) to service_role;
 grant execute on function public.idea_flow_transition(bigint,text,text,text) to service_role;
 grant execute on function public.idea_flow_mark_researched(bigint,text,text) to service_role;

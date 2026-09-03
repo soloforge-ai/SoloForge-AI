@@ -7,14 +7,24 @@ import backend.asset_forge.backend.idea_flow_webhook as webhook
 
 
 class FakeService:
-    claimed_updates: set[int] = set()
+    update_states: dict[int, tuple[str, str | None]] = {}
     captured: list[tuple[str, str]] = []
 
-    def claim_update(self, update_id: int) -> bool:
-        if update_id in self.claimed_updates:
-            return False
-        self.claimed_updates.add(update_id)
-        return True
+    def claim_update(self, update_id: int) -> dict[str, object]:
+        status, reply = self.update_states.get(update_id, ("NEW", None))
+        if status == "DELIVERED":
+            return {"action": "DELIVERED"}
+        if status == "READY":
+            return {"action": "RETRY_REPLY", "response_text": reply}
+        self.update_states[update_id] = ("PROCESSING", None)
+        return {"action": "PROCESS"}
+
+    def prepare_reply(self, update_id: int, response_text: str) -> None:
+        self.update_states[update_id] = ("READY", response_text)
+
+    def mark_delivered(self, update_id: int) -> None:
+        _, reply = self.update_states[update_id]
+        self.update_states[update_id] = ("DELIVERED", reply)
 
     def capture(self, body: str, *, actor: str) -> int:
         self.captured.append((body, actor))
@@ -29,7 +39,7 @@ def _client(monkeypatch):
     monkeypatch.setenv("SUPABASE_SECRET_KEY", "supabase-secret-must-not-appear")
     app = FastAPI()
     app.include_router(webhook.router)
-    return TestClient(app)
+    return TestClient(app, raise_server_exceptions=False)
 
 
 def _update(update_id=1, chat_id=123456, text="ทดลองไอเดีย"):
@@ -81,7 +91,7 @@ def test_unallowed_chat_cannot_read_or_mutate(monkeypatch):
 
 
 def test_authorized_update_captures_and_replies(monkeypatch):
-    FakeService.claimed_updates.clear()
+    FakeService.update_states.clear()
     FakeService.captured.clear()
     sent = []
     client = _client(monkeypatch)
@@ -100,7 +110,7 @@ def test_authorized_update_captures_and_replies(monkeypatch):
 
 
 def test_duplicate_update_is_acknowledged_without_duplicate_mutation(monkeypatch):
-    FakeService.claimed_updates.clear()
+    FakeService.update_states.clear()
     FakeService.captured.clear()
     sent = []
     client = _client(monkeypatch)
@@ -115,6 +125,46 @@ def test_duplicate_update_is_acknowledged_without_duplicate_mutation(monkeypatch
     assert second.status_code == 200
     assert len(FakeService.captured) == 1
     assert len(sent) == 1
+
+
+def test_failed_send_leaves_reply_ready_for_retry(monkeypatch):
+    FakeService.update_states.clear()
+    FakeService.captured.clear()
+    sent = []
+    client = _client(monkeypatch)
+    monkeypatch.setattr(webhook, "SupabaseIdeaFlowService", FakeService)
+
+    def send_once_then_succeed(*args):
+        sent.append(args)
+        if len(sent) == 1:
+            raise RuntimeError("transient Telegram failure")
+
+    monkeypatch.setattr(webhook, "_send_telegram", send_once_then_succeed)
+    headers = {"X-Telegram-Bot-Api-Secret-Token": "webhook-secret"}
+
+    first = client.post("/telegram/idea-inbox/webhook", headers=headers, json=_update(update_id=89))
+    second = client.post("/telegram/idea-inbox/webhook", headers=headers, json=_update(update_id=89))
+
+    assert first.status_code == 500
+    assert second.status_code == 200
+    assert len(FakeService.captured) == 1
+    assert len(sent) == 2
+    assert FakeService.update_states[89][0] == "DELIVERED"
+
+
+def test_busy_update_returns_retryable_error(monkeypatch):
+    class BusyService(FakeService):
+        def claim_update(self, update_id: int) -> dict[str, object]:
+            return {"action": "BUSY"}
+
+    client = _client(monkeypatch)
+    monkeypatch.setattr(webhook, "SupabaseIdeaFlowService", BusyService)
+    response = client.post(
+        "/telegram/idea-inbox/webhook",
+        headers={"X-Telegram-Bot-Api-Secret-Token": "webhook-secret"},
+        json=_update(update_id=90),
+    )
+    assert response.status_code == 503
 
 
 def test_research_usage_error_does_not_call_storage():

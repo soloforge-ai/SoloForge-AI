@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import secrets
@@ -117,8 +118,20 @@ def _format_list(rows: list[dict[str, object]]) -> str:
 
 
 class SupabaseIdeaFlowService:
-    def claim_update(self, update_id: int) -> bool:
-        return bool(_rpc("idea_flow_claim_telegram_update", {"p_update_id": update_id}))
+    def claim_update(self, update_id: int) -> dict[str, object]:
+        result = _rpc("idea_flow_claim_telegram_update", {"p_update_id": update_id})
+        if not isinstance(result, dict) or not isinstance(result.get("action"), str):
+            raise RuntimeError("Idea Inbox storage returned an invalid update claim")
+        return result
+
+    def prepare_reply(self, update_id: int, response_text: str) -> None:
+        _rpc(
+            "idea_flow_prepare_telegram_reply",
+            {"p_update_id": update_id, "p_response_text": response_text},
+        )
+
+    def mark_delivered(self, update_id: int) -> None:
+        _rpc("idea_flow_mark_telegram_delivered", {"p_update_id": update_id})
 
     def capture(self, body: str, *, actor: str) -> int:
         return int(
@@ -322,15 +335,31 @@ async def telegram_webhook(
         return {"ok": True}
 
     service = SupabaseIdeaFlowService()
-    if not service.claim_update(update_id):
+    claim = await asyncio.to_thread(service.claim_update, update_id)
+    action = claim["action"]
+    if action == "DELIVERED":
         return {"ok": True}
+    if action == "BUSY":
+        # A non-2xx response keeps Telegram retrying until the processing lease expires.
+        raise HTTPException(status_code=503, detail="Idea Inbox update is processing")
 
-    actor = f"telegram:{chat_id}"
-    try:
-        reply = handle_text(service, text, actor=actor)
-    except Exception as exc:
-        # Keep details out of HTTP responses and logs; the user receives a generic error.
-        print("idea_flow_command_error", {"exception_type": type(exc).__name__})
-        reply = "เกิดข้อผิดพลาดในการประมวลผล กรุณาลองส่งคำสั่งใหม่"
-    _send_telegram(token, int(chat_id), reply)
+    if action == "RETRY_REPLY":
+        reply = claim.get("response_text")
+        if not isinstance(reply, str) or not reply:
+            raise HTTPException(status_code=503, detail="Idea Inbox retry state is invalid")
+    elif action == "PROCESS":
+        actor = f"telegram:{chat_id}"
+        try:
+            reply = await asyncio.to_thread(handle_text, service, text, actor=actor)
+        except Exception as exc:
+            # Keep details out of HTTP responses and logs; the user receives a generic error.
+            print("idea_flow_command_error", {"exception_type": type(exc).__name__})
+            reply = "เกิดข้อผิดพลาดในการประมวลผล กรุณาลองส่งคำสั่งใหม่"
+        await asyncio.to_thread(service.prepare_reply, update_id, reply)
+    else:
+        raise HTTPException(status_code=503, detail="Idea Inbox update state is invalid")
+
+    # A failed Telegram call leaves the durable READY reply available for the retry.
+    await asyncio.to_thread(_send_telegram, token, int(chat_id), reply)
+    await asyncio.to_thread(service.mark_delivered, update_id)
     return {"ok": True}
