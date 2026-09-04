@@ -6,91 +6,113 @@
 
 ## Active Initiative
 
-SoloForge Income Engine — P1 Income Diagnostic v0
+SoloForge Income Engine — P2 Opportunity Library v0
 
 ## Status
 
 Validated — PASS
 
-## Sprint Outcome
+## Previous Gate
 
-P1 has validated the minimum diagnostic needed to understand a user's real income constraints, capabilities, urgency, work preferences, available assets, and uncertainty before any income path is recommended.
+P1 — Income Diagnostic v0: **PASS**
 
-The P1 specification and 10-persona validation evidence are maintained in:
+P1 validated 15 beginner-safe diagnostic questions against 10 deliberately different personas. It preserves evidence-backed capability, unknown-skill state, urgency, time, budget, devices, work preferences, public/customer interaction tolerance, assets, risk and market reach without recommending an income path.
+
+Primary P1 spec:
 
 `docs/INCOME_ENGINE_P1_DIAGNOSTIC.md`
 
-## P1 Validated Scope
+## P2 Outcome
 
-- 15 beginner-safe diagnostic questions
-- normalized user profile output
-- evidence/confidence requirements for inferred capability
-- explicit fallback when the user does not know their own skills
-- 10-persona validation completed
-- materially different profiles produced from materially different inputs
-- unknown skills preserved as unknown
-- hard constraints retained
-- no income recommendation generated during P1
+P2 now defines a controlled library of 28 meaningfully different income opportunities with deterministic metadata sufficient for the next eligibility/scoring phase.
 
-## Validation Result
+Primary P2 spec:
+
+`docs/INCOME_ENGINE_P2_OPPORTUNITY_LIBRARY.md`
+
+## P2 Validated Scope
+
+- 28 opportunities across service, productized service, operations, creative, technical implementation, digital product, content and platform work
+- canonical startup-cost bands
+- canonical time-to-first-revenue bands
+- required capability signals
+- explicit `minimum_device` for every opportunity
+- explicit customer interaction and public-presence requirements
+- explicit `acquisition_modes` for every opportunity
+- explicit `acquisition_difficulty` for every opportunity
+- explicit structural `margin_profile` for every opportunity
+- recurring-revenue potential
+- scalability
+- AI leverage
+- market-demand signal + evidence level
+- hard disqualifiers
+- cheap validation experiment for every opportunity
+
+## Completeness Audit Result
 
 **PASS**
 
-The 10-persona test confirmed that the diagnostic can distinguish users by urgency, available time, budget, devices, tool familiarity, evidence-backed capability, preferred work mode, customer interaction tolerance, camera/voice tolerance, existing assets, sales-model tolerance, risk, language/market reach, and skill confidence.
+The audit closed four metadata gaps from the first P2 draft:
 
-The beginner with no identified skill remained in `skill_discovery` mode instead of being assigned a fabricated capability.
+1. acquisition modes were not explicit for all entries
+2. mixed scalar enum values such as `fast-short`, `medium-high`, `zero-very_low`, and `A/B` were not machine-safe
+3. minimum-device requirements were not explicit for all entries
+4. acquisition difficulty and margin profile were missing from the metadata contract
 
-## P1 Non-Goals Retained
+All required scalar fields now use canonical single-value enums and all 28 opportunities contain the metadata needed for P3 eligibility filtering.
 
-P1 did not add:
+## Market-Evidence Rule
 
-- income-path recommendation
-- Opportunity Library
-- scoring/ranking engine
-- Flutter UI changes
-- Supabase schema
-- billing
-- scraping
-- autonomous agents
-- paid AI generation
-- revenue guarantees
+P2 must not use free-form LLM popularity as market demand.
+
+The v0 library uses current external evidence from Upwork 2026 hiring data, Fiverr 2026 marketplace-search trends, and the OECD 2026 D4SME survey. Evidence tags are directional only and do not guarantee demand, conversion, pricing or income.
+
+`margin_profile` is a structural heuristic for direct delivery costs, not verified market pricing or promised net profit.
+
+`acquisition_difficulty` is a structural new-entrant heuristic and may be adjusted later when P1 shows real distribution advantages such as customers, audience, network or platform access.
 
 ## Locked Product Principle
 
-SoloForge should reduce wrong experiments, not merely generate more income ideas.
+SoloForge should reduce wrong experiments, not merely generate more ideas.
 
-Future recommendation logic must preserve evidence and constraints so the system can eventually answer:
+P2 does not answer:
 
-> Given this person's real situation, what is the highest-probability income experiment to test first?
+> What are the best ways to make money online?
+
+It prepares the controlled opportunity side of the later question:
+
+> Given this person's actual constraints, evidence and market access, which income experiment is worth testing first?
+
+## P2 Non-Goals Retained
+
+P2 did not add:
+
+- personalized opportunity ranking
+- weighted scoring
+- Flutter UI changes
+- Supabase schema
+- billing
+- scraping automation
+- autonomous agents
+- paid AI generation
+- income guarantees
 
 ## Completed Product Retained
 
-Asset Forge v1 remains closed as Working Product #1 after the owner-accepted Android E2E test on 2026-09-04.
+Asset Forge v1 remains closed as Working Product #1.
 
-Its default contract remains:
-
-- 4 poses
-- 1 AI generation
-- local review/fix/export without automatic additional Pollen
-
-Residual light fringe remains tracked separately as GitHub Issue #48 and does not reopen Asset Forge v1.
-
-## Architecture Rule
-
-Project Scanner describes observable repository structure and implementation signals.
-
-This document describes human-approved current development intent.
-
-These are different concepts and must remain separate.
+Its contract remains 4 poses / 1 AI generation with local review/fix/export and no automatic additional Pollen. Residual light fringe remains tracked separately in GitHub Issue #48.
 
 ## Next Step
 
-P1 is complete.
+P2 is complete.
 
-The next candidate phase is `P2 — Opportunity Library v0`, but it must not begin until the owner explicitly approves progression.
+The next candidate phase is:
 
-P2 should define controlled opportunity metadata before any personalized ranking or recommendation engine is implemented.
+`P3 — Eligibility + Opportunity Scoring v0`
+
+Do not start P3 until the owner explicitly approves progression.
 
 ---
 
-Last updated: 2026-09-04 — Income Engine P1 validation PASS.
+Last updated: 2026-09-04 — Income Engine P2 completeness audit PASS.
