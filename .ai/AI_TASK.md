@@ -1,6 +1,6 @@
 # SoloForge AI Task Board
 
-Version: v1.4.0
+Version: v1.5.0
 
 ---
 
@@ -20,7 +20,7 @@ SoloForge Income Engine — P1 Income Diagnostic v0
 
 Status
 
-In Validation
+Validated — PASS
 
 Primary Spec
 
@@ -28,28 +28,66 @@ Primary Spec
 
 ---
 
-# Current Goal
+# Goal Achieved
 
-Validate whether SoloForge can collect enough beginner-safe, evidence-based information about a user to support later personalized income-path decisions without defaulting to generic online-income advice.
+SoloForge now has a validated beginner-safe diagnostic contract that can produce meaningfully different normalized profiles without inventing unknown skills or generating income recommendations prematurely.
 
-P1 must understand the user before any opportunity recommendation is attempted.
+The diagnostic preserves evidence-backed capability, urgency, time, budget, devices, work preferences, customer/public-facing tolerance, existing assets, risk, and market reach for later opportunity matching.
 
 ---
 
-# P1 Scope
+# P1 Completed Scope
 
-- 15 diagnostic questions covering income goal, urgency, time, budget, devices, tool familiarity, observed skill signals, work preferences, customer interaction tolerance, camera/voice tolerance, existing assets, sales-model tolerance, risk, languages/market reach, and unknown-skill fallback
-- normalized profile output
+- 15 diagnostic questions
+- normalized user profile output
 - evidence/confidence trace for inferred capabilities
 - skill-discovery mode when the user does not know what they are good at
-- validation against 10 deliberately different personas
-- explicit PASS/FAIL gate
+- 10 deliberately different persona tests completed
+- materially different profiles produced
+- hard constraints preserved
+- unknown skills retained as unknown
+- no recommendation generated during validation
+- explicit PASS gate satisfied
 
 ---
 
-# P1 Must Not Add
+# P1 Validation Result
 
-Do not implement these during P1:
+**PASS**
+
+The validation includes the required persona categories:
+
+1. Data / spreadsheet-oriented person
+2. Strong speaker with social-media familiarity
+3. Visual creator who dislikes customer interaction
+4. Existing small seller
+5. Beginner with no identified skill
+6. Student with low budget
+7. Full-time worker with little available time
+8. Unemployed person with substantial available time
+9. Person with money but little time
+10. Person with almost no money but strong willingness to work
+
+The detailed evidence is in `docs/INCOME_ENGINE_P1_DIAGNOSTIC.md`.
+
+---
+
+# Guardrails Carried Forward
+
+Future phases must:
+
+- preserve evidence and confidence instead of inventing capability
+- enforce hard constraints before ranking opportunities
+- distinguish tool exposure from demonstrated skill
+- distinguish willingness to work from proven capability
+- use controlled opportunity metadata rather than free-form LLM popularity guesses
+- validate real-user action and market response later, not only recommendation satisfaction
+
+---
+
+# P1 Must Remain Closed
+
+Do not add these retroactively to P1:
 
 - Opportunity Library
 - income-path recommendations
@@ -62,23 +100,7 @@ Do not implement these during P1:
 - paid AI generations
 - income guarantees
 
-P1 is a validation/specification phase only.
-
----
-
-# P1 Acceptance Gate
-
-The same diagnostic must be run against 10 distinct personas.
-
-P1 passes only if:
-
-- beginners can answer without business jargon
-- materially different inputs produce materially different normalized profiles
-- unknown skills remain unknown instead of being fabricated
-- hard constraints such as time, budget, devices, urgency, and public-facing tolerance are preserved
-- every inferred capability can be traced back to evidence
-- no recommendation is generated before the opportunity model exists
-- the output is sufficient for P2 Opportunity Library + scoring work
+These belong to later phases only if explicitly approved.
 
 ---
 
@@ -90,7 +112,7 @@ Its default product contract remains 4 poses / 1 AI generation, with local revie
 
 GitHub Issue #48 tracks residual light fringe as non-blocking output polish.
 
-Chat Prawtwan MVP and the Supabase-backed Telegram Idea Inbox webhook remain merged capabilities but are not the active product priority in P1.
+Chat Prawtwan MVP and the Supabase-backed Telegram Idea Inbox webhook remain merged capabilities but are not the current Income Engine focus.
 
 ---
 
@@ -134,9 +156,15 @@ Future recommendation logic should answer:
 
 # Next Development Direction
 
-Execute the P1 diagnostic against 10 test personas and review whether the normalized profiles are meaningfully different.
+P1 is complete.
 
-Do not start P2, recommendation logic, or UI work before P1 passes and the owner approves the next phase.
+The next candidate phase is:
+
+`P2 — Opportunity Library v0`
+
+P2 should define a controlled set of income opportunities and their requirements before any personalized ranking engine exists.
+
+Do not start P2 until the owner explicitly approves progression.
 
 ---
 
@@ -149,10 +177,10 @@ When starting a new task:
 3. Follow AI_RULES.md.
 4. Review this task board.
 5. Read docs/CURRENT_SPRINT.md for human-approved development state.
-6. Read docs/INCOME_ENGINE_P1_DIAGNOSTIC.md for the active P1 contract.
+6. Read docs/INCOME_ENGINE_P1_DIAGNOSTIC.md for the completed P1 contract and validation evidence.
 7. Prefer ACTIVE/current decisions over stale or superseded context.
 8. Do not reopen completed Asset Forge v1 scope without an explicit blocker or owner priority.
-9. Do not implement P2 until P1 validation passes and the owner approves progression.
+9. Do not implement P2 until the owner explicitly approves progression.
 
 ---
 
