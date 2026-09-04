@@ -6,56 +6,74 @@
 
 ## Active Initiative
 
-Asset Forge v1 — Working Product #1
+SoloForge Income Engine — P1 Income Diagnostic v0
 
 ## Status
 
-Completed
+Validated — PASS
 
-## Outcome
+## Sprint Outcome
 
-Asset Forge v1 has passed the owner-accepted Android end-to-end product gate.
+P1 has validated the minimum diagnostic needed to understand a user's real income constraints, capabilities, urgency, work preferences, available assets, and uncertainty before any income path is recommended.
 
-The verified product path is:
+The P1 specification and 10-persona validation evidence are maintained in:
 
-- Connect Pollinations through the existing OAuth flow.
-- Submit Asset Forge sticker inputs.
-- Generate one 2x2 sheet containing four distinct poses in one AI generation.
-- Preview the generated sheet in the Android app.
-- Produce four individual sticker PNG files.
-- Keep review/fix/export local so no additional Pollen is required by default.
+`docs/INCOME_ENGINE_P1_DIAGNOSTIC.md`
 
-The 2026-09-04 Red Dog test produced one four-pose sheet and four individual sticker outputs. The owner accepted this evidence as sufficient to close Working Product #1.
+## P1 Validated Scope
 
-## Locked Product Contract
+- 15 beginner-safe diagnostic questions
+- normalized user profile output
+- evidence/confidence requirements for inferred capability
+- explicit fallback when the user does not know their own skills
+- 10-persona validation completed
+- materially different profiles produced from materially different inputs
+- unknown skills preserved as unknown
+- hard constraints retained
+- no income recommendation generated during P1
 
-- Default pack: 4 poses.
-- AI generations per default pack: 1.
-- Review/export: 0 additional Pollen.
-- Manual crop/fix: 0 additional Pollen.
-- No automatic paid regeneration.
-- Do not expand pack size, billing, history, video/audio, or unrelated features as part of this completed scope.
+## Validation Result
 
-## Known Non-Blocking Issue
+**PASS**
 
-Output edge cleanup is not perfect. Some exported sticker PNGs can retain small white/light matte or fringe remnants around feet or outer silhouette edges, especially when viewed on dark backgrounds.
+The 10-persona test confirmed that the diagnostic can distinguish users by urgency, available time, budget, devices, tool familiarity, evidence-backed capability, preferred work mode, customer interaction tolerance, camera/voice tolerance, existing assets, sales-model tolerance, risk, language/market reach, and skill confidence.
 
-Tracked as GitHub Issue #48:
+The beginner with no identified skill remained in `skill_discovery` mode instead of being assigned a fabricated capability.
 
-`Asset Forge v1 post-release polish: residual light fringe on exported stickers`
+## P1 Non-Goals Retained
 
-This is P1 polish and does not reopen or block the completed Working Product #1 milestone.
+P1 did not add:
 
-## Previous Foundation Verification
+- income-path recommendation
+- Opportunity Library
+- scoring/ranking engine
+- Flutter UI changes
+- Supabase schema
+- billing
+- scraping
+- autonomous agents
+- paid AI generation
+- revenue guarantees
 
-Memory Foundation v1 remains verified infrastructure.
+## Locked Product Principle
 
-```text
-Ran 12 tests in 0.183s
-OK
-```
+SoloForge should reduce wrong experiments, not merely generate more income ideas.
 
-Verified capabilities include Decision Memory, ACTIVE → SUPERSEDED lifecycle, authority protection, scoped retrieval, JSON persistence, append-only Memory Events, event filtering, and Decision → image generation runtime events.
+Future recommendation logic must preserve evidence and constraints so the system can eventually answer:
+
+> Given this person's real situation, what is the highest-probability income experiment to test first?
+
+## Completed Product Retained
+
+Asset Forge v1 remains closed as Working Product #1 after the owner-accepted Android E2E test on 2026-09-04.
+
+Its default contract remains:
+
+- 4 poses
+- 1 AI generation
+- local review/fix/export without automatic additional Pollen
+
+Residual light fringe remains tracked separately as GitHub Issue #48 and does not reopen Asset Forge v1.
 
 ## Architecture Rule
 
@@ -65,29 +83,14 @@ This document describes human-approved current development intent.
 
 These are different concepts and must remain separate.
 
-## Deferred Scope
-
-Do not add these automatically:
-
-- pack sizes above four
-- automatic paid regeneration
-- general authentication
-- history
-- SoloForge billing
-- video/audio generation
-- Vector DB
-- Graph DB
-- autonomous memory deletion
-- embeddings as a required dependency
-- 3D brain visualization
-- nightly consolidation / dreaming
-
 ## Next Step
 
-Asset Forge v1 is closed. Do not continue polishing it by default.
+P1 is complete.
 
-Select the next SoloForge objective based on expected business/product value. Reopen Asset Forge only for a production blocker, credential/spend risk, broken core workflow, or an explicitly prioritized backlog item such as Issue #48.
+The next candidate phase is `P2 — Opportunity Library v0`, but it must not begin until the owner explicitly approves progression.
+
+P2 should define controlled opportunity metadata before any personalized ranking or recommendation engine is implemented.
 
 ---
 
-Last updated: 2026-09-04 — Asset Forge v1 Working Product #1 completed.
+Last updated: 2026-09-04 — Income Engine P1 validation PASS.
