@@ -1,6 +1,6 @@
 # SoloForge AI Task Board
 
-Version: v1.6.0
+Version: v1.7.0
 
 ---
 
@@ -12,7 +12,7 @@ SoloForge Income Engine — P2 Opportunity Library v0
 
 Status
 
-In Validation
+Validated — PASS
 
 Primary Specs
 
@@ -21,42 +21,65 @@ Primary Specs
 
 ---
 
-# Completed Gate
+# Completed Gates
 
 P1 — Income Diagnostic v0: **PASS**
 
-The validated diagnostic can distinguish materially different users, preserve unknown skills as unknown, retain hard constraints, and attach evidence/confidence to inferred capabilities without producing premature income recommendations.
+P2 — Opportunity Library v0: **PASS**
 
 ---
 
-# P2 Goal
+# P2 Goal Achieved
 
-Create a controlled opportunity library that later eligibility/ranking logic can evaluate against P1 profiles.
+SoloForge now has a controlled opportunity library that later eligibility/ranking logic can evaluate against P1 profiles without relying on free-form LLM popularity guesses.
 
-P2 exists to stop the system from inventing generic income paths from LLM popularity.
+The library contains 28 distinct opportunities across service, productized service, operational, creative, technical implementation, digital product, content and platform-work models.
 
 ---
 
-# P2 Scope
+# P2 Canonical Metadata
 
-- 28 distinct opportunities across service, productized service, operations, creative, technical implementation, digital product, content and platform work
+Every opportunity now provides:
+
 - startup cost
 - time to first revenue
-- capability requirements
-- device constraints
+- required capabilities
+- minimum device
 - customer interaction
 - public presence
-- acquisition mode
+- acquisition modes
+- acquisition difficulty
+- structural margin profile
 - recurring revenue potential
 - scalability
 - AI leverage
-- demand evidence quality
+- market-demand signal
+- evidence level
 - hard disqualifiers
-- cheap validation experiments
+- cheap validation experiment
+
+Scalar metadata uses canonical single-value enums. Mixed values such as `fast-short`, `medium-high`, `zero-very_low`, and `A/B` are not allowed in the canonical P2 records.
 
 ---
 
-# Current Demand Evidence
+# P2 Completeness Audit
+
+Result: **PASS**
+
+The audit closed four gaps:
+
+1. `acquisition_modes` is now explicit for all 28 opportunities.
+2. mixed scalar enum values were normalized for deterministic P3 use.
+3. `minimum_device` is now explicit for all 28 opportunities.
+4. `acquisition_difficulty` and `margin_profile` were added because they are required for the intended opportunity decision model.
+
+`margin_profile` is a structural direct-cost heuristic, not verified pricing or promised profit.
+
+`acquisition_difficulty` is a structural new-entrant heuristic. Future scoring may adjust it when P1 proves existing customers, audience, network or platform access.
+
+---
+
+# Demand Evidence Guardrail
 
 P2 v0 uses current 2026 evidence from:
 
@@ -68,43 +91,28 @@ Demand evidence is directional. Do not represent marketplace growth as guarantee
 
 ---
 
-# Guardrails
+# Product Principle
 
-P2 must:
+SoloForge should reduce wrong experiments, not merely generate more ideas.
 
-- use controlled opportunity metadata rather than free-form LLM guesses
-- distinguish fast-income service paths from long-horizon distribution-dependent paths
-- make hard constraints explicit
-- preserve skill uncertainty from P1
-- include opportunities that can be excluded before ranking
-- keep affiliate/content/media paths available but never assume they are beginner defaults
+The system is building toward:
 
-P2 must not:
-
-- rank a specific person
-- implement weighted scoring
-- add Flutter UI
-- add Supabase schema
-- add billing
-- add autonomous agents
-- add paid AI generation
-- promise income
+> Given this person's actual constraints, evidence and market access, which income experiment has the highest probability of being worth testing first?
 
 ---
 
-# P2 Acceptance Gate
+# P2 Must Remain Closed
 
-P2 passes only if:
+Do not retroactively add these to P2:
 
-1. at least 20 meaningfully distinct opportunities exist
-2. multiple economic models are represented
-3. metadata supports later eligibility filtering
-4. urgent and long-horizon revenue paths are distinguishable
-5. budget/device/capability/customer/public constraints are explicit
-6. distribution-dependent paths are not labeled fast/predictable
-7. each opportunity includes a cheap validation experiment
-8. demand claims include evidence quality
-9. no personalized ranking occurs
+- personalized ranking
+- weighted opportunity scoring
+- Flutter UI
+- Supabase schema
+- billing
+- autonomous agents
+- paid AI generation
+- income guarantees
 
 ---
 
@@ -118,11 +126,20 @@ Memory Foundation v1 remains shared infrastructure. Chat Prawtwan MVP and Telegr
 
 # Next Development Direction
 
-Validate P2 library completeness and constraint coverage.
-
-Only after P2 passes and the owner explicitly approves progression may P3 begin:
+The next candidate phase is:
 
 `P3 — Eligibility + Opportunity Scoring v0`
+
+P3 should apply, in order:
+
+1. hard eligibility filters
+2. confidence-aware capability matching
+3. weighted opportunity scoring
+4. explanation of why the top path fits
+5. explanation of why tempting alternatives were rejected
+6. cheap experiment selection
+
+Do not start P3 until the owner explicitly approves progression.
 
 ---
 
@@ -134,9 +151,9 @@ Only after P2 passes and the owner explicitly approves progression may P3 begin:
 4. Read docs/CURRENT_SPRINT.md.
 5. Read the P1 and P2 Income Engine specs.
 6. Prefer evidence-backed capability over guessed skill.
-7. Do not rank users during P2.
+7. Run hard eligibility before ranking.
 8. Do not reopen completed Asset Forge v1 without explicit owner priority.
-9. Do not start P3 until P2 passes and the owner explicitly approves progression.
+9. Do not start P3 until the owner explicitly approves progression.
 
 ---
 
