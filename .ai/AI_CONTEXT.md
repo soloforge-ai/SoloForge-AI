@@ -18,7 +18,7 @@ PROTOCOL.md
 
 # SoloForge AI Context
 
-Version: v1.1.0
+Version: v1.2.0
 
 ---
 
@@ -46,7 +46,9 @@ Active Development
 
 Current Objective
 
-Establish Memory Foundation v1 so SoloForge AI can preserve current decisions, project state, and reusable context without requiring repeated explanations.
+No active implementation sprint. Asset Forge v1 Working Product #1 was completed and owner-accepted on 2026-09-04.
+
+Asset Forge should not be reopened for non-blocking polish by default. The next development objective must be selected explicitly based on expected product/business value.
 
 Sprint 42 Status
 
@@ -68,9 +70,11 @@ Backend
 
 - Python
 
-Database
+Database / Persistence
 
 - Firebase
+- Supabase
+- Local persistence where appropriate for internal tools
 
 Version Control
 
@@ -93,8 +97,9 @@ Current
 
 - ChatGPT
 - CapCut AI
+- Pollinations
 
-Planned
+Planned / Optional
 
 - Claude
 - Gemini
@@ -179,12 +184,16 @@ Established Foundations
 - MiniBoss Engine
 - Frontend Foundation
 - SoloForge AI Development Protocol v1.0
-
-Active Infrastructure Direction
-
 - Memory Foundation v1
 
-Memory Foundation should extend existing context, scanner, documentation, and runtime systems rather than duplicate them.
+Completed Product / Internal Systems
+
+- Asset Forge v1 — Working Product #1
+- Idea Flow founder inbox
+- Supabase-backed Telegram Idea Inbox webhook
+- Chat Prawtwan MVP
+
+Known Asset Forge v1 post-release output polish is tracked separately and does not reopen the completed product milestone.
 
 ---
 
@@ -272,11 +281,13 @@ Do not treat generated scanner output as authoritative human sprint state.
 
 # Current Focus
 
-The current priority is Memory Foundation v1.
+There is no active implementation sprint after the Asset Forge v1 closure.
 
-The foundation should first establish reliable decision, version, status, event, and retrieval contracts before advanced memory features are considered.
+The next SoloForge objective should be chosen explicitly by the owner using business/product value, scalability, automation leverage, cost, risk, and expected ROI.
 
-Do not add Vector DB, Graph DB, autonomous memory deletion, or 3D brain visualization as part of the foundation unless explicitly approved.
+Do not automatically extend Asset Forge pack size, billing, history, general authentication, video/audio, or advanced memory systems merely because they remain possible future work.
+
+Memory Foundation v1 remains reusable infrastructure. Do not add Vector DB, Graph DB, autonomous memory deletion, required embeddings, or 3D brain visualization unless explicitly approved and justified by a product need.
 
 ---
 
@@ -292,6 +303,7 @@ Every AI assistant should
 - minimize unnecessary changes
 - explain important technical decisions
 - prefer current ACTIVE decisions over superseded context
+- treat completed Asset Forge v1 as closed unless a blocker or explicit owner priority requires reopening it
 
 ---
 
@@ -300,6 +312,8 @@ Every AI assistant should
 SoloForge AI is evolving toward a learning AI Creator Operating System capable of coordinating multiple AI tools and agents through a shared external memory layer.
 
 AI models should remain replaceable reasoning engines. SoloForge-owned context, decisions, experience, and project knowledge should remain portable across models.
+
+Future implementation work should be justified by concrete product or business value rather than architecture expansion alone.
 
 ---
 
