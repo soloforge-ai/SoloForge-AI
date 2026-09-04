@@ -10,7 +10,7 @@ SoloForge Income Engine — P2 Opportunity Library v0
 
 ## Status
 
-In Validation
+Validated — PASS
 
 ## Previous Gate
 
@@ -22,34 +22,54 @@ Primary P1 spec:
 
 `docs/INCOME_ENGINE_P1_DIAGNOSTIC.md`
 
-## P2 Goal
+## P2 Outcome
 
-Define a controlled set of income opportunities before any personalized ranking engine exists.
+P2 now defines a controlled library of 28 meaningfully different income opportunities with deterministic metadata sufficient for the next eligibility/scoring phase.
 
 Primary P2 spec:
 
 `docs/INCOME_ENGINE_P2_OPPORTUNITY_LIBRARY.md`
 
-## P2 Current Scope
+## P2 Validated Scope
 
-- 28 meaningfully different income opportunities
-- service, productized-service, operational, creative, technical, product and content/distribution models
-- startup-cost bands
-- time-to-first-revenue bands
+- 28 opportunities across service, productized service, operations, creative, technical implementation, digital product, content and platform work
+- canonical startup-cost bands
+- canonical time-to-first-revenue bands
 - required capability signals
-- device and customer/public-presence constraints
+- explicit `minimum_device` for every opportunity
+- explicit customer interaction and public-presence requirements
+- explicit `acquisition_modes` for every opportunity
+- explicit `acquisition_difficulty` for every opportunity
+- explicit structural `margin_profile` for every opportunity
 - recurring-revenue potential
 - scalability
 - AI leverage
-- demand-evidence quality
+- market-demand signal + evidence level
 - hard disqualifiers
-- cheap validation experiment for each opportunity
+- cheap validation experiment for every opportunity
+
+## Completeness Audit Result
+
+**PASS**
+
+The audit closed four metadata gaps from the first P2 draft:
+
+1. acquisition modes were not explicit for all entries
+2. mixed scalar enum values such as `fast-short`, `medium-high`, `zero-very_low`, and `A/B` were not machine-safe
+3. minimum-device requirements were not explicit for all entries
+4. acquisition difficulty and margin profile were missing from the metadata contract
+
+All required scalar fields now use canonical single-value enums and all 28 opportunities contain the metadata needed for P3 eligibility filtering.
 
 ## Market-Evidence Rule
 
 P2 must not use free-form LLM popularity as market demand.
 
 The v0 library uses current external evidence from Upwork 2026 hiring data, Fiverr 2026 marketplace-search trends, and the OECD 2026 D4SME survey. Evidence tags are directional only and do not guarantee demand, conversion, pricing or income.
+
+`margin_profile` is a structural heuristic for direct delivery costs, not verified market pricing or promised net profit.
+
+`acquisition_difficulty` is a structural new-entrant heuristic and may be adjusted later when P1 shows real distribution advantages such as customers, audience, network or platform access.
 
 ## Locked Product Principle
 
@@ -63,9 +83,9 @@ It prepares the controlled opportunity side of the later question:
 
 > Given this person's actual constraints, evidence and market access, which income experiment is worth testing first?
 
-## P2 Non-Goals
+## P2 Non-Goals Retained
 
-Do not add during P2:
+P2 did not add:
 
 - personalized opportunity ranking
 - weighted scoring
@@ -77,20 +97,6 @@ Do not add during P2:
 - paid AI generation
 - income guarantees
 
-## P2 Acceptance Gate
-
-P2 passes only if:
-
-- at least 20 distinct opportunities exist
-- metadata is sufficient for later eligibility filtering and ranking
-- service, product, content, operational and technical paths are represented
-- urgent-income versus long-horizon paths are distinguishable
-- customer/public-presence, device, budget and capability constraints are explicit
-- distribution-dependent paths are not mislabeled as fast/predictable income
-- each opportunity has a cheap validation experiment
-- demand claims carry evidence-quality labels
-- no personalized ranking occurs yet
-
 ## Completed Product Retained
 
 Asset Forge v1 remains closed as Working Product #1.
@@ -99,8 +105,14 @@ Its contract remains 4 poses / 1 AI generation with local review/fix/export and 
 
 ## Next Step
 
-Validate P2 library completeness and constraint coverage. Do not start P3 scoring until P2 passes and the owner explicitly approves progression.
+P2 is complete.
+
+The next candidate phase is:
+
+`P3 — Eligibility + Opportunity Scoring v0`
+
+Do not start P3 until the owner explicitly approves progression.
 
 ---
 
-Last updated: 2026-09-04 — Income Engine P2 Opportunity Library v0 started.
+Last updated: 2026-09-04 — Income Engine P2 completeness audit PASS.
