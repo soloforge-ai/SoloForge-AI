@@ -6,70 +6,56 @@
 
 ## Active Initiative
 
-Pollen Demo MVP — Scope-Locked Delivery
+Asset Forge v1 — Working Product #1
 
 ## Status
 
-In Progress
+Completed
 
-## Sprint Outcome
+## Outcome
 
-A user can connect Pollinations, generate one four-sticker pack, preview the
-generated sheet, and download the ZIP without automatic retries or additional
-pack-size scope.
+Asset Forge v1 has passed the owner-accepted Android end-to-end product gate.
 
-## Locked Acceptance Criteria
+The verified product path is:
 
-- Production demo opens successfully.
-- Pollinations connection can be initiated.
-- OAuth callback establishes a usable session.
-- The user can submit the sticker prompt inputs.
-- Generation is locked to a 2x2 pack of four stickers.
-- The generated sheet is shown as a preview.
-- The resulting ZIP can be downloaded or shared.
+- Connect Pollinations through the existing OAuth flow.
+- Submit Asset Forge sticker inputs.
+- Generate one 2x2 sheet containing four distinct poses in one AI generation.
+- Preview the generated sheet in the Android app.
+- Produce four individual sticker PNG files.
+- Keep review/fix/export local so no additional Pollen is required by default.
 
-## Scope Guard
+The 2026-09-04 Red Dog test produced one four-pose sheet and four individual sticker outputs. The owner accepted this evidence as sufficient to close Working Product #1.
 
-This sprint must not add pack sizes above four, semantic subject detection,
-video or audio generation, SoloForge billing, general authentication, history,
-or unrelated refactors. New findings are recorded as backlog unless they block
-an acceptance criterion, risk credentials, spend Pollen without a result, or
-break production/download behavior.
+## Locked Product Contract
+
+- Default pack: 4 poses.
+- AI generations per default pack: 1.
+- Review/export: 0 additional Pollen.
+- Manual crop/fix: 0 additional Pollen.
+- No automatic paid regeneration.
+- Do not expand pack size, billing, history, video/audio, or unrelated features as part of this completed scope.
+
+## Known Non-Blocking Issue
+
+Output edge cleanup is not perfect. Some exported sticker PNGs can retain small white/light matte or fringe remnants around feet or outer silhouette edges, especially when viewed on dark backgrounds.
+
+Tracked as GitHub Issue #48:
+
+`Asset Forge v1 post-release polish: residual light fringe on exported stickers`
+
+This is P1 polish and does not reopen or block the completed Working Product #1 milestone.
 
 ## Previous Foundation Verification
 
-Runtime verification completed successfully on Windows with Python 3.12.
+Memory Foundation v1 remains verified infrastructure.
 
 ```text
 Ran 12 tests in 0.183s
 OK
 ```
 
-Verified capabilities:
-
-- Decision Memory storage and retrieval
-- ACTIVE → SUPERSEDED lifecycle without deleting history
-- owner authority protection for authoritative decisions
-- scoped parallel decisions
-- JSON persistence
-- append-only Memory Events
-- event filtering and retrieval
-- Decision → image generation → runtime event end-to-end flow
-- superseded decisions preserve runtime history
-
-## Completed Scope
-
-- Normalized project state sources of truth
-- Preserved human-maintained current work separately from generated scanner reports
-- Approved Memory Foundation v1 specification
-- Implemented Decision Memory MVP
-- Implemented Version / Status lifecycle semantics
-- Implemented Memory Event MVP
-- Implemented basic retrieval behavior
-- Integrated first runtime producer with image generation events
-- Added runtime test runner
-- Added end-to-end Memory Foundation tests
-- Verified all 12 tests successfully
+Verified capabilities include Decision Memory, ACTIVE → SUPERSEDED lifecycle, authority protection, scoped retrieval, JSON persistence, append-only Memory Events, event filtering, and Decision → image generation runtime events.
 
 ## Architecture Rule
 
@@ -79,8 +65,16 @@ This document describes human-approved current development intent.
 
 These are different concepts and must remain separate.
 
-## Out of Scope Retained for Future Evaluation
+## Deferred Scope
 
+Do not add these automatically:
+
+- pack sizes above four
+- automatic paid regeneration
+- general authentication
+- history
+- SoloForge billing
+- video/audio generation
 - Vector DB
 - Graph DB
 - autonomous memory deletion
@@ -90,10 +84,10 @@ These are different concepts and must remain separate.
 
 ## Next Step
 
-Complete and verify the Pollen Demo MVP on `feature/pollen-demo-mvp`. Stop after
-the locked acceptance criteria pass and request owner approval before a live
-Pollen generation or production deployment.
+Asset Forge v1 is closed. Do not continue polishing it by default.
+
+Select the next SoloForge objective based on expected business/product value. Reopen Asset Forge only for a production blocker, credential/spend risk, broken core workflow, or an explicitly prioritized backlog item such as Issue #48.
 
 ---
 
-Last updated for the scope-locked Pollen Demo MVP sprint.
+Last updated: 2026-09-04 — Asset Forge v1 Working Product #1 completed.
