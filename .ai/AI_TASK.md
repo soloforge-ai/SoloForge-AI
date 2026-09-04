@@ -1,6 +1,6 @@
 # SoloForge AI Task Board
 
-Version: v1.7.0
+Version: v1.8.0
 
 ---
 
@@ -8,7 +8,7 @@ Version: v1.7.0
 
 Title
 
-SoloForge Income Engine — P2 Opportunity Library v0
+SoloForge Income Engine — P3 Eligibility + Opportunity Scoring v0
 
 Status
 
@@ -18,101 +18,107 @@ Primary Specs
 
 - `docs/INCOME_ENGINE_P1_DIAGNOSTIC.md`
 - `docs/INCOME_ENGINE_P2_OPPORTUNITY_LIBRARY.md`
+- `docs/INCOME_ENGINE_P3_ELIGIBILITY_SCORING.md`
 
 ---
 
 # Completed Gates
 
-P1 — Income Diagnostic v0: **PASS**
-
-P2 — Opportunity Library v0: **PASS**
-
----
-
-# P2 Goal Achieved
-
-SoloForge now has a controlled opportunity library that later eligibility/ranking logic can evaluate against P1 profiles without relying on free-form LLM popularity guesses.
-
-The library contains 28 distinct opportunities across service, productized service, operational, creative, technical implementation, digital product, content and platform-work models.
+- P1 — Income Diagnostic v0: **PASS**
+- P2 — Opportunity Library v0: **PASS**
+- P3 — Eligibility + Opportunity Scoring v0: **PASS (manual decision-model dry run)**
 
 ---
 
-# P2 Canonical Metadata
+# P3 Goal Achieved
 
-Every opportunity now provides:
+SoloForge now has a controlled decision model that can combine evidence-backed P1 user profiles with deterministic P2 opportunity metadata without relying on free-form LLM ranking.
 
-- startup cost
-- time to first revenue
-- required capabilities
-- minimum device
-- customer interaction
-- public presence
-- acquisition modes
-- acquisition difficulty
-- structural margin profile
-- recurring revenue potential
-- scalability
-- AI leverage
-- market-demand signal
-- evidence level
-- hard disqualifiers
-- cheap validation experiment
+The required decision order is:
 
-Scalar metadata uses canonical single-value enums. Mixed values such as `fast-short`, `medium-high`, `zero-very_low`, and `A/B` are not allowed in the canonical P2 records.
+1. hard eligibility
+2. capability uncertainty / verification
+3. weighted scoring
+4. recommendation confidence
+5. explanation of fit and rejection
+6. cheap validation experiment
 
 ---
 
-# P2 Completeness Audit
+# P3 Fit Score
+
+Weights:
+
+- Capability Fit: 25
+- Revenue Timing Fit: 20
+- Acquisition Reachability: 15
+- Execution Fit: 15
+- Market Evidence: 10
+- Margin Profile: 5
+- Recurring Revenue: 5
+- Scalability: 3
+- AI Leverage: 2
+
+Total: 100
+
+The score is a heuristic fit score. Never present it as probability of success, expected revenue, guaranteed conversion, or financial return.
+
+---
+
+# Decision States
+
+Opportunity-level:
+- `INELIGIBLE`
+- `VERIFY_FIRST`
+- `ELIGIBLE_PRIMARY`
+- `ELIGIBLE_SECONDARY`
+
+User-level:
+- `RECOMMEND`
+- `TWO_WAY_TEST`
+- `DISCOVERY_REQUIRED`
+- `NO_CONFIDENT_MATCH`
+
+The model is required to return no-match/discovery states when evidence is insufficient instead of filling the gap with generic online-income advice.
+
+---
+
+# P3 Validation
+
+The same 10 personas from P1 were manually dry-run through the P3 decision contract.
+
+Validated behaviors include:
+
+- materially different profiles lead to materially different opportunity families
+- hard device/budget/interaction/public/timing constraints execute before ranking
+- distribution-dependent paths are demoted for urgent users without distribution assets
+- unknown skill can return `DISCOVERY_REQUIRED`
+- capital without execution evidence can return `NO_CONFIDENT_MATCH`
+- acquisition reachability improves when P1 proves customers, audience, network or channel access
+- recommendation explanations must cite P1 evidence + P2 metadata
+- the next action is the P2 cheap validation experiment, not a large speculative business plan
 
 Result: **PASS**
 
-The audit closed four gaps:
-
-1. `acquisition_modes` is now explicit for all 28 opportunities.
-2. mixed scalar enum values were normalized for deterministic P3 use.
-3. `minimum_device` is now explicit for all 28 opportunities.
-4. `acquisition_difficulty` and `margin_profile` were added because they are required for the intended opportunity decision model.
-
-`margin_profile` is a structural direct-cost heuristic, not verified pricing or promised profit.
-
-`acquisition_difficulty` is a structural new-entrant heuristic. Future scoring may adjust it when P1 proves existing customers, audience, network or platform access.
+This PASS validates the decision-model specification only. It is not a production implementation and not evidence of real-world revenue outcomes.
 
 ---
 
-# Demand Evidence Guardrail
+# Guardrails
 
-P2 v0 uses current 2026 evidence from:
+Do not:
 
-- Upwork In-Demand Skills / Monthly Hiring Insights
-- Fiverr Business Trends Index 2026
-- OECD 2026 D4SME Survey
-
-Demand evidence is directional. Do not represent marketplace growth as guaranteed client availability, conversion, pricing or income.
-
----
-
-# Product Principle
-
-SoloForge should reduce wrong experiments, not merely generate more ideas.
-
-The system is building toward:
-
-> Given this person's actual constraints, evidence and market access, which income experiment has the highest probability of being worth testing first?
-
----
-
-# P2 Must Remain Closed
-
-Do not retroactively add these to P2:
-
-- personalized ranking
-- weighted opportunity scoring
-- Flutter UI
-- Supabase schema
-- billing
-- autonomous agents
-- paid AI generation
-- income guarantees
+- generate new opportunities dynamically during scoring
+- use LLM popularity as fit
+- bypass hard eligibility
+- convert tool exposure into proven capability
+- force a recommendation when confidence is low
+- call Fit Score a success probability
+- promise income
+- add Flutter UI during P3
+- add Supabase schema during P3
+- add billing
+- add autonomous execution
 
 ---
 
@@ -128,18 +134,17 @@ Memory Foundation v1 remains shared infrastructure. Chat Prawtwan MVP and Telegr
 
 The next candidate phase is:
 
-`P3 — Eligibility + Opportunity Scoring v0`
+`P4 — Deterministic Recommendation Engine Prototype`
 
-P3 should apply, in order:
+P4 should:
 
-1. hard eligibility filters
-2. confidence-aware capability matching
-3. weighted opportunity scoring
-4. explanation of why the top path fits
-5. explanation of why tempting alternatives were rejected
-6. cheap experiment selection
+- encode P1/P2/P3 as machine-readable contracts
+- implement hard eligibility + scoring without free-form LLM ranking
+- add automated fixtures for the 10 personas
+- return structured recommend/two-way-test/discovery/no-match output
+- remain local/testable before Flutter UI or production persistence
 
-Do not start P3 until the owner explicitly approves progression.
+Do not start P4 until the owner explicitly approves progression.
 
 ---
 
@@ -149,11 +154,12 @@ Do not start P3 until the owner explicitly approves progression.
 2. Read AI_CONTEXT.md.
 3. Follow AI_RULES.md.
 4. Read docs/CURRENT_SPRINT.md.
-5. Read the P1 and P2 Income Engine specs.
+5. Read P1/P2/P3 Income Engine specs.
 6. Prefer evidence-backed capability over guessed skill.
 7. Run hard eligibility before ranking.
-8. Do not reopen completed Asset Forge v1 without explicit owner priority.
-9. Do not start P3 until the owner explicitly approves progression.
+8. Preserve valid no-match states.
+9. Do not reopen completed Asset Forge v1 without explicit owner priority.
+10. Do not start P4 until the owner explicitly approves progression.
 
 ---
 
