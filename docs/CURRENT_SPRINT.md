@@ -6,114 +6,184 @@
 
 ## Active Initiative
 
-SoloForge Income Engine — P3 Eligibility + Opportunity Scoring v0
+SoloForge Income Engine — P4 Deterministic Recommendation Engine Prototype
 
 ## Status
 
-Validated — PASS
+Calibration Implemented — Preference / Revenue Tradeoff Policy Locked
 
 ## Completed Gates
 
 - P1 — Income Diagnostic v0: **PASS**
 - P2 — Opportunity Library v0: **PASS**
 - P3 — Eligibility + Opportunity Scoring v0: **PASS (manual decision-model dry run)**
+- P4 baseline deterministic prototype: **13/13 local automated tests PASS before calibration layer**
 
-## P3 Outcome
+## P4 Baseline Outcome
 
-P3 now defines the deterministic decision contract that combines P1 user evidence with P2 opportunity metadata.
+P4 converts the P1/P2/P3 decision model into executable Python without using an LLM for ranking.
 
-Primary P3 spec:
+Baseline files:
 
-`docs/INCOME_ENGINE_P3_ELIGIBILITY_SCORING.md`
+- `backend/income_engine.py`
+- `backend/test_income_engine.py`
 
-The decision order is locked as:
+The baseline prototype contains:
 
-1. hard eligibility filters
-2. capability uncertainty / verification state
-3. weighted opportunity scoring
-4. recommendation confidence
-5. explanation of fit and rejection
-6. P2 cheap validation experiment as the next action
+- 28 controlled P2 opportunity records
+- P1-style evidence states: `PROVEN`, `SIGNAL`, `UNKNOWN`, `CONTRADICTED`
+- hard eligibility before scoring
+- device/budget/customer/public/capability/timing/distribution/schedule checks
+- P3 weighted Fit Score
+- confidence handling
+- `RECOMMEND`, `TWO_WAY_TEST`, `DISCOVERY_REQUIRED`, `NO_CONFIDENT_MATCH`
+- explanation fields and P2 cheap validation experiment output
+- no dynamic opportunity generation
+- no network/LLM dependency
+- no persistence or UI integration
 
-## P3 Weighted Score
+## Owner Product Decision — Preference First, Tradeoff Visible, User Decides
 
-The v0 fit heuristic uses:
+The owner has locked this product principle:
 
-- Capability Fit — 25
-- Revenue Timing Fit — 20
-- Acquisition Reachability — 15
-- Execution Fit — 15
-- Market Evidence — 10
-- Margin Profile — 5
-- Recurring Revenue — 5
-- Scalability — 3
-- AI Leverage — 2
+> Give meaningful weight to what the user actually wants to do. If the preferred path conflicts with a structurally faster or stronger revenue path, explain the difference clearly and let the user decide whether to optimize for preferred work or faster revenue validation.
 
-Total: 100
+SoloForge must **not** silently override an explicit preference merely because another path scores higher economically.
 
-The score is a fit heuristic only. It is not success probability, expected revenue or an income guarantee.
+SoloForge must also **not** hide material economic tradeoffs merely to agree with the user.
 
-## Decision States
+The calibrated decision policy is:
 
-Opportunity-level:
-- `INELIGIBLE`
-- `VERIFY_FIRST`
-- `ELIGIBLE_PRIMARY`
-- `ELIGIBLE_SECONDARY`
+`Preference First -> Show Tradeoff -> User Chooses`
 
-User-level:
-- `RECOMMEND`
-- `TWO_WAY_TEST`
-- `DISCOVERY_REQUIRED`
-- `NO_CONFIDENT_MATCH`
+## P4 Calibration Layer
 
-A valid no-match is preferred over a generic recommendation.
+Added:
 
-## Validation Result
+- `backend/income_engine_choice.py`
+- `backend/test_income_engine_choice.py`
 
-**PASS**
+The choice layer wraps the deterministic baseline engine rather than replacing it. This preserves P3 hard eligibility, scoring, confidence and no-match behavior while separating the final user-choice policy from the scoring model.
 
-The manual dry run used the same 10 P1 personas.
+### New decision state
 
-Key validation behaviors:
-- data-oriented user -> spreadsheet/data service path
-- speaking/sales user -> outreach/appointment-setting path
-- visual low-interaction user -> digital asset/template path
-- existing seller -> marketplace operations path
-- unknown-skill beginner -> `DISCOVERY_REQUIRED`
-- student with formatting evidence -> document/presentation service
-- time-poor full-time worker -> fixed-scope asynchronous service rather than response-heavy work
-- unemployed admin/support user -> operations/admin path
-- capital-rich but time-poor user -> `NO_CONFIDENT_MATCH` rather than invented capability
-- zero-budget high-effort user -> phone-compatible support/operations path
+`TRADEOFF_CHOICE`
 
-This validation confirms that the decision model can differentiate users, preserve hard constraints, account for distribution access, demote long-horizon paths for urgent users, and refuse to force a recommendation.
+This state is returned when:
+
+1. the user has an explicit business-model preference
+2. an eligible path exists that matches that preference
+3. a different eligible path ranks higher overall
+4. the higher-ranked path has a visible structural advantage in revenue timing, acquisition reachability, or market evidence
+
+When `TRADEOFF_CHOICE` is returned, SoloForge does **not** select a primary opportunity automatically.
+
+Instead it exposes two options:
+
+- `PREFERENCE_PATH` — the best eligible path matching what the user wants to do
+- `REVENUE_PRIORITY_PATH` — the stronger practical/revenue-structure path under the current scoring model
+
+Each option exposes:
+
+- opportunity ID and name
+- model type
+- Fit Score
+- time-to-first-revenue band
+- capability fit
+- revenue timing fit
+- acquisition reachability
+- execution fit
+- market evidence
+- first cheap validation experiment
+
+The comparison must explicitly state that timing bands are structural heuristics, not income promises.
+
+## Example — Visual / Product Persona
+
+Before calibration, the baseline engine ranked:
+
+- O13 Canva Social Design above
+- O26 Niche Digital Asset Packs
+
+because O13 has a shorter revenue-timing band and stronger current market evidence, even though O26 better matches the user's explicit `product` preference and desired working style.
+
+Under the calibrated policy, SoloForge should not force O13.
+
+It should return `TRADEOFF_CHOICE` and show:
+
+### Preference Path
+
+O26 — Niche Digital Asset Packs
+
+Strengths:
+- matches explicit product preference
+- stronger execution fit for the desired work model
+- stronger scalability structure
+
+Tradeoffs:
+- long time-to-first-revenue band
+- distribution-dependent
+- weaker current market evidence
+
+### Revenue Priority Path
+
+O13 — Canva Social Design
+
+Strengths:
+- short time-to-first-revenue band
+- stronger current market evidence
+- stronger recurring-service structure
+
+Tradeoffs:
+- service model does not match the user's explicit product preference
+- requires more direct customer/client work
+
+The user must choose which objective matters more now.
 
 ## Guardrails
 
-P3 must not:
-- generate new income opportunities dynamically
-- interpret Fit Score as probability of success
-- promote weak tool exposure to proven skill
-- bypass hard eligibility with popularity/demand
-- make income guarantees
-- add Flutter UI
-- add Supabase persistence
-- add billing
-- add autonomous execution
+The calibration layer must not:
+
+- override `INELIGIBLE`
+- override `DISCOVERY_REQUIRED`
+- override `NO_CONFIDENT_MATCH`
+- present revenue timing as a guarantee
+- claim the higher economic score will definitely earn more
+- hide the user's stated preference
+- force the user into the economically stronger path
+- dynamically generate new opportunities
+- use LLM ranking
+- add Flutter UI yet
+- add Supabase persistence yet
+- add billing or autonomous execution
+
+## Test Coverage Added
+
+`backend/test_income_engine_choice.py` covers:
+
+- visual/product persona returns `TRADEOFF_CHOICE`
+- O26 is exposed as `PREFERENCE_PATH`
+- O13 is exposed as `REVENUE_PRIORITY_PATH`
+- structural timing / execution / market differences are visible
+- a matching preference preserves the normal baseline decision
+- `DISCOVERY_REQUIRED` is never overridden
+- `NO_CONFIDENT_MATCH` is never overridden
+
+CI has **not** been checked for this calibration change. Follow the repository CI policy: check only when the owner explicitly requests it.
 
 ## Completed Product Retained
 
 Asset Forge v1 remains closed as Working Product #1 with the contract 4 poses / 1 AI generation and local review/fix/export. GitHub Issue #48 remains non-blocking polish.
 
-## Next Candidate
+## Next Gate
 
-`P4 — Deterministic Recommendation Engine Prototype`
+Before P5 / UI integration:
 
-P4 should encode P1/P2/P3 as machine-readable contracts, implement eligibility + scoring without free-form LLM ranking, and add automated fixtures for the 10 personas.
-
-Do not start P4 until the owner explicitly approves progression.
+1. review the calibrated output shape with the owner
+2. run/check automated tests when explicitly requested
+3. confirm the wording for the two choices is understandable to non-technical users
+4. only then expose this decision in a UI or real-user validation flow
 
 ---
 
-Last updated: 2026-09-04 — Income Engine P3 decision-model validation PASS.
+Last updated: 2026-09-04 — P4 preference/revenue tradeoff calibration implemented; owner choice policy locked.
