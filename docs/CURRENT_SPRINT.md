@@ -6,113 +6,114 @@
 
 ## Active Initiative
 
-SoloForge Income Engine — P2 Opportunity Library v0
+SoloForge Income Engine — P3 Eligibility + Opportunity Scoring v0
 
 ## Status
 
 Validated — PASS
 
-## Previous Gate
+## Completed Gates
 
-P1 — Income Diagnostic v0: **PASS**
+- P1 — Income Diagnostic v0: **PASS**
+- P2 — Opportunity Library v0: **PASS**
+- P3 — Eligibility + Opportunity Scoring v0: **PASS (manual decision-model dry run)**
 
-P1 validated 15 beginner-safe diagnostic questions against 10 deliberately different personas. It preserves evidence-backed capability, unknown-skill state, urgency, time, budget, devices, work preferences, public/customer interaction tolerance, assets, risk and market reach without recommending an income path.
+## P3 Outcome
 
-Primary P1 spec:
+P3 now defines the deterministic decision contract that combines P1 user evidence with P2 opportunity metadata.
 
-`docs/INCOME_ENGINE_P1_DIAGNOSTIC.md`
+Primary P3 spec:
 
-## P2 Outcome
+`docs/INCOME_ENGINE_P3_ELIGIBILITY_SCORING.md`
 
-P2 now defines a controlled library of 28 meaningfully different income opportunities with deterministic metadata sufficient for the next eligibility/scoring phase.
+The decision order is locked as:
 
-Primary P2 spec:
+1. hard eligibility filters
+2. capability uncertainty / verification state
+3. weighted opportunity scoring
+4. recommendation confidence
+5. explanation of fit and rejection
+6. P2 cheap validation experiment as the next action
 
-`docs/INCOME_ENGINE_P2_OPPORTUNITY_LIBRARY.md`
+## P3 Weighted Score
 
-## P2 Validated Scope
+The v0 fit heuristic uses:
 
-- 28 opportunities across service, productized service, operations, creative, technical implementation, digital product, content and platform work
-- canonical startup-cost bands
-- canonical time-to-first-revenue bands
-- required capability signals
-- explicit `minimum_device` for every opportunity
-- explicit customer interaction and public-presence requirements
-- explicit `acquisition_modes` for every opportunity
-- explicit `acquisition_difficulty` for every opportunity
-- explicit structural `margin_profile` for every opportunity
-- recurring-revenue potential
-- scalability
-- AI leverage
-- market-demand signal + evidence level
-- hard disqualifiers
-- cheap validation experiment for every opportunity
+- Capability Fit — 25
+- Revenue Timing Fit — 20
+- Acquisition Reachability — 15
+- Execution Fit — 15
+- Market Evidence — 10
+- Margin Profile — 5
+- Recurring Revenue — 5
+- Scalability — 3
+- AI Leverage — 2
 
-## Completeness Audit Result
+Total: 100
+
+The score is a fit heuristic only. It is not success probability, expected revenue or an income guarantee.
+
+## Decision States
+
+Opportunity-level:
+- `INELIGIBLE`
+- `VERIFY_FIRST`
+- `ELIGIBLE_PRIMARY`
+- `ELIGIBLE_SECONDARY`
+
+User-level:
+- `RECOMMEND`
+- `TWO_WAY_TEST`
+- `DISCOVERY_REQUIRED`
+- `NO_CONFIDENT_MATCH`
+
+A valid no-match is preferred over a generic recommendation.
+
+## Validation Result
 
 **PASS**
 
-The audit closed four metadata gaps from the first P2 draft:
+The manual dry run used the same 10 P1 personas.
 
-1. acquisition modes were not explicit for all entries
-2. mixed scalar enum values such as `fast-short`, `medium-high`, `zero-very_low`, and `A/B` were not machine-safe
-3. minimum-device requirements were not explicit for all entries
-4. acquisition difficulty and margin profile were missing from the metadata contract
+Key validation behaviors:
+- data-oriented user -> spreadsheet/data service path
+- speaking/sales user -> outreach/appointment-setting path
+- visual low-interaction user -> digital asset/template path
+- existing seller -> marketplace operations path
+- unknown-skill beginner -> `DISCOVERY_REQUIRED`
+- student with formatting evidence -> document/presentation service
+- time-poor full-time worker -> fixed-scope asynchronous service rather than response-heavy work
+- unemployed admin/support user -> operations/admin path
+- capital-rich but time-poor user -> `NO_CONFIDENT_MATCH` rather than invented capability
+- zero-budget high-effort user -> phone-compatible support/operations path
 
-All required scalar fields now use canonical single-value enums and all 28 opportunities contain the metadata needed for P3 eligibility filtering.
+This validation confirms that the decision model can differentiate users, preserve hard constraints, account for distribution access, demote long-horizon paths for urgent users, and refuse to force a recommendation.
 
-## Market-Evidence Rule
+## Guardrails
 
-P2 must not use free-form LLM popularity as market demand.
-
-The v0 library uses current external evidence from Upwork 2026 hiring data, Fiverr 2026 marketplace-search trends, and the OECD 2026 D4SME survey. Evidence tags are directional only and do not guarantee demand, conversion, pricing or income.
-
-`margin_profile` is a structural heuristic for direct delivery costs, not verified market pricing or promised net profit.
-
-`acquisition_difficulty` is a structural new-entrant heuristic and may be adjusted later when P1 shows real distribution advantages such as customers, audience, network or platform access.
-
-## Locked Product Principle
-
-SoloForge should reduce wrong experiments, not merely generate more ideas.
-
-P2 does not answer:
-
-> What are the best ways to make money online?
-
-It prepares the controlled opportunity side of the later question:
-
-> Given this person's actual constraints, evidence and market access, which income experiment is worth testing first?
-
-## P2 Non-Goals Retained
-
-P2 did not add:
-
-- personalized opportunity ranking
-- weighted scoring
-- Flutter UI changes
-- Supabase schema
-- billing
-- scraping automation
-- autonomous agents
-- paid AI generation
-- income guarantees
+P3 must not:
+- generate new income opportunities dynamically
+- interpret Fit Score as probability of success
+- promote weak tool exposure to proven skill
+- bypass hard eligibility with popularity/demand
+- make income guarantees
+- add Flutter UI
+- add Supabase persistence
+- add billing
+- add autonomous execution
 
 ## Completed Product Retained
 
-Asset Forge v1 remains closed as Working Product #1.
+Asset Forge v1 remains closed as Working Product #1 with the contract 4 poses / 1 AI generation and local review/fix/export. GitHub Issue #48 remains non-blocking polish.
 
-Its contract remains 4 poses / 1 AI generation with local review/fix/export and no automatic additional Pollen. Residual light fringe remains tracked separately in GitHub Issue #48.
+## Next Candidate
 
-## Next Step
+`P4 — Deterministic Recommendation Engine Prototype`
 
-P2 is complete.
+P4 should encode P1/P2/P3 as machine-readable contracts, implement eligibility + scoring without free-form LLM ranking, and add automated fixtures for the 10 personas.
 
-The next candidate phase is:
-
-`P3 — Eligibility + Opportunity Scoring v0`
-
-Do not start P3 until the owner explicitly approves progression.
+Do not start P4 until the owner explicitly approves progression.
 
 ---
 
-Last updated: 2026-09-04 — Income Engine P2 completeness audit PASS.
+Last updated: 2026-09-04 — Income Engine P3 decision-model validation PASS.
