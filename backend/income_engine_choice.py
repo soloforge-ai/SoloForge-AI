@@ -88,6 +88,7 @@ class PreferenceTradeoffEngine:
         if not self._has_revenue_advantage(practical_choice, preference_choice):
             payload["primary_opportunity"] = preference_choice.opportunity_id
             payload["fit_score"] = round(float(preference_choice.fit_score or 0), 2)
+            payload["first_validation_experiment"] = preference_opportunity.cheap_validation_experiment
             payload["why_it_fits"] = [
                 "The user's explicit business-model preference is eligible and there is no clear structural revenue advantage strong enough to justify steering away from it."
             ]
@@ -171,7 +172,10 @@ class PreferenceTradeoffEngine:
             "opportunity_id": opportunity.id,
             "name": opportunity.name,
             "model_type": opportunity.model_type,
-            "matches_user_preference": opportunity.model_type in user.model_preferences,
+            "matches_user_preference": PreferenceTradeoffEngine._matches_model_preference(
+                PreferenceTradeoffEngine._explicit_preferences(user),
+                opportunity,
+            ),
             "fit_score": evaluation.fit_score,
             "time_to_first_revenue": opportunity.time_to_first_revenue,
             "capability_fit": scores.get("capability_fit"),
