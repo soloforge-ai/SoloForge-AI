@@ -1,6 +1,6 @@
 # SoloForge AI Task Board
 
-Version: v1.2.0
+Version: v1.3.0
 
 ---
 
@@ -16,7 +16,7 @@ It provides AI assistants with a concise snapshot of active work, completed foun
 
 Title
 
-Memory Foundation v1 — Verified Foundation
+Asset Forge v1 — Working Product #1
 
 Status
 
@@ -24,37 +24,59 @@ Completed
 
 Verification
 
-12/12 runtime and end-to-end tests passed on Windows / Python 3.12.
+Owner-accepted Android end-to-end evidence completed on 2026-09-04.
 
 ---
 
 # Goal Achieved
 
-SoloForge AI now has the minimum shared memory infrastructure required to preserve approved decisions, lifecycle status, meaningful runtime events, and reusable context without forcing repeated explanations.
+SoloForge AI now has a working Asset Forge product path that connects Pollinations, generates one four-pose 2x2 sticker sheet in one AI generation, previews the result, and produces four individual sticker PNG outputs.
+
+The default product contract remains 4 poses / 1 AI generation. Review, local fix, and export must not silently add paid generations.
 
 ---
 
-# Completed
+# Completed Product Scope
 
-- Source-of-truth normalization
-- Scanner/current-sprint semantic conflict resolved
-- Memory Foundation v1 specification approved
-- Decision Memory MVP
+- Pollinations OAuth connection path
+- Asset Forge Android workflow
+- canonical character master routing
+- explicit character color override
+- 3D chibi v1 scope lock
+- four-pose 2x2 Quick Pack
+- generated sheet preview
+- four individual sticker outputs
+- local review/fix/export flow
+- no remove.bg dependency in the default product flow
+- Chat Prawtwan MVP merged
+- Supabase-backed Telegram Idea Inbox webhook merged
+
+---
+
+# Known Non-Blocking Backlog
+
+GitHub Issue #48 tracks residual white/light matte or fringe around some exported sticker edges.
+
+This is P1 output polish. It does not reopen Asset Forge v1 and must not trigger extra live Pollen generation unless the owner explicitly prioritizes it.
+
+---
+
+# Verified Foundation Capabilities
+
+Memory Foundation v1 remains available as shared infrastructure:
+
+- Decision Memory
 - ACTIVE / SUPERSEDED lifecycle
 - scoped Decision retrieval
 - authority validation
 - JSON persistence
-- Memory Event MVP
-- append-only event history
+- append-only Memory Events
 - event retrieval/filtering
-- first image-generation event integration
+- image-generation runtime events
 - Runtime Test Runner
-- End-to-End Memory Test
-- 12/12 tests verified successfully
+- end-to-end Memory Foundation verification
 
----
-
-# Runtime Verification
+Previous verification:
 
 ```text
 Ran 12 tests in 0.183s
@@ -63,30 +85,16 @@ OK
 
 ---
 
-# Foundation Capabilities
-
-Decision Memory
-
-Approved decisions can be stored, retrieved, superseded, and historically preserved.
-
-Memory Events
-
-Meaningful runtime events can be appended and queried without mutating historical events.
-
-Retrieval
-
-Current ACTIVE decisions can be retrieved while superseded history remains available for debugging and traceability.
-
-Integration
-
-Image generation can emit IMAGE_GENERATED and ERROR_OCCURRED events through optional Memory Event injection.
-
----
-
-# Out of Scope
+# Out of Scope Unless Explicitly Approved
 
 Do not add these automatically:
 
+- Asset Forge pack sizes above four
+- automatic paid sticker regeneration
+- general authentication
+- history
+- SoloForge billing
+- video/audio generation
 - Vector DB
 - Graph DB
 - autonomous memory deletion
@@ -94,15 +102,13 @@ Do not add these automatically:
 - memory visualization / 3D brain
 - nightly consolidation / dreaming
 
-These require separate future approval and demonstrated need.
-
 ---
 
 # Next Development Direction
 
-Memory Foundation v1 is shared infrastructure, not the next product feature by itself.
+There is no active implementation sprint after the Asset Forge v1 closure.
 
-Resume the approved SoloForge product roadmap from the appropriate feature branch.
+Do not continue Asset Forge polish by default. The next task should be selected by the owner based on expected business/product value, recurring revenue potential, automation leverage, or another explicit SoloForge priority.
 
 When future systems need durable memory, integrate them incrementally through the approved Memory Foundation contracts rather than creating separate memory implementations.
 
@@ -119,6 +125,7 @@ When starting a new task:
 5. Read docs/CURRENT_SPRINT.md for human-approved development state.
 6. Prefer ACTIVE/current decisions over stale or superseded context.
 7. Reuse Memory Foundation v1 when durable decisions or runtime events are required.
+8. Do not reopen completed Asset Forge v1 scope without an explicit blocker or owner priority.
 
 ---
 
