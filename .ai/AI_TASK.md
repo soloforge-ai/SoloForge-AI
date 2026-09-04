@@ -1,6 +1,6 @@
 # SoloForge AI Task Board
 
-Version: v1.3.0
+Version: v1.4.0
 
 ---
 
@@ -16,48 +16,81 @@ It provides AI assistants with a concise snapshot of active work, completed foun
 
 Title
 
-Asset Forge v1 — Working Product #1
+SoloForge Income Engine — P1 Income Diagnostic v0
 
 Status
 
-Completed
+In Validation
 
-Verification
+Primary Spec
 
-Owner-accepted Android end-to-end evidence completed on 2026-09-04.
-
----
-
-# Goal Achieved
-
-SoloForge AI now has a working Asset Forge product path that connects Pollinations, generates one four-pose 2x2 sticker sheet in one AI generation, previews the result, and produces four individual sticker PNG outputs.
-
-The default product contract remains 4 poses / 1 AI generation. Review, local fix, and export must not silently add paid generations.
+`docs/INCOME_ENGINE_P1_DIAGNOSTIC.md`
 
 ---
 
-# Completed Product Scope
+# Current Goal
 
-- Pollinations OAuth connection path
-- Asset Forge Android workflow
-- canonical character master routing
-- explicit character color override
-- 3D chibi v1 scope lock
-- four-pose 2x2 Quick Pack
-- generated sheet preview
-- four individual sticker outputs
-- local review/fix/export flow
-- no remove.bg dependency in the default product flow
-- Chat Prawtwan MVP merged
-- Supabase-backed Telegram Idea Inbox webhook merged
+Validate whether SoloForge can collect enough beginner-safe, evidence-based information about a user to support later personalized income-path decisions without defaulting to generic online-income advice.
+
+P1 must understand the user before any opportunity recommendation is attempted.
 
 ---
 
-# Known Non-Blocking Backlog
+# P1 Scope
 
-GitHub Issue #48 tracks residual white/light matte or fringe around some exported sticker edges.
+- 15 diagnostic questions covering income goal, urgency, time, budget, devices, tool familiarity, observed skill signals, work preferences, customer interaction tolerance, camera/voice tolerance, existing assets, sales-model tolerance, risk, languages/market reach, and unknown-skill fallback
+- normalized profile output
+- evidence/confidence trace for inferred capabilities
+- skill-discovery mode when the user does not know what they are good at
+- validation against 10 deliberately different personas
+- explicit PASS/FAIL gate
 
-This is P1 output polish. It does not reopen Asset Forge v1 and must not trigger extra live Pollen generation unless the owner explicitly prioritizes it.
+---
+
+# P1 Must Not Add
+
+Do not implement these during P1:
+
+- Opportunity Library
+- income-path recommendations
+- ranking/scoring engine
+- Flutter UI changes
+- Supabase schema
+- billing
+- scraping
+- autonomous agents
+- paid AI generations
+- income guarantees
+
+P1 is a validation/specification phase only.
+
+---
+
+# P1 Acceptance Gate
+
+The same diagnostic must be run against 10 distinct personas.
+
+P1 passes only if:
+
+- beginners can answer without business jargon
+- materially different inputs produce materially different normalized profiles
+- unknown skills remain unknown instead of being fabricated
+- hard constraints such as time, budget, devices, urgency, and public-facing tolerance are preserved
+- every inferred capability can be traced back to evidence
+- no recommendation is generated before the opportunity model exists
+- the output is sufficient for P2 Opportunity Library + scoring work
+
+---
+
+# Completed Product Scope Retained
+
+Asset Forge v1 remains closed as Working Product #1 after owner-accepted Android E2E evidence on 2026-09-04.
+
+Its default product contract remains 4 poses / 1 AI generation, with local review/fix/export and no automatic paid regeneration.
+
+GitHub Issue #48 tracks residual light fringe as non-blocking output polish.
+
+Chat Prawtwan MVP and the Supabase-backed Telegram Idea Inbox webhook remain merged capabilities but are not the active product priority in P1.
 
 ---
 
@@ -85,32 +118,25 @@ OK
 
 ---
 
-# Out of Scope Unless Explicitly Approved
+# Product Principle
 
-Do not add these automatically:
+SoloForge should reduce wrong experiments, not merely generate more ideas.
 
-- Asset Forge pack sizes above four
-- automatic paid sticker regeneration
-- general authentication
-- history
-- SoloForge billing
-- video/audio generation
-- Vector DB
-- Graph DB
-- autonomous memory deletion
-- required embeddings
-- memory visualization / 3D brain
-- nightly consolidation / dreaming
+Future recommendation logic should answer:
+
+> Given this person's real constraints and evidence, what is the highest-probability income experiment to test first?
+
+—not:
+
+> What are some popular ways to make money online?
 
 ---
 
 # Next Development Direction
 
-There is no active implementation sprint after the Asset Forge v1 closure.
+Execute the P1 diagnostic against 10 test personas and review whether the normalized profiles are meaningfully different.
 
-Do not continue Asset Forge polish by default. The next task should be selected by the owner based on expected business/product value, recurring revenue potential, automation leverage, or another explicit SoloForge priority.
-
-When future systems need durable memory, integrate them incrementally through the approved Memory Foundation contracts rather than creating separate memory implementations.
+Do not start P2, recommendation logic, or UI work before P1 passes and the owner approves the next phase.
 
 ---
 
@@ -123,9 +149,10 @@ When starting a new task:
 3. Follow AI_RULES.md.
 4. Review this task board.
 5. Read docs/CURRENT_SPRINT.md for human-approved development state.
-6. Prefer ACTIVE/current decisions over stale or superseded context.
-7. Reuse Memory Foundation v1 when durable decisions or runtime events are required.
+6. Read docs/INCOME_ENGINE_P1_DIAGNOSTIC.md for the active P1 contract.
+7. Prefer ACTIVE/current decisions over stale or superseded context.
 8. Do not reopen completed Asset Forge v1 scope without an explicit blocker or owner priority.
+9. Do not implement P2 until P1 validation passes and the owner approves progression.
 
 ---
 
