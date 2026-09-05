@@ -9,9 +9,7 @@ import '../widgets/home/hero_banner.dart';
 import '../widgets/sort_selector.dart';
 import 'about_page.dart';
 import 'asset_forge_page.dart';
-import 'developer_tools_page.dart';
 import 'forge_page.dart';
-import 'prawtwan_chat_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -94,13 +92,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void openPrawtwan() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const PrawtwanChatPage()),
-    );
-  }
-
   void openProductForge(AffiliateProduct product) {
     Navigator.push(
       context,
@@ -114,16 +105,6 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('SoloForge AI'),
         actions: [
-          IconButton(
-            tooltip: 'Developer Tools',
-            icon: const Icon(Icons.build),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const DeveloperToolsPage()),
-              );
-            },
-          ),
           IconButton(
             tooltip: 'About',
             icon: const Icon(Icons.info_outline),
@@ -142,19 +123,6 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             HeroBanner(onPressed: openStickerForge),
-            const SizedBox(height: 5),
-            SizedBox(
-              width: double.infinity,
-              height: 38,
-              child: FilledButton.tonalIcon(
-                onPressed: openPrawtwan,
-                icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                label: const Text(
-                  'Chat Prawtwan',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-                ),
-              ),
-            ),
             const SizedBox(height: 5),
             SizedBox(
               height: 38,

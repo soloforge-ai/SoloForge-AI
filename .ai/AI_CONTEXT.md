@@ -18,7 +18,7 @@ PROTOCOL.md
 
 # SoloForge AI Context
 
-Version: v1.2.0
+Version: v1.3.0
 
 ---
 
@@ -34,7 +34,7 @@ AI Creator Operating System
 
 Mission
 
-Build a commercial-grade AI platform that enables creators, developers, and solo entrepreneurs to build, automate, manage, and scale digital products using AI.
+Build a commercial-grade AI platform that enables creators, affiliate marketers, and solo entrepreneurs to turn product data into useful business content and digital outputs with AI-assisted workflows.
 
 ---
 
@@ -46,17 +46,23 @@ Active Development
 
 Current Objective
 
-No active implementation sprint. Asset Forge v1 Working Product #1 was completed and owner-accepted on 2026-09-04.
+SoloForge Product-to-Post — Cleanup Scope Reset #1.
 
-Asset Forge should not be reopened for non-blocking polish by default. The next development objective must be selected explicitly based on expected product/business value.
+The owner has reset the active product direction to the original commercial workflow:
 
-Sprint 42 Status
+```text
+Product
+→ Extract / load product data
+→ Evaluate product opportunity
+→ Select selling angle
+→ Generate creative + caption
+→ Review
+→ Export ready-to-post package
+```
 
-Completed.
+The immediate objective is to reduce scope drift, preserve reusable components, and then prove one real Product-to-Post workflow before expanding architecture.
 
-The SoloForge AI Development Protocol v1.0 was established in Sprint 42 and remains the standard workflow for AI-assisted development.
-
-For the active development cycle, read AI_TASK.md and docs/CURRENT_SPRINT.md.
+Asset Forge v1 remains Working Product #1 and a reusable creative/image-processing component. It should not be reopened for non-blocking polish by default.
 
 ---
 
@@ -116,6 +122,7 @@ backend/
 assets/
 data/
 docs/
+feed_processor/
 tools/
 prompts/
 rules/
@@ -173,33 +180,49 @@ Business logic should remain separated from UI whenever possible.
 
 ---
 
-# Current Systems
+# Active Product Foundations
 
-Established Foundations
-
-- Developer Launcher
-- Project Scanner
-- Documentation Pipeline
+- Product Feed / Feed Processor
+- Product Catalog and category data
+- MiniBoss scoring and ranking
 - Product Intelligence
-- MiniBoss Engine
-- Frontend Foundation
+- Product Forge / Content Studio
+- Content Engine and prompt infrastructure
+- Flutter frontend foundation
+
+---
+
+# Retained Components
+
+- Asset Forge v1 — Working Product #1 and reusable creative/image-processing component
+- Pollinations OAuth/session infrastructure used by Asset Forge
+- Asset Forge Character Memory bridge currently wired into runtime
+- Asset Forge output-quality processing
 - SoloForge AI Development Protocol v1.0
-- Memory Foundation v1
 
-Completed Product / Internal Systems
+Do not remove retained shared infrastructure when an active component still depends on it.
 
-- Asset Forge v1 — Working Product #1
-- Idea Flow founder inbox
-- Supabase-backed Telegram Idea Inbox webhook
+---
+
+# Frozen Capabilities / Initiatives
+
+The following remain merged or documented but are not active roadmap drivers:
+
 - Chat Prawtwan MVP
+- Idea Flow / Supabase-backed Telegram Idea Inbox
+- SoloForge Income Engine P1
 
-Known Asset Forge v1 post-release output polish is tracked separately and does not reopen the completed product milestone.
+Income Engine P1 remains valid historical work. `P2 — Opportunity Library v0` is frozen and must not begin unless explicitly re-authorized by the owner.
 
 ---
 
 # Development Philosophy
 
 Prioritize
+
+Useful business output
+
+↓
 
 Correctness
 
@@ -215,11 +238,7 @@ Maintainability
 
 Scalability
 
-↓
-
-Performance
-
-Prefer simple and maintainable solutions over complex implementations.
+Prefer simple workflow completion over architecture expansion.
 
 ---
 
@@ -277,17 +296,29 @@ Keep documentation synchronized with implementation.
 
 Do not treat generated scanner output as authoritative human sprint state.
 
+Do not expand frozen initiatives without explicit owner approval.
+
 ---
 
 # Current Focus
 
-There is no active implementation sprint after the Asset Forge v1 closure.
+The active focus is Product-to-Post.
 
-The next SoloForge objective should be chosen explicitly by the owner using business/product value, scalability, automation leverage, cost, risk, and expected ROI.
+The governing product question is:
 
-Do not automatically extend Asset Forge pack size, billing, history, general authentication, video/audio, or advanced memory systems merely because they remain possible future work.
+> Can one real product enter SoloForge and leave as a useful, reviewable, ready-to-post package?
 
-Memory Foundation v1 remains reusable infrastructure. Do not add Vector DB, Graph DB, autonomous memory deletion, required embeddings, or 3D brain visualization unless explicitly approved and justified by a product need.
+For the current cleanup:
+
+- remove dead/legacy frontend implementations that have no production caller
+- remove Chat Prawtwan and Developer Tools entry points from Home
+- preserve Product Catalog, MiniBoss, Product Intelligence, Product Forge, Content Engine, and Asset Forge
+- preserve shared runtime dependencies required by retained components
+- do not modify backend Prawtwan or Idea Flow routes in Cleanup #1
+
+After cleanup, identify the smallest missing Product Forge gaps needed for one real end-to-end run.
+
+Do not automatically add billing, general authentication, autonomous posting, new agents, advanced memory, video/audio, or unrelated verticals merely because they remain possible future work.
 
 ---
 
@@ -302,18 +333,17 @@ Every AI assistant should
 - preserve architecture
 - minimize unnecessary changes
 - explain important technical decisions
-- prefer current ACTIVE decisions over superseded context
-- treat completed Asset Forge v1 as closed unless a blocker or explicit owner priority requires reopening it
+- prefer current ACTIVE Product-to-Post decisions over superseded context
+- treat Asset Forge as a retained component unless a blocker or explicit owner priority requires reopening it
+- avoid expanding frozen initiatives without explicit approval
 
 ---
 
 # Future Direction
 
-SoloForge AI is evolving toward a learning AI Creator Operating System capable of coordinating multiple AI tools and agents through a shared external memory layer.
+SoloForge may eventually coordinate multiple AI tools and specialized workflows, but future expansion must be justified by concrete product or business value.
 
-AI models should remain replaceable reasoning engines. SoloForge-owned context, decisions, experience, and project knowledge should remain portable across models.
-
-Future implementation work should be justified by concrete product or business value rather than architecture expansion alone.
+The near-term priority is not to become a broader platform. It is to complete and validate the Product-to-Post business loop first.
 
 ---
 
