@@ -1,0 +1,26 @@
+name: Text Model Qualification Test
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tools/model_qualification/**'
+      - '.github/workflows/text-model-qualification-test.yml'
+  workflow_dispatch:
+
+jobs:
+  qualification-unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run text model qualification tests
+        run: |
+          python -m unittest tools.model_qualification.test_text_model_qualification -v
