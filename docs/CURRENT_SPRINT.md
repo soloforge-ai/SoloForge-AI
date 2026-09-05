@@ -10,7 +10,7 @@ SoloForge Product-to-Post
 
 ## Current Implementation
 
-Cleanup Scope Reset #1
+Text Model Qualification + Product-to-Post E2E Preparation
 
 ## Status
 
@@ -18,7 +18,7 @@ In Progress
 
 ## Product Objective
 
-Restore SoloForge to its original commercial workflow:
+Prove the original commercial workflow with one real product:
 
 ```text
 Product
@@ -32,19 +32,44 @@ Product
 
 The immediate product goal is to complete this workflow for one real product before expanding architecture or adding unrelated verticals.
 
-## Cleanup Scope Reset #1
+## Completed In This Cycle
 
-This cleanup intentionally reduces the active product surface without rebuilding the application.
+### Cleanup Scope Reset #1
 
-Approved scope:
+Merged and complete.
 
-- keep the product catalog, feed processor, MiniBoss ranking, Product Intelligence, Product Forge, and Content Engine active
-- keep Asset Forge as a reusable creative/image-processing component
-- keep shared Pollinations OAuth/session and Asset Forge Memory/output-quality dependencies
-- remove Chat Prawtwan and Developer Tools entry points from the Home screen
-- remove confirmed dead/legacy Flutter Product/Sticker/Test implementations
-- keep backend Prawtwan and Idea Flow implementations unchanged in this cleanup
-- do not refactor Asset Forge in this cleanup
+The active product surface is intentionally narrowed to Product-to-Post while retaining reusable shared infrastructure.
+
+Retained active foundations:
+
+- Product Catalog and discovery
+- Feed Processor and MiniBoss
+- Product Intelligence and Product Forge
+- Content Engine
+- Asset Forge as a reusable creative/image-processing component
+- Pollinations OAuth/session infrastructure required by Asset Forge
+- Asset Forge Character Memory and output-quality runtime dependencies
+
+Chat Prawtwan and Developer Tools entry points were removed from Home, and confirmed dead/legacy Flutter Product/Sticker/Test implementations were removed.
+
+### Text Model Qualification Harness
+
+Merged and complete as isolated qualification infrastructure.
+
+It can compare supported text providers against one Product-to-Post output contract without changing the production ContentEngine provider automatically.
+
+### Live Text Qualification Runner
+
+Merged and available for manual live qualification runs through GitHub Actions.
+
+A successful workflow run is not, by itself, a provider approval. Qualification evidence must be judged from the generated report and the owner remains the final production gate.
+
+## Current Gate
+
+1. Obtain a usable live text-model qualification result.
+2. Do not switch the production ContentEngine provider until the owner explicitly approves a qualified provider.
+3. Inspect the existing Product Forge path and identify only the smallest missing gaps required for one real Product-to-Post E2E run.
+4. Run one real product through the complete workflow and verify the result is useful, reviewable, and manually exportable/postable.
 
 ## Product Definition of Done
 
@@ -68,7 +93,7 @@ The following merged/completed capabilities are retained but are not active road
 - Idea Flow / Telegram Idea Inbox
 - SoloForge Income Engine P1
 
-Income Engine P1 remains historical validated work. `P2 — Opportunity Library v0` is not active and must not begin unless the owner explicitly re-authorizes it.
+Income Engine P1 remains historical validated work. `P2 — Opportunity Library v0` and later Income Engine expansion are not active and must not proceed unless the owner explicitly re-authorizes them.
 
 ## Completed Product Retained
 
@@ -90,12 +115,19 @@ This document describes human-approved current development intent.
 
 These are different concepts and must remain separate.
 
-## Next Step After Cleanup
+## Explicit Non-Goals For The Active Gate
 
-Audit the existing Product Forge end-to-end and close the smallest missing gaps required for a real `Product → Ready-to-Post` test.
+Do not add or expand:
 
-Do not add new agents, memory systems, verticals, billing, autonomous posting, or unrelated infrastructure before that product loop is proven unless the owner explicitly changes priority.
+- new agents
+- new memory systems
+- billing
+- autonomous posting
+- unrelated product verticals
+- broad architecture refactors
+
+unless the owner explicitly changes priority.
 
 ---
 
-Last updated: 2026-09-05 — Product-to-Post scope reset approved.
+Last updated: 2026-09-05 — Cleanup #1, Text Model Qualification Harness, and Live Qualification Runner are merged; active gate is provider qualification followed by one real Product-to-Post E2E run.
