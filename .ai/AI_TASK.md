@@ -1,6 +1,6 @@
 # SoloForge AI Task Board
 
-Version: v1.5.0
+Version: v1.6.0
 
 ---
 
@@ -8,7 +8,7 @@ Version: v1.5.0
 
 This document represents the current working state of the SoloForge AI project.
 
-It provides AI assistants with a concise snapshot of active work, completed foundations, and the next safe development direction.
+It provides AI assistants with a concise snapshot of active work, completed foundations, frozen initiatives, and the next safe development direction.
 
 ---
 
@@ -16,91 +16,66 @@ It provides AI assistants with a concise snapshot of active work, completed foun
 
 Title
 
-SoloForge Income Engine — P1 Income Diagnostic v0
+SoloForge Product-to-Post — Cleanup Scope Reset #1
 
 Status
 
-Validated — PASS
+In Progress
 
-Primary Spec
+Primary Source of Truth
 
-`docs/INCOME_ENGINE_P1_DIAGNOSTIC.md`
-
----
-
-# Goal Achieved
-
-SoloForge now has a validated beginner-safe diagnostic contract that can produce meaningfully different normalized profiles without inventing unknown skills or generating income recommendations prematurely.
-
-The diagnostic preserves evidence-backed capability, urgency, time, budget, devices, work preferences, customer/public-facing tolerance, existing assets, risk, and market reach for later opportunity matching.
+`docs/CURRENT_SPRINT.md`
 
 ---
 
-# P1 Completed Scope
+# Active Product Objective
 
-- 15 diagnostic questions
-- normalized user profile output
-- evidence/confidence trace for inferred capabilities
-- skill-discovery mode when the user does not know what they are good at
-- 10 deliberately different persona tests completed
-- materially different profiles produced
-- hard constraints preserved
-- unknown skills retained as unknown
-- no recommendation generated during validation
-- explicit PASS gate satisfied
+Restore SoloForge to the original commercial workflow:
 
----
+```text
+Product
+→ Extract / load product data
+→ Evaluate product opportunity
+→ Select selling angle
+→ Generate creative + caption
+→ Review
+→ Export ready-to-post package
+```
 
-# P1 Validation Result
-
-**PASS**
-
-The validation includes the required persona categories:
-
-1. Data / spreadsheet-oriented person
-2. Strong speaker with social-media familiarity
-3. Visual creator who dislikes customer interaction
-4. Existing small seller
-5. Beginner with no identified skill
-6. Student with low budget
-7. Full-time worker with little available time
-8. Unemployed person with substantial available time
-9. Person with money but little time
-10. Person with almost no money but strong willingness to work
-
-The detailed evidence is in `docs/INCOME_ENGINE_P1_DIAGNOSTIC.md`.
+The next product milestone must prove this flow with one real product before unrelated architecture expansion.
 
 ---
 
-# Guardrails Carried Forward
+# Cleanup #1 Approved Scope
 
-Future phases must:
-
-- preserve evidence and confidence instead of inventing capability
-- enforce hard constraints before ranking opportunities
-- distinguish tool exposure from demonstrated skill
-- distinguish willingness to work from proven capability
-- use controlled opportunity metadata rather than free-form LLM popularity guesses
-- validate real-user action and market response later, not only recommendation satisfaction
+- keep Product Catalog and discovery
+- keep Feed Processor and MiniBoss
+- keep Product Intelligence and Product Forge
+- keep Content Engine
+- keep Asset Forge as a reusable creative/image-processing component
+- keep Pollinations OAuth/session infrastructure used by Asset Forge
+- keep Asset Forge Memory/output-quality dependencies that are currently wired into runtime
+- remove Chat Prawtwan navigation from Home
+- remove Developer Tools navigation from Home
+- remove confirmed dead/legacy Flutter Product/Sticker/Test implementations
+- update project state documentation to Product-to-Post
 
 ---
 
-# P1 Must Remain Closed
+# Explicit Non-Goals For Cleanup #1
 
-Do not add these retroactively to P1:
+Do not:
 
-- Opportunity Library
-- income-path recommendations
-- ranking/scoring engine
-- Flutter UI changes
-- Supabase schema
-- billing
-- scraping
-- autonomous agents
-- paid AI generations
-- income guarantees
-
-These belong to later phases only if explicitly approved.
+- modify backend Prawtwan routes
+- modify Idea Flow / Telegram webhook backend routes
+- delete Supabase Idea Flow migrations
+- refactor Asset Forge
+- remove shared Pollinations OAuth/session code
+- remove Asset Forge Memory/output-quality runtime dependencies
+- add new Product-to-Post features in the cleanup PR
+- add billing
+- add autonomous posting
+- add agents or new memory systems
 
 ---
 
@@ -112,59 +87,52 @@ Its default product contract remains 4 poses / 1 AI generation, with local revie
 
 GitHub Issue #48 tracks residual light fringe as non-blocking output polish.
 
-Chat Prawtwan MVP and the Supabase-backed Telegram Idea Inbox webhook remain merged capabilities but are not the current Income Engine focus.
+---
+
+# Frozen Capabilities / Initiatives
+
+The following remain in the repository but are not active roadmap drivers:
+
+- Chat Prawtwan MVP
+- Supabase-backed Telegram Idea Inbox / Idea Flow
+- SoloForge Income Engine P1
+
+Income Engine P1 remains valid historical work, but its candidate `P2 — Opportunity Library v0` is frozen and must not begin unless the owner explicitly re-authorizes it.
 
 ---
 
-# Verified Foundation Capabilities
+# Verified Shared Foundations
 
-Memory Foundation v1 remains available as shared infrastructure:
+Retain shared infrastructure only where it supports active components or has an existing runtime dependency.
 
-- Decision Memory
-- ACTIVE / SUPERSEDED lifecycle
-- scoped Decision retrieval
-- authority validation
-- JSON persistence
-- append-only Memory Events
-- event retrieval/filtering
-- image-generation runtime events
-- Runtime Test Runner
-- end-to-end Memory Foundation verification
+Current examples include:
 
-Previous verification:
+- Pollinations OAuth/session handling used by Asset Forge
+- Character Memory bridge currently used by Asset Forge runtime
+- Asset Forge output-quality processing
+- existing Product Catalog / MiniBoss / Product Intelligence foundation
 
-```text
-Ran 12 tests in 0.183s
-OK
-```
+Do not expand these systems merely because future extensions are possible.
 
 ---
 
 # Product Principle
 
-SoloForge should reduce wrong experiments, not merely generate more ideas.
+SoloForge should produce useful business output, not merely accumulate subsystems.
 
-Future recommendation logic should answer:
+For the active cycle, the governing question is:
 
-> Given this person's real constraints and evidence, what is the highest-probability income experiment to test first?
+> Can one real product enter SoloForge and leave as a useful, reviewable, ready-to-post package?
 
-—not:
-
-> What are some popular ways to make money online?
+Engineering completion alone is not sufficient if the user still cannot complete that product workflow.
 
 ---
 
 # Next Development Direction
 
-P1 is complete.
+After Cleanup Scope Reset #1 is merged, inspect the existing Product Forge path and identify the smallest missing gaps needed for one real end-to-end Product-to-Post run.
 
-The next candidate phase is:
-
-`P2 — Opportunity Library v0`
-
-P2 should define a controlled set of income opportunities and their requirements before any personalized ranking engine exists.
-
-Do not start P2 until the owner explicitly approves progression.
+Prioritize workflow completion over architecture expansion.
 
 ---
 
@@ -177,10 +145,10 @@ When starting a new task:
 3. Follow AI_RULES.md.
 4. Review this task board.
 5. Read docs/CURRENT_SPRINT.md for human-approved development state.
-6. Read docs/INCOME_ENGINE_P1_DIAGNOSTIC.md for the completed P1 contract and validation evidence.
-7. Prefer ACTIVE/current decisions over stale or superseded context.
-8. Do not reopen completed Asset Forge v1 scope without an explicit blocker or owner priority.
-9. Do not implement P2 until the owner explicitly approves progression.
+6. Prefer ACTIVE/current Product-to-Post decisions over superseded Income Engine direction.
+7. Treat Asset Forge v1 as a retained component, not the active roadmap by default.
+8. Do not restart Income Engine P2, Chat Prawtwan expansion, Idea Flow expansion, or unrelated infrastructure without explicit owner approval.
+9. Prefer the smallest change that advances the real Product-to-Post workflow.
 
 ---
 
