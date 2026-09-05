@@ -1,0 +1,97 @@
+name: Live Text Qualification
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Gemini model ID to qualify
+        required: true
+        default: gemini-3.8-flash
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-text-qualification
+  cancel-in-progress: false
+
+jobs:
+  qualify-gemini:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ inputs.model }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify Gemini secret is configured
+        shell: bash
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "GEMINI_API_KEY repository secret is missing." >&2
+            exit 1
+          fi
+
+      - name: Run live Gemini qualification
+        run: |
+          mkdir -p artifacts
+          python tools/model_qualification/text_model_qualification.py \
+            --product-json tools/model_qualification/fixtures/jasmeen_toilet_cleaner.json \
+            --providers gemini \
+            --output artifacts/text-qualification-gemini.json
+
+      - name: Write qualification summary
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -f artifacts/text-qualification-gemini.json ]; then
+            echo "## Live Text Qualification" >> "$GITHUB_STEP_SUMMARY"
+            echo "No report was produced. Check the failed step logs." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('artifacts/text-qualification-gemini.json').read_text(encoding='utf-8'))
+          result = report['results'][0]
+
+          print('## Live Text Qualification')
+          print()
+          print(f"- Provider: `{result.get('provider')}`")
+          print(f"- Model: `{result.get('model')}`")
+          print(f"- Status: **{result.get('status')}**")
+          print(f"- Stage: **{result.get('stage')}**")
+          if result.get('latency_ms') is not None:
+              print(f"- Latency: {result['latency_ms']} ms")
+          scores = result.get('scores') or {}
+          if scores:
+              print(f"- Qualification score: **{scores.get('total')}/100**")
+              print(f"- Structure: {scores.get('structure')}/25")
+              print(f"- Thai: {scores.get('thai')}/25")
+              print(f"- Evidence grounding: {scores.get('evidence_grounding')}/25")
+              print(f"- Completeness: {scores.get('completeness')}/25")
+          if result.get('error'):
+              print(f"- Error: `{result['error']}`")
+          print()
+          print('The full generated copy and scoring report are available in the uploaded artifact.')
+          PY
+
+      - name: Upload qualification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: text-qualification-gemini
+          path: artifacts/text-qualification-gemini.json
+          if-no-files-found: warn
+          retention-days: 7
