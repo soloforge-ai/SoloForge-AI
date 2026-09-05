@@ -1,6 +1,6 @@
 # SoloForge AI Task Board
 
-Version: v1.6.0
+Version: v1.7.0
 
 ---
 
@@ -16,7 +16,7 @@ It provides AI assistants with a concise snapshot of active work, completed foun
 
 Title
 
-SoloForge Product-to-Post — Cleanup Scope Reset #1
+SoloForge Product-to-Post — Text Model Qualification + E2E Preparation
 
 Status
 
@@ -30,7 +30,7 @@ Primary Source of Truth
 
 # Active Product Objective
 
-Restore SoloForge to the original commercial workflow:
+Prove the original commercial workflow with one real product:
 
 ```text
 Product
@@ -42,40 +42,28 @@ Product
 → Export ready-to-post package
 ```
 
-The next product milestone must prove this flow with one real product before unrelated architecture expansion.
+The next product milestone must prove this flow before unrelated architecture expansion.
 
 ---
 
-# Cleanup #1 Approved Scope
+# Completed In Current Cycle
 
-- keep Product Catalog and discovery
-- keep Feed Processor and MiniBoss
-- keep Product Intelligence and Product Forge
-- keep Content Engine
-- keep Asset Forge as a reusable creative/image-processing component
-- keep Pollinations OAuth/session infrastructure used by Asset Forge
-- keep Asset Forge Memory/output-quality dependencies that are currently wired into runtime
-- remove Chat Prawtwan navigation from Home
-- remove Developer Tools navigation from Home
-- remove confirmed dead/legacy Flutter Product/Sticker/Test implementations
-- update project state documentation to Product-to-Post
+- Cleanup Scope Reset #1 merged.
+- Product-to-Post is the active product direction.
+- Chat Prawtwan and Developer Tools Home entry points were removed.
+- Confirmed dead/legacy Flutter Product/Sticker/Test implementations were removed.
+- Text Model Qualification Harness merged.
+- Live Text Qualification Runner merged and is available through GitHub Actions.
 
 ---
 
-# Explicit Non-Goals For Cleanup #1
+# Current Gate
 
-Do not:
-
-- modify backend Prawtwan routes
-- modify Idea Flow / Telegram webhook backend routes
-- delete Supabase Idea Flow migrations
-- refactor Asset Forge
-- remove shared Pollinations OAuth/session code
-- remove Asset Forge Memory/output-quality runtime dependencies
-- add new Product-to-Post features in the cleanup PR
-- add billing
-- add autonomous posting
-- add agents or new memory systems
+1. Obtain a usable live qualification result for a text provider.
+2. Treat workflow execution success and model qualification success as separate outcomes.
+3. Do not switch the production ContentEngine provider without explicit owner approval.
+4. Inspect the existing Product Forge path for only the smallest missing Product-to-Post gaps.
+5. Run one real product end-to-end and verify a useful, reviewable, manually exportable ready-to-post package.
 
 ---
 
@@ -97,7 +85,7 @@ The following remain in the repository but are not active roadmap drivers:
 - Supabase-backed Telegram Idea Inbox / Idea Flow
 - SoloForge Income Engine P1
 
-Income Engine P1 remains valid historical work, but its candidate `P2 — Opportunity Library v0` is frozen and must not begin unless the owner explicitly re-authorizes it.
+Income Engine P1 remains valid historical work. `P2 — Opportunity Library v0` and later Income Engine expansion are frozen and must not proceed unless the owner explicitly re-authorizes them.
 
 ---
 
@@ -107,10 +95,15 @@ Retain shared infrastructure only where it supports active components or has an 
 
 Current examples include:
 
+- Product Catalog and discovery
+- Feed Processor and MiniBoss
+- Product Intelligence and Product Forge
+- Content Engine and prompt infrastructure
 - Pollinations OAuth/session handling used by Asset Forge
 - Character Memory bridge currently used by Asset Forge runtime
 - Asset Forge output-quality processing
-- existing Product Catalog / MiniBoss / Product Intelligence foundation
+- Text Model Qualification Harness
+- Live Text Qualification Runner
 
 Do not expand these systems merely because future extensions are possible.
 
@@ -128,11 +121,17 @@ Engineering completion alone is not sufficient if the user still cannot complete
 
 ---
 
-# Next Development Direction
+# Explicit Non-Goals
 
-After Cleanup Scope Reset #1 is merged, inspect the existing Product Forge path and identify the smallest missing gaps needed for one real end-to-end Product-to-Post run.
+Do not add or expand without explicit owner approval:
 
-Prioritize workflow completion over architecture expansion.
+- new agents
+- new memory systems
+- billing
+- autonomous posting
+- unrelated verticals
+- broad architecture refactors
+- Income Engine P2+
 
 ---
 
@@ -144,21 +143,22 @@ When starting a new task:
 2. Read AI_CONTEXT.md.
 3. Follow AI_RULES.md.
 4. Review this task board.
-5. Read docs/CURRENT_SPRINT.md for human-approved development state.
-6. Prefer ACTIVE/current Product-to-Post decisions over superseded Income Engine direction.
+5. Read `docs/CURRENT_SPRINT.md` for human-approved development state.
+6. Prefer ACTIVE/current Product-to-Post decisions over superseded or frozen Income Engine direction.
 7. Treat Asset Forge v1 as a retained component, not the active roadmap by default.
-8. Do not restart Income Engine P2, Chat Prawtwan expansion, Idea Flow expansion, or unrelated infrastructure without explicit owner approval.
+8. Do not restart Income Engine expansion, Chat Prawtwan expansion, Idea Flow expansion, or unrelated infrastructure without explicit owner approval.
 9. Prefer the smallest change that advances the real Product-to-Post workflow.
+10. Do not infer human intent from generated scanner output.
 
 ---
 
 # Notes
 
-Long-term planning belongs in docs/ROADMAP.md.
+Human-approved active development state lives in `docs/CURRENT_SPRINT.md`.
 
-Human sprint documentation belongs in docs/CURRENT_SPRINT.md.
+Generated scanner reports describe observed implementation and must not replace human sprint state.
 
-Generated scanner reports must not replace human sprint state.
+`docs/ROADMAP.md` is currently scanner-generated and must not be treated as authoritative product intent until its ownership is corrected in a separate approved change.
 
 ---
 
