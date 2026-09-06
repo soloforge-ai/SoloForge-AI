@@ -88,9 +88,12 @@ def main():
         output_dir / "PROJECT_INTELLIGENCE.md",
     )
 
+    # Scanner-generated implementation suggestions belong with other
+    # observational scanner output. Human-approved product direction lives in
+    # docs/ROADMAP.md and must never be overwritten by Project Scanner.
     RoadmapWriter().write(
         intelligence,
-        docs_dir / "ROADMAP.md",
+        output_dir / "IMPLEMENTATION_ROADMAP.md",
     )
 
     # Scanner-generated implementation report.
