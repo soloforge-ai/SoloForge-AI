@@ -1,6 +1,6 @@
 # SoloForge AI Task Board
 
-Version: v1.7.0
+Version: v1.8.0
 
 ---
 
@@ -54,6 +54,7 @@ The next product milestone must prove this flow before unrelated architecture ex
 - Confirmed dead/legacy Flutter Product/Sticker/Test implementations were removed.
 - Text Model Qualification Harness merged.
 - Live Text Qualification Runner merged and is available through GitHub Actions.
+- Project Scanner roadmap authority is separated from human product planning: scanner implementation suggestions belong in `tools/scanner/output/IMPLEMENTATION_ROADMAP.md`, while `docs/ROADMAP.md` is human-maintained product direction.
 
 ---
 
@@ -144,11 +145,12 @@ When starting a new task:
 3. Follow AI_RULES.md.
 4. Review this task board.
 5. Read `docs/CURRENT_SPRINT.md` for human-approved development state.
-6. Prefer ACTIVE/current Product-to-Post decisions over superseded or frozen Income Engine direction.
-7. Treat Asset Forge v1 as a retained component, not the active roadmap by default.
-8. Do not restart Income Engine expansion, Chat Prawtwan expansion, Idea Flow expansion, or unrelated infrastructure without explicit owner approval.
-9. Prefer the smallest change that advances the real Product-to-Post workflow.
-10. Do not infer human intent from generated scanner output.
+6. Read `docs/ROADMAP.md` for human-approved product direction when longer-horizon intent is relevant.
+7. Prefer ACTIVE/current Product-to-Post decisions over superseded or frozen Income Engine direction.
+8. Treat Asset Forge v1 as a retained component, not the active roadmap by default.
+9. Do not restart Income Engine expansion, Chat Prawtwan expansion, Idea Flow expansion, or unrelated infrastructure without explicit owner approval.
+10. Prefer the smallest change that advances the real Product-to-Post workflow.
+11. Do not infer human intent from generated scanner output.
 
 ---
 
@@ -156,9 +158,11 @@ When starting a new task:
 
 Human-approved active development state lives in `docs/CURRENT_SPRINT.md`.
 
-Generated scanner reports describe observed implementation and must not replace human sprint state.
+Human-approved product direction lives in `docs/ROADMAP.md`.
 
-`docs/ROADMAP.md` is currently scanner-generated and must not be treated as authoritative product intent until its ownership is corrected in a separate approved change.
+Generated scanner reports describe observed implementation and must not replace human sprint state or product direction.
+
+Scanner-generated implementation roadmap output belongs in `tools/scanner/output/IMPLEMENTATION_ROADMAP.md`.
 
 ---
 
