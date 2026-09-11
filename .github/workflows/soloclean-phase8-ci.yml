@@ -29,6 +29,20 @@ jobs:
           test -f soloclean/settings.gradle.kts
           test -f soloclean/app/src/main/AndroidManifest.xml
 
+      - name: Apply Phase 8 build fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            soloclean/app/src/main/java/com/soloforge/soloclean/ui/home/HomeScreen.kt \
+            soloclean/app/src/main/java/com/soloforge/soloclean/ui/result/ResultScreen.kt \
+            soloclean/app/src/main/java/com/soloforge/soloclean/ui/review/ReviewScreen.kt \
+            soloclean/app/src/main/java/com/soloforge/soloclean/ui/cleanup/CleanupResultScreen.kt
+          do
+            sed -i '/import androidx\.compose\.foundation\.layout\.weight/d' "$file"
+          done
+          ! grep -R 'import androidx.compose.foundation.layout.weight' soloclean/app/src/main/java
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
