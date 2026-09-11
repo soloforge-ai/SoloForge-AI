@@ -103,19 +103,67 @@ jobs:
               raise SystemExit('Expected duplicate test anchor not found')
           s = s.replace(duplicate_anchor, duplicate_replacement, 1)
           test.write_text(s)
+          PY
+          grep -q 'ScanItemKind.EMPTY_FOLDER -> false' soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSafetyPolicy.kt
+
+      - name: Apply Phase 8B3 categorized cleanup session
+        shell: bash
+        run: |
+          set -euo pipefail
+          REVIEW='soloclean/app/src/main/java/com/soloforge/soloclean/ui/review/ReviewScreen.kt'
+          MAIN='soloclean/app/src/main/java/com/soloforge/soloclean/MainActivity.kt'
+          RULES='soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSessionRules.kt'
+          TEST='soloclean/app/src/test/java/com/soloforge/soloclean/cleanup/CleanupSessionRulesTest.kt'
+          cat \
+            artifacts/soloclean/phase8b3/ReviewScreen.part1.kt \
+            artifacts/soloclean/phase8b3/ReviewScreen.part2a.kt \
+            artifacts/soloclean/phase8b3/ReviewScreen.part2b.kt \
+            artifacts/soloclean/phase8b3/ReviewScreen.part3a.kt \
+            artifacts/soloclean/phase8b3/ReviewScreen.part3b.kt \
+            > "$REVIEW"
+          cp artifacts/soloclean/phase8b3/MainActivity.kt "$MAIN"
+          cp artifacts/soloclean/phase8b3/CleanupSessionRules.kt "$RULES"
+          cp artifacts/soloclean/phase8b3/CleanupSessionRulesTest.kt "$TEST"
+
+          echo 'a28f31dcb5731762fdc8db68e219b699eb01ed8ff71be99440b2d7c78a960678  '"$REVIEW" | sha256sum -c -
+          echo '397f401852bcf7f6834de9f5b5f9bb85c99ce8fa5f038bab7f663ae2be287d1b  '"$MAIN" | sha256sum -c -
+          echo '68d44366a3f1a247858fd3aff0a86ba594c5e0d4a459c89f7a32765a5a3259ce  '"$RULES" | sha256sum -c -
+          echo '234599d60da604e985b5f4fc31ff77be0bb66291b1e55066fcfdc2b742e771e3  '"$TEST" | sha256sum -c -
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          review = Path('soloclean/app/src/main/java/com/soloforge/soloclean/ui/review/ReviewScreen.kt')
+          s = review.read_text()
+          anchor = '                        isCleaning = true\n                        cleanupError = null'
+          if anchor not in s:
+              raise SystemExit('Expected queue start anchor not found')
+          s = s.replace(anchor, '                        showConfirmation = false\n                        isCleaning = true\n                        cleanupError = null', 1)
+          s = s.replace(
+              '                        count = duplicateGroups.sumOf { it.members.size },',
+              '                        count = duplicateSelectableUris.size,',
+              1,
+          )
+          review.write_text(s)
 
           gradle = Path('soloclean/app/build.gradle.kts')
           s = gradle.read_text()
-          s, version_code_changes = re.subn(r'versionCode\s*=\s*\d+', 'versionCode = 10', s, count=1)
-          s, version_name_changes = re.subn(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.8.2-phase8b2"', s, count=1)
-          if version_code_changes != 1 or version_name_changes != 1:
+          s, code_changes = re.subn(r'versionCode\s*=\s*\d+', 'versionCode = 11', s, count=1)
+          s, name_changes = re.subn(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.8.3-phase8b3"', s, count=1)
+          if code_changes != 1 or name_changes != 1:
               raise SystemExit('Expected version metadata not found')
           gradle.write_text(s)
           PY
+
+          grep -q 'LazyColumn' "$REVIEW"
+          grep -q 'SELECT ALL' "$REVIEW"
+          grep -q 'DELETE QUEUE' "$REVIEW"
+          grep -q 'showConfirmation = false' "$REVIEW"
+          grep -q 'onFullScan' "$REVIEW"
+          grep -q 'CleanupSessionRules' "$RULES"
+          grep -q 'versionName = "0.8.3-phase8b3"' soloclean/app/build.gradle.kts
           grep -q 'ScanItemKind.EMPTY_FOLDER -> false' soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSafetyPolicy.kt
-          grep -q 'EMPTY FOLDER · manual selection' soloclean/app/src/main/java/com/soloforge/soloclean/ui/review/ReviewScreen.kt
-          grep -q 'versionName = "0.8.2-phase8b2"' soloclean/app/build.gradle.kts
-          ! grep -q 'Empty folders และสำเนา Exact duplicate' soloclean/app/src/main/java/com/soloforge/soloclean/ui/review/ReviewScreen.kt
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -180,10 +228,10 @@ jobs:
           fi
           sha256sum "$APK" | tee soloclean/app/build/outputs/apk/debug/app-debug.apk.sha256
 
-      - name: Upload Phase 8B2 build artifact
+      - name: Upload Phase 8B3 build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: soloclean-phase8b2-debug
+          name: soloclean-phase8b3-debug
           if-no-files-found: error
           retention-days: 7
           path: |
