@@ -23,7 +23,7 @@ jobs:
         run: |
           set -euo pipefail
           cat artifacts/soloclean/phase8/part*.bin > /tmp/soloclean-phase8.tar.xz
-          echo "3ca9f76466e82ae569de605badc4332ee2d73a7ac67f0648a154cc56bf3db41a  /tmp/soloclean-phase8.tar.xz" | sha256sum -c -
+          echo "ece303e696259bffc55cc9c0dccba7b0414dc0d90b695d6c5a8ebb22e12d03aa  /tmp/soloclean-phase8.tar.xz" | sha256sum -c -
           mkdir -p soloclean
           tar -xJf /tmp/soloclean-phase8.tar.xz -C soloclean
           test -f soloclean/settings.gradle.kts
@@ -46,14 +46,16 @@ jobs:
           from pathlib import Path
           p = Path('soloclean/app/src/main/AndroidManifest.xml')
           s = p.read_text()
-          s = s.replace(
-              '<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
-              '<manifest xmlns:android="http://schemas.android.com/apk/res/android"\n    xmlns:tools="http://schemas.android.com/tools">'
-          )
-          s = s.replace(
-              '<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />',
-              '<uses-permission\n        android:name="android.permission.QUERY_ALL_PACKAGES"\n        tools:ignore="QueryAllPackagesPermission" />'
-          )
+          if 'xmlns:tools=' not in s:
+              s = s.replace(
+                  '<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
+                  '<manifest xmlns:android="http://schemas.android.com/apk/res/android"\n    xmlns:tools="http://schemas.android.com/tools">'
+              )
+          if 'tools:ignore="QueryAllPackagesPermission"' not in s:
+              s = s.replace(
+                  '<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />',
+                  '<uses-permission\n        android:name="android.permission.QUERY_ALL_PACKAGES"\n        tools:ignore="QueryAllPackagesPermission" />'
+              )
           p.write_text(s)
           PY
           grep -q 'tools:ignore="QueryAllPackagesPermission"' soloclean/app/src/main/AndroidManifest.xml
@@ -121,10 +123,10 @@ jobs:
           fi
           sha256sum "$APK" | tee soloclean/app/build/outputs/apk/debug/app-debug.apk.sha256
 
-      - name: Upload Phase 8 build artifact
+      - name: Upload Phase 8B1 build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: soloclean-phase8-debug
+          name: soloclean-phase8b1-debug
           if-no-files-found: error
           retention-days: 7
           path: |
