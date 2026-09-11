@@ -42,6 +42,21 @@ jobs:
             sed -i '/import androidx\.compose\.foundation\.layout\.weight/d' "$file"
           done
           ! grep -R 'import androidx.compose.foundation.layout.weight' soloclean/app/src/main/java
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('soloclean/app/src/main/AndroidManifest.xml')
+          s = p.read_text()
+          s = s.replace(
+              '<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
+              '<manifest xmlns:android="http://schemas.android.com/apk/res/android"\n    xmlns:tools="http://schemas.android.com/tools">'
+          )
+          s = s.replace(
+              '<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />',
+              '<uses-permission\n        android:name="android.permission.QUERY_ALL_PACKAGES"\n        tools:ignore="QueryAllPackagesPermission" />'
+          )
+          p.write_text(s)
+          PY
+          grep -q 'tools:ignore="QueryAllPackagesPermission"' soloclean/app/src/main/AndroidManifest.xml
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
