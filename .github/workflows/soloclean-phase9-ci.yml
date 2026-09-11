@@ -1,0 +1,161 @@
+name: SoloClean Phase 9 CI
+
+on:
+  push:
+    branches:
+      - feature/soloclean-phase9-project-intelligence
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reconstruct Phase 8 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat artifacts/soloclean/phase8/part*.bin > /tmp/soloclean-phase8.tar.xz
+          echo "ece303e696259bffc55cc9c0dccba7b0414dc0d90b695d6c5a8ebb22e12d03aa  /tmp/soloclean-phase8.tar.xz" | sha256sum -c -
+          mkdir -p soloclean
+          tar -xJf /tmp/soloclean-phase8.tar.xz -C soloclean
+
+      - name: Restore proven Phase 8B3 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('soloclean/app/src/main/AndroidManifest.xml')
+          s=p.read_text()
+          if 'xmlns:tools=' not in s:
+              s=s.replace('<manifest xmlns:android="http://schemas.android.com/apk/res/android">','<manifest xmlns:android="http://schemas.android.com/apk/res/android"\n    xmlns:tools="http://schemas.android.com/tools">')
+          if 'tools:ignore="QueryAllPackagesPermission"' not in s:
+              s=s.replace('<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />','<uses-permission\n        android:name="android.permission.QUERY_ALL_PACKAGES"\n        tools:ignore="QueryAllPackagesPermission" />')
+          p.write_text(s)
+
+          policy=Path('soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSafetyPolicy.kt')
+          s=policy.read_text().replace('ScanItemKind.EMPTY_FOLDER -> item.isDirectory','ScanItemKind.EMPTY_FOLDER -> false',1)
+          policy.write_text(s)
+
+          test=Path('soloclean/app/src/test/java/com/soloforge/soloclean/cleanup/CleanupSafetyPolicyTest.kt')
+          s=test.read_text()
+          s=s.replace('assertTrue(\n            CleanupSafetyPolicy.isDefaultSelected(\n                item("content://empty", ScanItemKind.EMPTY_FOLDER, isDirectory = true, sizeBytes = 0L),\n            ),\n        )','assertFalse(\n            CleanupSafetyPolicy.isDefaultSelected(\n                item("content://empty", ScanItemKind.EMPTY_FOLDER, isDirectory = true, sizeBytes = 0L),\n            ),\n        )',1)
+          anchor='        assertFalse(CleanupSafetyPolicy.isSupportedCandidate(keeper))\n        assertTrue(CleanupSafetyPolicy.isSupportedCandidate(copy))'
+          if anchor in s and 'assertTrue(CleanupSafetyPolicy.isDefaultSelected(copy))' not in s:
+              s=s.replace(anchor, anchor+'\n        assertTrue(CleanupSafetyPolicy.isDefaultSelected(copy))',1)
+          test.write_text(s)
+          PY
+
+          cat artifacts/soloclean/phase8b3/ReviewScreen.part1.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part2a.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part2b.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part3a.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part3b.kt \
+              > soloclean/app/src/main/java/com/soloforge/soloclean/ui/review/ReviewScreen.kt
+          cp artifacts/soloclean/phase8b3/MainActivity.kt soloclean/app/src/main/java/com/soloforge/soloclean/MainActivity.kt
+          cp artifacts/soloclean/phase8b3/CleanupSessionRules.kt soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSessionRules.kt
+          cp artifacts/soloclean/phase8b3/CleanupSessionRulesTest.kt soloclean/app/src/test/java/com/soloforge/soloclean/cleanup/CleanupSessionRulesTest.kt
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('soloclean/app/src/main/java/com/soloforge/soloclean/ui/review/ReviewScreen.kt')
+          s=p.read_text()
+          anchor='                        isCleaning = true\n                        cleanupError = null'
+          if anchor in s:
+              s=s.replace(anchor,'                        showConfirmation = false\n                        isCleaning = true\n                        cleanupError = null',1)
+          s=s.replace('                        count = duplicateGroups.sumOf { it.members.size },','                        count = duplicateSelectableUris.size,',1)
+          p.write_text(s)
+          PY
+
+      - name: Apply Phase 9 Project Intelligence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat artifacts/soloclean/phase9/part*.bin > /tmp/soloclean-phase9-patch.tar.xz
+          echo "f20d90d5d518e1bb71ecf606e5336d96ff3b8f694fc4513672a6d0a33c85cf9c  /tmp/soloclean-phase9-patch.tar.xz" | sha256sum -c -
+          mkdir -p /tmp/phase9
+          tar -xJf /tmp/soloclean-phase9-patch.tar.xz -C /tmp/phase9
+          cp -a /tmp/phase9/app/. soloclean/app/
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('soloclean/app/build.gradle.kts')
+          s=p.read_text()
+          s=re.sub(r'versionCode\s*=\s*\d+','versionCode = 12',s,count=1)
+          s=re.sub(r'versionName\s*=\s*"[^"]+"','versionName = "0.9.0-phase9"',s,count=1)
+          p.write_text(s)
+          PY
+          grep -q 'Project Intelligence' soloclean/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
+          grep -q 'files = accumulator.allFiles' soloclean/app/src/main/java/com/soloforge/soloclean/scanner/AndroidReadOnlyScanEngine.kt
+          grep -q 'versionName = "0.9.0-phase9"' soloclean/app/build.gradle.kts
+          grep -q 'ScanItemKind.EMPTY_FOLDER -> false' soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSafetyPolicy.kt
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: sdkmanager "platform-tools" "build-tools;36.0.0" "platforms;android-37.0" --channel=3
+
+      - name: Set up Gradle 9.6.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Generate Gradle wrapper
+        working-directory: soloclean
+        run: |
+          gradle wrapper --gradle-version 9.6.0 --distribution-type bin
+          chmod +x gradlew
+
+      - name: Unit tests
+        working-directory: soloclean
+        run: ./gradlew --no-daemon --stacktrace testDebugUnitTest
+
+      - name: Android lint
+        working-directory: soloclean
+        run: ./gradlew --no-daemon --stacktrace lintDebug
+
+      - name: Assemble debug APK
+        working-directory: soloclean
+        run: ./gradlew --no-daemon --stacktrace assembleDebug
+
+      - name: Verify APK and permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="soloclean/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          unzip -t "$APK" >/dev/null
+          PERMISSIONS="$(${ANDROID_HOME}/build-tools/36.0.0/aapt dump permissions "$APK")"
+          printf '%s\n' "$PERMISSIONS" | tee soloclean/app/build/outputs/apk/debug/permissions.txt
+          ! printf '%s\n' "$PERMISSIONS" | grep -q 'android.permission.INTERNET'
+          ! printf '%s\n' "$PERMISSIONS" | grep -q 'android.permission.MANAGE_EXTERNAL_STORAGE'
+          sha256sum "$APK" | tee soloclean/app/build/outputs/apk/debug/app-debug.apk.sha256
+
+      - name: Upload Phase 9 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: soloclean-phase9-debug
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            soloclean/app/build/outputs/apk/debug/app-debug.apk
+            soloclean/app/build/outputs/apk/debug/app-debug.apk.sha256
+            soloclean/app/build/outputs/apk/debug/permissions.txt
+            soloclean/app/build/reports/tests/testDebugUnitTest/
+            soloclean/app/build/reports/lint-results-debug.html
