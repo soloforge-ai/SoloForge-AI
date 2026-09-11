@@ -82,6 +82,14 @@ jobs:
           mkdir -p /tmp/phase9
           tar -xJf /tmp/soloclean-phase9-patch.tar.xz -C /tmp/phase9
           cp -a /tmp/phase9/app/. soloclean/app/
+
+          cp artifacts/soloclean/phase9fix/ProjectFingerprintEngine.kt \
+             soloclean/app/src/main/java/com/soloforge/soloclean/project/ProjectFingerprintEngine.kt
+          cp artifacts/soloclean/phase9fix/ProjectFingerprintEngineTest.kt \
+             soloclean/app/src/test/java/com/soloforge/soloclean/project/ProjectFingerprintEngineTest.kt
+          echo "6e2c495bea629a798eae8b62ab377f54114fb7c0dd42db7c6ad0ad7d22b702f6  soloclean/app/src/main/java/com/soloforge/soloclean/project/ProjectFingerprintEngine.kt" | sha256sum -c -
+          echo "4badf2739b49770b5f83af988447a81d84c1729a9b77981c211016c7ae396af8  soloclean/app/src/test/java/com/soloforge/soloclean/project/ProjectFingerprintEngineTest.kt" | sha256sum -c -
+
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -93,6 +101,8 @@ jobs:
           PY
           grep -q 'Project Intelligence' soloclean/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
           grep -q 'files = accumulator.allFiles' soloclean/app/src/main/java/com/soloforge/soloclean/scanner/AndroidReadOnlyScanEngine.kt
+          grep -q 'SHORT_ALIAS_MAX_LENGTH = 4' soloclean/app/src/main/java/com/soloforge/soloclean/project/ProjectFingerprintEngine.kt
+          grep -q 'shortAliasDoesNotMatchInsideUnrelatedWord' soloclean/app/src/test/java/com/soloforge/soloclean/project/ProjectFingerprintEngineTest.kt
           grep -q 'versionName = "0.9.0-phase9"' soloclean/app/build.gradle.kts
           grep -q 'ScanItemKind.EMPTY_FOLDER -> false' soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSafetyPolicy.kt
 
