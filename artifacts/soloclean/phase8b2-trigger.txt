@@ -1,0 +1,1 @@
+Phase 8B2 CI trigger. Empty folders require manual selection by default.
