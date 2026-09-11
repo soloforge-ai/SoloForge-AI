@@ -66,6 +66,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
           policy = Path('soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSafetyPolicy.kt')
           s = policy.read_text()
@@ -105,8 +106,10 @@ jobs:
 
           gradle = Path('soloclean/app/build.gradle.kts')
           s = gradle.read_text()
-          s = s.replace('versionCode = 8', 'versionCode = 10', 1)
-          s = s.replace('versionName = "0.8.0-phase8"', 'versionName = "0.8.2-phase8b2"', 1)
+          s, version_code_changes = re.subn(r'versionCode\s*=\s*\d+', 'versionCode = 10', s, count=1)
+          s, version_name_changes = re.subn(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.8.2-phase8b2"', s, count=1)
+          if version_code_changes != 1 or version_name_changes != 1:
+              raise SystemExit('Expected version metadata not found')
           gradle.write_text(s)
           PY
           grep -q 'ScanItemKind.EMPTY_FOLDER -> false' soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSafetyPolicy.kt
