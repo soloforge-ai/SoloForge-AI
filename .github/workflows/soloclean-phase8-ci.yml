@@ -44,8 +44,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sdkmanager --list --channel=3 | grep -E 'platforms;android-37|build-tools;36.0.0' || true
-          sdkmanager "platform-tools" "build-tools;36.0.0" "platforms;android-37" --channel=3
+          sdkmanager --list --channel=3 | grep -E 'platforms;android-37\.0|build-tools;36\.0\.0' || true
+          sdkmanager "platform-tools" "build-tools;36.0.0" "platforms;android-37.0" --channel=3
 
       - name: Set up Gradle 9.6.0
         uses: gradle/actions/setup-gradle@v4
