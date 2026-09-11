@@ -1,0 +1,104 @@
+name: SoloClean Phase 8 CI
+
+on:
+  push:
+    branches:
+      - chore/soloclean-phase8-ci
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reconstruct and verify SoloClean source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat artifacts/soloclean/phase8/part*.bin > /tmp/soloclean-phase8.tar.xz
+          echo "3ca9f76466e82ae569de605badc4332ee2d73a7ac67f0648a154cc56bf3db41a  /tmp/soloclean-phase8.tar.xz" | sha256sum -c -
+          mkdir -p soloclean
+          tar -xJf /tmp/soloclean-phase8.tar.xz -C soloclean
+          test -f soloclean/settings.gradle.kts
+          test -f soloclean/app/src/main/AndroidManifest.xml
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "build-tools;36.0.0" "platforms;android-37"
+
+      - name: Set up Gradle 9.6.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Generate Gradle wrapper
+        working-directory: soloclean
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle wrapper --gradle-version 9.6.0 --distribution-type bin
+          chmod +x gradlew
+          ./gradlew --version
+
+      - name: Unit tests
+        working-directory: soloclean
+        run: ./gradlew --no-daemon --stacktrace testDebugUnitTest
+
+      - name: Android lint
+        working-directory: soloclean
+        run: ./gradlew --no-daemon --stacktrace lintDebug
+
+      - name: Assemble debug APK
+        working-directory: soloclean
+        run: ./gradlew --no-daemon --stacktrace assembleDebug
+
+      - name: Verify APK and permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="soloclean/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          unzip -t "$APK" >/dev/null
+          PERMISSIONS="$(${ANDROID_HOME}/build-tools/36.0.0/aapt dump permissions "$APK")"
+          printf '%s\n' "$PERMISSIONS" | tee soloclean/app/build/outputs/apk/debug/permissions.txt
+          if printf '%s\n' "$PERMISSIONS" | grep -q 'android.permission.INTERNET'; then
+            echo "Forbidden INTERNET permission found"
+            exit 1
+          fi
+          if printf '%s\n' "$PERMISSIONS" | grep -q 'android.permission.MANAGE_EXTERNAL_STORAGE'; then
+            echo "Forbidden MANAGE_EXTERNAL_STORAGE permission found"
+            exit 1
+          fi
+          sha256sum "$APK" | tee soloclean/app/build/outputs/apk/debug/app-debug.apk.sha256
+
+      - name: Upload Phase 8 build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: soloclean-phase8-debug
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            soloclean/app/build/outputs/apk/debug/app-debug.apk
+            soloclean/app/build/outputs/apk/debug/app-debug.apk.sha256
+            soloclean/app/build/outputs/apk/debug/permissions.txt
+            soloclean/app/build/reports/tests/testDebugUnitTest/
+            soloclean/app/build/reports/lint-results-debug.html
