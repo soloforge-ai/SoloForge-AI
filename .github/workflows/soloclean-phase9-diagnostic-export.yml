@@ -16,20 +16,38 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Extract exact Phase 9 patch used by CI
+      - name: Extract current and previous Phase 9 patches
         shell: bash
         run: |
           set -euo pipefail
-          cat artifacts/soloclean/phase9/part*.bin > /tmp/soloclean-phase9-patch.tar.xz
-          echo "336d61c49d1e46caf1d2f6feaeb3ebdb2384bec9122d1980d9c7e9a2e0415b65  /tmp/soloclean-phase9-patch.tar.xz" | sha256sum -c -
-          mkdir -p export
-          tar -xJf /tmp/soloclean-phase9-patch.tar.xz -C export
-          test -s export/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
-          test -s export/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt
-          test -s export/app/src/test/java/com/soloforge/soloclean/project/ProjectReviewRulesTest.kt
-          grep -n 'Bulk project review\|SELECT SUGGESTED\|CONFIRM SELECTED\|REJECT SELECTED' export/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt || true
-          grep -n 'saveDecisions\|SharedPreferences\|confirmed\|rejected' export/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt || true
+
+          cat artifacts/soloclean/phase9/part*.bin > /tmp/current-phase9.tar.xz
+          echo "336d61c49d1e46caf1d2f6feaeb3ebdb2384bec9122d1980d9c7e9a2e0415b65  /tmp/current-phase9.tar.xz" | sha256sum -c -
+          mkdir -p export-current
+          tar -xJf /tmp/current-phase9.tar.xz -C export-current
+
+          mkdir -p /tmp/oldparts export-previous
+          for f in artifacts/soloclean/phase9/part*.bin; do
+            git show 40a032db4c8e1fe3f2e02b18aca9d039a568143d:"$f" > "/tmp/oldparts/$(basename "$f")"
+          done
+          cat /tmp/oldparts/part*.bin > /tmp/previous-phase9.tar.xz
+          echo "f20d90d5d518e1bb71ecf606e5336d96ff3b8f694fc4513672a6d0a33c85cf9c  /tmp/previous-phase9.tar.xz" | sha256sum -c -
+          tar -xJf /tmp/previous-phase9.tar.xz -C export-previous
+
+          for root in export-current export-previous; do
+            test -s "$root/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt"
+            test -s "$root/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt"
+          done
+
+          echo '--- CURRENT ProjectScreen markers ---'
+          grep -n 'Bulk project review\|SELECT SUGGESTED\|Checkbox\|CONFIRM SELECTED\|REJECT SELECTED' export-current/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt || true
+          echo '--- CURRENT repository markers ---'
+          grep -n 'saveDecisions\|KEY_DECISIONS\|ProjectCandidateStatus.valueOf' export-current/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt || true
+          echo '--- PREVIOUS repository markers ---'
+          grep -n 'saveDecision\|KEY_DECISIONS\|ProjectCandidateStatus.valueOf' export-previous/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt || true
 
       - name: Upload diagnostic source
         uses: actions/upload-artifact@v4
@@ -38,8 +56,10 @@ jobs:
           if-no-files-found: error
           retention-days: 1
           path: |
-            export/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
-            export/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt
-            export/app/src/main/java/com/soloforge/soloclean/project/ProjectModels.kt
-            export/app/src/main/java/com/soloforge/soloclean/project/ProjectReviewRules.kt
-            export/app/src/test/java/com/soloforge/soloclean/project/ProjectReviewRulesTest.kt
+            export-current/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
+            export-current/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt
+            export-current/app/src/main/java/com/soloforge/soloclean/project/ProjectModels.kt
+            export-current/app/src/main/java/com/soloforge/soloclean/project/ProjectReviewRules.kt
+            export-current/app/src/test/java/com/soloforge/soloclean/project/ProjectReviewRulesTest.kt
+            export-previous/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
+            export-previous/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt
