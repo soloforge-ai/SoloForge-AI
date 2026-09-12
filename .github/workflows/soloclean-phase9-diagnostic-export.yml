@@ -1,0 +1,45 @@
+name: SoloClean Phase 9 Diagnostic Export
+
+on:
+  push:
+    branches:
+      - feature/soloclean-phase9-project-intelligence
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract exact Phase 9 patch used by CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat artifacts/soloclean/phase9/part*.bin > /tmp/soloclean-phase9-patch.tar.xz
+          echo "336d61c49d1e46caf1d2f6feaeb3ebdb2384bec9122d1980d9c7e9a2e0415b65  /tmp/soloclean-phase9-patch.tar.xz" | sha256sum -c -
+          mkdir -p export
+          tar -xJf /tmp/soloclean-phase9-patch.tar.xz -C export
+          test -s export/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
+          test -s export/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt
+          test -s export/app/src/test/java/com/soloforge/soloclean/project/ProjectReviewRulesTest.kt
+          grep -n 'Bulk project review\|SELECT SUGGESTED\|CONFIRM SELECTED\|REJECT SELECTED' export/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt || true
+          grep -n 'saveDecisions\|SharedPreferences\|confirmed\|rejected' export/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt || true
+
+      - name: Upload diagnostic source
+        uses: actions/upload-artifact@v4
+        with:
+          name: soloclean-phase9-diagnostic-source
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            export/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
+            export/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt
+            export/app/src/main/java/com/soloforge/soloclean/project/ProjectModels.kt
+            export/app/src/main/java/com/soloforge/soloclean/project/ProjectReviewRules.kt
+            export/app/src/test/java/com/soloforge/soloclean/project/ProjectReviewRulesTest.kt
