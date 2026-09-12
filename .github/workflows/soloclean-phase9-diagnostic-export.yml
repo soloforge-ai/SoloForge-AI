@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/soloclean-phase9-project-intelligence
+      - feature/soloclean-phase10-project-cleanup
   workflow_dispatch:
 
 permissions:
