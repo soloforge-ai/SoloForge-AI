@@ -30,8 +30,9 @@ jobs:
           tar -xJf /tmp/current-phase9.tar.xz -C export-current
 
           mkdir -p /tmp/oldparts export-previous
-          for f in artifacts/soloclean/phase9/part*.bin; do
-            git show 40a032db4c8e1fe3f2e02b18aca9d039a568143d:"$f" > "/tmp/oldparts/$(basename "$f")"
+          for n in 00 01 02 03 04; do
+            f="artifacts/soloclean/phase9/part${n}.bin"
+            git show 40a032db4c8e1fe3f2e02b18aca9d039a568143d:"$f" > "/tmp/oldparts/part${n}.bin"
           done
           cat /tmp/oldparts/part*.bin > /tmp/previous-phase9.tar.xz
           echo "f20d90d5d518e1bb71ecf606e5336d96ff3b8f694fc4513672a6d0a33c85cf9c  /tmp/previous-phase9.tar.xz" | sha256sum -c -
