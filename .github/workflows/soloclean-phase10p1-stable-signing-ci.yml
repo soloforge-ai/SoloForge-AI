@@ -1,0 +1,188 @@
+name: SoloClean Phase 10.1 Stable Signing CI
+
+on:
+  push:
+    branches:
+      - feature/soloclean-phase10-project-cleanup
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reconstruct Phase 8 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat artifacts/soloclean/phase8/part*.bin > /tmp/soloclean-phase8.tar.xz
+          echo "ece303e696259bffc55cc9c0dccba7b0414dc0d90b695d6c5a8ebb22e12d03aa  /tmp/soloclean-phase8.tar.xz" | sha256sum -c -
+          mkdir -p soloclean
+          tar -xJf /tmp/soloclean-phase8.tar.xz -C soloclean
+
+      - name: Restore proven Phase 8B3 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('soloclean/app/src/main/AndroidManifest.xml')
+          s=p.read_text()
+          if 'xmlns:tools=' not in s:
+              s=s.replace('<manifest xmlns:android="http://schemas.android.com/apk/res/android">','<manifest xmlns:android="http://schemas.android.com/apk/res/android"\n    xmlns:tools="http://schemas.android.com/tools">')
+          if 'tools:ignore="QueryAllPackagesPermission"' not in s:
+              s=s.replace('<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />','<uses-permission\n        android:name="android.permission.QUERY_ALL_PACKAGES"\n        tools:ignore="QueryAllPackagesPermission" />')
+          p.write_text(s)
+          PY
+
+          cat artifacts/soloclean/phase8b3/ReviewScreen.part1.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part2a.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part2b.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part3a.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part3b.kt \
+              > soloclean/app/src/main/java/com/soloforge/soloclean/ui/review/ReviewScreen.kt
+          cp artifacts/soloclean/phase8b3/MainActivity.kt soloclean/app/src/main/java/com/soloforge/soloclean/MainActivity.kt
+          cp artifacts/soloclean/phase8b3/CleanupSessionRules.kt soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSessionRules.kt
+          cp artifacts/soloclean/phase8b3/CleanupSessionRulesTest.kt soloclean/app/src/test/java/com/soloforge/soloclean/cleanup/CleanupSessionRulesTest.kt
+
+      - name: Apply verified Phase 9 Project Intelligence baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat artifacts/soloclean/phase9/part*.bin > /tmp/soloclean-phase9-patch.tar.xz
+          echo "336d61c49d1e46caf1d2f6feaeb3ebdb2384bec9122d1980d9c7e9a2e0415b65  /tmp/soloclean-phase9-patch.tar.xz" | sha256sum -c -
+          mkdir -p /tmp/phase9
+          tar -xJf /tmp/soloclean-phase9-patch.tar.xz -C /tmp/phase9
+          cp -a /tmp/phase9/app/. soloclean/app/
+          cp artifacts/soloclean/phase9fix/ProjectFingerprintEngine.kt soloclean/app/src/main/java/com/soloforge/soloclean/project/ProjectFingerprintEngine.kt
+          cp artifacts/soloclean/phase9fix/ProjectFingerprintEngineTest.kt soloclean/app/src/test/java/com/soloforge/soloclean/project/ProjectFingerprintEngineTest.kt
+
+      - name: Apply Phase 10 Project Cleanup patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat artifacts/soloclean/phase10/patch.part*.b64 | base64 -d > /tmp/soloclean-phase10-patch.tar.gz
+          echo "39128457bff7afe8a69aa8245fad209220f92e8401e25549dce02867cd673b22  /tmp/soloclean-phase10-patch.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/soloclean-phase10-patch.tar.gz -C soloclean
+
+      - name: Configure stable DEV signing and version
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d artifacts/soloclean/signing/soloclean-dev-test.keystore.b64 > soloclean/soloclean-dev-test.keystore
+          echo "4e0dc110dd118b054f7d57b1f883326ac41f9ee6a680bf5ba9c8ab69211b950e  soloclean/soloclean-dev-test.keystore" | sha256sum -c -
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p=Path('soloclean/app/build.gradle.kts')
+          s=p.read_text()
+          s=re.sub(r'versionCode\s*=\s*\d+','versionCode = 16',s,count=1)
+          s=re.sub(r'versionName\s*=\s*"[^"]+"','versionName = "0.10.1-phase10p1"',s,count=1)
+
+          signing='''\n    signingConfigs {\n        create("solocleanDev") {\n            storeFile = file("../soloclean-dev-test.keystore")\n            storePassword = "soloclean-dev-only"\n            keyAlias = "soloclean-dev"\n            keyPassword = "soloclean-dev-only"\n        }\n    }\n'''
+          if 'create("solocleanDev")' not in s:
+              s=s.replace('    defaultConfig {', signing + '\n    defaultConfig {', 1)
+
+          build_types='''\n    buildTypes {\n        getByName("debug") {\n            signingConfig = signingConfigs.getByName("solocleanDev")\n        }\n    }\n'''
+          if 'signingConfig = signingConfigs.getByName("solocleanDev")' not in s:
+              s=s.replace('    buildFeatures {', build_types + '\n    buildFeatures {', 1)
+          p.write_text(s)
+
+          screen=Path('soloclean/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt')
+          s=screen.read_text()
+          marker='                Text("Project Intelligence", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)'
+          stamp='                Text("BUILD 0.10.1-phase10p1 • STABLE DEV SIGNING", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)'
+          if marker in s and 'STABLE DEV SIGNING' not in s:
+              s=s.replace(marker, marker+'\n'+stamp, 1)
+          screen.write_text(s)
+          PY
+          grep -q 'versionName = "0.10.1-phase10p1"' soloclean/app/build.gradle.kts
+          grep -q 'create("solocleanDev")' soloclean/app/build.gradle.kts
+          grep -q 'STABLE DEV SIGNING' soloclean/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: sdkmanager "platform-tools" "build-tools;36.0.0" "platforms;android-37.0" --channel=3
+
+      - name: Set up Gradle 9.6.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Generate Gradle wrapper
+        working-directory: soloclean
+        run: |
+          gradle wrapper --gradle-version 9.6.0 --distribution-type bin
+          chmod +x gradlew
+
+      - name: Unit tests
+        working-directory: soloclean
+        run: ./gradlew --no-daemon --stacktrace testDebugUnitTest
+
+      - name: Android lint
+        working-directory: soloclean
+        run: ./gradlew --no-daemon --stacktrace lintDebug
+
+      - name: Assemble debug APK
+        working-directory: soloclean
+        run: ./gradlew --no-daemon --stacktrace assembleDebug
+
+      - name: Verify APK identity, stable signer, permissions and features
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="soloclean/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          unzip -t "$APK" >/dev/null
+          BADGING="$(${ANDROID_HOME}/build-tools/36.0.0/aapt dump badging "$APK")"
+          printf '%s\n' "$BADGING" | grep -q "package: name='com.soloforge.soloclean'"
+          printf '%s\n' "$BADGING" | grep -q "versionName='0.10.1-phase10p1'"
+
+          ${ANDROID_HOME}/build-tools/36.0.0/apksigner verify --verbose --print-certs "$APK" | tee soloclean/app/build/outputs/apk/debug/signing.txt
+          SIGNER_SHA=$(grep -m1 'certificate SHA-256 digest:' soloclean/app/build/outputs/apk/debug/signing.txt | sed 's/.*digest: //' | tr 'A-F' 'a-f')
+          test "$SIGNER_SHA" = "8b88619724c1ae03344dd350868dd15babf1d1ab7f0bafa43c0c479948f1d360"
+
+          PERMISSIONS="$(${ANDROID_HOME}/build-tools/36.0.0/aapt dump permissions "$APK")"
+          printf '%s\n' "$PERMISSIONS" | tee soloclean/app/build/outputs/apk/debug/permissions.txt
+          ! printf '%s\n' "$PERMISSIONS" | grep -q 'android.permission.INTERNET'
+          ! printf '%s\n' "$PERMISSIONS" | grep -q 'android.permission.MANAGE_EXTERNAL_STORAGE'
+
+          rm -rf /tmp/apk-dex && mkdir -p /tmp/apk-dex
+          unzip -q "$APK" 'classes*.dex' -d /tmp/apk-dex
+          strings /tmp/apk-dex/classes*.dex > /tmp/apk-strings.txt
+          grep -q 'STABLE DEV SIGNING' /tmp/apk-strings.txt
+          grep -q 'PROJECT CLEANUP' /tmp/apk-strings.txt
+          grep -q 'Old versions' /tmp/apk-strings.txt
+          sha256sum "$APK" | tee soloclean/app/build/outputs/apk/debug/app-debug.apk.sha256
+
+      - name: Upload stable-signed Phase 10.1 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: soloclean-phase10p1-stable-debug
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            soloclean/app/build/outputs/apk/debug/app-debug.apk
+            soloclean/app/build/outputs/apk/debug/app-debug.apk.sha256
+            soloclean/app/build/outputs/apk/debug/signing.txt
+            soloclean/app/build/outputs/apk/debug/permissions.txt
+            soloclean/app/build/reports/tests/testDebugUnitTest/
+            soloclean/app/build/reports/lint-results-debug.html
