@@ -1,0 +1,93 @@
+name: SoloClean Phase 10 Persistence Diagnostic
+
+on:
+  push:
+    branches:
+      - feature/soloclean-phase10-project-cleanup
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reconstruct Phase 9 proven baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat artifacts/soloclean/phase8/part*.bin > /tmp/soloclean-phase8.tar.xz
+          mkdir -p soloclean
+          tar -xJf /tmp/soloclean-phase8.tar.xz -C soloclean
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('soloclean/app/src/main/AndroidManifest.xml')
+          s=p.read_text()
+          if 'xmlns:tools=' not in s:
+              s=s.replace('<manifest xmlns:android="http://schemas.android.com/apk/res/android">','<manifest xmlns:android="http://schemas.android.com/apk/res/android"\n    xmlns:tools="http://schemas.android.com/tools">')
+          if 'tools:ignore="QueryAllPackagesPermission"' not in s:
+              s=s.replace('<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />','<uses-permission\n        android:name="android.permission.QUERY_ALL_PACKAGES"\n        tools:ignore="QueryAllPackagesPermission" />')
+          p.write_text(s)
+          PY
+
+          cat artifacts/soloclean/phase8b3/ReviewScreen.part1.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part2a.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part2b.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part3a.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part3b.kt \
+              > soloclean/app/src/main/java/com/soloforge/soloclean/ui/review/ReviewScreen.kt
+          cp artifacts/soloclean/phase8b3/MainActivity.kt soloclean/app/src/main/java/com/soloforge/soloclean/MainActivity.kt
+          cp artifacts/soloclean/phase8b3/CleanupSessionRules.kt soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSessionRules.kt
+          cp artifacts/soloclean/phase8b3/CleanupSessionRulesTest.kt soloclean/app/src/test/java/com/soloforge/soloclean/cleanup/CleanupSessionRulesTest.kt
+
+          cat artifacts/soloclean/phase9/part*.bin > /tmp/soloclean-phase9-patch.tar.xz
+          mkdir -p /tmp/phase9
+          tar -xJf /tmp/soloclean-phase9-patch.tar.xz -C /tmp/phase9
+          cp -a /tmp/phase9/app/. soloclean/app/
+          cp artifacts/soloclean/phase9fix/ProjectFingerprintEngine.kt soloclean/app/src/main/java/com/soloforge/soloclean/project/ProjectFingerprintEngine.kt
+          cp artifacts/soloclean/phase9fix/ProjectFingerprintEngineTest.kt soloclean/app/src/test/java/com/soloforge/soloclean/project/ProjectFingerprintEngineTest.kt
+          cp -a soloclean/app /tmp/phase9-app
+
+      - name: Apply Phase 10 patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat artifacts/soloclean/phase10/patch.part*.b64 | base64 -d > /tmp/soloclean-phase10-patch.tar.gz
+          tar -xzf /tmp/soloclean-phase10-patch.tar.gz -C soloclean
+
+      - name: Persistence identity report
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== PHASE9 build identity ==='
+          grep -nE 'namespace|applicationId|versionCode|versionName' /tmp/phase9-app/build.gradle.kts || true
+          echo '=== PHASE10 build identity ==='
+          grep -nE 'namespace|applicationId|versionCode|versionName' soloclean/app/build.gradle.kts || true
+
+          echo '=== PHASE9 preference/project persistence references ==='
+          grep -RniE 'SharedPreferences|getSharedPreferences|projects_v1|project_decisions_v1|ProjectRepository|AndroidProjectRepository|clear\(|remove\(' /tmp/phase9-app/src/main/java/com/soloforge/soloclean | head -300 || true
+          echo '=== PHASE10 preference/project persistence references ==='
+          grep -RniE 'SharedPreferences|getSharedPreferences|projects_v1|project_decisions_v1|ProjectRepository|AndroidProjectRepository|clear\(|remove\(' soloclean/app/src/main/java/com/soloforge/soloclean | head -300 || true
+
+          echo '=== Changed persistence-related files ==='
+          diff -qr /tmp/phase9-app/src/main/java/com/soloforge/soloclean soloclean/app/src/main/java/com/soloforge/soloclean | grep -Ei 'project|mainactivity|scan|repository|cleanup' || true
+
+          echo '=== Project repository diff ==='
+          for f in $(find /tmp/phase9-app/src/main/java/com/soloforge/soloclean -type f | grep -E 'ProjectRepository|AndroidProjectRepository'); do
+            rel=${f#/tmp/phase9-app/}
+            if [ -f "soloclean/app/$rel" ]; then
+              echo "--- $rel"
+              diff -u "$f" "soloclean/app/$rel" || true
+            fi
+          done
+
+          echo '=== MainActivity diff ==='
+          diff -u /tmp/phase9-app/src/main/java/com/soloforge/soloclean/MainActivity.kt soloclean/app/src/main/java/com/soloforge/soloclean/MainActivity.kt || true
+
+          echo '=== Scan flow clear/reset references ==='
+          grep -RniE 'project.*clear|clear.*project|project.*reset|reset.*project|saveProjects|loadProjects|projects_v1|project_decisions_v1' soloclean/app/src/main/java/com/soloforge/soloclean || true
