@@ -58,10 +58,8 @@ jobs:
           if-no-files-found: error
           retention-days: 1
           path: |
-            export-current/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
-            export-current/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt
-            export-current/app/src/main/java/com/soloforge/soloclean/project/ProjectModels.kt
-            export-current/app/src/main/java/com/soloforge/soloclean/project/ProjectReviewRules.kt
-            export-current/app/src/test/java/com/soloforge/soloclean/project/ProjectReviewRulesTest.kt
+            export-current/app/src/main/java/com/soloforge/soloclean/
+            export-current/app/src/test/java/com/soloforge/soloclean/
+            export-current/app/build.gradle.kts
             export-previous/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
             export-previous/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt
