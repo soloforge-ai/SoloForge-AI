@@ -73,7 +73,7 @@ jobs:
           p.write_text(s)
           PY
 
-      - name: Apply Phase 9 Project Intelligence + Bulk Review
+      - name: Apply Phase 9 Project Intelligence + verified Bulk Review
         shell: bash
         run: |
           set -euo pipefail
@@ -91,18 +91,31 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
+
           p=Path('soloclean/app/build.gradle.kts')
           s=p.read_text()
-          s=re.sub(r'versionCode\s*=\s*\d+','versionCode = 13',s,count=1)
-          s=re.sub(r'versionName\s*=\s*"[^"]+"','versionName = "0.9.1-phase9bulk"',s,count=1)
+          s=re.sub(r'versionCode\s*=\s*\d+','versionCode = 14',s,count=1)
+          s=re.sub(r'versionName\s*=\s*"[^"]+"','versionName = "0.9.2-phase9bulk2"',s,count=1)
           p.write_text(s)
+
+          screen=Path('soloclean/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt')
+          s=screen.read_text()
+          marker='                Text("Project Intelligence", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)'
+          stamp='''                Text("Project Intelligence", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)\n                Text(\n                    "BUILD 0.9.2-phase9bulk2 • BULK REVIEW ACTIVE",\n                    style = MaterialTheme.typography.bodySmall,\n                    color = MaterialTheme.colorScheme.primary,\n                    fontWeight = FontWeight.Bold,\n                )'''
+          if marker not in s:
+              raise SystemExit('Project Intelligence header marker not found')
+          s=s.replace(marker,stamp,1)
+          screen.write_text(s)
           PY
 
           grep -q 'Bulk project review' soloclean/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
-          grep -q 'saveDecisions' soloclean/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt
           grep -q 'SELECT SUGGESTED ≥70%' soloclean/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
+          grep -q 'Checkbox' soloclean/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
+          grep -q 'BUILD 0.9.2-phase9bulk2 • BULK REVIEW ACTIVE' soloclean/app/src/main/java/com/soloforge/soloclean/ui/project/ProjectScreen.kt
+          grep -q 'saveDecisions' soloclean/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt
+          grep -q 'KEY_DECISIONS = "project_decisions_v1"' soloclean/app/src/main/java/com/soloforge/soloclean/project/AndroidProjectRepository.kt
           grep -q 'ProjectReviewRulesTest' soloclean/app/src/test/java/com/soloforge/soloclean/project/ProjectReviewRulesTest.kt
-          grep -q 'versionName = "0.9.1-phase9bulk"' soloclean/app/build.gradle.kts
+          grep -q 'versionName = "0.9.2-phase9bulk2"' soloclean/app/build.gradle.kts
           grep -q 'ScanItemKind.EMPTY_FOLDER -> false' soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSafetyPolicy.kt
 
       - name: Set up JDK 17
@@ -143,23 +156,31 @@ jobs:
         working-directory: soloclean
         run: ./gradlew --no-daemon --stacktrace assembleDebug
 
-      - name: Verify APK and permissions
+      - name: Verify APK, build stamp, and permissions
         shell: bash
         run: |
           set -euo pipefail
           APK="soloclean/app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
           unzip -t "$APK" >/dev/null
+          BADGING="$(${ANDROID_HOME}/build-tools/36.0.0/aapt dump badging "$APK")"
+          printf '%s\n' "$BADGING" | grep -q "versionName='0.9.2-phase9bulk2'"
           PERMISSIONS="$(${ANDROID_HOME}/build-tools/36.0.0/aapt dump permissions "$APK")"
           printf '%s\n' "$PERMISSIONS" | tee soloclean/app/build/outputs/apk/debug/permissions.txt
           ! printf '%s\n' "$PERMISSIONS" | grep -q 'android.permission.INTERNET'
           ! printf '%s\n' "$PERMISSIONS" | grep -q 'android.permission.MANAGE_EXTERNAL_STORAGE'
+          rm -rf /tmp/apk-dex && mkdir -p /tmp/apk-dex
+          unzip -q "$APK" 'classes*.dex' -d /tmp/apk-dex
+          strings /tmp/apk-dex/classes*.dex > /tmp/apk-strings.txt
+          grep -q 'BULK REVIEW ACTIVE' /tmp/apk-strings.txt
+          grep -q 'Bulk project review' /tmp/apk-strings.txt
+          grep -q 'SELECT SUGGESTED' /tmp/apk-strings.txt
           sha256sum "$APK" | tee soloclean/app/build/outputs/apk/debug/app-debug.apk.sha256
 
-      - name: Upload Phase 9 Bulk Review artifact
+      - name: Upload Phase 9 Bulk Review 2 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: soloclean-phase9bulk-debug
+          name: soloclean-phase9bulk2-debug
           if-no-files-found: error
           retention-days: 7
           path: |
