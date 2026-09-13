@@ -1,0 +1,67 @@
+name: SoloClean Phase 10 Full Source Export
+
+on:
+  push:
+    branches:
+      - feature/soloclean-phase10-project-cleanup
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reconstruct proven source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat artifacts/soloclean/phase8/part*.bin > /tmp/soloclean-phase8.tar.xz
+          mkdir -p soloclean
+          tar -xJf /tmp/soloclean-phase8.tar.xz -C soloclean
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('soloclean/app/src/main/AndroidManifest.xml')
+          s=p.read_text()
+          if 'xmlns:tools=' not in s:
+              s=s.replace('<manifest xmlns:android="http://schemas.android.com/apk/res/android">','<manifest xmlns:android="http://schemas.android.com/apk/res/android"\n    xmlns:tools="http://schemas.android.com/tools">')
+          if 'tools:ignore="QueryAllPackagesPermission"' not in s:
+              s=s.replace('<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />','<uses-permission\n        android:name="android.permission.QUERY_ALL_PACKAGES"\n        tools:ignore="QueryAllPackagesPermission" />')
+          p.write_text(s)
+          PY
+
+          cat artifacts/soloclean/phase8b3/ReviewScreen.part1.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part2a.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part2b.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part3a.kt \
+              artifacts/soloclean/phase8b3/ReviewScreen.part3b.kt \
+              > soloclean/app/src/main/java/com/soloforge/soloclean/ui/review/ReviewScreen.kt
+          cp artifacts/soloclean/phase8b3/MainActivity.kt soloclean/app/src/main/java/com/soloforge/soloclean/MainActivity.kt
+          cp artifacts/soloclean/phase8b3/CleanupSessionRules.kt soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/CleanupSessionRules.kt
+          cp artifacts/soloclean/phase8b3/CleanupSessionRulesTest.kt soloclean/app/src/test/java/com/soloforge/soloclean/cleanup/CleanupSessionRulesTest.kt
+
+          cat artifacts/soloclean/phase9/part*.bin > /tmp/soloclean-phase9-patch.tar.xz
+          mkdir -p /tmp/phase9
+          tar -xJf /tmp/soloclean-phase9-patch.tar.xz -C /tmp/phase9
+          cp -a /tmp/phase9/app/. soloclean/app/
+          cp artifacts/soloclean/phase9fix/ProjectFingerprintEngine.kt soloclean/app/src/main/java/com/soloforge/soloclean/project/ProjectFingerprintEngine.kt
+          cp artifacts/soloclean/phase9fix/ProjectFingerprintEngineTest.kt soloclean/app/src/test/java/com/soloforge/soloclean/project/ProjectFingerprintEngineTest.kt
+
+          cat artifacts/soloclean/phase10/patch.part*.b64 | base64 -d > /tmp/soloclean-phase10-patch.tar.gz
+          tar -xzf /tmp/soloclean-phase10-patch.tar.gz -C soloclean
+
+          tar -czf /tmp/phase10-full-source.tar.gz \
+            -C soloclean app/src/main/java app/src/test/java app/build.gradle.kts app/src/main/AndroidManifest.xml
+
+      - name: Upload full reconstructed source
+        uses: actions/upload-artifact@v4
+        with:
+          name: soloclean-phase10-full-source
+          if-no-files-found: error
+          retention-days: 1
+          path: /tmp/phase10-full-source.tar.gz
