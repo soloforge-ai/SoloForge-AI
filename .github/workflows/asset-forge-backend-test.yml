@@ -51,6 +51,7 @@ jobs:
           python -m compileall -q backend/pollinations_oauth.py
           python -m compileall -q backend/pollinations_oauth_router.py
           python -m compileall -q backend/idea_flow_webhook.py
+          python -m compileall -q backend/affiliate_agent.py
           python -m compileall -q backend/tests
 
       - name: Run backend contract, Memory runtime, and image regression tests
