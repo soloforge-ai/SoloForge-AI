@@ -16,7 +16,7 @@ It provides AI assistants with a concise snapshot of active work, completed foun
 
 Title
 
-SoloForge Product-to-Post — Text Model Qualification + E2E Preparation
+SoloForge Affiliate Agent V0.1 — Discover → Analyze → Save
 
 Status
 
@@ -42,7 +42,9 @@ Product
 → Export ready-to-post package
 ```
 
-The next product milestone must prove this flow before unrelated architecture expansion.
+The current owner-approved milestone is Affiliate Agent V0.1. Reuse the Product-to-Post foundations; do not create a parallel content architecture.
+
+Owner explicitly re-authorized affiliate opportunity work on 2026-09-19. This authorization applies to the MVP roadmap under `docs/affiliate-agent/`.
 
 ---
 
@@ -86,7 +88,7 @@ The following remain in the repository but are not active roadmap drivers:
 - Supabase-backed Telegram Idea Inbox / Idea Flow
 - SoloForge Income Engine P1
 
-Income Engine P1 remains valid historical work. `P2 — Opportunity Library v0` and later Income Engine expansion are frozen and must not proceed unless the owner explicitly re-authorizes them.
+Income Engine P1 remains valid historical work. Affiliate opportunity work is now explicitly re-authorized for the Affiliate Agent MVP only; unrelated Income Engine expansion remains frozen.
 
 ---
 
