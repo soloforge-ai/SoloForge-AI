@@ -6,11 +6,35 @@
 
 ## Active Initiative
 
+SoloForge Affiliate Agent V0.1
+
+Owner re-authorization: 2026-09-19.
+
+Affiliate opportunity work and the previously frozen Income Engine opportunity direction are explicitly re-authorized only to the extent needed for this MVP. The implementation must reuse the existing Product-to-Post foundations rather than create a parallel content stack.
+
+Primary V0.1 loop:
+
+```text
+OpenAffiliate program
+→ Discover / filter
+→ Deterministic opportunity analysis
+→ Save for later
+→ Content Factory (next phase)
+→ Publish manually
+→ Track clicks / conversions / revenue
+```
+
+V0.1 scope is Discover → Analyze → Save. Personal saves remain device-local until SoloForge has a real user-auth boundary.
+
+## Retained Product Foundation
+
 SoloForge Product-to-Post
 
 ## Current Implementation
 
-Text Model Qualification + Product-to-Post E2E Preparation
+Affiliate Agent V0.1 — OpenAffiliate discovery, deterministic scoring, Flutter workspace, and internal local save.
+
+The existing Product-to-Post implementation, model qualification harness, Product Forge, Content Engine, and Asset Forge remain retained foundations and must not be duplicated.
 
 ## Status
 
@@ -91,9 +115,9 @@ The following merged/completed capabilities are retained but are not active road
 
 - Chat Prawtwan MVP
 - Idea Flow / Telegram Idea Inbox
-- SoloForge Income Engine P1
+- SoloForge Income Engine work outside the explicitly authorized Affiliate Agent MVP
 
-Income Engine P1 remains historical validated work. `P2 — Opportunity Library v0` and later Income Engine expansion are not active and must not proceed unless the owner explicitly re-authorizes them.
+Income Engine P1 remains historical validated work. Opportunity work is re-authorized only for the Affiliate Agent roadmap under `docs/affiliate-agent/`; unrelated Income Engine expansion remains frozen.
 
 ## Completed Product Retained
 
