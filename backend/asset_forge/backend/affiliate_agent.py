@@ -3,19 +3,25 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 from pydantic import BaseModel, Field
+
+from backend.pollinations_oauth_router import (
+    get_pollinations_access_token_from_authorization,
+)
 
 router = APIRouter(prefix="/v1/affiliate", tags=["affiliate-agent"])
 
 OPENAFFILIATE_BASE_URL = "https://openaffiliate.dev"
-_USER_AGENT = "SoloForge-Affiliate-Agent/0.1"
+POLLINATIONS_CHAT_URL = "https://gen.pollinations.ai/v1/chat/completions"
+_USER_AGENT = "SoloForge-Affiliate-Agent/0.2"
 _TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9+.#-]{1,}", re.IGNORECASE)
 
 
@@ -34,6 +40,18 @@ class OpportunityScore(BaseModel):
     rationale: list[str]
     risks: list[str]
     content_angles: list[str]
+
+
+class ContentGenerateRequest(BaseModel):
+    slug: str = Field(min_length=1, max_length=160)
+    platform: str = Field(default="youtube_shorts", min_length=1, max_length=80)
+    format: str = Field(default="review", min_length=1, max_length=80)
+    intent: str = Field(default="commercial_investigation", min_length=1, max_length=80)
+    goal: str = Field(default="affiliate_click", min_length=1, max_length=80)
+    niche: str = Field(default="AI Creator Tools", max_length=200)
+    audience: str = Field(default="AI creators and beginners", max_length=500)
+    language: str = Field(default="th", max_length=20)
+    affiliate_url: str | None = Field(default=None, max_length=2000)
 
 
 def _openaffiliate_get(path: str, query: dict[str, object] | None = None) -> Any:
@@ -324,6 +342,268 @@ def _score_program(program: dict[str, Any], request: AnalyzeRequest) -> Opportun
     )
 
 
+def _extract_chat_text(payload: object) -> str:
+    if not isinstance(payload, dict):
+        raise ValueError("chat response is not an object")
+    choices = payload.get("choices")
+    if not isinstance(choices, list) or not choices:
+        raise ValueError("chat response has no choices")
+    first = choices[0]
+    if not isinstance(first, dict):
+        raise ValueError("chat choice is invalid")
+    message = first.get("message")
+    if not isinstance(message, dict):
+        raise ValueError("chat choice has no message")
+    content = message.get("content")
+    if isinstance(content, str) and content.strip():
+        return content.strip()
+    if isinstance(content, list):
+        parts = [
+            item.get("text", "")
+            for item in content
+            if isinstance(item, dict) and isinstance(item.get("text"), str)
+        ]
+        text = "".join(parts).strip()
+        if text:
+            return text
+    raise ValueError("chat message content is empty")
+
+
+def _parse_json_object(text: str) -> dict[str, Any]:
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        stripped = re.sub(r"^```(?:json)?\s*", "", stripped, flags=re.IGNORECASE)
+        stripped = re.sub(r"\s*```$", "", stripped)
+    try:
+        payload = json.loads(stripped)
+    except json.JSONDecodeError:
+        start = stripped.find("{")
+        end = stripped.rfind("}")
+        if start < 0 or end <= start:
+            raise
+        payload = json.loads(stripped[start : end + 1])
+    if not isinstance(payload, dict):
+        raise ValueError("content response is not an object")
+    return payload
+
+
+def _normalize_content_package(
+    payload: dict[str, Any],
+    program: dict[str, Any],
+    request: ContentGenerateRequest,
+    model: str,
+) -> dict[str, Any]:
+    def text_value(name: str, default: str = "") -> str:
+        value = payload.get(name)
+        return str(value).strip() if value is not None else default
+
+    def string_list(name: str, limit: int) -> list[str]:
+        value = payload.get(name)
+        if not isinstance(value, list):
+            return []
+        return [str(item).strip() for item in value if str(item).strip()][:limit]
+
+    raw_claims = payload.get("claims")
+    claims: list[dict[str, str]] = []
+    if isinstance(raw_claims, list):
+        for item in raw_claims[:12]:
+            if not isinstance(item, dict):
+                continue
+            claim_type = str(item.get("claim_type") or "product_claim").strip()
+            if claim_type not in {
+                "sourced_fact",
+                "product_claim",
+                "first_hand_claim",
+                "measured_result",
+            }:
+                claim_type = "product_claim"
+            claim_text = str(item.get("claim_text") or "").strip()
+            if not claim_text:
+                continue
+            evidence_required = str(item.get("evidence_required") or "").strip()
+            if claim_type in {"first_hand_claim", "measured_result"} and not evidence_required:
+                evidence_required = "Real hands-on test evidence is required before publishing this claim."
+            claims.append(
+                {
+                    "claim_text": claim_text,
+                    "claim_type": claim_type,
+                    "evidence_required": evidence_required,
+                    "verification_status": "unverified",
+                }
+            )
+
+    affiliate_url = request.affiliate_url or program.get("signup_url") or program.get("website")
+    disclosure = text_value(
+        "affiliate_disclosure",
+        "โพสต์นี้อาจมีลิงก์ Affiliate ซึ่งผู้จัดทำอาจได้รับค่าคอมมิชชันโดยไม่มีค่าใช้จ่ายเพิ่มสำหรับผู้ซื้อ",
+    )
+
+    tools = [
+        {
+            "tool_name": f"Pollinations ({model})",
+            "role": "Script / Content Draft",
+            "used_in_final_output": True,
+        }
+    ]
+
+    return {
+        "program_slug": program.get("slug"),
+        "program_name": program.get("name"),
+        "platform": request.platform,
+        "format": request.format,
+        "intent": request.intent,
+        "goal": request.goal,
+        "title": text_value("title", f"{program.get('name', 'Tool')} — review"),
+        "hooks": string_list("hooks", 5),
+        "script": text_value("script"),
+        "shot_list": string_list("shot_list", 12),
+        "voiceover": text_value("voiceover"),
+        "visual_prompts": string_list("visual_prompts", 12),
+        "thumbnail_brief": text_value("thumbnail_brief"),
+        "cta": text_value("cta"),
+        "description": text_value("description"),
+        "affiliate_disclosure": disclosure,
+        "affiliate_url": affiliate_url,
+        "claims": claims,
+        "tools": tools,
+        "end_card": {
+            "heading": "เบื้องหลังคลิปนี้",
+            "items": [
+                {
+                    "role": "Script",
+                    "tool": f"Pollinations ({model})",
+                }
+            ],
+            "closing": "ทดลองจริง ใช้จริง แล้วค่อยเล่า",
+        },
+    }
+
+
+def _generate_content_package(
+    program: dict[str, Any],
+    request: ContentGenerateRequest,
+    access_token: str,
+) -> dict[str, Any]:
+    model = os.getenv("POLLINATIONS_TEXT_MODEL", "openai").strip() or "openai"
+    source = {
+        "name": program.get("name"),
+        "category": program.get("category"),
+        "description": program.get("description") or program.get("short_description"),
+        "commission": program.get("commission"),
+        "cookie_days": program.get("cookie_days"),
+        "verified_registry_entry": program.get("verified"),
+        "restrictions": program.get("restrictions"),
+        "agents": program.get("agents"),
+        "website": program.get("website"),
+    }
+    language_instruction = (
+        "Write natural Thai suitable for a Thai creator audience."
+        if request.language.lower().startswith("th")
+        else f"Write in language code {request.language}."
+    )
+
+    system_prompt = """You are the SoloForge Affiliate Content Factory.
+Create a practical content package from the supplied affiliate-program data.
+Return ONLY one valid JSON object. No markdown fences.
+
+Hard rules:
+- Never pretend the creator personally tested, bought, earned from, or measured the product unless the prompt contains real evidence.
+- If a proposed line would require first-hand testing or measurement, put it in claims with claim_type first_hand_claim or measured_result and keep the script phrased as a test/question, not as a proven result.
+- Do not invent commission, cookie duration, pricing, restrictions, customer counts, ratings, revenue, or product capabilities.
+- Registry data is a lead, not a guarantee. Encourage verification of important commercial terms.
+- Do not promise income.
+- Keep the content useful even if the viewer never buys.
+- The CTA may invite the viewer to check the disclosed affiliate link, but must not use deceptive urgency.
+- visual_prompts describe visuals only; do not claim they already exist.
+- Keep hooks strong but non-misleading.
+
+JSON schema:
+{
+  "title": "string",
+  "hooks": ["string", "string", "string"],
+  "script": "string",
+  "shot_list": ["string"],
+  "voiceover": "string",
+  "visual_prompts": ["string"],
+  "thumbnail_brief": "string",
+  "cta": "string",
+  "description": "string",
+  "affiliate_disclosure": "string",
+  "claims": [
+    {
+      "claim_text": "string",
+      "claim_type": "sourced_fact|product_claim|first_hand_claim|measured_result",
+      "evidence_required": "string"
+    }
+  ]
+}"""
+
+    user_prompt = f"""Create one content package.
+
+Program data:
+{json.dumps(source, ensure_ascii=False)}
+
+Creator context:
+- niche: {request.niche}
+- audience: {request.audience}
+- platform: {request.platform}
+- format: {request.format}
+- intent: {request.intent}
+- goal: {request.goal}
+- affiliate link available: {"yes" if request.affiliate_url else "not yet"}
+
+{language_instruction}
+
+For review/tutorial content, frame untested experiences as what the creator should test on camera.
+Aim for a concise piece that can be produced with AI-assisted visuals plus screen recordings if needed."""
+
+    upstream_payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "stream": False,
+    }
+    upstream_request = urllib.request.Request(
+        POLLINATIONS_CHAT_URL,
+        data=json.dumps(upstream_payload, ensure_ascii=False).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": _USER_AGENT,
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(upstream_request, timeout=120) as response:
+            raw = response.read()
+    except urllib.error.HTTPError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Content AI request failed upstream ({exc.code}).",
+        ) from exc
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        raise HTTPException(
+            status_code=504,
+            detail="Content AI did not respond in time.",
+        ) from exc
+
+    try:
+        upstream = json.loads(raw.decode("utf-8"))
+        text = _extract_chat_text(upstream)
+        payload = _parse_json_object(text)
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Content AI returned an invalid structured response.",
+        ) from exc
+
+    return _normalize_content_package(payload, program, request, model)
+
+
 def _get_program(slug: str) -> dict[str, Any]:
     safe_slug = urllib.parse.quote(slug.strip(), safe="")
     payload = _openaffiliate_get(f"/api/programs/{safe_slug}")
@@ -376,3 +656,18 @@ def get_program(slug: str) -> dict[str, Any]:
 @router.post("/programs/{slug}/analyze", response_model=OpportunityScore)
 def analyze_program(slug: str, request: AnalyzeRequest) -> OpportunityScore:
     return _score_program(_get_program(slug), request)
+
+
+@router.post("/content/generate")
+def generate_content(
+    request: ContentGenerateRequest,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
+    access_token = get_pollinations_access_token_from_authorization(authorization)
+    if not access_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Connect Pollinations before generating Affiliate content.",
+        )
+    program = _get_program(request.slug)
+    return _generate_content_package(program, request, access_token)
