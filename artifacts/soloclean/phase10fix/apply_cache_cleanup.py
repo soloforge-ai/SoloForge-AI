@@ -230,7 +230,7 @@ r = r.replace(
 cache_ui_marker = """                    if (item.kind == ScanItemKind.APP_LEFTOVER) {
                         val score = item.leftoverConfidenceScore ?: 0
                         Text(
-                            "\${OrphanRules.confidenceLabel(score)} confidence · $score/100 · \${item.leftoverPackageName ?: "unknown package"}",
+                            "${OrphanRules.confidenceLabel(score)} confidence · $score/100 · ${item.leftoverPackageName ?: "unknown package"}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.tertiary,
                         )
@@ -282,7 +282,7 @@ rs = rs.replace(
 app_ui = """            if (item.kind == ScanItemKind.APP_LEFTOVER) {
                 val score = item.leftoverConfidenceScore ?: 0
                 Text(
-                    "\${OrphanRules.confidenceLabel(score)} confidence · $score/100 · \${item.leftoverPackageName ?: "unknown package"}",
+                    "${OrphanRules.confidenceLabel(score)} confidence · $score/100 · ${item.leftoverPackageName ?: "unknown package"}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.tertiary,
                 )
@@ -297,7 +297,7 @@ app_ui = """            if (item.kind == ScanItemKind.APP_LEFTOVER) {
 """
 cache_result_ui = """            if (item.kind == ScanItemKind.CACHE_OR_TEMP) {
                 Text(
-                    "CACHE/TEMP confidence · \${item.cacheConfidenceScore ?: 0}/100",
+                    "CACHE/TEMP confidence · ${item.cacheConfidenceScore ?: 0}/100",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.tertiary,
                 )
