@@ -46,7 +46,9 @@ Active Development
 
 Current Objective
 
-SoloForge Product-to-Post — Text Model Qualification + E2E Preparation.
+SoloForge Affiliate Agent V0.1 — Discover → Analyze → Save.
+
+Owner explicitly re-authorized affiliate opportunity development on 2026-09-19. The implementation reuses the existing Product-to-Post and Content Engine foundations and must not duplicate them.
 
 The active commercial workflow is:
 
@@ -220,7 +222,7 @@ The following remain merged, documented, or preserved but are not active roadmap
 - Idea Flow / Supabase-backed Telegram Idea Inbox
 - SoloForge Income Engine P1
 
-Income Engine P1 remains valid historical work. `P2 — Opportunity Library v0` and later Income Engine expansion are frozen and must not proceed unless explicitly re-authorized by the owner.
+Income Engine P1 remains valid historical work. Affiliate opportunity work is explicitly re-authorized for the Affiliate Agent MVP under `docs/affiliate-agent/`; unrelated Income Engine expansion remains frozen.
 
 ---
 
