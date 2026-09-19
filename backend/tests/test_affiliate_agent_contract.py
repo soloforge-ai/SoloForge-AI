@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import json
-from io import BytesIO
-
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -98,3 +96,100 @@ def test_analyze_is_deterministic_and_flags_real_risk(monkeypatch):
     assert any("Recurring commission" in item for item in body["rationale"])
     assert any("neutral" in item for item in body["risks"])
     assert body["content_angles"]
+
+
+def test_content_factory_requires_connected_pollinations(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.post(
+        "/v1/affiliate/content/generate",
+        json={
+            "slug": "tool-a",
+            "platform": "youtube_shorts",
+            "format": "review",
+            "intent": "commercial_investigation",
+            "goal": "affiliate_click",
+        },
+    )
+
+    assert response.status_code == 401
+    assert "Connect Pollinations" in response.json()["detail"]
+
+
+def test_content_factory_returns_structured_package_and_forces_claim_verification(monkeypatch):
+    generated = {
+        "title": "ลอง Tool A ทำคลิปสั้นได้แค่ไหน?",
+        "hooks": [
+            "AI ตัวนี้ช่วยทำวิดีโอได้จริงแค่ไหน?",
+            "วันนี้จะลองให้ Tool A ช่วยทำคลิปหนึ่งชิ้น",
+            "ก่อนจ่ายเงิน มาดู workflow จริงกัน",
+        ],
+        "script": "Tool A เป็นเครื่องมือ AI video วันนี้จะทดสอบ workflow จริงก่อนสรุปผล",
+        "shot_list": ["เปิดหน้าเครื่องมือ", "ทดลองสร้างคลิป", "สรุปสิ่งที่พบ"],
+        "voiceover": "วันนี้จะลอง Tool A แบบไม่สรุปล่วงหน้าว่าดีหรือไม่",
+        "visual_prompts": ["clean AI video workspace, vertical 9:16"],
+        "thumbnail_brief": "ข้อความสั้น: Tool A ใช้จริงเป็นไง?",
+        "cta": "ถ้าอยากดูรายละเอียดโปรแกรม ลิงก์ Affiliate อยู่ในคำอธิบาย",
+        "description": "ทดลอง workflow ของ Tool A และเช็กข้อจำกัดก่อนตัดสินใจ",
+        "affiliate_disclosure": "มีลิงก์ Affiliate ในคำอธิบาย",
+        "claims": [
+            {
+                "claim_text": "ประหยัดเวลาได้ 70%",
+                "claim_type": "measured_result",
+                "evidence_required": "",
+            }
+        ],
+    }
+
+    def fake_urlopen(request, timeout=0):
+        if request.full_url == affiliate.POLLINATIONS_CHAT_URL:
+            return _FakeResponse(
+                {
+                    "choices": [
+                        {
+                            "message": {
+                                "content": json.dumps(generated, ensure_ascii=False)
+                            }
+                        }
+                    ]
+                }
+            )
+        if "/api/programs/" in request.full_url:
+            return _FakeResponse(_program())
+        return _FakeResponse([_program()])
+
+    monkeypatch.setattr(affiliate.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(
+        affiliate,
+        "get_pollinations_access_token_from_authorization",
+        lambda _header: "pollinations-access-token",
+    )
+
+    app = FastAPI()
+    app.include_router(affiliate.router)
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/affiliate/content/generate",
+        headers={"Authorization": "Bearer app-session"},
+        json={
+            "slug": "tool-a",
+            "platform": "youtube_shorts",
+            "format": "review",
+            "intent": "commercial_investigation",
+            "goal": "affiliate_click",
+            "niche": "AI Creator Tools",
+            "audience": "beginner creators",
+            "language": "th",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["title"] == generated["title"]
+    assert body["program_name"] == "Tool A"
+    assert body["claims"][0]["claim_type"] == "measured_result"
+    assert body["claims"][0]["verification_status"] == "unverified"
+    assert "Real hands-on test evidence" in body["claims"][0]["evidence_required"]
+    assert body["tools"][0]["role"] == "Script / Content Draft"
+    assert body["end_card"]["closing"] == "ทดลองจริง ใช้จริง แล้วค่อยเล่า"
