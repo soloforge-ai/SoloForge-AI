@@ -133,8 +133,7 @@ CHARACTER REFERENCE:
 - Use the character name and style direction only.
 """
 
-    message_block = "
-".join(
+    message_block = "\n".join(
         f"{index + 1}. {message.strip()}"
         for index, message in enumerate(request.messages)
         if message.strip()
@@ -193,29 +192,19 @@ def _multipart_body(fields: dict[str, str], file_field: str, filename: str, file
 
     for name, value in fields.items():
         chunks.extend([
-            f"--{boundary}
-".encode(),
-            f'Content-Disposition: form-data; name="{name}"
-
-'.encode(),
+            f"--{boundary}\r\n".encode(),
+            f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode(),
             value.encode("utf-8"),
-            b"
-",
+            b"\r\n",
         ])
 
     chunks.extend([
-        f"--{boundary}
-".encode(),
-        f'Content-Disposition: form-data; name="{file_field}"; filename="{filename}"
-'.encode(),
-        f"Content-Type: {content_type}
-
-".encode(),
+        f"--{boundary}\r\n".encode(),
+        f'Content-Disposition: form-data; name="{file_field}"; filename="{filename}"\r\n'.encode(),
+        f"Content-Type: {content_type}\r\n\r\n".encode(),
         file_bytes,
-        b"
-",
-        f"--{boundary}--
-".encode(),
+        b"\r\n",
+        f"--{boundary}--\r\n".encode(),
     ])
     return b"".join(chunks), boundary
 
