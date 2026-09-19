@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/affiliate_content_package.dart';
 import '../models/affiliate_program.dart';
 import 'pollinations_session_service.dart';
 
@@ -82,6 +83,61 @@ class AffiliateAgentService {
       );
     }
     return AffiliateOpportunityScore.fromJson(
+      body.map((key, value) => MapEntry(key.toString(), value)),
+    );
+  }
+
+  Future<AffiliateContentPackage> generateContentPackage({
+    required String slug,
+    required String platform,
+    required String format,
+    required String intent,
+    required String goal,
+    required String niche,
+    required String audience,
+    String language = 'th',
+    String? affiliateUrl,
+  }) async {
+    final session = PollinationsSessionService();
+    Map<String, String> authHeaders;
+    try {
+      authHeaders = await session.authorizationHeaders();
+    } on PollinationsSessionException {
+      throw const AffiliateAgentException(
+        'Connect Pollinations before generating AI content.',
+      );
+    } finally {
+      await session.dispose();
+    }
+
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/v1/affiliate/content/generate'),
+      headers: {
+        ...authHeaders,
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'slug': slug,
+        'platform': platform,
+        'format': format,
+        'intent': intent,
+        'goal': goal,
+        'niche': niche.trim(),
+        'audience': audience.trim(),
+        'language': language,
+        if (affiliateUrl != null && affiliateUrl.trim().isNotEmpty)
+          'affiliate_url': affiliateUrl.trim(),
+      }),
+    );
+    _ensureSuccess(response);
+
+    final body = jsonDecode(response.body);
+    if (body is! Map) {
+      throw const AffiliateAgentException(
+        'Content Factory returned an invalid response.',
+      );
+    }
+    return AffiliateContentPackage.fromJson(
       body.map((key, value) => MapEntry(key.toString(), value)),
     );
   }
