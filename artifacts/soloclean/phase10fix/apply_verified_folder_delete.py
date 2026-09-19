@@ -176,7 +176,7 @@ companion_new = """    private companion object {
         const val FOLDER_DELETE_VERIFY_RETRIES = 3
         const val FOLDER_DELETE_VERIFY_DELAY_MS = 100L
 """
-if "FOLDER_DELETE_VERIFY_RETRIES" not in e:
+if "const val FOLDER_DELETE_VERIFY_RETRIES" not in e:
     if companion_marker not in e:
         raise SystemExit("companion marker missing")
     e = e.replace(companion_marker, companion_new, 1)
