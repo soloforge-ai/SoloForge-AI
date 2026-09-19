@@ -8,6 +8,7 @@ import '../widgets/category_filter_bar.dart';
 import '../widgets/home/hero_banner.dart';
 import '../widgets/sort_selector.dart';
 import 'about_page.dart';
+import 'affiliate_agent_page.dart';
 import 'asset_forge_page.dart';
 import 'forge_page.dart';
 
@@ -92,6 +93,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void openAffiliateAgent() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AffiliateAgentPage()),
+    );
+  }
+
   void openProductForge(AffiliateProduct product) {
     Navigator.push(
       context,
@@ -105,6 +113,11 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('SoloForge AI'),
         actions: [
+          IconButton(
+            tooltip: 'Affiliate Agent',
+            icon: const Icon(Icons.handshake_outlined),
+            onPressed: openAffiliateAgent,
+          ),
           IconButton(
             tooltip: 'About',
             icon: const Icon(Icons.info_outline),
