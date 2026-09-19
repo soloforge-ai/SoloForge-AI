@@ -79,3 +79,27 @@ The tool list should also feed:
 - affiliate disclosure
 - affiliate links when available
 - internal analytics by tool and content item
+
+
+## Current implementation
+
+The first live Content Factory path is available from Affiliate Agent → Create Content.
+
+It uses the user's connected Pollinations session for text generation and returns a structured package:
+
+- title and hook options
+- script
+- shot list
+- voiceover
+- visual prompts
+- thumbnail brief
+- CTA
+- description
+- affiliate disclosure
+- claims requiring verification
+- tool metadata
+- end-card payload
+
+The backend forcibly keeps generated claims unverified. In particular, first-hand and measured-result claims require real evidence before they may be treated as verified.
+
+At this stage the end card lists only tools actually used by the current generation step. Visual/video/edit tools are added only when they are genuinely used in later production stages.
