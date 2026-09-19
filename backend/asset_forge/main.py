@@ -24,6 +24,7 @@ from backend.pollinations_oauth_router import (
 )
 from backend.idea_flow_webhook import router as idea_flow_webhook_router
 from backend.prawtwan_chat import router as prawtwan_chat_router
+from backend.affiliate_agent import router as affiliate_agent_router
 
 
 app = FastAPI(title="SoloForge Asset Forge API", version="0.8.0")
@@ -39,6 +40,7 @@ app.add_middleware(
 app.include_router(pollinations_oauth_router)
 app.include_router(idea_flow_webhook_router)
 app.include_router(prawtwan_chat_router)
+app.include_router(affiliate_agent_router)
 
 CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
 CHARACTER_LIBRARY_BASE_URL = (
@@ -131,7 +133,8 @@ CHARACTER REFERENCE:
 - Use the character name and style direction only.
 """
 
-    message_block = "\n".join(
+    message_block = "
+".join(
         f"{index + 1}. {message.strip()}"
         for index, message in enumerate(request.messages)
         if message.strip()
@@ -190,19 +193,29 @@ def _multipart_body(fields: dict[str, str], file_field: str, filename: str, file
 
     for name, value in fields.items():
         chunks.extend([
-            f"--{boundary}\r\n".encode(),
-            f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode(),
+            f"--{boundary}
+".encode(),
+            f'Content-Disposition: form-data; name="{name}"
+
+'.encode(),
             value.encode("utf-8"),
-            b"\r\n",
+            b"
+",
         ])
 
     chunks.extend([
-        f"--{boundary}\r\n".encode(),
-        f'Content-Disposition: form-data; name="{file_field}"; filename="{filename}"\r\n'.encode(),
-        f"Content-Type: {content_type}\r\n\r\n".encode(),
+        f"--{boundary}
+".encode(),
+        f'Content-Disposition: form-data; name="{file_field}"; filename="{filename}"
+'.encode(),
+        f"Content-Type: {content_type}
+
+".encode(),
         file_bytes,
-        b"\r\n",
-        f"--{boundary}--\r\n".encode(),
+        b"
+",
+        f"--{boundary}--
+".encode(),
     ])
     return b"".join(chunks), boundary
 
