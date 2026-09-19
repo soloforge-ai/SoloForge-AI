@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/theme/app_theme.dart';
 import '../models/affiliate_program.dart';
 import '../services/affiliate_agent_service.dart';
+import 'affiliate_content_factory_page.dart';
 
 class AffiliateAgentPage extends StatefulWidget {
   const AffiliateAgentPage({super.key, this.service});
@@ -117,6 +118,19 @@ class _AffiliateAgentPageState extends State<AffiliateAgentPage> {
         _savedSlugs.add(program.slug);
       }
     });
+  }
+
+  void _openContentFactory(AffiliateProgram program) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AffiliateContentFactoryPage(
+          program: program,
+          niche: _nicheController.text.trim(),
+          audience: _audienceController.text.trim(),
+        ),
+      ),
+    );
   }
 
   Future<void> _openSignup(AffiliateProgram program) async {
@@ -338,6 +352,11 @@ class _AffiliateAgentPageState extends State<AffiliateAgentPage> {
                 onPressed: () => _toggleSaved(program),
                 icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border),
                 label: Text(saved ? 'Saved' : 'Save'),
+              ),
+              FilledButton.icon(
+                onPressed: () => _openContentFactory(program),
+                icon: const Icon(Icons.auto_awesome),
+                label: const Text('Create Content'),
               ),
               if (program.signupUrl != null || program.website != null)
                 TextButton.icon(
