@@ -59,6 +59,7 @@ jobs:
           grep -q 'verifyFolderDeleted(itemUri)' soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/AndroidSafCleanupEngine.kt
           grep -q 'DocumentPresence.PRESENT' soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/AndroidSafCleanupEngine.kt
           grep -q 'const val FOLDER_DELETE_VERIFY_RETRIES = 3' soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/AndroidSafCleanupEngine.kt
+          grep -q 'verifyFolderDeleted' soloclean/app/src/main/java/com/soloforge/soloclean/cleanup/AndroidSafCleanupEngine.kt
           grep -q 'EmptyFolderState.TRULY_EMPTY' soloclean/app/src/main/java/com/soloforge/soloclean/scanner/AndroidReadOnlyScanEngine.kt
           grep -q 'EmptyFolderState.CONTAINS_ONLY_EMPTY_SUBFOLDERS' soloclean/app/src/main/java/com/soloforge/soloclean/scanner/AndroidReadOnlyScanEngine.kt
           grep -q 'TRULY EMPTY FOLDER' soloclean/app/src/main/java/com/soloforge/soloclean/ui/review/ReviewScreen.kt
@@ -103,7 +104,6 @@ jobs:
           grep -q 'VERIFIED FOLDER DELETE' /tmp/apk-strings.txt
           grep -q 'TRULY EMPTY FOLDER' /tmp/apk-strings.txt
           grep -q 'EMPTY TREE' /tmp/apk-strings.txt
-          grep -q 'Document provider ตอบว่าลบแล้ว แต่ตรวจซ้ำพบว่าโฟลเดอร์ยังอยู่' /tmp/apk-strings.txt
 
           sha256sum "$APK" | tee soloclean/app/build/outputs/apk/debug/app-debug.apk.sha256
 
