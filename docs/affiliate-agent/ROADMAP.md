@@ -12,13 +12,15 @@
 - rationale
 - verification/source timestamps
 
-## V0.3 — Content Factory
-- title/hook/script generation
-- content intent
+## V0.3 — Content Factory — IN PROGRESS
+- AI title/hook/script generation via connected Pollinations session
+- platform / format / intent / goal controls
 - claims/evidence gate
-- tool metadata
+- structured shot list, voiceover, visual prompts, thumbnail brief
+- actual tool metadata for generated draft
 - end-card payload
-- disclosure text
+- affiliate disclosure text
+- next: editable real production-tool list and persistence
 
 ## V0.4 — Tracking
 - redirect slugs
