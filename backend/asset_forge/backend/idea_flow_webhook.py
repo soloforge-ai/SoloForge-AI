@@ -31,6 +31,9 @@ HELP = """SoloForge Idea Flow
 /validate ID [reason]
 /kill ID [reason]
 /history ID
+/jobs
+/latest
+/job ID
 /help
 """
 
@@ -115,6 +118,76 @@ def _format_list(rows: list[dict[str, object]]) -> str:
     if not rows:
         return "ไม่มีไอเดียในรายการนี้"
     return "\n".join(f"#{row['id']} [{row['status']}] {row['title']}" for row in rows)
+
+
+def _status_progress(status: str) -> list[str]:
+    stages = [
+        ("Capture", {"NEW","SCORING","SCORED","SELECTED","BACKLOG","ARCHIVED","GENERATING","READY_FOR_REVIEW","APPROVED","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","GENERATION_FAILED","RENDER_FAILED","PUBLISH_FAILED"}),
+        ("MiniBoss Score", {"SCORED","SELECTED","BACKLOG","ARCHIVED","GENERATING","READY_FOR_REVIEW","APPROVED","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","GENERATION_FAILED","RENDER_FAILED","PUBLISH_FAILED"}),
+        ("AI Generate", {"READY_FOR_REVIEW","APPROVED","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","RENDER_FAILED","PUBLISH_FAILED"}),
+        ("Review", {"APPROVED","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","RENDER_FAILED","PUBLISH_FAILED"}),
+        ("Render Video", {"READY_TO_PUBLISH","PUBLISHING","PUBLISHED","PUBLISH_FAILED"}),
+        ("Publish", {"PUBLISHED"}),
+    ]
+    failed = {
+        "GENERATION_FAILED": "AI Generate",
+        "RENDER_FAILED": "Render Video",
+        "PUBLISH_FAILED": "Publish",
+    }
+    lines: list[str] = []
+    for name, done_states in stages:
+        if failed.get(status) == name:
+            icon = "❌"
+        elif status in done_states:
+            icon = "✅"
+        else:
+            icon = "⏳" if (
+                (name == "MiniBoss Score" and status in {"NEW","SCORING"})
+                or (name == "AI Generate" and status in {"SELECTED","GENERATING"})
+                or (name == "Review" and status == "READY_FOR_REVIEW")
+                or (name == "Render Video" and status in {"APPROVED","RENDERING"})
+                or (name == "Publish" and status in {"READY_TO_PUBLISH","PUBLISHING"})
+            ) else "⬜"
+        lines.append(f"{icon} {name}")
+    return lines
+
+
+def _format_job(row: dict[str, object]) -> str:
+    idea_id = row.get("idea_flow_id") or "?"
+    status = str(row.get("status") or "UNKNOWN")
+    score = row.get("score")
+    idea = str(row.get("idea") or "")
+    platform = str(row.get("publish_platform") or "-")
+    publish_status = str(row.get("publish_status") or "-")
+    score_text = f"{score}/100" if score is not None else "ยังไม่มีคะแนน"
+    progress = "\n".join(_status_progress(status))
+    return (
+        f"🧠 SoloForge Job #{idea_id}\n\n"
+        f"Idea:\n{idea}\n\n"
+        f"MiniBoss: {score_text}\n"
+        f"Status: {status}\n\n"
+        f"Progress:\n{progress}\n\n"
+        f"Platform: {platform}\n"
+        f"Publish: {publish_status}"
+    )
+
+
+def _format_jobs(rows: list[dict[str, object]]) -> str:
+    if not rows:
+        return "ยังไม่มี Content Job"
+    lines = ["📋 SoloForge Jobs", ""]
+    for row in rows:
+        idea_id = row.get("idea_flow_id") or "?"
+        status = str(row.get("status") or "UNKNOWN")
+        score = row.get("score")
+        score_text = f" {score}/100" if score is not None else ""
+        idea = str(row.get("idea") or "").replace("\n", " ").strip()
+        if len(idea) > 72:
+            idea = idea[:69] + "..."
+        lines.append(f"#{idea_id}  {status}{score_text}")
+        lines.append(idea)
+        lines.append("")
+    return "\n".join(lines).strip()
 
 
 MINIBOSS_SCORE_VERSION = "miniboss_v0_rule"
@@ -297,6 +370,34 @@ class SupabaseIdeaFlowService:
             },
         )
 
+    def list_content_jobs(self, limit: int = 10) -> list[dict[str, object]]:
+        path = (
+            "content_jobs?select=idea_flow_id,idea,status,score,publish_platform,publish_status,"
+            "hook,caption,video_url,created_at,updated_at"
+            f"&order=created_at.desc&limit={limit}"
+        )
+        return list(_supabase_request("GET", path) or [])
+
+    def get_content_job(self, idea_id: int) -> dict[str, object]:
+        rows = _supabase_request(
+            "GET",
+            "content_jobs"
+            f"?idea_flow_id=eq.{idea_id}"
+            "&select=idea_flow_id,idea,status,score,score_breakdown,score_reason,"
+            "publish_platform,publish_status,hook,script,caption,cta,video_url,"
+            "created_at,updated_at,scored_at"
+            "&limit=1",
+        ) or []
+        if not rows:
+            raise ValueError(f"Job #{idea_id} not found")
+        return dict(rows[0])
+
+    def latest_content_job(self) -> dict[str, object]:
+        rows = self.list_content_jobs(limit=1)
+        if not rows:
+            raise ValueError("ยังไม่มี Content Job")
+        return dict(rows[0])
+
     def list(self, status: str | None = None, limit: int = 30) -> list[dict[str, object]]:
         path = "idea_flow_ideas?select=id,title,status&order=id.desc"
         if status:
@@ -454,6 +555,14 @@ def handle_text(
     cmd = parts[0].split("@")[0].lower()
     if cmd in {"/help", "/start"}:
         return HELP
+    if cmd == "/jobs":
+        return _format_jobs(service.list_content_jobs())
+    if cmd == "/latest":
+        return _format_job(service.latest_content_job())
+    if cmd == "/job":
+        if len(parts) < 2:
+            return "ใช้: /job ID"
+        return _format_job(service.get_content_job(int(parts[1])))
     if cmd == "/list":
         return _format_list(service.list(parts[1] if len(parts) > 1 else None))
     if cmd == "/search":
