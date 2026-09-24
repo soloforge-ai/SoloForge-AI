@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import io
 import json
@@ -23,6 +24,7 @@ from backend.pollinations_oauth_router import (
     router as pollinations_oauth_router,
 )
 from backend.idea_flow_webhook import router as idea_flow_webhook_router
+from backend.content_generation import content_worker_loop
 from backend.prawtwan_chat import router as prawtwan_chat_router
 
 
@@ -445,6 +447,11 @@ def _zip_files(
         for filename, data in files:
             archive.writestr(f"{pack_name}/{filename}", data)
     return output.getvalue()
+
+
+@app.on_event("startup")
+async def start_content_worker() -> None:
+    asyncio.create_task(content_worker_loop())
 
 
 @app.get("/health")
