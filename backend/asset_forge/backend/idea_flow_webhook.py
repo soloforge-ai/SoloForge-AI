@@ -117,6 +117,85 @@ def _format_list(rows: list[dict[str, object]]) -> str:
     return "\n".join(f"#{row['id']} [{row['status']}] {row['title']}" for row in rows)
 
 
+MINIBOSS_SCORE_VERSION = "miniboss_v0_rule"
+
+def _miniboss_score(idea: str) -> dict[str, object]:
+    """Deterministic V0 scorer so the pipeline works without a paid LLM key."""
+    text = " ".join((idea or "").lower().split())
+
+    def has_any(*terms: str) -> bool:
+        return any(term in text for term in terms)
+
+    audience_fit = 12
+    if has_any("ai", "เครื่องมือ", "แอป", "ทำงาน", "ครีเอเตอร์", "creator", "affiliate"):
+        audience_fit += 5
+    if has_any("ประหยัดเวลา", "รายได้", "เงิน", "productivity", "งาน"):
+        audience_fit += 3
+    audience_fit = min(audience_fit, 20)
+
+    hook_potential = 10
+    if has_any("ฟรี", "ทดลอง", "จริง", "คุ้ม", "ได้ไหม", "แทนมนุษย์", "ไม่ต้อง"):
+        hook_potential += 6
+    if len(text) >= 35:
+        hook_potential += 2
+    if has_any("ai", "เครื่องมือ", "แอป"):
+        hook_potential += 2
+    hook_potential = min(hook_potential, 20)
+
+    revenue_potential = 8
+    if has_any("affiliate", "สินค้า", "product", "รายได้", "เงิน", "ขาย", "คอมมิชชั่น"):
+        revenue_potential += 10
+    if has_any("เครื่องมือ", "แอป", "tool", "software", "saas"):
+        revenue_potential += 5
+    if has_any("ฟรี", "ทดลอง"):
+        revenue_potential += 2
+    revenue_potential = min(revenue_potential, 25)
+
+    trend_potential = 8
+    if has_any("ai", "automation", "agent", "เครื่องมือ", "แอป"):
+        trend_potential += 5
+    if has_any("ทดลอง", "รีวิว", "เทียบ", "จริง"):
+        trend_potential += 2
+    trend_potential = min(trend_potential, 15)
+
+    brand_fit = 6
+    if has_any("ai", "เครื่องมือ", "แอป", "automation"):
+        brand_fit += 2
+    if has_any("ทดลอง", "ใช้จริง", "รายได้", "affiliate", "ประหยัดเวลา"):
+        brand_fit += 2
+    brand_fit = min(brand_fit, 10)
+
+    production_ease = 7
+    if has_any("เครื่องมือ", "แอป", "เว็บ", "website", "tool", "ai"):
+        production_ease += 2
+    if has_any("ทดลอง", "รีวิว", "สอน", "วิธี", "เทียบ"):
+        production_ease += 1
+    production_ease = min(production_ease, 10)
+
+    breakdown = {
+        "audience_fit": audience_fit,
+        "hook_potential": hook_potential,
+        "revenue_potential": revenue_potential,
+        "trend_potential": trend_potential,
+        "brand_fit": brand_fit,
+        "production_ease": production_ease,
+    }
+    total = int(sum(breakdown.values()))
+    decision = "SELECTED" if total >= 80 else "BACKLOG" if total >= 60 else "ARCHIVED"
+    reason = (
+        f"Audience {audience_fit}/20, Hook {hook_potential}/20, "
+        f"Revenue {revenue_potential}/25, Trend {trend_potential}/15, "
+        f"Brand {brand_fit}/10, Ease {production_ease}/10"
+    )
+    return {
+        "score": total,
+        "decision": decision,
+        "breakdown": breakdown,
+        "reason": reason,
+        "version": MINIBOSS_SCORE_VERSION,
+    }
+
+
 class SupabaseIdeaFlowService:
     def __init__(self) -> None:
         self.mutation_committed = False
@@ -156,6 +235,70 @@ class SupabaseIdeaFlowService:
         )
         self.mutation_committed = True
         return idea_id
+
+    def score_content_job(self, idea_id: int) -> dict[str, object]:
+        rows = _supabase_request(
+            "GET",
+            "content_jobs"
+            f"?idea_flow_id=eq.{idea_id}"
+            "&select=id,idea,status"
+            "&limit=1",
+        ) or []
+        if not rows:
+            raise RuntimeError("Content job was not created")
+        row = rows[0]
+        if row.get("status") != "NEW":
+            return {
+                "score": row.get("score"),
+                "decision": row.get("status"),
+                "breakdown": row.get("score_breakdown") or {},
+                "reason": row.get("score_reason") or "already scored",
+                "version": row.get("score_version") or MINIBOSS_SCORE_VERSION,
+            }
+
+        result = _miniboss_score(str(row.get("idea") or ""))
+        job_id = urllib.parse.quote(str(row["id"]), safe="")
+        updated = _supabase_request(
+            "PATCH",
+            f"content_jobs?id=eq.{job_id}",
+            body={
+                "status": result["decision"],
+                "score": result["score"],
+                "score_breakdown": result["breakdown"],
+                "score_reason": result["reason"],
+                "score_version": result["version"],
+                "scored_at": "now()",
+            },
+            prefer="return=representation",
+        )
+        # PostgREST does not evaluate SQL expressions inside JSON. If scored_at was rejected,
+        # retry without it and let the database timestamp be filled by the follow-up RPC/migration.
+        if updated is None:
+            raise RuntimeError("MiniBoss score update failed")
+        return result
+
+    def persist_miniboss_result(
+        self,
+        update_id: int,
+        idea_id: int,
+        result: dict[str, object],
+    ) -> None:
+        encoded = urllib.parse.quote(str(update_id), safe="")
+        _supabase_request(
+            "PATCH",
+            f"idea_flow_telegram_updates?update_id=eq.{encoded}&status=eq.PROCESSED",
+            body={
+                "result_json": {
+                    "kind": "capture",
+                    "idea_id": idea_id,
+                    "status": "CAPTURED",
+                    "content_job_status": result["decision"],
+                    "miniboss_score": result["score"],
+                    "miniboss_reason": result["reason"],
+                    "miniboss_version": result["version"],
+                }
+            },
+        )
 
     def list(self, status: str | None = None, limit: int = 30) -> list[dict[str, object]]:
         path = "idea_flow_ideas?select=id,title,status&order=id.desc"
@@ -266,6 +409,14 @@ def _format_mutation_result(result: dict[str, object]) -> str:
     kind = result.get("kind")
     idea_id = result.get("idea_id")
     if kind == "capture":
+        score = result.get("miniboss_score")
+        decision = result.get("content_job_status")
+        if score is not None and decision:
+            return (
+                f"จับไว้แล้ว ✅ Idea #{idea_id}\n"
+                f"MiniBoss: {score}/100 → {decision}\n"
+                f"{result.get('miniboss_reason') or ''}"
+            ).strip()
         return f"จับไว้แล้ว ✅ Idea #{idea_id}\nสถานะ: CAPTURED"
     if kind == "research":
         return f"#{idea_id} -> RESEARCHED ✅"
@@ -287,7 +438,20 @@ def handle_text(
         return "ข้อความว่าง"
     if not text.startswith("/"):
         idea_id = service.capture(text, actor=actor, update_id=update_id)
-        return f"จับไว้แล้ว ✅ Idea #{idea_id}\nสถานะ: CAPTURED"
+        try:
+            result = service.score_content_job(idea_id)
+            service.persist_miniboss_result(update_id, idea_id, result)
+            return (
+                f"จับไว้แล้ว ✅ Idea #{idea_id}\n"
+                f"MiniBoss: {result['score']}/100 → {result['decision']}\n"
+                f"{result['reason']}"
+            )
+        except Exception as exc:
+            print("miniboss_score_error", {"exception_type": type(exc).__name__})
+            return (
+                f"จับไว้แล้ว ✅ Idea #{idea_id}\n"
+                "MiniBoss: รอประเมิน (ระบบ scoring ยังไม่พร้อม)"
+            )
 
     parts = text.split()
     cmd = parts[0].split("@")[0].lower()
