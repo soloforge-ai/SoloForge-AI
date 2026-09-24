@@ -267,12 +267,9 @@ class SupabaseIdeaFlowService:
                 "score_breakdown": result["breakdown"],
                 "score_reason": result["reason"],
                 "score_version": result["version"],
-                "scored_at": "now()",
             },
             prefer="return=representation",
         )
-        # PostgREST does not evaluate SQL expressions inside JSON. If scored_at was rejected,
-        # retry without it and let the database timestamp be filled by the follow-up RPC/migration.
         if updated is None:
             raise RuntimeError("MiniBoss score update failed")
         return result
