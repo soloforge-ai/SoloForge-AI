@@ -6,6 +6,23 @@
 
 ## Active Product Direction
 
+SoloForge Affiliate Agent V0.1 — owner re-authorized 2026-09-19.
+
+```text
+Affiliate Program
+→ Discover
+→ Analyze
+→ Save
+→ Content Factory
+→ Manual Publish
+→ Track
+→ Learn
+```
+
+The Affiliate Agent must reuse SoloForge's existing Product-to-Post, Content Engine, and creative foundations rather than duplicate them.
+
+### Retained Foundation
+
 SoloForge Product-to-Post
 
 ```text
@@ -20,7 +37,17 @@ Product
 
 The near-term goal is to prove this workflow with one real product before expanding architecture or adding unrelated verticals.
 
-## NOW — Prove Product-to-Post
+## NOW — Affiliate Agent V0.1
+
+1. Integrate the current OpenAffiliate REST API through the existing FastAPI backend.
+2. Normalize program data and expose search/filter.
+3. Calculate the documented deterministic opportunity score.
+4. Provide a Flutter workspace for Discover → Analyze → Save.
+5. Keep saved programs device-local until user authentication exists.
+6. Verify backend contracts, Flutter analysis/tests, and Android build.
+7. Do not add Content Factory automation, click tracking, billing, or autonomous posting until V0.1 passes.
+
+## Retained Gate — Product-to-Post
 
 1. Obtain a usable live qualification result for a text provider.
 2. Keep model qualification separate from workflow execution success.
@@ -64,7 +91,7 @@ Do not promote a possible item to active work without owner approval.
 
 - Chat Prawtwan expansion
 - Idea Flow / Telegram Idea Inbox expansion
-- SoloForge Income Engine P2+
+- SoloForge Income Engine expansion outside the Affiliate Agent MVP
 - new agent systems
 - new memory systems
 - billing
