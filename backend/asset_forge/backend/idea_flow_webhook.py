@@ -466,6 +466,8 @@ def handle_text(
             extra = f"\nScore: {evaluation['weighted_score']}/5\nSignal: {evaluation['signal']}"
         return f"#{idea['id']} [{idea['status']}]\n{idea['body']}{extra}"
     if cmd == "/history":
+        if len(parts) < 2:
+            return "ใช้: /history ID"
         events = service.history(int(parts[1]))
         return "\n".join(
             f"{event['created_at']} | {event['event_type']} | "
