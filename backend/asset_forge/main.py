@@ -26,6 +26,7 @@ from backend.pollinations_oauth_router import (
 from backend.idea_flow_webhook import router as idea_flow_webhook_router
 from backend.content_generation import content_worker_loop
 from backend.prawtwan_chat import router as prawtwan_chat_router
+from backend.telegram_miniapp import router as telegram_miniapp_router
 
 
 app = FastAPI(title="SoloForge Asset Forge API", version="0.8.0")
@@ -41,6 +42,7 @@ app.add_middleware(
 app.include_router(pollinations_oauth_router)
 app.include_router(idea_flow_webhook_router)
 app.include_router(prawtwan_chat_router)
+app.include_router(telegram_miniapp_router)
 
 CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
 CHARACTER_LIBRARY_BASE_URL = (
