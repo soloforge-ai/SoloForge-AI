@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -145,7 +146,7 @@ def _finish_audio(job: dict[str, Any], storage_path: str) -> None:
             "audio_status": "READY",
             "audio_storage_path": storage_path,
             "voice_profile": str(job.get("voice_profile") or DEFAULT_VOICE_PROFILE),
-            "audio_generated_at": None,
+            "audio_generated_at": datetime.now(timezone.utc).isoformat(),
             "error_message": None,
         },
     )
