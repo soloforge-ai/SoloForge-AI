@@ -118,7 +118,7 @@ MINIAPP_HTML = r"""<!doctype html>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#101218">
   <title>SoloForge MiniBoss</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>\n  <script src="//libtl.com/sdk.js" data-zone="11885002" data-sdk="show_11885002"></script>
   <style>
     :root {
       color-scheme: dark;
@@ -267,6 +267,12 @@ MINIAPP_HTML = r"""<!doctype html>
       <div class="status" id="job"></div>
     </section>
 
+    <section class="result" id="unlockPlan">
+      <div style="font-weight:800;font-size:18px">✨ Full Execution Plan</div>
+      <p class="reason">ดูโฆษณา 1 ครั้งเพื่อปลดล็อกแผนทำคอนเทนต์ฉบับเต็มสำหรับไอเดียนี้</p>
+      <button id="watchAd" type="button">🎁 ดูโฆษณาเพื่อปลดล็อก</button>
+      <div class="status" id="rewardStatus"></div>
+    </section>
     <p class="foot" id="mode">กำลังเชื่อม Telegram…</p>\n    <p class="foot">Impact-Site-Verification: db63c967-8188-4a96-b20a-740706fc7edb</p>
   </main>
 
@@ -278,7 +284,7 @@ MINIAPP_HTML = r"""<!doctype html>
       const count = document.getElementById('count');
       const error = document.getElementById('error');
       const result = document.getElementById('result');
-      const mode = document.getElementById('mode');
+      const mode = document.getElementById('mode');\n      const unlockPlan = document.getElementById('unlockPlan');\n      const watchAd = document.getElementById('watchAd');\n      const rewardStatus = document.getElementById('rewardStatus');
 
       if (tg) {
         tg.ready();
@@ -324,7 +330,7 @@ MINIAPP_HTML = r"""<!doctype html>
           document.getElementById('decision').textContent = payload.decision || payload.status || 'QUEUED';
           document.getElementById('reason').textContent = payload.reason || 'MiniBoss รับงานแล้ว';
           document.getElementById('job').textContent = 'SoloForge Job #' + payload.idea_id + ' · ' + (payload.status || 'NEW');
-          result.style.display = 'block';
+          result.style.display = 'block';\n          unlockPlan.style.display = 'block';\n          unlockPlan.dataset.ideaId = payload.idea_id;
 
           if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         } catch (err) {
