@@ -122,15 +122,17 @@ def _format_list(rows: list[dict[str, object]]) -> str:
 
 def _status_progress(status: str) -> list[str]:
     stages = [
-        ("Capture", {"NEW","SCORING","SCORED","SELECTED","BACKLOG","ARCHIVED","GENERATING","READY_FOR_REVIEW","APPROVED","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","GENERATION_FAILED","RENDER_FAILED","PUBLISH_FAILED"}),
-        ("MiniBoss Score", {"SCORED","SELECTED","BACKLOG","ARCHIVED","GENERATING","READY_FOR_REVIEW","APPROVED","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","GENERATION_FAILED","RENDER_FAILED","PUBLISH_FAILED"}),
-        ("AI Generate", {"READY_FOR_REVIEW","APPROVED","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","RENDER_FAILED","PUBLISH_FAILED"}),
-        ("Review", {"APPROVED","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","RENDER_FAILED","PUBLISH_FAILED"}),
+        ("Capture", {"NEW","SCORING","SCORED","SELECTED","BACKLOG","ARCHIVED","GENERATING","READY_FOR_REVIEW","APPROVED","AUDIO_GENERATING","AUDIO_READY","AUDIO_FAILED","FINAL_RENDERING","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","GENERATION_FAILED","RENDER_FAILED","PUBLISH_FAILED"}),
+        ("MiniBoss Score", {"SCORED","SELECTED","BACKLOG","ARCHIVED","GENERATING","READY_FOR_REVIEW","APPROVED","AUDIO_GENERATING","AUDIO_READY","AUDIO_FAILED","FINAL_RENDERING","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","GENERATION_FAILED","RENDER_FAILED","PUBLISH_FAILED"}),
+        ("AI Generate", {"READY_FOR_REVIEW","APPROVED","AUDIO_GENERATING","AUDIO_READY","AUDIO_FAILED","FINAL_RENDERING","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","RENDER_FAILED","PUBLISH_FAILED"}),
+        ("Review", {"APPROVED","AUDIO_GENERATING","AUDIO_READY","AUDIO_FAILED","FINAL_RENDERING","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","RENDER_FAILED","PUBLISH_FAILED"}),
+        ("Aira Voice", {"AUDIO_READY","FINAL_RENDERING","RENDERING","READY_TO_PUBLISH","PUBLISHING","PUBLISHED","RENDER_FAILED","PUBLISH_FAILED"}),
         ("Render Video", {"READY_TO_PUBLISH","PUBLISHING","PUBLISHED","PUBLISH_FAILED"}),
         ("Publish", {"PUBLISHED"}),
     ]
     failed = {
         "GENERATION_FAILED": "AI Generate",
+        "AUDIO_FAILED": "Aira Voice",
         "RENDER_FAILED": "Render Video",
         "PUBLISH_FAILED": "Publish",
     }
@@ -145,12 +147,12 @@ def _status_progress(status: str) -> list[str]:
                 (name == "MiniBoss Score" and status in {"NEW","SCORING"})
                 or (name == "AI Generate" and status in {"SELECTED","GENERATING"})
                 or (name == "Review" and status == "READY_FOR_REVIEW")
-                or (name == "Render Video" and status in {"APPROVED","RENDERING"})
+                or (name == "Aira Voice" and status in {"APPROVED","AUDIO_GENERATING"})
+                or (name == "Render Video" and status in {"AUDIO_READY","FINAL_RENDERING","RENDERING"})
                 or (name == "Publish" and status in {"READY_TO_PUBLISH","PUBLISHING"})
             ) else "⬜"
         lines.append(f"{icon} {name}")
     return lines
-
 
 def _format_job(row: dict[str, object]) -> str:
     idea_id = row.get("idea_flow_id") or "?"
@@ -373,7 +375,7 @@ class SupabaseIdeaFlowService:
     def list_content_jobs(self, limit: int = 10) -> list[dict[str, object]]:
         path = (
             "content_jobs?select=idea_flow_id,idea,status,score,publish_platform,publish_status,"
-            "hook,caption,video_url,created_at,updated_at"
+            "hook,caption,video_url,voice_profile,audio_status,audio_storage_path,created_at,updated_at"
             f"&order=created_at.desc&limit={limit}"
         )
         return list(_supabase_request("GET", path) or [])
@@ -385,6 +387,7 @@ class SupabaseIdeaFlowService:
             f"?idea_flow_id=eq.{idea_id}"
             "&select=idea_flow_id,idea,status,score,score_breakdown,score_reason,"
             "publish_platform,publish_status,hook,script,caption,cta,video_url,"
+            "voice_profile,audio_status,audio_storage_path,audio_generated_at,"
             "created_at,updated_at,scored_at"
             "&limit=1",
         ) or []
