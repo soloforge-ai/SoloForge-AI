@@ -87,6 +87,9 @@ def submit_idea(request: MiniAppSubmitRequest) -> dict[str, Any]:
     service = SupabaseIdeaFlowService()
 
     try:
+        claim = service.claim_update(synthetic_update_id)
+        if claim.get("action") != "PROCESS":
+            raise RuntimeError("Mini App submission could not acquire processing lease")
         idea_id = service.capture(
             idea,
             actor=f"telegram-miniapp:{user_id}",
