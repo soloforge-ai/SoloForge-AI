@@ -267,7 +267,7 @@ MINIAPP_HTML = r"""<!doctype html>
       <div class="status" id="job"></div>
     </section>
 
-    <p class="foot" id="mode">กำลังเชื่อม Telegram…</p>
+    <p class="foot" id="mode">กำลังเชื่อม Telegram…</p>\n    <p class="foot">Impact-Site-Verification: db63c967-8188-4a96-b20a-740706fc7edb</p>
   </main>
 
   <script>
