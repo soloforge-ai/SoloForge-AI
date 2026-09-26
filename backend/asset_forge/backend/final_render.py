@@ -17,7 +17,7 @@ from typing import Any
 
 AUDIO_BUCKET = "content-audio"
 VIDEO_BUCKET = "content-video"
-RENDER_VERSION = "final_render_v0.2_lowmem"
+RENDER_VERSION = "final_render_v0.3_audio_subtitles"
 
 
 def _required_env(name: str) -> str:
@@ -154,14 +154,48 @@ def _duration(path: Path) -> float:
     return float(result.stdout.strip())
 
 
-def _split_script(script: str) -> list[str]:
-    clean = " ".join((script or "").split())
-    if not clean:
+def _split_script(script: str, max_chars: int = 34) -> list[str]:
+    """Split narration into subtitle-sized phrases while preserving authored line breaks."""
+    raw = (script or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    if not raw:
         return []
-    chunks = [x.strip() for x in re.split(r"(?<=[.!?。！？])\s+|\s{2,}", clean) if x.strip()]
-    if len(chunks) <= 1:
-        words = clean.split()
-        chunks = [" ".join(words[i:i + 10]) for i in range(0, len(words), 10)]
+
+    logical_lines = [line.strip() for line in raw.split("\n") if line.strip()]
+    chunks: list[str] = []
+
+    for line in logical_lines:
+        clauses = [
+            part.strip()
+            for part in re.split(r"(?<=[.!?。！？])\s*|\s*[—–;:]\s*", line)
+            if part.strip()
+        ]
+        for clause in clauses:
+            if len(clause) <= max_chars:
+                chunks.append(clause)
+                continue
+
+            words = clause.split()
+            if len(words) <= 1:
+                # Thai often has no spaces. Fall back to character windows rather than
+                # allowing one subtitle to cover the entire screen.
+                chunks.extend(
+                    clause[i:i + max_chars].strip()
+                    for i in range(0, len(clause), max_chars)
+                    if clause[i:i + max_chars].strip()
+                )
+                continue
+
+            current: list[str] = []
+            for word in words:
+                candidate = " ".join(current + [word])
+                if current and len(candidate) > max_chars:
+                    chunks.append(" ".join(current))
+                    current = [word]
+                else:
+                    current.append(word)
+            if current:
+                chunks.append(" ".join(current))
+
     return chunks
 
 
@@ -342,7 +376,8 @@ def process_audio_ready_once() -> int:
                         "-t", f"{audio_duration:.3f}",
                         "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
                         "-threads", "1",
-                        "-c:a", "aac", "-b:a", "96k",
+                        "-af", "aresample=48000,alimiter=limit=0.90",
+                        "-c:a", "aac", "-b:a", "160k", "-ar", "48000",
                         "-movflags", "+faststart",
                         str(output),
                     ],
@@ -362,6 +397,7 @@ def process_audio_ready_once() -> int:
                     "render_profile": "EXPERIMENT_LOW_MEMORY",
                     "ffmpeg_threads": 1,
                     "audio_present": True,
+                    "audio_codec": "aac_160k_48khz_limited",
                     "duration_delta_sec": round(abs(video_duration - audio_duration), 2),
                 }
                 if abs(video_duration - audio_duration) > 1.5:

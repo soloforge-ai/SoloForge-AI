@@ -9,7 +9,7 @@ from tempfile import NamedTemporaryFile
 
 import edge_tts
 
-DEFAULT_VOICE_PROFILE = "AIRA_THAI_V1"
+DEFAULT_VOICE_PROFILE = "AIRA_THAI_V2"
 
 VOICE_PROFILES: dict[str, dict[str, str]] = {
     "AIRA_THAI_V1": {
@@ -17,7 +17,13 @@ VOICE_PROFILES: dict[str, dict[str, str]] = {
         "rate": "-25%",
         "pitch": "+20Hz",
         "language": "th-TH",
-    }
+    },
+    "AIRA_THAI_V2": {
+        "voice": "th-TH-PremwadeeNeural",
+        "rate": "-15%",
+        "pitch": "+5Hz",
+        "language": "th-TH",
+    },
 }
 
 
