@@ -22,3 +22,14 @@ def test_write_srt_covers_audio_duration(tmp_path: Path) -> None:
     assert count >= 1
     assert "00:00:06,000" in content
     assert "ประโยค" in content
+
+
+def test_split_script_preserves_thai_line_breaks() -> None:
+    script = """ปัญหาไม่ได้อยู่ที่ Prompt อย่างเดียว
+แต่เรายังไม่ได้ล็อกตัวตนของ Character ให้ชัด
+ก่อนเปลี่ยนฉาก ต้องล็อกหน้า ผม รูปร่าง
+รวมถึงจุดจำเฉพาะของตัวละคร
+ฉากเปลี่ยนได้ แต่ Identity ควรยังเป็นคนเดิม"""
+    chunks = _split_script(script)
+    assert 5 <= len(chunks) <= 10
+    assert all(len(chunk) <= 34 for chunk in chunks)
