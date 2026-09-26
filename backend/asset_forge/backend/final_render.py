@@ -162,7 +162,7 @@ def _recover_stale_rendering(stale_minutes: int = 10) -> int:
         "GET",
         "content_jobs?status=eq.FINAL_RENDERING"
         "&render_status=eq.RENDERING"
-        f"&updated_at=lt.{urllib.parse.quote(cutoff_iso, safe=':-+.TZ')}"
+        f"&updated_at=lt.{urllib.parse.quote(cutoff_iso, safe='')}"
         "&select=id,retry_count",
     ) or []
     recovered = 0
@@ -258,7 +258,10 @@ def _fail(job: dict[str, Any], exc: Exception) -> None:
 
 
 def process_audio_ready_once() -> int:
-    _recover_stale_rendering()
+    try:
+        _recover_stale_rendering()
+    except Exception as exc:
+        print("final_render_recovery_error", {"exception_type": type(exc).__name__})
     processed = 0
     for job in _claim_ready():
         try:
