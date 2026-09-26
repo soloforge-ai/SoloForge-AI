@@ -26,6 +26,7 @@ from backend.pollinations_oauth_router import (
 from backend.idea_flow_webhook import router as idea_flow_webhook_router
 from backend.content_generation import content_worker_loop
 from backend.audio_generation import audio_worker_loop
+from backend.final_render import final_render_worker_loop
 from backend.prawtwan_chat import router as prawtwan_chat_router
 from backend.telegram_miniapp import router as telegram_miniapp_router
 
@@ -456,6 +457,7 @@ def _zip_files(
 async def start_content_workers() -> None:
     asyncio.create_task(content_worker_loop())
     asyncio.create_task(audio_worker_loop())
+    asyncio.create_task(final_render_worker_loop())
 
 
 @app.get("/health")
