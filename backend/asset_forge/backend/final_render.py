@@ -118,7 +118,7 @@ def create_signed_video_url(job_id: str, expires_in: int = 600) -> str:
     signed = body.get("signedURL") or body.get("signedUrl")
     if not signed:
         raise RuntimeError("Supabase did not return a signed URL")
-    return signed if str(signed).startswith("http") else f"{base_url}{signed}"
+    return signed if str(signed).startswith("http") else f"{base_url}/storage/v1{signed}"
 
 
 def _storage_upload(bucket: str, object_path: str, local_path: Path, content_type: str) -> None:
