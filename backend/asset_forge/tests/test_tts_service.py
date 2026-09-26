@@ -12,11 +12,11 @@ from backend.tts_service import (
 )
 
 
-def test_aira_profile_is_locked() -> None:
+def test_default_aira_v2_profile_is_locked() -> None:
     profile = get_voice_profile(DEFAULT_VOICE_PROFILE)
     assert profile["voice"] == "th-TH-PremwadeeNeural"
-    assert profile["rate"] == "-25%"
-    assert profile["pitch"] == "+20Hz"
+    assert profile["rate"] == "-15%"
+    assert profile["pitch"] == "+5Hz"
 
 
 def test_unknown_profile_raises() -> None:
