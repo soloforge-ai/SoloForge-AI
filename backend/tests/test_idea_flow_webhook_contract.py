@@ -47,6 +47,32 @@ class FakeService:
         self.mutation_committed = True
         return 42
 
+    def score_content_job(self, idea_id: int) -> dict[str, object]:
+        assert idea_id == 42
+        return {
+            "score": 88,
+            "decision": "SELECTED",
+            "breakdown": {"test": 88},
+            "reason": "test score",
+            "version": "test",
+        }
+
+    def persist_miniboss_result(
+        self,
+        update_id: int,
+        idea_id: int,
+        result: dict[str, object],
+    ) -> None:
+        self.update_states[update_id]["result"] = {
+            "kind": "capture",
+            "idea_id": idea_id,
+            "status": "CAPTURED",
+            "content_job_status": result["decision"],
+            "miniboss_score": result["score"],
+            "miniboss_reason": result["reason"],
+            "miniboss_version": result["version"],
+        }
+
 
 def _client(monkeypatch):
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token-must-not-appear")
@@ -123,7 +149,11 @@ def test_authorized_update_captures_and_replies(monkeypatch):
 
     assert response.status_code == 200
     assert FakeService.captured == [("ทดลองไอเดีย", "telegram:123456")]
-    assert sent == [("token-must-not-appear", 123456, "จับไว้แล้ว ✅ Idea #42\nสถานะ: CAPTURED")]
+    assert sent == [(
+        "token-must-not-appear",
+        123456,
+        "จับไว้แล้ว ✅ Idea #42\nMiniBoss: 88/100 → SELECTED\ntest score",
+    )]
 
 
 def test_duplicate_update_is_acknowledged_without_duplicate_mutation(monkeypatch):
