@@ -82,6 +82,45 @@ def _download_url(url: str, destination: Path) -> None:
         raise RuntimeError("Base video download failed") from exc
 
 
+def create_signed_video_url(job_id: str, expires_in: int = 600) -> str:
+    """Create a short-lived signed URL for a finished private content video."""
+    encoded_job_id = urllib.parse.quote(job_id, safe="")
+    rows = _supabase_request(
+        "GET",
+        f"content_jobs?id=eq.{encoded_job_id}&status=eq.READY_TO_PUBLISH"
+        "&select=video_storage_path&limit=1",
+    ) or []
+    if not rows or not rows[0].get("video_storage_path"):
+        raise ValueError("Final video is not ready")
+
+    object_path = str(rows[0]["video_storage_path"])
+    base_url = _required_env("SUPABASE_URL").rstrip("/")
+    secret_key = _required_env("SUPABASE_SECRET_KEY")
+    encoded_path = urllib.parse.quote(object_path, safe="/")
+    payload = json.dumps({"expiresIn": max(60, min(int(expires_in), 3600))}).encode("utf-8")
+    req = urllib.request.Request(
+        f"{base_url}/storage/v1/object/sign/{VIDEO_BUCKET}/{encoded_path}",
+        data=payload,
+        headers={
+            "apikey": secret_key,
+            "Authorization": f"Bearer {secret_key}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as response:
+            body = json.loads(response.read().decode("utf-8"))
+    except Exception as exc:
+        raise RuntimeError("Could not create signed final-video URL") from exc
+
+    signed = body.get("signedURL") or body.get("signedUrl")
+    if not signed:
+        raise RuntimeError("Supabase did not return a signed URL")
+    return signed if str(signed).startswith("http") else f"{base_url}{signed}"
+
+
 def _storage_upload(bucket: str, object_path: str, local_path: Path, content_type: str) -> None:
     base_url = _required_env("SUPABASE_URL").rstrip("/")
     secret_key = _required_env("SUPABASE_SECRET_KEY")
