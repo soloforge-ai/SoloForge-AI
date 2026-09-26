@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import List
 
 from fastapi import FastAPI, Header, HTTPException
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from PIL import Image, ImageDraw
@@ -26,7 +27,7 @@ from backend.pollinations_oauth_router import (
 from backend.idea_flow_webhook import router as idea_flow_webhook_router
 from backend.content_generation import content_worker_loop
 from backend.audio_generation import audio_worker_loop
-from backend.final_render import final_render_worker_loop
+from backend.final_render import create_signed_video_url, final_render_worker_loop
 from backend.prawtwan_chat import router as prawtwan_chat_router
 from backend.telegram_miniapp import router as telegram_miniapp_router
 
@@ -467,6 +468,17 @@ def health() -> dict[str, str]:
         "service": "asset-forge",
         "git_commit": os.getenv("RENDER_GIT_COMMIT", "unknown"),
     }
+
+
+@app.get("/v1/content-video/{job_id}")
+def download_final_content_video(job_id: str) -> RedirectResponse:
+    try:
+        signed_url = create_signed_video_url(job_id, expires_in=600)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Could not prepare final video download") from exc
+    return RedirectResponse(url=signed_url, status_code=307)
 
 
 @app.post("/v1/asset-forge/generate", response_model=AssetForgeResponse)
