@@ -17,7 +17,7 @@ from typing import Any
 
 AUDIO_BUCKET = "content-audio"
 VIDEO_BUCKET = "content-video"
-RENDER_VERSION = "final_render_v0.1"
+RENDER_VERSION = "final_render_v0.2_lowmem"
 
 
 def _required_env(name: str) -> str:
@@ -155,6 +155,35 @@ def _write_srt(script: str, duration: float, path: Path) -> int:
     return len(chunks)
 
 
+def _recover_stale_rendering(stale_minutes: int = 10) -> int:
+    cutoff = datetime.now(timezone.utc).timestamp() - (stale_minutes * 60)
+    cutoff_iso = datetime.fromtimestamp(cutoff, timezone.utc).isoformat()
+    rows = _supabase_request(
+        "GET",
+        "content_jobs?status=eq.FINAL_RENDERING"
+        "&render_status=eq.RENDERING"
+        f"&updated_at=lt.{urllib.parse.quote(cutoff_iso, safe=':-+.TZ')}"
+        "&select=id,retry_count",
+    ) or []
+    recovered = 0
+    for row in rows:
+        job_id = urllib.parse.quote(str(row["id"]), safe="")
+        retry_count = int(row.get("retry_count") or 0) + 1
+        next_status = "AUDIO_READY" if retry_count <= 2 else "RENDER_FAILED"
+        _supabase_request(
+            "PATCH",
+            f"content_jobs?id=eq.{job_id}&status=eq.FINAL_RENDERING",
+            body={
+                "status": next_status,
+                "render_status": "PENDING" if next_status == "AUDIO_READY" else "FAILED",
+                "retry_count": retry_count,
+                "error_message": "Recovered stale render after worker restart/OOM",
+            },
+        )
+        recovered += 1
+    return recovered
+
+
 def _claim_ready(limit: int = 1) -> list[dict[str, Any]]:
     rows = _supabase_request(
         "GET",
@@ -229,6 +258,7 @@ def _fail(job: dict[str, Any], exc: Exception) -> None:
 
 
 def process_audio_ready_once() -> int:
+    _recover_stale_rendering()
     processed = 0
     for job in _claim_ready():
         try:
@@ -248,21 +278,30 @@ def process_audio_ready_once() -> int:
                 subtitle_count = _write_srt(str(job.get("script") or ""), audio_duration, srt)
 
                 style = (
-                    "FontName=Noto Sans Thai,FontSize=18,"
+                    "FontName=Noto Sans Thai,FontSize=16,"
                     "PrimaryColour=&H00FFFFFF,OutlineColour=&H80000000,"
                     "BackColour=&H50000000,BorderStyle=3,Outline=1,Shadow=0,"
-                    "Alignment=2,MarginL=50,MarginR=50,MarginV=170"
+                    "Alignment=2,MarginL=34,MarginR=34,MarginV=110"
+                )
+                video_filter = (
+                    "scale=720:1280:force_original_aspect_ratio=increase,"
+                    "crop=720:1280,"
+                    f"subtitles={srt}:force_style='{style}',"
+                    "format=yuv420p"
                 )
                 subprocess.run(
                     [
                         "ffmpeg", "-y",
-                        "-i", str(base_video),
+                        "-threads", "1",
+                        "-stream_loop", "-1", "-i", str(base_video),
                         "-i", str(audio),
-                        "-vf", f"subtitles={srt}:force_style='{style}'",
+                        "-vf", video_filter,
                         "-map", "0:v:0", "-map", "1:a:0",
-                        "-c:v", "libx264", "-preset", "veryfast", "-crf", "21",
-                        "-c:a", "aac", "-b:a", "128k",
-                        "-shortest", "-movflags", "+faststart",
+                        "-t", f"{audio_duration:.3f}",
+                        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
+                        "-threads", "1",
+                        "-c:a", "aac", "-b:a", "96k",
+                        "-movflags", "+faststart",
                         str(output),
                     ],
                     check=True,
@@ -277,6 +316,9 @@ def process_audio_ready_once() -> int:
                     "video_duration_sec": round(video_duration, 2),
                     "subtitle_segments": subtitle_count,
                     "subtitle_layout": "lower_third",
+                    "resolution": "720x1280",
+                    "render_profile": "EXPERIMENT_LOW_MEMORY",
+                    "ffmpeg_threads": 1,
                     "audio_present": True,
                     "duration_delta_sec": round(abs(video_duration - audio_duration), 2),
                 }
