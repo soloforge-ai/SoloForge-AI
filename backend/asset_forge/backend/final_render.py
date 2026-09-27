@@ -17,7 +17,7 @@ from typing import Any
 
 AUDIO_BUCKET = "content-audio"
 VIDEO_BUCKET = "content-video"
-RENDER_VERSION = "final_render_v0.3_audio_subtitles"
+RENDER_VERSION = "final_render_v0.4_tts_synced_subtitles"
 
 
 def _required_env(name: str) -> str:
@@ -71,6 +71,19 @@ def _storage_download(bucket: str, object_path: str, destination: Path) -> None:
             destination.write_bytes(response.read())
     except Exception as exc:
         raise RuntimeError("Storage download failed") from exc
+
+
+def _try_storage_download(bucket: str, object_path: str, destination: Path) -> bool:
+    try:
+        _storage_download(bucket, object_path, destination)
+        return True
+    except RuntimeError:
+        return False
+
+
+def _count_srt_segments(path: Path) -> int:
+    text = path.read_text(encoding="utf-8")
+    return len(re.findall(r"(?m)^\d+\s*$", text))
 
 
 def _download_url(url: str, destination: Path) -> None:
@@ -351,7 +364,16 @@ def process_audio_ready_once() -> int:
                 _storage_download(AUDIO_BUCKET, str(job["audio_storage_path"]), audio)
 
                 audio_duration = _duration(audio)
-                subtitle_count = _write_srt(str(job.get("script") or ""), audio_duration, srt)
+                audio_storage_path = str(job["audio_storage_path"])
+                subtitle_storage_path = re.sub(r"\.mp3$", ".srt", audio_storage_path)
+                subtitle_timing = "estimated"
+                if _try_storage_download(AUDIO_BUCKET, subtitle_storage_path, srt):
+                    subtitle_count = _count_srt_segments(srt)
+                    subtitle_timing = "edge_tts_word_boundary"
+                else:
+                    subtitle_count = _write_srt(
+                        str(job.get("script") or ""), audio_duration, srt
+                    )
 
                 style = (
                     "FontName=Noto Sans Thai,FontSize=16,"
@@ -393,6 +415,7 @@ def process_audio_ready_once() -> int:
                     "video_duration_sec": round(video_duration, 2),
                     "subtitle_segments": subtitle_count,
                     "subtitle_layout": "lower_third",
+                    "subtitle_timing": subtitle_timing,
                     "resolution": "720x1280",
                     "render_profile": "EXPERIMENT_LOW_MEMORY",
                     "ffmpeg_threads": 1,
