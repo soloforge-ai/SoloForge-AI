@@ -16,7 +16,7 @@ from typing import Any
 from backend.tts_service import (
     DEFAULT_VOICE_PROFILE,
     aira_enabled,
-    synthesize_to_file_sync,
+    synthesize_with_subtitles_to_file_sync,
 )
 
 AUDIO_BUCKET = "content-audio"
@@ -111,7 +111,7 @@ def _claim_approved(limit: int = 2) -> list[dict[str, Any]]:
     return claimed
 
 
-def _upload_audio(local_path: Path, object_path: str) -> None:
+def _upload_audio(local_path: Path, object_path: str, content_type: str = "audio/mpeg") -> None:
     base_url = _required_env("SUPABASE_URL").rstrip("/")
     secret_key = _required_env("SUPABASE_SECRET_KEY")
     encoded_path = urllib.parse.quote(object_path, safe="/")
@@ -121,7 +121,7 @@ def _upload_audio(local_path: Path, object_path: str) -> None:
         headers={
             "apikey": secret_key,
             "Authorization": f"Bearer {secret_key}",
-            "Content-Type": "audio/mpeg",
+            "Content-Type": content_type,
             "x-upsert": "true",
         },
         method="POST",
@@ -184,9 +184,17 @@ def process_approved_once() -> int:
             profile_id = str(job.get("voice_profile") or DEFAULT_VOICE_PROFILE)
             with TemporaryDirectory(prefix="soloforge_audio_") as tmp:
                 local_path = Path(tmp) / "voice.mp3"
-                synthesize_to_file_sync(script, local_path, profile_id=profile_id)
+                subtitle_path = Path(tmp) / "voice.srt"
+                synthesize_with_subtitles_to_file_sync(
+                    script,
+                    local_path,
+                    subtitle_path,
+                    profile_id=profile_id,
+                )
                 storage_path = f"{job['id']}/{profile_id}.mp3"
+                subtitle_storage_path = f"{job['id']}/{profile_id}.srt"
                 _upload_audio(local_path, storage_path)
+                _upload_audio(subtitle_path, subtitle_storage_path, "application/x-subrip")
 
             _finish_audio(job, storage_path)
             _send_telegram(
