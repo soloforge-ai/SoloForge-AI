@@ -2,65 +2,326 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
 import '../models/content_job.dart';
+import '../services/content_job_service.dart';
 
-class ContentJobPage extends StatelessWidget {
+class ContentJobPage extends StatefulWidget {
   const ContentJobPage({super.key, required this.job});
 
   final ContentJob job;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(job.contentId)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(job.idea, style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _Chip(label: job.status),
-              _Chip(label: 'MiniBoss ${job.score?.toStringAsFixed(0) ?? '-'}'),
-              _Chip(label: job.publishPlatform),
-              _Chip(label: job.format),
-              _Chip(label: job.priority),
+  State<ContentJobPage> createState() => _ContentJobPageState();
+}
+
+class _ContentJobPageState extends State<ContentJobPage> {
+  final ContentJobService _service = ContentJobService();
+
+  late ContentJob _job;
+  late final TextEditingController _hook;
+  late final TextEditingController _script;
+  late final TextEditingController _caption;
+  late final TextEditingController _cta;
+  late final TextEditingController _visualPrompt;
+  late final TextEditingController _motionPrompt;
+
+  bool _busy = false;
+  bool _editing = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _job = widget.job;
+    _hook = TextEditingController(text: _job.hook ?? '');
+    _script = TextEditingController(text: _job.script ?? '');
+    _caption = TextEditingController(text: _job.caption ?? '');
+    _cta = TextEditingController(text: _job.cta ?? '');
+    _visualPrompt = TextEditingController(text: _job.visualPrompt ?? '');
+    _motionPrompt = TextEditingController(text: _job.motionPrompt ?? '');
+  }
+
+  @override
+  void dispose() {
+    _hook.dispose();
+    _script.dispose();
+    _caption.dispose();
+    _cta.dispose();
+    _visualPrompt.dispose();
+    _motionPrompt.dispose();
+    super.dispose();
+  }
+
+  void _syncControllers(ContentJob job) {
+    _hook.text = job.hook ?? '';
+    _script.text = job.script ?? '';
+    _caption.text = job.caption ?? '';
+    _cta.text = job.cta ?? '';
+    _visualPrompt.text = job.visualPrompt ?? '';
+    _motionPrompt.text = job.motionPrompt ?? '';
+  }
+
+  Future<void> _run(Future<ContentJob> Function() action) async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final updated = await action();
+      if (!mounted) return;
+      setState(() {
+        _job = updated;
+        _editing = false;
+      });
+      _syncControllers(updated);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _save() => _run(
+        () => _service.updateDraft(
+          _job.id,
+          hook: _hook.text.trim(),
+          script: _script.text.trim(),
+          caption: _caption.text.trim(),
+          cta: _cta.text.trim(),
+          visualPrompt: _visualPrompt.text.trim(),
+          motionPrompt: _motionPrompt.text.trim(),
+        ),
+      );
+
+  Future<void> _approve() => _run(() => _service.approve(_job.id));
+
+  Future<void> _regenerate() async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Regenerate draft?'),
+            content: const Text(
+              'Generated text and prompts will be cleared. The content brief and queue metadata will be kept.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Regenerate'),
+              ),
             ],
           ),
-          if (job.blocker != null) ...[
+        ) ??
+        false;
+    if (!confirmed || !mounted) return;
+    await _run(() => _service.regenerate(_job.id));
+  }
+
+  bool get _canEdit =>
+      _job.status == 'READY_FOR_REVIEW' || _job.status == 'BACKLOG';
+
+  bool get _canApprove => _job.status == 'READY_FOR_REVIEW';
+
+  bool get _canRegenerate => const {
+        'BACKLOG',
+        'READY_FOR_REVIEW',
+        'GENERATION_FAILED',
+        'SELECTED',
+      }.contains(_job.status);
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      onPopInvokedWithResult: (_, __) {},
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_job.contentId),
+          actions: [
+            if (_canEdit)
+              IconButton(
+                tooltip: _editing ? 'Cancel edit' : 'Edit draft',
+                onPressed: _busy
+                    ? null
+                    : () => setState(() => _editing = !_editing),
+                icon: Icon(_editing ? Icons.close : Icons.edit_outlined),
+              ),
+          ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(_job.idea, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.warning_amber_rounded),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(job.blocker!)),
-                  ],
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _Chip(label: _job.status),
+                _Chip(
+                  label: 'MiniBoss ${_job.score?.toStringAsFixed(0) ?? '-'}',
+                ),
+                _Chip(label: _job.publishPlatform),
+                _Chip(label: _job.format),
+                _Chip(label: _job.priority),
+              ],
+            ),
+            if (_job.blocker != null) ...[
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.warning_amber_rounded),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(_job.blocker!)),
+                    ],
+                  ),
                 ),
               ),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: AshColors.mutedRose),
+                  ),
+                ),
+              ),
+            ],
+            if (_busy) ...[
+              const SizedBox(height: 12),
+              const LinearProgressIndicator(),
+            ],
+            const SizedBox(height: 16),
+            _DraftField(
+              title: 'Hook',
+              controller: _hook,
+              editing: _editing,
+              maxLines: 4,
             ),
+            _DraftField(
+              title: 'Script',
+              controller: _script,
+              editing: _editing,
+              maxLines: 12,
+            ),
+            _DraftField(
+              title: 'Caption',
+              controller: _caption,
+              editing: _editing,
+              maxLines: 8,
+            ),
+            _DraftField(
+              title: 'CTA',
+              controller: _cta,
+              editing: _editing,
+              maxLines: 4,
+            ),
+            _DraftField(
+              title: 'Visual Prompt',
+              controller: _visualPrompt,
+              editing: _editing,
+              maxLines: 8,
+            ),
+            _DraftField(
+              title: 'Motion Prompt',
+              controller: _motionPrompt,
+              editing: _editing,
+              maxLines: 8,
+            ),
+            _ReadOnlySection(title: 'Goal', value: _job.goal),
+            _ReadOnlySection(
+              title: 'MiniBoss Reason',
+              value: _job.scoreReason,
+            ),
+            const SizedBox(height: 6),
+            if (_editing)
+              FilledButton.icon(
+                onPressed: _busy ? null : _save,
+                icon: const Icon(Icons.save_outlined),
+                label: const Text('Save Draft'),
+              ),
+            if (!_editing) ...[
+              if (_canApprove)
+                FilledButton.icon(
+                  onPressed: _busy ? null : _approve,
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('Approve'),
+                ),
+              if (_canApprove) const SizedBox(height: 8),
+              if (_canRegenerate)
+                OutlinedButton.icon(
+                  onPressed: _busy ? null : _regenerate,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Regenerate'),
+                ),
+            ],
           ],
-          const SizedBox(height: 16),
-          _Section(title: 'Hook', value: job.hook),
-          _Section(title: 'Script', value: job.script),
-          _Section(title: 'Caption', value: job.caption),
-          _Section(title: 'CTA', value: job.cta),
-          _Section(title: 'Visual Prompt', value: job.visualPrompt),
-          _Section(title: 'Motion Prompt', value: job.motionPrompt),
-          _Section(title: 'Goal', value: job.goal),
-          _Section(title: 'MiniBoss Reason', value: job.scoreReason),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.value});
+class _DraftField extends StatelessWidget {
+  const _DraftField({
+    required this.title,
+    required this.controller,
+    required this.editing,
+    required this.maxLines,
+  });
+
+  final String title;
+  final TextEditingController controller;
+  final bool editing;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: AshColors.mutedRose,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (editing)
+              TextField(
+                controller: controller,
+                minLines: 1,
+                maxLines: maxLines,
+              )
+            else
+              Text(
+                controller.text.trim().isEmpty ? '—' : controller.text,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReadOnlySection extends StatelessWidget {
+  const _ReadOnlySection({required this.title, required this.value});
 
   final String title;
   final String? value;
