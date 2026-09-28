@@ -10,19 +10,23 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
-GENERATOR_VERSION = "content_gen_v0.1"
+GENERATOR_VERSION = "content_gen_v0.2"
 SYSTEM_PROMPT = """You are SoloForge Content Strategist for the Ai HackWork brand.
-Create concise Thai short-form video content for TikTok.
+Create Thai content that follows the supplied CONTENT BRIEF exactly.
 Return ONLY one JSON object with these keys:
 hook, script, caption, cta, onscreen_text, visual_prompt, motion_prompt, risk_level.
 Rules:
-- 30-45 second vertical video.
+- Respect target_platforms, format, goal, angle, and generation_brief when supplied.
+- Do not force a video format when the brief asks for a personal post, carousel, question post, or breakdown post.
+- For video briefs, make the script production-ready for the requested format.
 - Hook must be immediate and specific.
+- Preserve the user's first-person voice when the idea is written from a personal perspective.
 - Do not invent personal-use claims, income claims, test results, prices, discounts, or product facts.
 - If the idea says to test or compare something but no evidence is supplied, frame it as a test plan, not as completed experience.
 - risk_level must be LOW, MEDIUM, or HIGH.
-- onscreen_text must be an array of short strings.
-- visual_prompt and motion_prompt should be production-ready.
+- onscreen_text must be an array of short strings; use an empty array when not needed.
+- visual_prompt must match the requested format.
+- motion_prompt may be an empty string when motion is not needed.
 """
 
 PROVIDERS = [
@@ -116,17 +120,41 @@ def _extract_json(text: str) -> dict[str, Any]:
     return value
 
 
-def _call_provider(idea: str) -> tuple[dict[str, Any], str, str] | None:
+def _call_provider(
+    idea: str,
+    content_package: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], str, str] | None:
     for provider, key_env, model_env, default_model, endpoint in PROVIDERS:
         api_key = os.getenv(key_env, "").strip()
         if not api_key:
             continue
         model = os.getenv(model_env, default_model).strip() or default_model
+        context = content_package or {}
+        brief = {
+            key: context.get(key)
+            for key in (
+                "content_id",
+                "format",
+                "goal",
+                "priority",
+                "target_platforms",
+                "generation_brief",
+                "source_context",
+            )
+            if context.get(key) is not None
+        }
         payload = {
             "model": model,
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": f"IDEA:\n{idea}"},
+                {
+                    "role": "user",
+                    "content": (
+                        f"IDEA:\n{idea}\n\n"
+                        "CONTENT BRIEF:\n"
+                        f"{json.dumps(brief, ensure_ascii=False)}"
+                    ),
+                },
             ],
             "temperature": 0.35,
             "max_tokens": 1600,
@@ -193,7 +221,7 @@ def _claim_selected(limit: int = 2) -> list[dict[str, Any]]:
     rows = _supabase_request(
         "GET",
         "content_jobs?status=eq.SELECTED"
-        "&select=id,idea_flow_id,idea,status,retry_count"
+        "&select=id,idea_flow_id,idea,status,retry_count,content_package"
         f"&order=created_at.asc&limit={limit}",
     ) or []
     claimed: list[dict[str, Any]] = []
@@ -213,6 +241,8 @@ def _claim_selected(limit: int = 2) -> list[dict[str, Any]]:
 def _finish_job(job: dict[str, Any], package: dict[str, Any],
                 provider: str, model: str) -> None:
     job_id = urllib.parse.quote(str(job["id"]), safe="")
+    existing_package = dict(job.get("content_package") or {})
+    merged_package = {**existing_package, **package}
     _supabase_request(
         "PATCH",
         f"content_jobs?id=eq.{job_id}&status=eq.GENERATING",
@@ -227,7 +257,7 @@ def _finish_job(job: dict[str, Any], package: dict[str, Any],
             "motion_prompt": str(package["motion_prompt"]),
             "risk_level": str(package["risk_level"]),
             "qa_status": "PENDING",
-            "content_package": package,
+            "content_package": merged_package,
             "generator_provider": provider,
             "generator_model": model,
             "generator_version": GENERATOR_VERSION,
@@ -263,7 +293,10 @@ def process_selected_once() -> int:
     for job in _claim_selected():
         idea_id = job.get("idea_flow_id") or "?"
         try:
-            result = _call_provider(str(job.get("idea") or ""))
+            result = _call_provider(
+                str(job.get("idea") or ""),
+                dict(job.get("content_package") or {}),
+            )
             if result is None:
                 package, provider, model = _fallback_package(str(job.get("idea") or "")), "template_fallback", "v0"
             else:
