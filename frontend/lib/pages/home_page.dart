@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
-import '../models/affiliate_product.dart';
-import '../services/catalog_service.dart';
-import '../services/discovery/discovery_service.dart';
-import '../widgets/category_filter_bar.dart';
+import '../models/content_job.dart';
+import '../services/content_job_service.dart';
 import '../widgets/home/hero_banner.dart';
-import '../widgets/sort_selector.dart';
 import 'about_page.dart';
 import 'asset_forge_page.dart';
-import 'forge_page.dart';
+import 'content_job_page.dart';
+
+enum QueueFilter { all, today, review, blocked, published }
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,84 +18,167 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final CatalogService _catalogService = const CatalogService();
-  final DiscoveryService _discoveryService = const DiscoveryService();
+  final ContentJobService _contentJobService = ContentJobService();
 
-  List<AffiliateProduct> allProducts = [];
-  List<AffiliateProduct> products = [];
-
-  String keyword = '';
-  SortType sortType = SortType.miniBossScore;
-  bool loading = true;
-  String selectedCategory = 'All';
-  List<String> categories = ['All'];
+  List<ContentJob> _allJobs = const [];
+  List<ContentJob> _jobs = const [];
+  QueueFilter _filter = QueueFilter.all;
+  String _keyword = '';
+  bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    loadCategories();
-    loadProducts();
+    _loadJobs();
   }
 
-  Future<void> loadCategories() async {
-    final data = await _discoveryService.loadCategoryNames();
-    if (!mounted) return;
-    setState(() => categories = ['All', ...data]);
-  }
+  Future<void> _loadJobs() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
-  Future<void> loadProducts({String category = 'All'}) async {
-    setState(() => loading = true);
-    final data = category == 'All'
-        ? await _catalogService.getProducts()
-        : await _catalogService.getCategory(category);
-    if (!mounted) return;
-    allProducts = data;
-    loading = false;
-    filterProducts();
-  }
-
-  void filterProducts() {
-    final normalizedKeyword = keyword.trim().toLowerCase();
-    var result = List<AffiliateProduct>.from(allProducts);
-
-    if (normalizedKeyword.isNotEmpty) {
-      result = result.where((product) {
-        return product.title.toLowerCase().contains(normalizedKeyword) ||
-            product.shopName.toLowerCase().contains(normalizedKeyword);
-      }).toList();
+    try {
+      final jobs = await _contentJobService.getJobs();
+      if (!mounted) return;
+      _allJobs = jobs;
+      _applyFilters();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString().replaceFirst('Exception: ', '');
+        _loading = false;
+      });
     }
-
-    switch (sortType) {
-      case SortType.miniBossScore:
-        result.sort((a, b) => b.miniBossScore.compareTo(a.miniBossScore));
-        break;
-      case SortType.soldScore:
-        result.sort((a, b) => b.soldScore.compareTo(a.soldScore));
-        break;
-      case SortType.priceScore:
-        result.sort((a, b) => b.priceScore.compareTo(a.priceScore));
-        break;
-      case SortType.commissionScore:
-        result.sort((a, b) => b.commissionScore.compareTo(a.commissionScore));
-        break;
-    }
-
-    if (!mounted) return;
-    setState(() => products = result);
   }
 
-  void openStickerForge() {
+  void _applyFilters() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final keyword = _keyword.trim().toLowerCase();
+
+    var jobs = _allJobs.where((job) {
+      if (keyword.isNotEmpty) {
+        final haystack =
+            '${job.contentId} ${job.idea} ${job.status} ${job.format} ${job.publishPlatform}'
+                .toLowerCase();
+        if (!haystack.contains(keyword)) return false;
+      }
+
+      switch (_filter) {
+        case QueueFilter.all:
+          return true;
+        case QueueFilter.today:
+          final due = job.plannedDate;
+          return due != null &&
+              DateTime(due.year, due.month, due.day) == today;
+        case QueueFilter.review:
+          return job.status == 'READY_FOR_REVIEW';
+        case QueueFilter.blocked:
+          return job.blocker != null || job.status.endsWith('_FAILED');
+        case QueueFilter.published:
+          return job.status == 'PUBLISHED' ||
+              job.publishStatus == 'PUBLISHED';
+      }
+    }).toList();
+
+    jobs.sort((a, b) {
+      final byStatus = _statusRank(a.status).compareTo(_statusRank(b.status));
+      if (byStatus != 0) return byStatus;
+      final aDue = a.plannedDate ?? DateTime(2100);
+      final bDue = b.plannedDate ?? DateTime(2100);
+      final byDue = aDue.compareTo(bDue);
+      if (byDue != 0) return byDue;
+      return (b.score ?? -1).compareTo(a.score ?? -1);
+    });
+
+    setState(() {
+      _jobs = jobs;
+      _loading = false;
+    });
+  }
+
+  int _statusRank(String status) {
+    const ranks = {
+      'READY_FOR_REVIEW': 0,
+      'GENERATION_FAILED': 1,
+      'AUDIO_FAILED': 1,
+      'RENDER_FAILED': 1,
+      'PUBLISH_FAILED': 1,
+      'GENERATING': 2,
+      'AUDIO_GENERATING': 2,
+      'RENDERING': 2,
+      'PUBLISHING': 2,
+      'SELECTED': 3,
+      'SCORED': 4,
+      'BACKLOG': 5,
+      'NEW': 6,
+      'APPROVED': 7,
+      'READY_TO_PUBLISH': 8,
+      'PUBLISHED': 9,
+      'ARCHIVED': 10,
+    };
+    return ranks[status] ?? 50;
+  }
+
+  void _openStickerForge() {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const AssetForgePage()),
     );
   }
 
-  void openProductForge(AffiliateProduct product) {
+  void _openJob(ContentJob job) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => ForgePage(product: product)),
+      MaterialPageRoute(builder: (_) => ContentJobPage(job: job)),
     );
+  }
+
+  int get _reviewCount =>
+      _allJobs.where((job) => job.status == 'READY_FOR_REVIEW').length;
+
+  int get _workingCount => _allJobs
+      .where((job) => const {
+            'GENERATING',
+            'AUDIO_GENERATING',
+            'RENDERING',
+            'PUBLISHING',
+          }.contains(job.status))
+      .length;
+
+  int get _blockedCount =>
+      _allJobs.where((job) => job.blocker != null).length;
+
+  int get _queuedCount => _allJobs
+      .where((job) => const {'NEW', 'SCORED', 'SELECTED', 'BACKLOG'}
+          .contains(job.status))
+      .length;
+
+  int get _activeCount => _allJobs
+      .where((job) => !const {'PUBLISHED', 'ARCHIVED'}.contains(job.status))
+      .length;
+
+  String _filterLabel(QueueFilter filter) {
+    switch (filter) {
+      case QueueFilter.all:
+        return 'All';
+      case QueueFilter.today:
+        return 'Today';
+      case QueueFilter.review:
+        return 'Review';
+      case QueueFilter.blocked:
+        return 'Blocked';
+      case QueueFilter.published:
+        return 'Published';
+    }
+  }
+
+  String _dueLabel(ContentJob job) {
+    final due = job.plannedDate;
+    if (due == null) return 'No due date';
+    return 'Due ${due.day.toString().padLeft(2, '0')}/${due.month.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -105,6 +187,11 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('SoloForge AI'),
         actions: [
+          IconButton(
+            tooltip: 'Refresh',
+            icon: const Icon(Icons.refresh),
+            onPressed: _loading ? null : _loadJobs,
+          ),
           IconButton(
             tooltip: 'About',
             icon: const Icon(Icons.info_outline),
@@ -117,138 +204,150 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: RefreshIndicator(
+        onRefresh: _loadJobs,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
           children: [
-            HeroBanner(onPressed: openStickerForge),
-            const SizedBox(height: 5),
+            HeroBanner(onPressed: _openStickerForge),
+            const SizedBox(height: 10),
+            _QueueSummary(
+              active: _activeCount,
+              review: _reviewCount,
+              working: _workingCount,
+              queued: _queuedCount,
+              blocked: _blockedCount,
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              onChanged: (value) {
+                _keyword = value;
+                _applyFilters();
+              },
+              decoration: InputDecoration(
+                hintText: 'Search content jobs...',
+                prefixIcon: const Icon(Icons.search, size: 19),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
             SizedBox(
               height: 38,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: SortSelector(
-                      value: sortType,
-                      onChanged: (value) {
-                        setState(() => sortType = value);
-                        filterProducts();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    height: 38,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: AshColors.blackPlum,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AshColors.indigoMist.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${products.length}',
-                        style: const TextStyle(
-                          color: AshColors.boneWhite,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 5),
-            SizedBox(
-              height: 42,
-              child: TextField(
-                onChanged: (value) {
-                  keyword = value;
-                  filterProducts();
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: QueueFilter.values.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 6),
+                itemBuilder: (context, index) {
+                  final filter = QueueFilter.values[index];
+                  final selected = filter == _filter;
+                  return ChoiceChip(
+                    selected: selected,
+                    label: Text(_filterLabel(filter)),
+                    onSelected: (_) {
+                      _filter = filter;
+                      _applyFilters();
+                    },
+                  );
                 },
-                decoration: InputDecoration(
-                  hintText: 'Search product or shop...',
-                  prefixIcon: const Icon(Icons.search, size: 19),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                ),
               ),
             ),
-            const SizedBox(height: 4),
-            if (categories.isNotEmpty)
-              SizedBox(
-                height: 36,
-                child: CategoryFilterBar(
-                  categories: categories,
-                  selectedCategory: selectedCategory,
-                  onSelected: (category) async {
-                    setState(() => selectedCategory = category);
-                    await loadProducts(category: category);
-                  },
-                ),
-              ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 10),
             Row(
               children: [
                 const Icon(
-                  Icons.inventory_2_outlined,
-                  size: 15,
+                  Icons.view_kanban_outlined,
+                  size: 18,
                   color: AshColors.indigoMist,
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: 6),
                 const Text(
-                  'Products',
+                  'Content Queue',
                   style: TextStyle(
-                    fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: AshColors.boneWhite,
                   ),
                 ),
                 const Spacer(),
                 Text(
-                  '${products.length} • MiniBoss priority',
-                  style: const TextStyle(
-                    fontSize: 9,
-                    color: AshColors.smokeSilver,
-                  ),
+                  '${_jobs.length} jobs',
+                  style: const TextStyle(color: AshColors.smokeSilver),
                 ),
               ],
             ),
-            const SizedBox(height: 2),
-            Expanded(
-              child: loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : products.isEmpty
-                      ? const Center(child: Text('No products found.'))
-                      : LayoutBuilder(
-                          builder: (context, constraints) {
-                            final columns = constraints.maxWidth >= 720 ? 3 : 2;
-                            return GridView.builder(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: columns,
-                                crossAxisSpacing: 7,
-                                mainAxisSpacing: 7,
-                                childAspectRatio: columns == 2 ? 0.86 : 0.90,
-                              ),
-                              itemCount: products.length,
-                              itemBuilder: (context, index) {
-                                final product = products[index];
-                                return _CompactProductCard(
-                                  product: product,
-                                  onForge: () => openProductForge(product),
-                                );
-                              },
-                            );
-                          },
-                        ),
+            const SizedBox(height: 8),
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 48),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_error != null)
+              _ErrorCard(message: _error!, onRetry: _loadJobs)
+            else if (_jobs.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 48),
+                child: Center(child: Text('No content jobs in this view.')),
+              )
+            else
+              ..._jobs.map(
+                (job) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _ContentJobCard(
+                    job: job,
+                    dueLabel: _dueLabel(job),
+                    onTap: () => _openJob(job),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QueueSummary extends StatelessWidget {
+  const _QueueSummary({
+    required this.active,
+    required this.review,
+    required this.working,
+    required this.queued,
+    required this.blocked,
+  });
+
+  final int active;
+  final int review;
+  final int working;
+  final int queued;
+  final int blocked;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '$active Active Jobs',
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _CountPill(label: 'Review', value: review),
+                _CountPill(label: 'Working', value: working),
+                _CountPill(label: 'Queued', value: queued),
+                _CountPill(label: 'Blocked', value: blocked),
+              ],
             ),
           ],
         ),
@@ -257,98 +356,111 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _CompactProductCard extends StatelessWidget {
-  final AffiliateProduct product;
-  final VoidCallback onForge;
+class _CountPill extends StatelessWidget {
+  const _CountPill({required this.label, required this.value});
+  final String label;
+  final int value;
 
-  const _CompactProductCard({
-    required this.product,
-    required this.onForge,
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: AshColors.blackPlum,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AshColors.indigoMist.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Text('$label $value'),
+    );
+  }
+}
+
+class _ContentJobCard extends StatelessWidget {
+  const _ContentJobCard({
+    required this.job,
+    required this.dueLabel,
+    required this.onTap,
   });
+
+  final ContentJob job;
+  final String dueLabel;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onForge,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                flex: 7,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: product.images.isNotEmpty
-                        ? Image.network(
-                            product.images.first,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => const _ImageFallback(),
-                          )
-                        : const _ImageFallback(),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AshColors.blackPlum,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      job.contentId,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
                   ),
-                ),
+                  const Spacer(),
+                  _StatusBadge(status: job.status),
+                ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 10),
               Text(
-                product.title,
-                maxLines: 2,
+                job.idea,
+                maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 11,
-                  height: 1.08,
+                  fontSize: 15,
                   fontWeight: FontWeight.w800,
                   color: AshColors.boneWhite,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                product.shopName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 9,
-                  color: AshColors.smokeSilver,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Row(
+              const SizedBox(height: 9),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
                 children: [
-                  const Icon(Icons.star_rounded, size: 12, color: AshColors.indigoMist),
-                  const SizedBox(width: 2),
-                  Text(
-                    product.miniBossScore.toStringAsFixed(0),
-                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700),
-                  ),
-                  const Spacer(),
-                  Text(
-                    product.priceText,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      color: AshColors.boneWhite,
-                    ),
-                  ),
+                  Text('★ ${job.score?.toStringAsFixed(0) ?? '-'}'),
+                  Text(job.publishPlatform),
+                  Text(job.format),
+                  Text(dueLabel),
                 ],
               ),
-              const SizedBox(height: 4),
-              SizedBox(
-                width: double.infinity,
-                height: 27,
-                child: FilledButton.icon(
-                  onPressed: onForge,
-                  icon: const Icon(Icons.auto_awesome, size: 12),
-                  label: const Text('SoloForge AI', style: TextStyle(fontSize: 10)),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                  ),
+              if (job.blocker != null) ...[
+                const SizedBox(height: 9),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      size: 16,
+                      color: AshColors.wineRose,
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        job.blocker!,
+                        style: const TextStyle(color: AshColors.wineRose),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -357,18 +469,54 @@ class _CompactProductCard extends StatelessWidget {
   }
 }
 
-class _ImageFallback extends StatelessWidget {
-  const _ImageFallback();
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.status});
+  final String status;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AshColors.blackPlum,
-      alignment: Alignment.center,
-      child: const Icon(
-        Icons.image_not_supported_outlined,
-        color: AshColors.smokeSilver,
-        size: 26,
+      constraints: const BoxConstraints(maxWidth: 155),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(
+          color: AshColors.indigoMist.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Text(
+        status.replaceAll('_', ' '),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const Icon(Icons.lock_outline),
+            const SizedBox(height: 8),
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }
