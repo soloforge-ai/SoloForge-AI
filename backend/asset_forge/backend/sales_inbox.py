@@ -215,7 +215,7 @@ def lead_keyboard(lead: dict[str, Any]) -> dict[str, Any]:
         ])
     elif status == "READY_TO_SEND":
         buttons.append([
-            {"text": "✅ พร้อมส่ง", "callback_data": f"sales:ready:{lead_id}"},
+            {"text": "📤 ส่งอีเมล", "callback_data": f"sales:send:{lead_id}"},
             {"text": "⏭ ข้าม", "callback_data": f"sales:skip:{lead_id}"},
         ])
     return {"inline_keyboard": buttons}
