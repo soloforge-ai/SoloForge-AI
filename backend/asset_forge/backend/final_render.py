@@ -16,6 +16,7 @@ import urllib.request
 from typing import Any
 
 AUDIO_BUCKET = "content-audio"
+CONTENT_ASSET_BUCKET = "content-assets"
 VIDEO_BUCKET = "content-video"
 RENDER_VERSION = "final_render_v0.3_audio_subtitles"
 
@@ -261,22 +262,23 @@ def _claim_ready(limit: int = 1) -> list[dict[str, Any]]:
     rows = _supabase_request(
         "GET",
         "content_jobs?status=eq.AUDIO_READY"
-        "&select=id,idea_flow_id,script,video_url,audio_storage_path,retry_count"
+        "&select=id,idea_flow_id,script,video_url,audio_storage_path,retry_count,content_package"
         f"&order=updated_at.asc&limit={limit}",
     ) or []
     claimed: list[dict[str, Any]] = []
     for row in rows:
         job_id = urllib.parse.quote(str(row["id"]), safe="")
-        if not row.get("video_url"):
+        package = dict(row.get("content_package") or {})
+        if not row.get("video_url") and not package.get("asset_storage_path"):
             _supabase_request(
                 "PATCH",
                 f"content_jobs?id=eq.{job_id}&status=eq.AUDIO_READY",
                 body={
                     "render_status": "BLOCKED_NO_VIDEO",
-                    "render_mode": "WAITING_FOR_BASE_VIDEO",
+                    "render_mode": "WAITING_FOR_BASE_VISUAL",
                     "render_qa": {
                         "status": "BLOCKED",
-                        "reason": "video_url is required before final render",
+                        "reason": "video_url or asset_storage_path is required before final render",
                     },
                 },
             )
@@ -347,10 +349,33 @@ def process_audio_ready_once() -> int:
                 srt = root / "subs.srt"
                 output = root / "final.mp4"
 
-                _download_url(str(job["video_url"]), base_video)
                 _storage_download(AUDIO_BUCKET, str(job["audio_storage_path"]), audio)
-
                 audio_duration = _duration(audio)
+
+                package = dict(job.get("content_package") or {})
+                if job.get("video_url"):
+                    _download_url(str(job["video_url"]), base_video)
+                else:
+                    still = root / "base.png"
+                    asset_path = str(package.get("asset_storage_path") or "")
+                    if not asset_path:
+                        raise ValueError("asset_storage_path is missing")
+                    _storage_download(CONTENT_ASSET_BUCKET, asset_path, still)
+                    subprocess.run(
+                        [
+                            "ffmpeg", "-y",
+                            "-loop", "1", "-i", str(still),
+                            "-t", f"{audio_duration:.3f}",
+                            "-vf",
+                            "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,format=yuv420p",
+                            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
+                            "-pix_fmt", "yuv420p",
+                            str(base_video),
+                        ],
+                        check=True,
+                        capture_output=True,
+                    )
+
                 subtitle_count = _write_srt(str(job.get("script") or ""), audio_duration, srt)
 
                 style = (
