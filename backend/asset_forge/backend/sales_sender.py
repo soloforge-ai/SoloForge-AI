@@ -13,7 +13,7 @@ import ssl
 from email.message import EmailMessage
 from typing import Any
 
-from backend.asset_forge.backend.idea_flow_webhook import _supabase_request
+try:\n    from backend.idea_flow_webhook import _supabase_request\nexcept ImportError:\n    from backend.asset_forge.backend.idea_flow_webhook import _supabase_request
 
 
 def _required(name: str) -> str:
