@@ -137,7 +137,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      onPopInvokedWithResult: (_, __) {},
+      onPopInvokedWithResult: (_, _) {},
       child: Scaffold(
         appBar: AppBar(
           title: Text(_job.contentId),
