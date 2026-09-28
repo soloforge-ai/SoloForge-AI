@@ -26,6 +26,8 @@ from backend.pollinations_oauth_router import (
 )
 from backend.combined_telegram_webhook import router as idea_flow_webhook_router
 from backend.content_generation import content_worker_loop
+from backend.content_router import content_router_loop
+from backend.content_asset_generation import content_asset_worker_loop
 from backend.audio_generation import audio_worker_loop
 from backend.final_render import create_signed_video_url, final_render_worker_loop
 from backend.prawtwan_chat import router as prawtwan_chat_router
@@ -459,6 +461,8 @@ def _zip_files(
 @app.on_event("startup")
 async def start_content_workers() -> None:
     asyncio.create_task(content_worker_loop())
+    asyncio.create_task(content_router_loop())
+    asyncio.create_task(content_asset_worker_loop())
     asyncio.create_task(audio_worker_loop())
     asyncio.create_task(final_render_worker_loop())
 

@@ -1,4 +1,4 @@
-"""Autonomous Aira TTS worker for approved SoloForge content jobs."""
+"""Autonomous Aira TTS worker for video jobs with a prepared visual asset."""
 
 from __future__ import annotations
 
@@ -84,10 +84,10 @@ def _send_telegram(text: str) -> None:
         print("audio_worker_telegram_error", {"exception_type": type(exc).__name__})
 
 
-def _claim_approved(limit: int = 2) -> list[dict[str, Any]]:
+def _claim_video_assets(limit: int = 2) -> list[dict[str, Any]]:
     rows = _supabase_request(
         "GET",
-        "content_jobs?status=eq.APPROVED"
+        "content_jobs?status=eq.ASSET_READY"
         "&select=id,idea_flow_id,script,retry_count,voice_profile"
         f"&order=updated_at.asc&limit={limit}",
     ) or []
@@ -97,7 +97,7 @@ def _claim_approved(limit: int = 2) -> list[dict[str, Any]]:
         job_id = urllib.parse.quote(str(row["id"]), safe="")
         updated = _supabase_request(
             "PATCH",
-            f"content_jobs?id=eq.{job_id}&status=eq.APPROVED",
+            f"content_jobs?id=eq.{job_id}&status=eq.ASSET_READY",
             body={
                 "status": "AUDIO_GENERATING",
                 "audio_status": "GENERATING",
@@ -155,8 +155,8 @@ def _finish_audio(job: dict[str, Any], storage_path: str) -> None:
 def _fail_audio(job: dict[str, Any], exc: Exception) -> None:
     job_id = urllib.parse.quote(str(job["id"]), safe="")
     retry_count = int(job.get("retry_count") or 0) + 1
-    status = "APPROVED" if retry_count <= 2 else "AUDIO_FAILED"
-    audio_status = "PENDING" if status == "APPROVED" else "FAILED"
+    status = "ASSET_READY" if retry_count <= 2 else "AUDIO_FAILED"
+    audio_status = "PENDING" if status == "ASSET_READY" else "FAILED"
     _supabase_request(
         "PATCH",
         f"content_jobs?id=eq.{job_id}",
@@ -169,12 +169,12 @@ def _fail_audio(job: dict[str, Any], exc: Exception) -> None:
     )
 
 
-def process_approved_once() -> int:
+def process_video_assets_once() -> int:
     if not aira_enabled():
         return 0
 
     processed = 0
-    for job in _claim_approved():
+    for job in _claim_video_assets():
         idea_id = job.get("idea_flow_id") or "?"
         try:
             script = str(job.get("script") or "").strip()
@@ -208,7 +208,7 @@ async def audio_worker_loop() -> None:
     await asyncio.sleep(5)
     while True:
         try:
-            await asyncio.to_thread(process_approved_once)
+            await asyncio.to_thread(process_video_assets_once)
         except Exception as exc:
             print("audio_worker_loop_error", {"exception_type": type(exc).__name__})
         await asyncio.sleep(30)

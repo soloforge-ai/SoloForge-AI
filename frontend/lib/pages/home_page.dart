@@ -103,10 +103,14 @@ class _HomePageState extends State<HomePage> {
     const ranks = {
       'READY_FOR_REVIEW': 0,
       'GENERATION_FAILED': 1,
+      'ASSET_FAILED': 1,
       'AUDIO_FAILED': 1,
       'RENDER_FAILED': 1,
       'PUBLISH_FAILED': 1,
       'GENERATING': 2,
+      'ASSET_QUEUED': 2,
+      'ASSET_GENERATING': 2,
+      'ASSET_READY': 2,
       'AUDIO_GENERATING': 2,
       'RENDERING': 2,
       'PUBLISHING': 2,
@@ -145,6 +149,9 @@ class _HomePageState extends State<HomePage> {
   int get _workingCount => _allJobs
       .where((job) => const {
             'GENERATING',
+            'ASSET_QUEUED',
+            'ASSET_GENERATING',
+            'ASSET_READY',
             'AUDIO_GENERATING',
             'RENDERING',
             'PUBLISHING',
