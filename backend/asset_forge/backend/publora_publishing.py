@@ -272,8 +272,16 @@ def sync_publishing_once(limit: int = 20) -> int:
         try:
             payload = _publora_request("GET", f"/get-post/{post_group_id}")
             status = str(payload.get("status") or "").lower()
+            publish_status = {
+                "draft": "PENDING",
+                "scheduled": "QUEUED",
+                "publishing": "QUEUED",
+                "published": "PUBLISHED",
+                "failed": "FAILED",
+                "partially_published": "FAILED",
+            }.get(status, "PENDING")
             body: dict[str, Any] = {
-                "publish_status": status.upper() if status else "UNKNOWN",
+                "publish_status": publish_status,
                 "updated_at": _now(),
             }
             if status == "published":
