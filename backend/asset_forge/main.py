@@ -24,7 +24,7 @@ from backend.pollinations_oauth_router import (
     get_pollinations_access_token_from_authorization,
     router as pollinations_oauth_router,
 )
-from backend.idea_flow_webhook import router as idea_flow_webhook_router
+from backend.combined_telegram_webhook import router as idea_flow_webhook_router
 from backend.content_generation import content_worker_loop
 from backend.audio_generation import audio_worker_loop
 from backend.final_render import create_signed_video_url, final_render_worker_loop
