@@ -62,4 +62,5 @@ jobs:
             backend/tests/test_idea_flow_webhook_contract.py \
             backend/tests/test_background_removal_regression.py \
             backend/tests/test_asset_forge_output_quality.py \
-            backend/tests/test_asset_forge_prompt_contract.py
+            backend/tests/test_asset_forge_prompt_contract.py \
+            backend/asset_forge/tests/test_content_router.py
