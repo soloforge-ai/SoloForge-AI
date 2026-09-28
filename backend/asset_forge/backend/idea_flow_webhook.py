@@ -193,7 +193,7 @@ def _format_jobs(rows: list[dict[str, object]]) -> str:
     return "\n".join(lines).strip()
 
 
-MINIBOSS_SCORE_VERSION = "miniboss_v0_rule"
+MINIBOSS_SCORE_VERSION = "miniboss_v0_rule_boundaryfix1"
 
 def _miniboss_score(idea: str) -> dict[str, object]:
     """Deterministic V0 scorer so the pipeline works without a paid LLM key."""
