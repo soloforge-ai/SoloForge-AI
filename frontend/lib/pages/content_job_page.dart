@@ -168,6 +168,10 @@ class _ContentJobPageState extends State<ContentJobPage> {
                 _Chip(label: _job.publishPlatform),
                 _Chip(label: _job.format),
                 _Chip(label: _job.priority),
+                if (_job.pipelineRoute != '-')
+                  _Chip(label: 'Route ${_job.pipelineRoute}'),
+                if (_job.assetStatus != '-')
+                  _Chip(label: 'Asset ${_job.assetStatus}'),
               ],
             ),
             if (_job.blocker != null) ...[
@@ -240,6 +244,14 @@ class _ContentJobPageState extends State<ContentJobPage> {
               maxLines: 8,
             ),
             _ReadOnlySection(title: 'Goal', value: _job.goal),
+            _ReadOnlySection(
+              title: 'Pipeline Route',
+              value: _job.pipelineRoute,
+            ),
+            _ReadOnlySection(
+              title: 'Asset Status',
+              value: _job.assetStatus,
+            ),
             _ReadOnlySection(
               title: 'MiniBoss Reason',
               value: _job.scoreReason,
