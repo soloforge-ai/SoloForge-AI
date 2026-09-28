@@ -18,20 +18,48 @@ class ContentJobService {
   String get _baseUrl =>
       assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
 
-  Future<List<ContentJob>> getJobs({int limit = 100}) async {
+  Future<Map<String, String>> _headers({bool json = false}) async {
     final headers = await _sessionService.authorizationHeaders();
-    final response = await _client
-        .get(
-          Uri.parse('$_baseUrl/v1/content-jobs?limit=$limit'),
-          headers: headers,
-        )
-        .timeout(const Duration(seconds: 30));
+    if (json) {
+      headers['Content-Type'] = 'application/json';
+    }
+    return headers;
+  }
 
+  Never _throwFor(http.Response response, String action) {
     if (response.statusCode == 401) {
       throw const ContentJobAuthException();
     }
+    String detail = '';
+    try {
+      final body = jsonDecode(response.body);
+      if (body is Map && body['detail'] != null) {
+        detail = body['detail'].toString();
+      }
+    } catch (_) {}
+    throw Exception(
+      detail.isEmpty ? '$action returned ${response.statusCode}.' : detail,
+    );
+  }
+
+  ContentJob _decodeJob(http.Response response) {
+    return ContentJob.fromJson(
+      (jsonDecode(response.body) as Map).map(
+        (key, value) => MapEntry(key.toString(), value),
+      ),
+    );
+  }
+
+  Future<List<ContentJob>> getJobs({int limit = 100}) async {
+    final response = await _client
+        .get(
+          Uri.parse('$_baseUrl/v1/content-jobs?limit=$limit'),
+          headers: await _headers(),
+        )
+        .timeout(const Duration(seconds: 30));
+
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Content queue returned ${response.statusCode}.');
+      _throwFor(response, 'Content queue');
     }
 
     final body = jsonDecode(response.body);
@@ -49,26 +77,75 @@ class ContentJobService {
   }
 
   Future<ContentJob> getJob(String id) async {
-    final headers = await _sessionService.authorizationHeaders();
     final response = await _client
-        .get(Uri.parse('$_baseUrl/v1/content-jobs/$id'), headers: headers)
+        .get(
+          Uri.parse('$_baseUrl/v1/content-jobs/$id'),
+          headers: await _headers(),
+        )
         .timeout(const Duration(seconds: 30));
 
-    if (response.statusCode == 401) {
-      throw const ContentJobAuthException();
-    }
-    if (response.statusCode == 404) {
-      throw Exception('Content job not found.');
-    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Content job returned ${response.statusCode}.');
+      _throwFor(response, 'Content job');
     }
+    return _decodeJob(response);
+  }
 
-    return ContentJob.fromJson(
-      (jsonDecode(response.body) as Map).map(
-        (key, value) => MapEntry(key.toString(), value),
-      ),
-    );
+  Future<ContentJob> updateDraft(
+    String id, {
+    required String hook,
+    required String script,
+    required String caption,
+    required String cta,
+    required String visualPrompt,
+    required String motionPrompt,
+  }) async {
+    final response = await _client
+        .patch(
+          Uri.parse('$_baseUrl/v1/content-jobs/$id/draft'),
+          headers: await _headers(json: true),
+          body: jsonEncode({
+            'hook': hook,
+            'script': script,
+            'caption': caption,
+            'cta': cta,
+            'visual_prompt': visualPrompt,
+            'motion_prompt': motionPrompt,
+          }),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Save draft');
+    }
+    return _decodeJob(response);
+  }
+
+  Future<ContentJob> approve(String id) async {
+    final response = await _client
+        .post(
+          Uri.parse('$_baseUrl/v1/content-jobs/$id/approve'),
+          headers: await _headers(),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Approve');
+    }
+    return _decodeJob(response);
+  }
+
+  Future<ContentJob> regenerate(String id) async {
+    final response = await _client
+        .post(
+          Uri.parse('$_baseUrl/v1/content-jobs/$id/regenerate'),
+          headers: await _headers(),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Regenerate');
+    }
+    return _decodeJob(response);
   }
 }
 
