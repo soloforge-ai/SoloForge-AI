@@ -78,7 +78,7 @@ class _Section extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                color: AshColors.wineRose,
+                color: AshColors.mutedRose,
                 fontWeight: FontWeight.w800,
               ),
             ),
