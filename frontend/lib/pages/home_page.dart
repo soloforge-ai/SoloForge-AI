@@ -129,11 +129,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _openJob(ContentJob job) {
-    Navigator.push(
+  Future<void> _openJob(ContentJob job) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => ContentJobPage(job: job)),
     );
+    if (mounted) {
+      await _loadJobs();
+    }
   }
 
   int get _reviewCount =>
