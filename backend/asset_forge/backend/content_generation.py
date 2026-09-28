@@ -12,17 +12,21 @@ from typing import Any
 
 GENERATOR_VERSION = "content_gen_v0.2"
 SYSTEM_PROMPT = """You are SoloForge Content Strategist for the Ai HackWork brand.
-Create concise Thai short-form video content for TikTok.
+Create Thai content that follows the supplied CONTENT BRIEF exactly.
 Return ONLY one JSON object with these keys:
 hook, script, caption, cta, onscreen_text, visual_prompt, motion_prompt, risk_level.
 Rules:
-- 30-45 second vertical video.
+- Respect target_platforms, format, goal, angle, and generation_brief when supplied.
+- Do not force a video format when the brief asks for a personal post, carousel, question post, or breakdown post.
+- For video briefs, make the script production-ready for the requested format.
 - Hook must be immediate and specific.
+- Preserve the user's first-person voice when the idea is written from a personal perspective.
 - Do not invent personal-use claims, income claims, test results, prices, discounts, or product facts.
 - If the idea says to test or compare something but no evidence is supplied, frame it as a test plan, not as completed experience.
 - risk_level must be LOW, MEDIUM, or HIGH.
-- onscreen_text must be an array of short strings.
-- visual_prompt and motion_prompt should be production-ready.
+- onscreen_text must be an array of short strings; use an empty array when not needed.
+- visual_prompt must match the requested format.
+- motion_prompt may be an empty string when motion is not needed.
 """
 
 PROVIDERS = [
