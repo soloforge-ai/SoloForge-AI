@@ -7,21 +7,38 @@ import json
 import secrets
 from fastapi import APIRouter, Header, HTTPException, Request
 
-from backend.asset_forge.backend.idea_flow_webhook import (
-    SupabaseIdeaFlowService,
-    _required_env,
-    _format_mutation_result,
-    handle_text,
-)
-from backend.asset_forge.backend.sales_inbox import (
-    SalesLeadService,
-    answer_callback,
-    format_lead,
-    format_sales_list,
-    lead_keyboard,
-    parse_addlead,
-    send_message,
-)
+try:
+    from backend.idea_flow_webhook import (
+        SupabaseIdeaFlowService,
+        _required_env,
+        _format_mutation_result,
+        handle_text,
+    )
+    from backend.sales_inbox import (
+        SalesLeadService,
+        answer_callback,
+        format_lead,
+        format_sales_list,
+        lead_keyboard,
+        parse_addlead,
+        send_message,
+    )
+except ImportError:
+    from backend.asset_forge.backend.idea_flow_webhook import (
+        SupabaseIdeaFlowService,
+        _required_env,
+        _format_mutation_result,
+        handle_text,
+    )
+    from backend.asset_forge.backend.sales_inbox import (
+        SalesLeadService,
+        answer_callback,
+        format_lead,
+        format_sales_list,
+        lead_keyboard,
+        parse_addlead,
+        send_message,
+    )
 
 router = APIRouter(prefix="/telegram/idea-inbox", tags=["idea-inbox", "sales-inbox"])
 
