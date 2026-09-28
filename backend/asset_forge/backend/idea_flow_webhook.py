@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import secrets
 import urllib.error
 import urllib.parse
@@ -198,8 +199,18 @@ def _miniboss_score(idea: str) -> dict[str, object]:
     """Deterministic V0 scorer so the pipeline works without a paid LLM key."""
     text = " ".join((idea or "").lower().split())
 
+    def has_term(term: str) -> bool:
+        term = term.lower()
+        # Avoid false positives such as "product" matching "production".
+        # For English/ASCII terms, require token boundaries. Thai terms still use
+        # substring matching because Thai text is not whitespace-tokenized reliably.
+        if re.fullmatch(r"[a-z0-9_ -]+", term):
+            pattern = rf"(?<![a-z0-9_]){re.escape(term)}(?![a-z0-9_])"
+            return re.search(pattern, text) is not None
+        return term in text
+
     def has_any(*terms: str) -> bool:
-        return any(term in text for term in terms)
+        return any(has_term(term) for term in terms)
 
     audience_fit = 12
     if has_any("ai", "เครื่องมือ", "แอป", "ทำงาน", "ครีเอเตอร์", "creator", "affiliate"):
