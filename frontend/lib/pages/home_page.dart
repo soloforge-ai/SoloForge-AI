@@ -449,13 +449,13 @@ class _ContentJobCard extends StatelessWidget {
                     const Icon(
                       Icons.warning_amber_rounded,
                       size: 16,
-                      color: AshColors.wineRose,
+                      color: AshColors.mutedRose,
                     ),
                     const SizedBox(width: 5),
                     Expanded(
                       child: Text(
                         job.blocker!,
-                        style: const TextStyle(color: AshColors.wineRose),
+                        style: const TextStyle(color: AshColors.mutedRose),
                       ),
                     ),
                   ],
