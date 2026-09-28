@@ -18,6 +18,9 @@ class ContentJob {
     this.qaStatus,
     this.generatorProvider,
     this.generatorModel,
+    this.publoraPostId,
+    this.publishedAt,
+    this.videoStoragePath,
     this.generatedAt,
     this.createdAt,
     this.updatedAt,
@@ -40,6 +43,9 @@ class ContentJob {
   final String publishStatus;
   final String? generatorProvider;
   final String? generatorModel;
+  final String? publoraPostId;
+  final DateTime? publishedAt;
+  final String? videoStoragePath;
   final DateTime? generatedAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -60,6 +66,8 @@ class ContentJob {
       contentPackage['asset_status']?.toString() ?? '-';
   String? get assetStoragePath =>
       contentPackage['asset_storage_path']?.toString();
+  DateTime? get scheduledTime =>
+      _asDate(contentPackage['scheduled_time']);
 
   DateTime? get plannedDate {
     final value = contentPackage['planned_date']?.toString();
@@ -98,6 +106,9 @@ class ContentJob {
       publishStatus: json['publish_status']?.toString() ?? 'PENDING',
       generatorProvider: json['generator_provider']?.toString(),
       generatorModel: json['generator_model']?.toString(),
+      publoraPostId: json['publora_post_id']?.toString(),
+      publishedAt: _asDate(json['published_at']),
+      videoStoragePath: json['video_storage_path']?.toString(),
       generatedAt: _asDate(json['generated_at']),
       createdAt: _asDate(json['created_at']),
       updatedAt: _asDate(json['updated_at']),

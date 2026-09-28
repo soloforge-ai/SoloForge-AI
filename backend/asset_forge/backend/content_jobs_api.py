@@ -21,7 +21,8 @@ router = APIRouter(prefix="/v1/content-jobs", tags=["content-jobs"])
 _FIELDS = (
     "id,idea,status,score,score_reason,hook,script,caption,cta,"
     "visual_prompt,motion_prompt,risk_level,qa_status,publish_platform,"
-    "publish_status,generator_provider,generator_model,generated_at,"
+    "publish_status,publora_post_id,published_at,video_storage_path,"
+    "generator_provider,generator_model,generated_at,"
     "created_at,updated_at,content_package"
 )
 

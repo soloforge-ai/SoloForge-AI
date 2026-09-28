@@ -33,6 +33,8 @@ from backend.final_render import create_signed_video_url, final_render_worker_lo
 from backend.prawtwan_chat import router as prawtwan_chat_router
 from backend.telegram_miniapp import router as telegram_miniapp_router
 from backend.content_jobs_api import router as content_jobs_router
+from backend.publishing_api import router as publishing_router
+from backend.publora_publishing import publishing_worker_loop
 
 
 app = FastAPI(title="SoloForge Asset Forge API", version="0.8.0")
@@ -50,6 +52,7 @@ app.include_router(idea_flow_webhook_router)
 app.include_router(prawtwan_chat_router)
 app.include_router(telegram_miniapp_router)
 app.include_router(content_jobs_router)
+app.include_router(publishing_router)
 
 CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
 CHARACTER_LIBRARY_BASE_URL = (
@@ -465,6 +468,7 @@ async def start_content_workers() -> None:
     asyncio.create_task(content_asset_worker_loop())
     asyncio.create_task(audio_worker_loop())
     asyncio.create_task(final_render_worker_loop())
+    asyncio.create_task(publishing_worker_loop())
 
 
 @app.get("/health")

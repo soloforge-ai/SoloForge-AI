@@ -5,6 +5,31 @@ import 'package:http/http.dart' as http;
 import '../models/content_job.dart';
 import 'pollinations_session_service.dart';
 
+class PublishingConnection {
+  const PublishingConnection({
+    required this.platformId,
+    required this.username,
+    required this.connectionStatus,
+    required this.tokenStatus,
+  });
+
+  final String platformId;
+  final String username;
+  final String connectionStatus;
+  final String tokenStatus;
+
+  String get platform => platformId.split('-').first;
+
+  factory PublishingConnection.fromJson(Map<String, dynamic> json) {
+    return PublishingConnection(
+      platformId: json['platformId']?.toString() ?? '',
+      username: json['username']?.toString() ?? '',
+      connectionStatus: json['connectionStatus']?.toString() ?? '',
+      tokenStatus: json['tokenStatus']?.toString() ?? '',
+    );
+  }
+}
+
 class ContentJobService {
   ContentJobService({
     http.Client? client,
@@ -130,6 +155,69 @@ class ContentJobService {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       _throwFor(response, 'Approve');
+    }
+    return _decodeJob(response);
+  }
+
+  Future<List<PublishingConnection>> getPublishingConnections() async {
+    final response = await _client
+        .get(
+          Uri.parse('$_baseUrl/v1/publishing/connections'),
+          headers: await _headers(),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Publishing connections');
+    }
+    final body = jsonDecode(response.body);
+    final items = body is Map ? body['items'] as List<dynamic>? : null;
+    if (items == null) return const [];
+    return items
+        .whereType<Map>()
+        .map((row) => PublishingConnection.fromJson(
+              row.map((key, value) => MapEntry(key.toString(), value)),
+            ))
+        .where((item) => item.platformId.isNotEmpty)
+        .toList();
+  }
+
+  Future<ContentJob> publishNow(
+    String id, {
+    required List<String> platformIds,
+  }) async {
+    final response = await _client
+        .post(
+          Uri.parse('$_baseUrl/v1/publishing/$id/publish-now'),
+          headers: await _headers(json: true),
+          body: jsonEncode({'platform_ids': platformIds}),
+        )
+        .timeout(const Duration(seconds: 45));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Publish now');
+    }
+    return _decodeJob(response);
+  }
+
+  Future<ContentJob> schedule(
+    String id, {
+    required List<String> platformIds,
+    required DateTime scheduledTime,
+  }) async {
+    final response = await _client
+        .post(
+          Uri.parse('$_baseUrl/v1/publishing/$id/schedule'),
+          headers: await _headers(json: true),
+          body: jsonEncode({
+            'platform_ids': platformIds,
+            'scheduled_time': scheduledTime.toUtc().toIso8601String(),
+          }),
+        )
+        .timeout(const Duration(seconds: 45));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Schedule');
     }
     return _decodeJob(response);
   }

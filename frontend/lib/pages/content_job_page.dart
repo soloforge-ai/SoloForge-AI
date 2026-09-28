@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_theme.dart';
 import '../models/content_job.dart';
 import '../services/content_job_service.dart';
+import '../widgets/content/publishing_dialogs.dart';
 
 class ContentJobPage extends StatefulWidget {
   const ContentJobPage({super.key, required this.job});
@@ -97,6 +98,76 @@ class _ContentJobPageState extends State<ContentJobPage> {
 
   Future<void> _approve() => _run(() => _service.approve(_job.id));
 
+  Future<void> _publishNow() async {
+    try {
+      final plan = await choosePublishingPlan(
+        context,
+        service: _service,
+        job: _job,
+        schedule: false,
+      );
+      if (plan == null || !mounted) return;
+
+      final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Publish now?'),
+              content: const Text(
+                'SoloForge will send this content to Publora and queue a real post shortly.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('Publish Now'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+
+      if (!confirmed || !mounted) return;
+      await _run(
+        () => _service.publishNow(
+          _job.id,
+          platformIds: plan.platformIds,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString().replaceFirst('Exception: ', '');
+      });
+    }
+  }
+
+  Future<void> _schedulePublish() async {
+    try {
+      final plan = await choosePublishingPlan(
+        context,
+        service: _service,
+        job: _job,
+        schedule: true,
+      );
+      if (plan == null || plan.scheduledTime == null || !mounted) return;
+      await _run(
+        () => _service.schedule(
+          _job.id,
+          platformIds: plan.platformIds,
+          scheduledTime: plan.scheduledTime!,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString().replaceFirst('Exception: ', '');
+      });
+    }
+  }
+
   Future<void> _regenerate() async {
     final confirmed = await showDialog<bool>(
           context: context,
@@ -126,6 +197,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
       _job.status == 'READY_FOR_REVIEW' || _job.status == 'BACKLOG';
 
   bool get _canApprove => _job.status == 'READY_FOR_REVIEW';
+  bool get _canPublish => _job.status == 'READY_TO_PUBLISH';
 
   bool get _canRegenerate => const {
         'BACKLOG',
@@ -172,6 +244,8 @@ class _ContentJobPageState extends State<ContentJobPage> {
                   _Chip(label: 'Route ${_job.pipelineRoute}'),
                 if (_job.assetStatus != '-')
                   _Chip(label: 'Asset ${_job.assetStatus}'),
+                if (_job.publishStatus.isNotEmpty)
+                  _Chip(label: 'Publish ${_job.publishStatus}'),
               ],
             ),
             if (_job.blocker != null) ...[
@@ -252,6 +326,21 @@ class _ContentJobPageState extends State<ContentJobPage> {
               title: 'Asset Status',
               value: _job.assetStatus,
             ),
+            if (_job.publoraPostId != null)
+              _ReadOnlySection(
+                title: 'Publora Post',
+                value: _job.publoraPostId,
+              ),
+            if (_job.scheduledTime != null)
+              _ReadOnlySection(
+                title: 'Scheduled',
+                value: _job.scheduledTime!.toLocal().toString(),
+              ),
+            if (_job.publishedAt != null)
+              _ReadOnlySection(
+                title: 'Published',
+                value: _job.publishedAt!.toLocal().toString(),
+              ),
             _ReadOnlySection(
               title: 'MiniBoss Reason',
               value: _job.scoreReason,
@@ -277,6 +366,20 @@ class _ContentJobPageState extends State<ContentJobPage> {
                   icon: const Icon(Icons.refresh),
                   label: const Text('Regenerate'),
                 ),
+              if (_canPublish) ...[
+                const SizedBox(height: 14),
+                FilledButton.icon(
+                  onPressed: _busy ? null : _publishNow,
+                  icon: const Icon(Icons.send_outlined),
+                  label: const Text('Publish Now'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _busy ? null : _schedulePublish,
+                  icon: const Icon(Icons.schedule_outlined),
+                  label: const Text('Schedule'),
+                ),
+              ],
             ],
           ],
         ),
