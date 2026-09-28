@@ -61,12 +61,16 @@ def _sales_callback(data: str) -> tuple[str, dict | None, str]:
     if action == "skip":
         lead = service.skip(lead_id)
         return format_lead(lead), lead_keyboard(lead), "ข้าม Lead นี้แล้ว"
-    if action == "ready":
+    if action == "send":
         lead = service.get(lead_id)
+        if str(lead.get("status") or "") != "READY_TO_SEND":
+            raise ValueError("Lead ยังไม่พร้อมส่ง")
+        result = send_sales_email(lead)
+        updated = service.get(lead_id)
         return (
-            format_lead(lead) + "\n\n📤 ขั้นถัดไป: เชื่อม Gmail Sender เพื่อส่งจากปุ่มนี้โดยตรง",
-            lead_keyboard(lead),
-            "ข้อเสนอพร้อมส่ง",
+            format_lead(updated) + f"\n\n✅ ส่งอีเมลแล้ว → {result['recipient']}",
+            lead_keyboard(updated),
+            "ส่งอีเมลแล้ว",
         )
     raise ValueError("Unknown sales action")
 
