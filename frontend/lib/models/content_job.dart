@@ -54,6 +54,12 @@ class ContentJob {
   String get goal => contentPackage['goal']?.toString() ?? '-';
   String get priority => contentPackage['priority']?.toString() ?? 'MEDIUM';
   bool get needsVideo => contentPackage['needs_video'] == true;
+  String get pipelineRoute =>
+      contentPackage['pipeline_route']?.toString() ?? '-';
+  String get assetStatus =>
+      contentPackage['asset_status']?.toString() ?? '-';
+  String? get assetStoragePath =>
+      contentPackage['asset_storage_path']?.toString();
 
   DateTime? get plannedDate {
     final value = contentPackage['planned_date']?.toString();
@@ -65,6 +71,7 @@ class ContentJob {
     final explicit = contentPackage['blocker']?.toString();
     if (explicit != null && explicit.trim().isNotEmpty) return explicit.trim();
     if (status == 'GENERATION_FAILED') return 'Generation failed';
+    if (status == 'ASSET_FAILED') return 'Asset generation failed';
     if (status == 'RENDER_FAILED') return 'Render failed';
     if (status == 'PUBLISH_FAILED') return 'Publish failed';
     if (needsVideo && status == 'BACKLOG') return 'Waiting for video pipeline';
