@@ -81,7 +81,7 @@ def _finish_submission(
         f"content_jobs?id=eq.{encoded}&status=eq.READY_TO_PUBLISH",
         body={
             "status": "PUBLISHING",
-            "publish_status": "SCHEDULED",
+            "publish_status": "QUEUED",
             "publora_post_id": post_group_id,
             "content_package": package,
             "error_message": None,
