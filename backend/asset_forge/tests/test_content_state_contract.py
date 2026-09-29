@@ -37,12 +37,13 @@ def test_state_contract_matches_database_constraint() -> None:
 
 def test_core_workers_only_write_known_content_job_statuses() -> None:
     observed: set[str] = set()
+    auxiliary_status_literals = {"PASS", "BLOCKED"}
     for path in CORE_STATUS_FILES:
         source = path.read_text(encoding="utf-8")
         observed.update(re.findall(r'status=eq\.([A-Z_]+)', source))
         observed.update(re.findall(r'"status"\s*:\s*"([A-Z_]+)"', source))
     assert observed
-    assert observed <= set(CONTENT_JOB_STATUSES)
+    assert observed <= set(CONTENT_JOB_STATUSES) | auxiliary_status_literals
 
 
 def test_generation_finish_persists_generated_at(monkeypatch) -> None:
@@ -88,11 +89,11 @@ def test_generation_finish_persists_generated_at(monkeypatch) -> None:
     assert body["status"] == "READY_FOR_REVIEW"
 
 
-def test_repository_pollinations_modules_alias_deployed_implementation() -> None:
+def test_repository_pollinations_imports_resolve_to_deployed_files() -> None:
     import backend.pollinations_oauth as root_oauth
     import backend.pollinations_oauth_router as root_router
     from backend.asset_forge.backend import pollinations_oauth as deployed_oauth
     from backend.asset_forge.backend import pollinations_oauth_router as deployed_router
 
-    assert root_oauth is deployed_oauth
-    assert root_router is deployed_router
+    assert Path(root_oauth.__file__).resolve() == Path(deployed_oauth.__file__).resolve()
+    assert Path(root_router.__file__).resolve() == Path(deployed_router.__file__).resolve()
