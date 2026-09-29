@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 import json
 import os
 import urllib.error
@@ -231,15 +232,9 @@ def _finish_job(job: dict[str, Any], package: dict[str, Any],
             "generator_provider": provider,
             "generator_model": model,
             "generator_version": GENERATOR_VERSION,
-            "generated_at": None,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "error_message": None,
         },
-    )
-    # generated_at is filled separately because PostgREST JSON cannot express SQL now().
-    _supabase_request(
-        "PATCH",
-        f"content_jobs?id=eq.{job_id}",
-        body={"generator_version": GENERATOR_VERSION},
     )
 
 
