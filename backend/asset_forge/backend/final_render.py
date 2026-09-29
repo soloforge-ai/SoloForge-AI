@@ -15,6 +15,8 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
+from backend.shared_supabase import supabase_request as _supabase_request
+
 AUDIO_BUCKET = "content-audio"
 CONTENT_ASSET_BUCKET = "content-assets"
 VIDEO_BUCKET = "content-video"
@@ -26,36 +28,6 @@ def _required_env(name: str) -> str:
     if not value:
         raise RuntimeError(f"{name} is required")
     return value
-
-
-def _supabase_request(method: str, path: str, body: dict[str, object] | None = None,
-                      prefer: str | None = None) -> Any:
-    base_url = _required_env("SUPABASE_URL").rstrip("/")
-    secret_key = _required_env("SUPABASE_SECRET_KEY")
-    headers = {
-        "apikey": secret_key,
-        "Authorization": f"Bearer {secret_key}",
-        "Accept": "application/json",
-    }
-    data = None
-    if body is not None:
-        headers["Content-Type"] = "application/json"
-        data = json.dumps(body, ensure_ascii=False).encode("utf-8")
-    if prefer:
-        headers["Prefer"] = prefer
-    req = urllib.request.Request(
-        f"{base_url}/rest/v1/{path}",
-        data=data,
-        headers=headers,
-        method=method,
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as response:
-            raw = response.read()
-    except urllib.error.HTTPError as exc:
-        print("render_worker_supabase_http_error", {"status": exc.code, "method": method})
-        raise RuntimeError("Content storage unavailable") from exc
-    return json.loads(raw.decode("utf-8")) if raw else None
 
 
 def _storage_download(bucket: str, object_path: str, destination: Path) -> None:
