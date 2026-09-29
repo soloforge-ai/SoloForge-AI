@@ -28,6 +28,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
   bool _busy = false;
   bool _editing = false;
   String? _error;
+  ContentFeedback? _feedback;
 
   @override
   void initState() {
@@ -39,6 +40,17 @@ class _ContentJobPageState extends State<ContentJobPage> {
     _cta = TextEditingController(text: _job.cta ?? '');
     _visualPrompt = TextEditingController(text: _job.visualPrompt ?? '');
     _motionPrompt = TextEditingController(text: _job.motionPrompt ?? '');
+    _loadFeedback();
+  }
+
+  Future<void> _loadFeedback() async {
+    try {
+      final feedback = await _service.getPerformanceFeedback(_job.id);
+      if (!mounted) return;
+      setState(() => _feedback = feedback);
+    } catch (_) {
+      // Feedback is advisory and must never block the content workflow.
+    }
   }
 
   @override
@@ -345,6 +357,46 @@ class _ContentJobPageState extends State<ContentJobPage> {
               title: 'MiniBoss Reason',
               value: _job.scoreReason,
             ),
+            if (_feedback != null)
+              Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Performance Feedback',
+                        style: TextStyle(
+                          color: AshColors.mutedRose,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _feedback!.state == 'READY'
+                            ? '${_feedback!.automationAction.replaceAll('_', ' ')} · advisory score ${_feedback!.scoreAdjustment >= 0 ? '+' : ''}${_feedback!.scoreAdjustment}'
+                            : 'Collect more data · ${_feedback!.sampleSize}/${_feedback!.minimumSampleSize} comparable series',
+                      ),
+                      if (_feedback!.reasons.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          _feedback!.reasons.join(' · '),
+                          style: const TextStyle(color: AshColors.smokeSilver),
+                        ),
+                      ],
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Advisory only — this does not auto-publish or override the deterministic MiniBoss decision.',
+                        style: TextStyle(
+                          color: AshColors.smokeSilver,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             const SizedBox(height: 6),
             if (_editing)
               FilledButton.icon(
