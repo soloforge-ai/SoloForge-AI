@@ -46,3 +46,16 @@ def test_media_required_platform_rejects_text_only() -> None:
         assert "requires an image or video" in str(exc)
     else:
         raise AssertionError("Expected media validation failure")
+
+
+def test_publish_status_mapping_stays_within_database_constraint() -> None:
+    allowed = {"PENDING", "QUEUED", "PUBLISHED", "FAILED"}
+    mapping = {
+        "draft": "PENDING",
+        "scheduled": "QUEUED",
+        "publishing": "QUEUED",
+        "published": "PUBLISHED",
+        "failed": "FAILED",
+        "partially_published": "FAILED",
+    }
+    assert set(mapping.values()) <= allowed
