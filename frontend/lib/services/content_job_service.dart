@@ -30,6 +30,37 @@ class PublishingConnection {
   }
 }
 
+class AnalyticsProviderCapability {
+  const AnalyticsProviderCapability({
+    required this.provider,
+    required this.platform,
+    required this.username,
+    required this.connectionStatus,
+    required this.metadataSync,
+    required this.engagementMetrics,
+  });
+
+  final String provider;
+  final String platform;
+  final String username;
+  final String connectionStatus;
+  final bool metadataSync;
+  final bool? engagementMetrics;
+
+  factory AnalyticsProviderCapability.fromJson(Map<String, dynamic> json) {
+    return AnalyticsProviderCapability(
+      provider: json['provider']?.toString() ?? '',
+      platform: json['platform']?.toString() ?? '',
+      username: json['username']?.toString() ?? '',
+      connectionStatus: json['connection_status']?.toString() ?? '',
+      metadataSync: json['metadata_sync'] == true,
+      engagementMetrics: json['engagement_metrics'] is bool
+          ? json['engagement_metrics'] as bool
+          : null,
+    );
+  }
+}
+
 class ContentAnalyticsSummary {
   const ContentAnalyticsSummary({
     required this.jobsTotal,
@@ -43,6 +74,10 @@ class ContentAnalyticsSummary {
     required this.byPlatform,
     required this.performanceSnapshots,
     required this.performanceAvailable,
+    required this.latestSeries,
+    required this.totalViews,
+    required this.totalInteractions,
+    required this.engagementRatePercent,
   });
 
   final int jobsTotal;
@@ -56,6 +91,10 @@ class ContentAnalyticsSummary {
   final Map<String, int> byPlatform;
   final int performanceSnapshots;
   final bool performanceAvailable;
+  final int latestSeries;
+  final int totalViews;
+  final int totalInteractions;
+  final double? engagementRatePercent;
 
   factory ContentAnalyticsSummary.fromJson(Map<String, dynamic> json) {
     Map<String, int> intMap(dynamic raw) {
@@ -88,6 +127,10 @@ class ContentAnalyticsSummary {
       performanceSnapshots:
           (json['performance_snapshots'] as num?)?.toInt() ?? 0,
       performanceAvailable: json['performance_available'] == true,
+      latestSeries: (json['latest_series'] as num?)?.toInt() ?? 0,
+      totalViews: (json['total_views'] as num?)?.toInt() ?? 0,
+      totalInteractions: (json['total_interactions'] as num?)?.toInt() ?? 0,
+      engagementRatePercent: asDouble(json['engagement_rate_percent']),
     );
   }
 }
@@ -182,6 +225,29 @@ class ContentJobService {
     return ContentAnalyticsSummary.fromJson(
       body.map((key, value) => MapEntry(key.toString(), value)),
     );
+  }
+
+  Future<List<AnalyticsProviderCapability>> getAnalyticsProviders() async {
+    final response = await _client
+        .get(
+          Uri.parse('$_baseUrl/v1/analytics/providers'),
+          headers: await _headers(),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Analytics providers');
+    }
+
+    final body = jsonDecode(response.body);
+    final items = body is Map ? body['items'] as List<dynamic>? : null;
+    if (items == null) return const [];
+    return items
+        .whereType<Map>()
+        .map((row) => AnalyticsProviderCapability.fromJson(
+              row.map((key, value) => MapEntry(key.toString(), value)),
+            ))
+        .toList();
   }
 
   Future<ContentJob> getJob(String id) async {
