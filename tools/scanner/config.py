@@ -27,6 +27,10 @@ IGNORE_FOLDERS = {
     "web",
 }
 
+IGNORE_PATH_PREFIXES = {
+    "tools/scanner/output",
+}
+
 SUPPORTED_EXTENSIONS = {
     ".dart",
     ".py",
