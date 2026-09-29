@@ -7,6 +7,12 @@ from typing import Any
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 
+from backend.performance_ingestion import (
+    aggregate_latest_snapshots,
+    provider_capabilities,
+    store_import_snapshot,
+    sync_publora_metadata,
+)
 from backend.pollinations_oauth_router import (
     get_pollinations_access_token_from_authorization,
 )
@@ -36,6 +42,15 @@ class PerformanceSnapshotRequest(BaseModel):
     clicks: int | None = Field(default=None, ge=0)
     watch_time_seconds: float | None = Field(default=None, ge=0)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class PerformanceImportItem(PerformanceSnapshotRequest):
+    content_job_id: str = Field(min_length=1, max_length=80)
+    observed_at: datetime | None = None
+
+
+class PerformanceImportRequest(BaseModel):
+    items: list[PerformanceImportItem] = Field(min_length=1, max_length=100)
 
 
 def _require_session(authorization: str | None) -> None:
@@ -73,6 +88,14 @@ def _require_job(job_id: str) -> dict[str, object]:
     if not rows:
         raise HTTPException(status_code=404, detail="Content job not found")
     return dict(rows[0])
+
+
+@router.get("/providers")
+def analytics_providers(
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    _require_session(authorization)
+    return {"items": provider_capabilities()}
 
 
 @router.get("/summary")
@@ -140,6 +163,9 @@ def analytics_summary(
         "reactions,comments,shares,saves,clicks,watch_time_seconds,observed_at"
         "&order=observed_at.desc&limit=500",
     ) or []
+    performance = aggregate_latest_snapshots(
+        [dict(row) for row in performance_rows]
+    )
 
     return {
         "jobs_total": len(rows),
@@ -153,6 +179,7 @@ def analytics_summary(
         "by_platform": by_platform,
         "performance_snapshots": len(performance_rows),
         "performance_available": bool(performance_rows),
+        **performance,
     }
 
 
@@ -194,6 +221,21 @@ def job_performance(
     return {"items": rows}
 
 
+@router.post("/jobs/{job_id}/sync-provider")
+def sync_job_provider(
+    job_id: str,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    _require_session(authorization)
+    job = _require_job(job_id)
+    try:
+        return sync_publora_metadata(job)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
 @router.post("/jobs/{job_id}/performance")
 def add_performance_snapshot(
     job_id: str,
@@ -216,3 +258,33 @@ def add_performance_snapshot(
     if not rows:
         raise HTTPException(status_code=409, detail="Performance snapshot was not stored")
     return dict(rows[0])
+
+
+@router.post("/performance/import")
+def import_performance(
+    request: PerformanceImportRequest,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    _require_session(authorization)
+    stored: list[dict[str, Any]] = []
+    errors: list[dict[str, str]] = []
+
+    for item in request.items:
+        body = item.model_dump(mode="json")
+        body["source"] = "import"
+        try:
+            stored.append(store_import_snapshot(body))
+        except (ValueError, RuntimeError) as exc:
+            errors.append(
+                {
+                    "content_job_id": item.content_job_id,
+                    "error": str(exc),
+                }
+            )
+
+    return {
+        "stored": len(stored),
+        "failed": len(errors),
+        "errors": errors,
+        "items": stored,
+    }
