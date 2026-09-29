@@ -7,10 +7,7 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
-try:
-    from backend.idea_flow_webhook import _supabase_request
-except ImportError:
-    from backend.asset_forge.backend.idea_flow_webhook import _supabase_request
+from backend.shared_supabase import supabase_request as _supabase_request
 
 PROVIDERS = [
     ("gemini", "GEMINI_API_KEY", "GEMINI_MODEL", "gemini-2.5-flash",

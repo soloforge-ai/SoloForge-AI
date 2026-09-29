@@ -7,10 +7,7 @@ from datetime import datetime, timezone
 import urllib.parse
 from typing import Any
 
-try:
-    from backend.idea_flow_webhook import _supabase_request
-except ImportError:
-    from backend.asset_forge.backend.idea_flow_webhook import _supabase_request
+from backend.shared_supabase import supabase_request as _supabase_request
 
 
 ROUTER_VERSION = "content_router_v0.1"
