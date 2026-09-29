@@ -88,7 +88,11 @@ def test_generation_finish_persists_generated_at(monkeypatch) -> None:
     assert body["status"] == "READY_FOR_REVIEW"
 
 
-def test_pollinations_oauth_helper_copies_do_not_drift() -> None:
-    root = Path("backend/pollinations_oauth.py").read_text(encoding="utf-8")
-    nested = Path("backend/asset_forge/backend/pollinations_oauth.py").read_text(encoding="utf-8")
-    assert root == nested
+def test_repository_pollinations_modules_alias_deployed_implementation() -> None:
+    import backend.pollinations_oauth as root_oauth
+    import backend.pollinations_oauth_router as root_router
+    from backend.asset_forge.backend import pollinations_oauth as deployed_oauth
+    from backend.asset_forge.backend import pollinations_oauth_router as deployed_router
+
+    assert root_oauth is deployed_oauth
+    assert root_router is deployed_router
