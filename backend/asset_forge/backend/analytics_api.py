@@ -84,7 +84,7 @@ def _require_job(job_id: str) -> dict[str, object]:
     encoded = urllib.parse.quote(job_id, safe="")
     rows = _supabase_request(
         "GET",
-        f"content_jobs?id=eq.{encoded}&select=id,publora_post_id,publish_platform&limit=1",
+        f"content_jobs?id=eq.{encoded}&select=id,publora_post_id,publish_platform,content_package&limit=1",
     ) or []
     if not rows:
         raise HTTPException(status_code=404, detail="Content job not found")
