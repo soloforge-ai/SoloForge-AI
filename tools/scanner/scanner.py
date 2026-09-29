@@ -4,6 +4,7 @@ from .config import (
     PROJECT_ROOT,
     SCAN_FOLDERS,
     IGNORE_FOLDERS,
+    IGNORE_PATH_PREFIXES,
     SUPPORTED_EXTENSIONS,
 )
 
@@ -27,6 +28,13 @@ class ProjectScanner:
                     continue
 
                 if any(part in IGNORE_FOLDERS for part in file.parts):
+                    continue
+
+                relative = file.relative_to(PROJECT_ROOT).as_posix()
+                if any(
+                    relative == prefix or relative.startswith(f"{prefix}/")
+                    for prefix in IGNORE_PATH_PREFIXES
+                ):
                     continue
 
                 files.append(file)
