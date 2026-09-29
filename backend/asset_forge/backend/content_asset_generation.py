@@ -96,7 +96,7 @@ def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str
             "asset_storage_path": object_path,
             "asset_generated_at": _now(),
             "asset_count": 1,
-            "asset_mode": "cover_v1",
+            "asset_layout": "cover_v1",
             "asset_worker_version": ASSET_WORKER_VERSION,
             "asset_provider": provider_meta.get("provider"),
             "asset_mode": provider_meta.get("mode") or "cover_v1",
