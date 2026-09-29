@@ -11,6 +11,7 @@ on:
       - 'backend/idea_flow_webhook.py'
       - 'supabase/migrations/**'
       - 'backend/tests/**'
+      - 'tools/scanner/**'
       - '.github/workflows/asset-forge-backend-test.yml'
   pull_request:
     branches:
@@ -23,6 +24,7 @@ on:
       - 'backend/idea_flow_webhook.py'
       - 'supabase/migrations/**'
       - 'backend/tests/**'
+      - 'tools/scanner/**'
       - '.github/workflows/asset-forge-backend-test.yml'
   workflow_dispatch:
 
@@ -52,6 +54,7 @@ jobs:
           python -m compileall -q backend/pollinations_oauth_router.py
           python -m compileall -q backend/idea_flow_webhook.py
           python -m compileall -q backend/tests
+          python -m compileall -q tools/scanner
 
       - name: Run backend contract, Memory runtime, and image regression tests
         run: |
@@ -66,4 +69,5 @@ jobs:
             backend/asset_forge/tests/test_content_router.py \
             backend/asset_forge/tests/test_publora_publishing.py \
             backend/asset_forge/tests/test_shared_supabase.py \
-            backend/asset_forge/tests/test_content_state_contract.py
+            backend/asset_forge/tests/test_content_state_contract.py \
+            tools/scanner/tests/test_output_exclusion.py
