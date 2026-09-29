@@ -14,6 +14,9 @@ MIGRATED_MODULES = [
     "backend/asset_forge/backend/publora_publishing.py",
     "backend/asset_forge/backend/sales_inbox.py",
     "backend/asset_forge/backend/sales_sender.py",
+    "backend/asset_forge/backend/content_generation.py",
+    "backend/asset_forge/backend/audio_generation.py",
+    "backend/asset_forge/backend/final_render.py",
 ]
 
 
@@ -26,6 +29,10 @@ def test_migrated_modules_do_not_depend_on_idea_flow_storage_helper() -> None:
         source = Path(relative_path).read_text(encoding="utf-8")
         for value in forbidden:
             assert value not in source, f"{relative_path} still depends on Idea Flow storage"
+        assert "def _supabase_request" not in source, (
+            f"{relative_path} still defines a private Supabase REST client"
+        )
+        assert "from backend.shared_supabase import supabase_request as _supabase_request" in source
 
 
 def test_shared_supabase_request_builds_authenticated_rest_request(monkeypatch) -> None:
