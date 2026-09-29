@@ -30,6 +30,68 @@ class PublishingConnection {
   }
 }
 
+class ContentAnalyticsSummary {
+  const ContentAnalyticsSummary({
+    required this.jobsTotal,
+    required this.published,
+    required this.failed,
+    required this.review,
+    required this.averageScore,
+    required this.averageGenerationSeconds,
+    required this.averageTimeToPublishSeconds,
+    required this.byStatus,
+    required this.byPlatform,
+    required this.performanceSnapshots,
+    required this.performanceAvailable,
+  });
+
+  final int jobsTotal;
+  final int published;
+  final int failed;
+  final int review;
+  final double? averageScore;
+  final double? averageGenerationSeconds;
+  final double? averageTimeToPublishSeconds;
+  final Map<String, int> byStatus;
+  final Map<String, int> byPlatform;
+  final int performanceSnapshots;
+  final bool performanceAvailable;
+
+  factory ContentAnalyticsSummary.fromJson(Map<String, dynamic> json) {
+    Map<String, int> intMap(dynamic raw) {
+      if (raw is! Map) return const {};
+      return raw.map(
+        (key, value) => MapEntry(
+          key.toString(),
+          value is num ? value.toInt() : int.tryParse(value.toString()) ?? 0,
+        ),
+      );
+    }
+
+    double? asDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      return double.tryParse(value.toString());
+    }
+
+    return ContentAnalyticsSummary(
+      jobsTotal: (json['jobs_total'] as num?)?.toInt() ?? 0,
+      published: (json['published'] as num?)?.toInt() ?? 0,
+      failed: (json['failed'] as num?)?.toInt() ?? 0,
+      review: (json['review'] as num?)?.toInt() ?? 0,
+      averageScore: asDouble(json['average_score']),
+      averageGenerationSeconds: asDouble(json['average_generation_seconds']),
+      averageTimeToPublishSeconds:
+          asDouble(json['average_time_to_publish_seconds']),
+      byStatus: intMap(json['by_status']),
+      byPlatform: intMap(json['by_platform']),
+      performanceSnapshots:
+          (json['performance_snapshots'] as num?)?.toInt() ?? 0,
+      performanceAvailable: json['performance_available'] == true,
+    );
+  }
+}
+
 class ContentJobService {
   ContentJobService({
     http.Client? client,
@@ -99,6 +161,27 @@ class ContentJobService {
               row.map((key, value) => MapEntry(key.toString(), value)),
             ))
         .toList();
+  }
+
+  Future<ContentAnalyticsSummary> getAnalyticsSummary() async {
+    final response = await _client
+        .get(
+          Uri.parse('$_baseUrl/v1/analytics/summary'),
+          headers: await _headers(),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Analytics summary');
+    }
+
+    final body = jsonDecode(response.body);
+    if (body is! Map) {
+      throw Exception('Analytics summary returned an invalid response.');
+    }
+    return ContentAnalyticsSummary.fromJson(
+      body.map((key, value) => MapEntry(key.toString(), value)),
+    );
   }
 
   Future<ContentJob> getJob(String id) async {
