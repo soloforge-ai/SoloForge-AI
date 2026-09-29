@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import urllib.parse
 from typing import Any
 
+from backend.branding import provenance_metadata
 from backend.shared_supabase import supabase_request as _supabase_request
 
 
@@ -58,6 +59,7 @@ def _claim_approved(limit: int = 4) -> list[dict[str, Any]]:
                 "pipeline_route": route,
                 "router_version": ROUTER_VERSION,
                 "routed_at": _now(),
+                **provenance_metadata(),
             }
         )
         next_status = "READY_TO_PUBLISH" if route == "TEXT" else "ASSET_QUEUED"

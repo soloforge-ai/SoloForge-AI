@@ -135,6 +135,40 @@ class ContentAnalyticsSummary {
   }
 }
 
+class ContentFeedback {
+  const ContentFeedback({
+    required this.state,
+    required this.sampleSize,
+    required this.minimumSampleSize,
+    required this.scoreAdjustment,
+    required this.automationAction,
+    required this.reasons,
+  });
+
+  final String state;
+  final int sampleSize;
+  final int minimumSampleSize;
+  final int scoreAdjustment;
+  final String automationAction;
+  final List<String> reasons;
+
+  factory ContentFeedback.fromJson(Map<String, dynamic> json) {
+    final rawReasons = json['reasons'];
+    return ContentFeedback(
+      state: json['state']?.toString() ?? 'INSUFFICIENT_DATA',
+      sampleSize: (json['sample_size'] as num?)?.toInt() ?? 0,
+      minimumSampleSize:
+          (json['minimum_sample_size'] as num?)?.toInt() ?? 0,
+      scoreAdjustment: (json['score_adjustment'] as num?)?.toInt() ?? 0,
+      automationAction:
+          json['automation_action']?.toString() ?? 'COLLECT_MORE_DATA',
+      reasons: rawReasons is List
+          ? rawReasons.map((value) => value.toString()).toList()
+          : const [],
+    );
+  }
+}
+
 class ContentJobService {
   ContentJobService({
     http.Client? client,
@@ -248,6 +282,26 @@ class ContentJobService {
               row.map((key, value) => MapEntry(key.toString(), value)),
             ))
         .toList();
+  }
+
+  Future<ContentFeedback> getPerformanceFeedback(String id) async {
+    final response = await _client
+        .get(
+          Uri.parse('$_baseUrl/v1/analytics/jobs/$id/feedback'),
+          headers: await _headers(),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Performance feedback');
+    }
+    final body = jsonDecode(response.body);
+    if (body is! Map) {
+      throw Exception('Performance feedback returned an invalid response.');
+    }
+    return ContentFeedback.fromJson(
+      body.map((key, value) => MapEntry(key.toString(), value)),
+    );
   }
 
   Future<ContentJob> getJob(String id) async {

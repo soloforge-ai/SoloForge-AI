@@ -13,6 +13,7 @@ from backend.performance_ingestion import (
     store_import_snapshot,
     sync_publora_metadata,
 )
+from backend.performance_feedback import evaluate_job_performance, feedback_for_candidate
 from backend.pollinations_oauth_router import (
     get_pollinations_access_token_from_authorization,
 )
@@ -83,7 +84,7 @@ def _require_job(job_id: str) -> dict[str, object]:
     encoded = urllib.parse.quote(job_id, safe="")
     rows = _supabase_request(
         "GET",
-        f"content_jobs?id=eq.{encoded}&select=id,publora_post_id,publish_platform&limit=1",
+        f"content_jobs?id=eq.{encoded}&select=id,publora_post_id,publish_platform,content_package&limit=1",
     ) or []
     if not rows:
         raise HTTPException(status_code=404, detail="Content job not found")
@@ -219,6 +220,32 @@ def job_performance(
         "&order=observed_at.desc",
     ) or []
     return {"items": rows}
+
+
+
+@router.get("/jobs/{job_id}/feedback")
+def job_feedback(
+    job_id: str,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    _require_session(authorization)
+    job = _require_job(job_id)
+    encoded = urllib.parse.quote(job_id, safe="")
+    rows = _supabase_request(
+        "GET",
+        "content_performance_snapshots"
+        f"?content_job_id=eq.{encoded}"
+        "&select=content_job_id,platform,views,impressions,reach,reactions,"
+        "comments,shares,saves,clicks,watch_time_seconds,observed_at"
+        "&order=observed_at.desc&limit=1",
+    ) or []
+    if not rows:
+        package = dict(job.get("content_package") or {})
+        return feedback_for_candidate(
+            platform=str(job.get("publish_platform") or "") or None,
+            content_format=str(package.get("format") or "") or None,
+        )
+    return evaluate_job_performance(job, dict(rows[0]))
 
 
 @router.post("/jobs/{job_id}/sync-provider")

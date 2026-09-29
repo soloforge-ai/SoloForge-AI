@@ -15,12 +15,13 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
+from backend.branding import BRAND_STAMP_VERSION, ffmpeg_brand_filter
 from backend.shared_supabase import supabase_request as _supabase_request
 
 AUDIO_BUCKET = "content-audio"
 CONTENT_ASSET_BUCKET = "content-assets"
 VIDEO_BUCKET = "content-video"
-RENDER_VERSION = "final_render_v0.3_audio_subtitles"
+RENDER_VERSION = "final_render_v0.4_brand_stamp"
 
 
 def _required_env(name: str) -> str:
@@ -360,6 +361,7 @@ def process_audio_ready_once() -> int:
                     "scale=720:1280:force_original_aspect_ratio=increase,"
                     "crop=720:1280,"
                     f"subtitles={srt}:force_style='{style}',"
+                    f"{ffmpeg_brand_filter()},"
                     "format=yuv420p"
                 )
                 subprocess.run(
@@ -396,6 +398,10 @@ def process_audio_ready_once() -> int:
                     "audio_present": True,
                     "audio_codec": "aac_160k_48khz_limited",
                     "duration_delta_sec": round(abs(video_duration - audio_duration), 2),
+                    "brand_applied": True,
+                    "brand_text": "SoloForge AI",
+                    "brand_stamp_version": BRAND_STAMP_VERSION,
+                    "brand_position": "bottom_right",
                 }
                 if abs(video_duration - audio_duration) > 1.5:
                     raise RuntimeError("Final video duration does not match voiceover")

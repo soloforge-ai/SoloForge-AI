@@ -72,4 +72,7 @@ jobs:
             backend/asset_forge/tests/test_content_state_contract.py \
             backend/asset_forge/tests/test_analytics_api.py \
             backend/asset_forge/tests/test_performance_ingestion.py \
+            backend/asset_forge/tests/test_performance_feedback.py \
+            backend/asset_forge/tests/test_asset_provider.py \
+            backend/asset_forge/tests/test_branding.py \
             tools/scanner/tests/test_output_exclusion.py

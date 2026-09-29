@@ -11,6 +11,8 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
+from backend.asset_provider import generate_asset
+from backend.branding import stamp_image_bytes
 from backend.shared_supabase import supabase_request as _supabase_request
 
 
@@ -63,46 +65,6 @@ def _claim_assets(limit: int = 2) -> list[dict[str, Any]]:
     return claimed
 
 
-def _generate_image(prompt: str) -> bytes:
-    api_key = _required_env("POLLINATIONS_API_KEY")
-    width = int(os.getenv("CONTENT_ASSET_WIDTH", "1080"))
-    height = int(os.getenv("CONTENT_ASSET_HEIGHT", "1350"))
-    model = os.getenv("CONTENT_ASSET_MODEL", "flux").strip() or "flux"
-
-    query = urllib.parse.urlencode(
-        {
-            "model": model,
-            "width": width,
-            "height": height,
-            "nologo": "true",
-        }
-    )
-    url = (
-        "https://gen.pollinations.ai/image/"
-        f"{urllib.parse.quote(prompt, safe='')}?{query}"
-    )
-    request = urllib.request.Request(
-        url,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Accept": "image/png,image/jpeg;q=0.9,*/*;q=0.8",
-            "User-Agent": "SoloForge-Content-Asset/0.1",
-        },
-        method="GET",
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=180) as response:
-            data = response.read()
-    except urllib.error.HTTPError as exc:
-        raise RuntimeError(f"Asset generation HTTP {exc.code}") from exc
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise RuntimeError("Asset generation unavailable") from exc
-
-    if not data:
-        raise RuntimeError("Asset generation returned no bytes")
-    return data
-
-
 def _upload_asset(data: bytes, object_path: str) -> None:
     base_url = _required_env("SUPABASE_URL").rstrip("/")
     secret_key = _required_env("SUPABASE_SECRET_KEY")
@@ -125,7 +87,7 @@ def _upload_asset(data: bytes, object_path: str) -> None:
         raise RuntimeError("Asset upload failed") from exc
 
 
-def _finish_asset(job: dict[str, Any], object_path: str) -> None:
+def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str, object]) -> None:
     job_id = urllib.parse.quote(str(job["id"]), safe="")
     package = dict(job.get("content_package") or {})
     route = str(package.get("pipeline_route") or "VISUAL")
@@ -135,8 +97,16 @@ def _finish_asset(job: dict[str, Any], object_path: str) -> None:
             "asset_storage_path": object_path,
             "asset_generated_at": _now(),
             "asset_count": 1,
-            "asset_mode": "cover_v1",
+            "asset_layout": "cover_v1",
             "asset_worker_version": ASSET_WORKER_VERSION,
+            "asset_provider": provider_meta.get("provider"),
+            "asset_mode": provider_meta.get("mode") or "cover_v1",
+            "asset_provider_version": provider_meta.get("provider_version"),
+            "asset_provider_attempts": provider_meta.get("attempts") or [],
+            "brand_applied": provider_meta.get("brand_applied") is True,
+            "brand_text": provider_meta.get("brand_text"),
+            "brand_stamp_version": provider_meta.get("brand_stamp_version"),
+            "brand_position": provider_meta.get("brand_position"),
         }
     )
 
@@ -183,10 +153,17 @@ def process_assets_once() -> int:
                     "Editorial social media visual, clean premium creator-tech design, "
                     f"topic: {str(job.get('idea') or '')[:400]}"
                 )
-            data = _generate_image(prompt)
+            package = dict(job.get("content_package") or {})
+            data, provider_meta = generate_asset(
+                prompt,
+                fallback_title=str(job.get("idea") or "SoloForge")[:240],
+                fallback_subtitle=str(package.get("goal") or "").strip() or None,
+            )
+            data, brand_meta = stamp_image_bytes(data)
+            provider_meta = {**provider_meta, **brand_meta}
             object_path = f"{job['id']}/cover.png"
             _upload_asset(data, object_path)
-            _finish_asset(job, object_path)
+            _finish_asset(job, object_path, provider_meta)
             processed += 1
         except Exception as exc:
             print(
