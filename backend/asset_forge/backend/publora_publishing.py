@@ -81,6 +81,11 @@ def _publora_request(
     return payload
 
 
+def get_post(post_group_id: str) -> dict[str, Any]:
+    encoded = urllib.parse.quote(post_group_id, safe="")
+    return _publora_request("GET", f"/get-post/{encoded}")
+
+
 def list_connections() -> list[dict[str, Any]]:
     payload = _publora_request("GET", "/platform-connections")
     rows = payload.get("connections") or []
@@ -267,7 +272,7 @@ def sync_publishing_once(limit: int = 20) -> int:
         job_id = urllib.parse.quote(str(row["id"]), safe="")
         post_group_id = urllib.parse.quote(str(row["publora_post_id"]), safe="")
         try:
-            payload = _publora_request("GET", f"/get-post/{post_group_id}")
+            payload = get_post(str(row["publora_post_id"]))
             status = str(payload.get("status") or "").lower()
             publish_status = {
                 "draft": "PENDING",
