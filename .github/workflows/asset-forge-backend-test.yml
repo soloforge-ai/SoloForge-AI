@@ -64,4 +64,5 @@ jobs:
             backend/tests/test_asset_forge_output_quality.py \
             backend/tests/test_asset_forge_prompt_contract.py \
             backend/asset_forge/tests/test_content_router.py \
-            backend/asset_forge/tests/test_publora_publishing.py
+            backend/asset_forge/tests/test_publora_publishing.py \
+            backend/asset_forge/tests/test_shared_supabase.py
