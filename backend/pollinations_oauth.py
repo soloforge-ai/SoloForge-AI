@@ -1,8 +1,6 @@
-"""Repository-root compatibility shim for Pollinations OAuth helpers.
+"""Repository-root alias for the deployed Pollinations OAuth helper module."""
 
-The deployed Asset Forge Docker image uses backend/asset_forge/backend as its
-backend package. Keep that implementation canonical and make repository-root
-imports resolve to the same code during tests and local development.
-"""
+import sys
+from backend.asset_forge.backend import pollinations_oauth as _impl
 
-from backend.asset_forge.backend.pollinations_oauth import *  # noqa: F401,F403
+sys.modules[__name__] = _impl
