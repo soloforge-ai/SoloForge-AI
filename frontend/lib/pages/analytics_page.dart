@@ -30,7 +30,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     });
     try {
       final summary = await _service.getAnalyticsSummary();
-      final providers = await _service.getAnalyticsProviders();
+      List<AnalyticsProviderCapability> providers = const [];
+      try {
+        providers = await _service.getAnalyticsProviders();
+      } catch (_) {
+        // Provider availability must not hide stored analytics.
+      }
       if (!mounted) return;
       setState(() {
         _summary = summary;
