@@ -29,7 +29,7 @@ _ANALYTICS_FIELDS = (
 
 class PerformanceSnapshotRequest(BaseModel):
     platform: str = Field(min_length=1, max_length=80)
-    source: str = Field(default="manual", pattern="^(manual|publora|platform_api|import)$")
+    source: str = Field(default="manual", pattern="^manual$")
     publora_post_id: str | None = Field(default=None, max_length=500)
     platform_post_id: str | None = Field(default=None, max_length=1000)
     views: int | None = Field(default=None, ge=0)
