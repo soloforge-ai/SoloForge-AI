@@ -5,6 +5,7 @@ import '../models/content_job.dart';
 import '../services/content_job_service.dart';
 import '../widgets/home/hero_banner.dart';
 import 'about_page.dart';
+import 'analytics_page.dart';
 import 'asset_forge_page.dart';
 import 'content_job_page.dart';
 
@@ -201,6 +202,16 @@ class _HomePageState extends State<HomePage> {
             tooltip: 'Refresh',
             icon: const Icon(Icons.refresh),
             onPressed: _loading ? null : _loadJobs,
+          ),
+          IconButton(
+            tooltip: 'Performance',
+            icon: const Icon(Icons.insights_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AnalyticsPage()),
+              );
+            },
           ),
           IconButton(
             tooltip: 'About',
