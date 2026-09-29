@@ -193,7 +193,7 @@ def _format_jobs(rows: list[dict[str, object]]) -> str:
     return "\n".join(lines).strip()
 
 
-MINIBOSS_SCORE_VERSION = "miniboss_v0_rule_boundaryfix1"
+MINIBOSS_SCORE_VERSION = "miniboss_v0_rule_boundaryfix1_feedback1"
 
 def _miniboss_score(idea: str) -> dict[str, object]:
     """Deterministic V0 scorer so the pipeline works without a paid LLM key."""
@@ -327,7 +327,7 @@ class SupabaseIdeaFlowService:
             "GET",
             "content_jobs"
             f"?idea_flow_id=eq.{idea_id}"
-            "&select=id,idea,status"
+            "&select=id,idea,status,publish_platform,content_package"
             "&limit=1",
         ) or []
         if not rows:
@@ -343,6 +343,17 @@ class SupabaseIdeaFlowService:
             }
 
         result = _miniboss_score(str(row.get("idea") or ""))
+        package = dict(row.get("content_package") or {})
+        feedback = feedback_for_candidate(
+            platform=str(row.get("publish_platform") or "") or None,
+            content_format=str(package.get("format") or "") or None,
+        )
+        result["performance_feedback"] = feedback
+        result["performance_adjustment"] = int(feedback.get("score_adjustment") or 0)
+        result["adjusted_score"] = int(result["score"]) + result["performance_adjustment"]
+        # Advisory-only in Sprint 5C: deterministic MiniBoss decision remains based
+        # on the original score until enough evidence and an explicit active mode
+        # are approved in a later change.
         job_id = urllib.parse.quote(str(row["id"]), safe="")
         updated = _supabase_request(
             "PATCH",
@@ -353,6 +364,11 @@ class SupabaseIdeaFlowService:
                 "score_breakdown": result["breakdown"],
                 "score_reason": result["reason"],
                 "score_version": result["version"],
+                "content_package": {
+                    **package,
+                    "miniboss_performance_feedback": feedback,
+                    "miniboss_adjusted_score_advisory": result["adjusted_score"],
+                },
             },
             prefer="return=representation",
         )
