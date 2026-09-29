@@ -13,6 +13,7 @@ class AnalyticsPage extends StatefulWidget {
 class _AnalyticsPageState extends State<AnalyticsPage> {
   final ContentJobService _service = ContentJobService();
   ContentAnalyticsSummary? _summary;
+  List<AnalyticsProviderCapability> _providers = const [];
   bool _loading = true;
   String? _error;
 
@@ -29,9 +30,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     });
     try {
       final summary = await _service.getAnalyticsSummary();
+      List<AnalyticsProviderCapability> providers = const [];
+      try {
+        providers = await _service.getAnalyticsProviders();
+      } catch (_) {
+        // Provider availability must not hide stored analytics.
+      }
       if (!mounted) return;
       setState(() {
         _summary = summary;
+        _providers = providers;
         _loading = false;
       });
     } catch (error) {
@@ -123,6 +131,27 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                             ),
                           ),
                           const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _MetricCard(
+                                label: 'Views',
+                                value: '${summary.totalViews}',
+                              ),
+                              _MetricCard(
+                                label: 'Interactions',
+                                value: '${summary.totalInteractions}',
+                              ),
+                              _MetricCard(
+                                label: 'Engagement',
+                                value: summary.engagementRatePercent == null
+                                    ? '—'
+                                    : '${summary.engagementRatePercent!.toStringAsFixed(2)}%',
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
                           Card(
                             child: Padding(
                               padding: const EdgeInsets.all(14),
@@ -139,13 +168,41 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                                   const SizedBox(height: 8),
                                   Text(
                                     summary.performanceAvailable
-                                        ? '${summary.performanceSnapshots} performance snapshots stored.'
-                                        : 'No platform performance snapshots yet. Sprint 5A is recording lifecycle data and is ready for a supported analytics source.',
+                                        ? '${summary.performanceSnapshots} snapshots · ${summary.latestSeries} current platform series.'
+                                        : 'No performance snapshots yet. Import real platform metrics when available; SoloForge will not fabricate engagement values.',
                                     style: const TextStyle(
                                       color: AshColors.smokeSilver,
                                       height: 1.4,
                                     ),
                                   ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Analytics providers',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      color: AshColors.boneWhite,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  if (_providers.isEmpty)
+                                    const Text(
+                                      'No connected publishing providers.',
+                                      style: TextStyle(color: AshColors.smokeSilver),
+                                    )
+                                  else
+                                    ..._providers.map(
+                                      (provider) => _ProviderRow(provider: provider),
+                                    ),
                                 ],
                               ),
                             ),
@@ -258,6 +315,40 @@ class _BreakdownCard extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+
+class _ProviderRow extends StatelessWidget {
+  const _ProviderRow({required this.provider});
+
+  final AnalyticsProviderCapability provider;
+
+  @override
+  Widget build(BuildContext context) {
+    final metrics = provider.engagementMetrics == true
+        ? 'Metrics supported'
+        : provider.engagementMetrics == false
+            ? 'Metadata only'
+            : 'Metrics capability unknown';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              '${provider.platform} · ${provider.username}',
+              style: const TextStyle(color: AshColors.smokeSilver),
+            ),
+          ),
+          Text(
+            metrics,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        ],
       ),
     );
   }
