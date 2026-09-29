@@ -70,4 +70,5 @@ jobs:
             backend/asset_forge/tests/test_publora_publishing.py \
             backend/asset_forge/tests/test_shared_supabase.py \
             backend/asset_forge/tests/test_content_state_contract.py \
+            backend/asset_forge/tests/test_analytics_api.py \
             tools/scanner/tests/test_output_exclusion.py
