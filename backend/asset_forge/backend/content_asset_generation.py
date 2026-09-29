@@ -12,6 +12,7 @@ import urllib.request
 from typing import Any
 
 from backend.asset_provider import generate_asset
+from backend.branding import stamp_image_bytes
 from backend.shared_supabase import supabase_request as _supabase_request
 
 
@@ -102,6 +103,10 @@ def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str
             "asset_mode": provider_meta.get("mode") or "cover_v1",
             "asset_provider_version": provider_meta.get("provider_version"),
             "asset_provider_attempts": provider_meta.get("attempts") or [],
+            "brand_applied": provider_meta.get("brand_applied") is True,
+            "brand_text": provider_meta.get("brand_text"),
+            "brand_stamp_version": provider_meta.get("brand_stamp_version"),
+            "brand_position": provider_meta.get("brand_position"),
         }
     )
 
@@ -154,6 +159,8 @@ def process_assets_once() -> int:
                 fallback_title=str(job.get("idea") or "SoloForge")[:240],
                 fallback_subtitle=str(package.get("goal") or "").strip() or None,
             )
+            data, brand_meta = stamp_image_bytes(data)
+            provider_meta = {**provider_meta, **brand_meta}
             object_path = f"{job['id']}/cover.png"
             _upload_asset(data, object_path)
             _finish_asset(job, object_path, provider_meta)
