@@ -16,3 +16,7 @@ backend/**/__pycache__/
 **/dist/
 **/coverage/
 **/*.lock
+windows/runner/
+linux/
+macos/Runner/
+tools/scanner/output/

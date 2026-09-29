@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 import json
 import os
 import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
+
+from backend.shared_supabase import supabase_request as _supabase_request
 
 GENERATOR_VERSION = "content_gen_v0.2"
 SYSTEM_PROMPT = """You are SoloForge Content Strategist for the Ai HackWork brand.
@@ -46,38 +49,6 @@ def _required_env(name: str) -> str:
     if not value:
         raise RuntimeError(f"{name} is required")
     return value
-
-
-def _supabase_request(method: str, path: str, body: dict[str, object] | None = None,
-                      prefer: str | None = None) -> Any:
-    base_url = _required_env("SUPABASE_URL").rstrip("/")
-    secret_key = _required_env("SUPABASE_SECRET_KEY")
-    headers = {
-        "apikey": secret_key,
-        "Authorization": f"Bearer {secret_key}",
-        "Accept": "application/json",
-    }
-    data = None
-    if body is not None:
-        headers["Content-Type"] = "application/json"
-        data = json.dumps(body, ensure_ascii=False).encode("utf-8")
-    if prefer:
-        headers["Prefer"] = prefer
-    req = urllib.request.Request(
-        f"{base_url}/rest/v1/{path}",
-        data=data,
-        headers=headers,
-        method=method,
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as response:
-            raw = response.read()
-    except urllib.error.HTTPError as exc:
-        print("content_worker_supabase_http_error", {"status": exc.code, "method": method})
-        raise RuntimeError("Content storage unavailable") from exc
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise RuntimeError("Content storage unavailable") from exc
-    return json.loads(raw.decode("utf-8")) if raw else None
 
 
 def _send_telegram(text: str) -> None:
@@ -261,15 +232,9 @@ def _finish_job(job: dict[str, Any], package: dict[str, Any],
             "generator_provider": provider,
             "generator_model": model,
             "generator_version": GENERATOR_VERSION,
-            "generated_at": None,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "error_message": None,
         },
-    )
-    # generated_at is filled separately because PostgREST JSON cannot express SQL now().
-    _supabase_request(
-        "PATCH",
-        f"content_jobs?id=eq.{job_id}",
-        body={"generator_version": GENERATOR_VERSION},
     )
 
 

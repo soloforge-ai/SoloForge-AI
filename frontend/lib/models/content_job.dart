@@ -80,6 +80,7 @@ class ContentJob {
     if (explicit != null && explicit.trim().isNotEmpty) return explicit.trim();
     if (status == 'GENERATION_FAILED') return 'Generation failed';
     if (status == 'ASSET_FAILED') return 'Asset generation failed';
+    if (status == 'AUDIO_FAILED') return 'Audio generation failed';
     if (status == 'RENDER_FAILED') return 'Render failed';
     if (status == 'PUBLISH_FAILED') return 'Publish failed';
     if (needsVideo && status == 'BACKLOG') return 'Waiting for video pipeline';
