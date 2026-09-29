@@ -15,3 +15,7 @@ frontend/assets/data/top_products.json
 
 # VS Code
 .vscode/
+
+# Scanner outputs are generated artifacts; keep only the directory placeholder.
+tools/scanner/output/*
+!tools/scanner/output/.gitkeep
