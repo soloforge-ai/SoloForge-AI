@@ -10,10 +10,7 @@ from backend.pollinations_oauth_router import (
     get_pollinations_access_token_from_authorization,
 )
 
-try:
-    from backend.idea_flow_webhook import _supabase_request
-except ImportError:
-    from backend.asset_forge.backend.idea_flow_webhook import _supabase_request
+from backend.shared_supabase import supabase_request as _supabase_request
 
 
 router = APIRouter(prefix="/v1/content-jobs", tags=["content-jobs"])
