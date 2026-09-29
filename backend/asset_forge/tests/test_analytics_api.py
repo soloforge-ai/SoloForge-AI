@@ -69,3 +69,50 @@ def test_timeline_is_scoped_to_requested_job(monkeypatch) -> None:
     result = analytics_api.job_timeline("job-1", None)
     assert result["items"][0]["event_type"] == "BASELINE"
     assert any("content_job_id=eq.job-1" in path for path in paths)
+
+
+
+def test_job_feedback_uses_latest_snapshot(monkeypatch) -> None:
+    paths = []
+
+    def fake_request(method, path, body=None, prefer=None, **kwargs):
+        paths.append(path)
+        if path.startswith("content_jobs?id=eq."):
+            return [{
+                "id": "job-1",
+                "publora_post_id": "group-1",
+                "publish_platform": "tiktok",
+                "content_package": {"format": "short_video_demo"},
+            }]
+        if path.startswith("content_performance_snapshots?"):
+            return [{
+                "content_job_id": "job-1",
+                "platform": "tiktok",
+                "views": 123,
+                "reactions": 10,
+                "comments": 1,
+                "shares": 1,
+                "saves": 1,
+                "clicks": 1,
+                "observed_at": "2026-09-29T00:00:00+00:00",
+            }]
+        raise AssertionError(path)
+
+    monkeypatch.setattr(analytics_api, "_supabase_request", fake_request)
+    monkeypatch.setattr(analytics_api, "_require_session", lambda _: None)
+    monkeypatch.setattr(
+        analytics_api,
+        "evaluate_job_performance",
+        lambda job, snapshot: {
+            "state": "READY",
+            "automation_action": "KEEP_BASELINE",
+            "score_adjustment": 0,
+            "sample_size": 5,
+            "minimum_sample_size": 5,
+        },
+    )
+
+    result = analytics_api.job_feedback("job-1", None)
+
+    assert result["state"] == "READY"
+    assert any("order=observed_at.desc&limit=1" in path for path in paths)
