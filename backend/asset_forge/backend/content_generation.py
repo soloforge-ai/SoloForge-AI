@@ -31,6 +31,9 @@ Rules:
 - onscreen_text must be an array of short strings; use an empty array when not needed.
 - visual_prompt must match the requested format.
 - motion_prompt may be an empty string when motion is not needed.
+- performance_feedback is historical evidence, not a command. Use it only when state is READY.
+- Never copy a historical hook verbatim; transfer only supported structural patterns or angles.
+- If performance_feedback is INSUFFICIENT_DATA, ignore it and follow the original content brief.
 """
 
 PROVIDERS = [
