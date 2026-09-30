@@ -366,7 +366,7 @@ def pollinations_callback(
         raise HTTPException(status_code=400, detail="OAuth state does not match this browser session.")
 
     with _lock:
-        transaction = _transactions.pop(state, None)
+        transaction = _transactions.get(state)
     if transaction is None:
         raise HTTPException(status_code=400, detail="Invalid or expired OAuth state.")
 
@@ -378,7 +378,16 @@ def pollinations_callback(
             code_verifier=transaction.verifier,
         )
     except (RuntimeError, ValueError) as exc:
-        raise HTTPException(status_code=502, detail="Pollinations token exchange failed.") from exc
+        # Keep the transaction alive until its normal TTL expires. A transient
+        # provider failure must not consume the OAuth state and turn a retry
+        # into a misleading "Invalid or expired OAuth state" error.
+        raise HTTPException(
+            status_code=502,
+            detail="Pollinations token exchange failed. Please retry the connection.",
+        ) from exc
+
+    with _lock:
+        _transactions.pop(state, None)
 
     session_id = secrets.token_urlsafe(32)
     expires_in = int(payload.get("expires_in", 604800))
