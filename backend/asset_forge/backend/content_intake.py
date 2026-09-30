@@ -100,7 +100,7 @@ def recommend_formats(idea: str) -> dict[str, Any]:
     text = _normalize(idea)
     demo_signal = _has_any(
         text,
-        "ลอง", "ทดลอง", "ใช้", "รีวิว", "เทียบ", "ก่อน", "หลัง", "before", "after",
+        "ลอง", "ทดลอง", "รีวิว", "เทียบ", "ก่อน", "หลัง", "before", "after",
         "ทำไม", "ปัญหา", "พัง", "ไม่เหมือน", "เปลี่ยน",
     )
     educational_signal = _has_any(
@@ -121,15 +121,15 @@ def recommend_formats(idea: str) -> dict[str, Any]:
     )
 
     scores = {
-        "short_video_demo": 58
-        + (24 if demo_signal else 0)
+        "short_video_demo": 54
+        + (28 if demo_signal else 0)
         + (8 if sales_signal else 0),
-        "carousel": 55
-        + (22 if educational_signal else 0)
-        + (8 if demo_signal else 0),
-        "personal_post": 52
-        + (24 if personal_signal else 0),
-        "question_post": 48
+        "carousel": 52
+        + (20 if educational_signal else 0)
+        + (5 if demo_signal else 0),
+        "personal_post": 50
+        + (30 if personal_signal else 0),
+        "question_post": 46
         + (22 if discussion_signal else 0),
     }
 
