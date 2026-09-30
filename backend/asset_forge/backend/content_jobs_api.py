@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import urllib.parse
+import uuid
 
 from fastapi import APIRouter, Header, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -10,6 +11,7 @@ from backend.pollinations_oauth_router import (
     get_pollinations_access_token_from_authorization,
 )
 from backend.content_intake import find_recommendation, recommend_formats, score_idea
+from backend.content_strategy import strategize_idea
 
 from backend.shared_supabase import supabase_request as _supabase_request
 
@@ -62,6 +64,16 @@ class IdeaCreateRequest(BaseModel):
     action: str = Field(default="generate", pattern="^(generate|save)$")
 
 
+class IdeaStrategizeRequest(BaseModel):
+    idea: str = Field(min_length=3, max_length=4000)
+
+
+class StrategyPlanCreateRequest(BaseModel):
+    idea: str = Field(min_length=3, max_length=4000)
+    plan_id: str = Field(pattern="^(quick_test|mini_series|seven_day)$")
+    action: str = Field(default="generate", pattern="^(generate|save)$")
+
+
 class ContentDraftUpdate(BaseModel):
     hook: str | None = Field(default=None, max_length=4000)
     script: str | None = Field(default=None, max_length=20000)
@@ -108,6 +120,143 @@ def _patch_job(job_id: str, body: dict[str, object]) -> dict[str, object]:
 @router.post("/idea/analyze")
 def analyze_idea(request: IdeaAnalyzeRequest) -> dict[str, object]:
     return recommend_formats(request.idea)
+
+
+@router.post("/idea/strategize")
+def strategize_content_idea(
+    request: IdeaStrategizeRequest,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    _require_session(authorization)
+    return strategize_idea(request.idea)
+
+
+@router.post("/idea/plan/create")
+def create_strategy_plan(
+    request: StrategyPlanCreateRequest,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    _require_session(authorization)
+    strategy = strategize_idea(request.idea)
+    plan = next(
+        (item for item in strategy["plans"] if item["id"] == request.plan_id),
+        None,
+    )
+    if plan is None:
+        raise HTTPException(status_code=400, detail="Unknown strategy plan")
+
+    campaign_id = str(uuid.uuid4())
+    score = score_idea(request.idea)
+    total = int(plan["job_count"])
+    created: list[dict[str, object]] = []
+
+    for raw_job in plan["jobs"]:
+        sequence = int(raw_job["sequence"])
+        dependencies = list(raw_job.get("depends_on") or [])
+        blocked = bool(dependencies)
+        status = (
+            "SELECTED"
+            if request.action == "generate" and not blocked
+            else "BACKLOG"
+        )
+        fmt = str(raw_job.get("format") or "content")
+        needs_video = any(
+            token in fmt.lower()
+            for token in ("video", "reel", "shorts", "short_video")
+        )
+        platforms = list(plan.get("platforms") or [])
+        publish_platform = str(platforms[0]) if platforms else "tiktok"
+        asset_requirements = list(raw_job.get("asset_requirements") or [])
+
+        package = {
+            "format": fmt,
+            "goal": str(raw_job.get("goal") or plan.get("goal") or "reach"),
+            "priority": "MEDIUM",
+            "target_platforms": platforms,
+            "needs_video": needs_video,
+            "campaign_id": campaign_id,
+            "campaign_plan_id": request.plan_id,
+            "campaign_title": str(plan.get("title") or request.plan_id),
+            "campaign_sequence": sequence,
+            "campaign_total": total,
+            "content_title": str(raw_job.get("title") or f"Content {sequence}"),
+            "asset_requirements": asset_requirements,
+            "depends_on": dependencies,
+            "generation_brief": {
+                "hook_direction": str(raw_job.get("hook_direction") or ""),
+                "strategy_angle": str(strategy["strategy"].get("angle") or ""),
+                "strategy_objective": str(strategy["strategy"].get("objective") or ""),
+                "strategy_rationale": str(strategy["strategy"].get("rationale") or ""),
+            },
+            "strategy": {
+                "strategist_version": strategy.get("strategist_version"),
+                "strategist_provider": strategy.get("strategist_provider"),
+                "strategist_model": strategy.get("strategist_model"),
+                "recommended_plan_id": strategy["strategy"].get("recommended_plan_id"),
+                "selected_plan_id": request.plan_id,
+                "human_action": request.action,
+            },
+        }
+        if blocked:
+            package["blocker"] = (
+                "Waiting for: " + ", ".join(str(item) for item in dependencies)
+            )
+
+        rows = _supabase_request(
+            "POST",
+            "content_jobs",
+            body={
+                "idea": (
+                    f"{request.idea.strip()}\n\n"
+                    f"Campaign {sequence}/{total}: {package['content_title']}"
+                ),
+                "source": "app_strategy_plan",
+                "status": status,
+                "score": score["score"],
+                "score_reason": score["reason"],
+                "score_breakdown": score["breakdown"],
+                "score_version": score["version"],
+                "scored_at": _now(),
+                "publish_platform": publish_platform,
+                "content_package": package,
+                "qa_status": "PENDING",
+                "updated_at": _now(),
+            },
+            prefer="return=representation",
+        ) or []
+        if not rows:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Campaign creation stopped at item {sequence}",
+            )
+
+        job = dict(rows[0])
+        created.append(job)
+        _supabase_request(
+            "POST",
+            "content_job_events",
+            body={
+                "content_job_id": job["id"],
+                "event_type": "STRATEGY_PLAN_JOB_CREATED",
+                "actor": "app",
+                "metadata": {
+                    "campaign_id": campaign_id,
+                    "plan_id": request.plan_id,
+                    "sequence": sequence,
+                    "total": total,
+                    "action": request.action,
+                },
+                "occurred_at": _now(),
+            },
+        )
+
+    return {
+        "campaign_id": campaign_id,
+        "plan_id": request.plan_id,
+        "plan_title": plan["title"],
+        "created_count": len(created),
+        "jobs": created,
+    }
 
 
 @router.post("/idea/create")
