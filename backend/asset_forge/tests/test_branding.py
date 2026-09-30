@@ -36,3 +36,15 @@ def test_provenance_metadata_marks_soloforge_origin() -> None:
     assert value["generated_by"] == "soloforge_ai"
     assert value["brand_text"] == "SoloForge AI"
     assert value["brand_stamp_version"] == branding.BRAND_STAMP_VERSION
+
+
+
+def test_stamp_image_can_preserve_alpha() -> None:
+    source = Image.new("RGBA", (320, 320), (20, 24, 32, 0))
+    raw = BytesIO()
+    source.save(raw, format="PNG")
+
+    stamped, _ = branding.stamp_image_bytes(raw.getvalue(), preserve_alpha=True)
+
+    with Image.open(BytesIO(stamped)) as image:
+        assert image.mode == "RGBA"

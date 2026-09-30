@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 import backend.pollinations_oauth_router as router_module
+import backend.asset_forge.main as asset_forge_main
 from backend.asset_forge.main import app as asset_forge_app
 
 
@@ -199,7 +200,29 @@ def test_status_restores_persisted_session_after_backend_restart(monkeypatch):
         assert router_module._sessions["persisted-session"] == persisted
 
 
-def test_asset_generation_requires_connected_pollinations_session():
+def test_oauth_transaction_survives_transient_exchange_failure(monkeypatch):
+    client = _client(monkeypatch)
+
+    def fail_exchange(*args, **kwargs):
+        raise RuntimeError("temporary provider failure")
+
+    monkeypatch.setattr(router_module, "exchange_authorization_code", fail_exchange)
+    state = _start_mobile_login(client)
+
+    response = client.get(
+        "/auth/pollinations/callback",
+        params={"code": "oauth-code", "state": state},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 502
+    assert "Please retry the connection" in response.text
+    with router_module._lock:
+        assert state in router_module._transactions
+
+
+def test_asset_generation_uses_local_fallback_without_pollinations_session(monkeypatch):
+    monkeypatch.setattr(asset_forge_main, "_load_character_reference", lambda _: None)
     client = TestClient(asset_forge_app)
     response = client.post(
         "/v1/asset-forge/generate",
@@ -212,5 +235,10 @@ def test_asset_generation_requires_connected_pollinations_session():
             "messages": [],
         },
     )
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Connect Pollinations before generating assets."
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["generation_mode"] == "local_fallback"
+    assert len(body["files"]) == 4
+    assert body["source_image_base64"]
+    assert body["zip_base64"]

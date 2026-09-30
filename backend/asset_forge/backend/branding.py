@@ -23,7 +23,11 @@ def _load_font(size: int) -> ImageFont.ImageFont:
     return ImageFont.load_default()
 
 
-def stamp_image_bytes(data: bytes) -> tuple[bytes, dict[str, object]]:
+def stamp_image_bytes(
+    data: bytes,
+    *,
+    preserve_alpha: bool = False,
+) -> tuple[bytes, dict[str, object]]:
     image = Image.open(BytesIO(data)).convert("RGBA")
     width, height = image.size
     overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
@@ -59,7 +63,9 @@ def stamp_image_bytes(data: bytes) -> tuple[bytes, dict[str, object]]:
         fill=(255, 255, 255, 210),
     )
 
-    branded = Image.alpha_composite(image, overlay).convert("RGB")
+    branded = Image.alpha_composite(image, overlay)
+    if not preserve_alpha:
+        branded = branded.convert("RGB")
     output = BytesIO()
     branded.save(output, format="PNG", optimize=True)
     return output.getvalue(), {

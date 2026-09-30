@@ -18,12 +18,13 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 
 from backend.pollinations_oauth_router import (
     get_pollinations_access_token_from_authorization,
     router as pollinations_oauth_router,
 )
+from backend.branding import stamp_image_bytes
 from backend.combined_telegram_webhook import router as idea_flow_webhook_router
 from backend.content_generation import content_worker_loop
 from backend.content_router import content_router_loop
@@ -81,6 +82,7 @@ class AssetForgeResponse(BaseModel):
     files: List[str]
     zip_base64: str
     source_image_base64: str
+    generation_mode: str
 
 
 def _grid(quantity: int) -> tuple[int, int]:
@@ -322,6 +324,104 @@ def _generate_sheet(
     return data
 
 
+
+def _generate_local_fallback_sheet(
+    request: AssetForgeRequest,
+    reference_bytes: bytes | None,
+) -> bytes:
+    """Create a deterministic sticker sheet without an external AI call."""
+    columns, rows = _grid(request.quantity)
+    size = 1024
+    sheet = Image.new("RGBA", (size, size), (248, 248, 248, 255))
+    draw = ImageDraw.Draw(sheet)
+    cell_w = size // columns
+    cell_h = size // rows
+    accent = {
+        "blue": (74, 109, 205, 255),
+        "black": (48, 50, 56, 255),
+        "white": (225, 226, 230, 255),
+        "pink": (211, 112, 157, 255),
+        "red": (190, 72, 83, 255),
+        "green": (80, 154, 117, 255),
+        "purple": (129, 92, 173, 255),
+        "yellow": (217, 174, 67, 255),
+    }.get(_requested_character_color(request.character) or "blue", (74, 109, 205, 255))
+
+    master = None
+    if reference_bytes:
+        try:
+            master = Image.open(io.BytesIO(reference_bytes)).convert("RGBA")
+        except Exception:
+            master = None
+
+    for index in range(request.quantity):
+        row = index // columns
+        col = index % columns
+        x0 = col * cell_w
+        y0 = row * cell_h
+        x1 = size if col == columns - 1 else (col + 1) * cell_w
+        y1 = size if row == rows - 1 else (row + 1) * cell_h
+        margin = max(18, min(cell_w, cell_h) // 10)
+        draw.rounded_rectangle(
+            (x0 + margin // 2, y0 + margin // 2, x1 - margin // 2, y1 - margin // 2),
+            radius=max(18, margin),
+            fill=(255, 255, 255, 255),
+        )
+
+        if master is not None:
+            tile = master.copy()
+            tile.thumbnail((cell_w - margin * 2, cell_h - margin * 2), Image.Resampling.LANCZOS)
+            if index % 2 == 1:
+                tile = ImageOps.mirror(tile)
+            sheet.alpha_composite(
+                tile,
+                (x0 + (cell_w - tile.width) // 2, y0 + (cell_h - tile.height) // 2),
+            )
+        else:
+            cx = x0 + cell_w // 2
+            cy = y0 + cell_h // 2
+            head_r = max(24, min(cell_w, cell_h) // 8)
+            body_w = head_r * 2
+            body_h = int(head_r * 2.4)
+            draw.ellipse(
+                (cx - head_r, cy - head_r * 2, cx + head_r, cy),
+                fill=accent,
+            )
+            draw.rounded_rectangle(
+                (cx - body_w // 2, cy - 2, cx + body_w // 2, cy + body_h),
+                radius=head_r,
+                fill=accent,
+            )
+            eye_r = max(2, head_r // 10)
+            draw.ellipse(
+                (cx - head_r // 3 - eye_r, cy - head_r - eye_r,
+                 cx - head_r // 3 + eye_r, cy - head_r + eye_r),
+                fill=(20, 20, 24, 255),
+            )
+            draw.ellipse(
+                (cx + head_r // 3 - eye_r, cy - head_r - eye_r,
+                 cx + head_r // 3 + eye_r, cy - head_r + eye_r),
+                fill=(20, 20, 24, 255),
+            )
+            arm_y = cy + body_h // 3
+            swing = (index % 4 - 1) * max(6, head_r // 3)
+            draw.line(
+                (cx - body_w // 2, arm_y, cx - body_w, arm_y - swing),
+                fill=accent,
+                width=max(6, head_r // 4),
+            )
+            draw.line(
+                (cx + body_w // 2, arm_y, cx + body_w, arm_y + swing),
+                fill=accent,
+                width=max(6, head_r // 4),
+            )
+
+    output = io.BytesIO()
+    sheet.convert("RGB").save(output, format="PNG", optimize=True)
+    branded, _ = stamp_image_bytes(output.getvalue())
+    return branded
+
+
 def _remove_simple_background(
     image: Image.Image,
     threshold: int = 8,
@@ -437,7 +537,8 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
         filename = f"{index + 1:02d}_{request.character.lower()}_sticker.png"
         output = io.BytesIO()
         canvas.save(output, format="PNG", optimize=True)
-        files.append((filename, output.getvalue()))
+        branded, _ = stamp_image_bytes(output.getvalue(), preserve_alpha=True)
+        files.append((filename, branded))
 
     return files, source_bytes
 
@@ -499,20 +600,36 @@ def generate_asset_pack(
     authorization: str | None = Header(default=None),
 ) -> AssetForgeResponse:
     access_token = get_pollinations_access_token_from_authorization(authorization)
-    if not access_token:
-        raise HTTPException(
-            status_code=401,
-            detail="Connect Pollinations before generating assets.",
-        )
 
     try:
         reference_bytes = _load_character_reference(request.character)
         if _character_key(request.character) == "pearli" and reference_bytes is None:
-            raise HTTPException(status_code=409, detail="Pearli master reference is missing from the SoloForge character library.")
+            raise HTTPException(
+                status_code=409,
+                detail="Pearli master reference is missing from the SoloForge character library.",
+            )
 
         columns, rows = _grid(request.quantity)
         prompt = _build_prompt(request, columns, rows, reference_bytes is not None)
-        source_bytes = _generate_sheet(prompt, reference_bytes, access_token)
+
+        generation_mode = "local_fallback"
+        if access_token:
+            try:
+                source_bytes = _generate_sheet(prompt, reference_bytes, access_token)
+                source_bytes, _ = stamp_image_bytes(source_bytes)
+                generation_mode = "pollinations"
+            except HTTPException as exc:
+                print(
+                    "asset_forge_pollinations_fallback",
+                    {
+                        "status_code": exc.status_code,
+                        "detail": str(exc.detail)[:240],
+                    },
+                )
+                source_bytes = _generate_local_fallback_sheet(request, reference_bytes)
+        else:
+            source_bytes = _generate_local_fallback_sheet(request, reference_bytes)
+
         files, source_bytes = _process_sheet(source_bytes, request)
         zip_bytes = _zip_files(files, request, source_bytes)
 
@@ -522,9 +639,13 @@ def generate_asset_pack(
             files=[name for name, _ in files],
             zip_base64=base64.b64encode(zip_bytes).decode("ascii"),
             source_image_base64=base64.b64encode(source_bytes).decode("ascii"),
+            generation_mode=generation_mode,
         )
     except HTTPException:
         raise
     except Exception as exc:
         error_text = str(exc).strip() or exc.__class__.__name__
-        raise HTTPException(status_code=500, detail=f"Asset Forge processing failed: {error_text[:1200]}") from exc
+        raise HTTPException(
+            status_code=500,
+            detail=f"Asset Forge processing failed: {error_text[:1200]}",
+        ) from exc
