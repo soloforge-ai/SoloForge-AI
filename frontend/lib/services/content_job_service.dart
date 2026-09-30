@@ -94,6 +94,178 @@ class IdeaAnalysis {
   }
 }
 
+
+class StrategyJobPlan {
+  const StrategyJobPlan({
+    required this.sequence,
+    required this.title,
+    required this.format,
+    required this.goal,
+    required this.hookDirection,
+    required this.assetRequirements,
+    required this.dependsOn,
+  });
+
+  final int sequence;
+  final String title;
+  final String format;
+  final String goal;
+  final String hookDirection;
+  final List<String> assetRequirements;
+  final List<String> dependsOn;
+
+  factory StrategyJobPlan.fromJson(Map<String, dynamic> json) {
+    List<String> strings(dynamic raw) => raw is List
+        ? raw.map((value) => value.toString()).toList()
+        : const [];
+    return StrategyJobPlan(
+      sequence: (json['sequence'] as num?)?.toInt() ?? 0,
+      title: json['title']?.toString() ?? '',
+      format: json['format']?.toString() ?? 'content',
+      goal: json['goal']?.toString() ?? 'reach',
+      hookDirection: json['hook_direction']?.toString() ?? '',
+      assetRequirements: strings(json['asset_requirements']),
+      dependsOn: strings(json['depends_on']),
+    );
+  }
+}
+
+class StrategyPlan {
+  const StrategyPlan({
+    required this.id,
+    required this.title,
+    required this.summary,
+    required this.jobCount,
+    required this.goal,
+    required this.platforms,
+    required this.assetRequirements,
+    required this.jobs,
+  });
+
+  final String id;
+  final String title;
+  final String summary;
+  final int jobCount;
+  final String goal;
+  final List<String> platforms;
+  final List<String> assetRequirements;
+  final List<StrategyJobPlan> jobs;
+
+  factory StrategyPlan.fromJson(Map<String, dynamic> json) {
+    final rawJobs = json['jobs'];
+    List<String> strings(dynamic raw) => raw is List
+        ? raw.map((value) => value.toString()).toList()
+        : const [];
+    return StrategyPlan(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      summary: json['summary']?.toString() ?? '',
+      jobCount: (json['job_count'] as num?)?.toInt() ?? 0,
+      goal: json['goal']?.toString() ?? '',
+      platforms: strings(json['platforms']),
+      assetRequirements: strings(json['asset_requirements']),
+      jobs: rawJobs is List
+          ? rawJobs
+              .whereType<Map>()
+              .map((row) => StrategyJobPlan.fromJson(
+                    row.map((key, value) => MapEntry(key.toString(), value)),
+                  ))
+              .toList()
+          : const [],
+    );
+  }
+}
+
+class IdeaStrategy {
+  const IdeaStrategy({
+    required this.idea,
+    required this.angle,
+    required this.objective,
+    required this.audience,
+    required this.rationale,
+    required this.missingInputs,
+    required this.recommendedPlanId,
+    required this.plans,
+    required this.provider,
+    required this.model,
+  });
+
+  final String idea;
+  final String angle;
+  final String objective;
+  final String audience;
+  final String rationale;
+  final List<String> missingInputs;
+  final String recommendedPlanId;
+  final List<StrategyPlan> plans;
+  final String provider;
+  final String model;
+
+  factory IdeaStrategy.fromJson(Map<String, dynamic> json) {
+    final rawStrategy = json['strategy'];
+    final strategy = rawStrategy is Map
+        ? rawStrategy.map((key, value) => MapEntry(key.toString(), value))
+        : const <String, dynamic>{};
+    final rawPlans = json['plans'];
+    final rawMissing = strategy['missing_inputs'];
+    return IdeaStrategy(
+      idea: json['idea']?.toString() ?? '',
+      angle: strategy['angle']?.toString() ?? '',
+      objective: strategy['objective']?.toString() ?? '',
+      audience: strategy['audience']?.toString() ?? '',
+      rationale: strategy['rationale']?.toString() ?? '',
+      missingInputs: rawMissing is List
+          ? rawMissing.map((value) => value.toString()).toList()
+          : const [],
+      recommendedPlanId: strategy['recommended_plan_id']?.toString() ?? '',
+      plans: rawPlans is List
+          ? rawPlans
+              .whereType<Map>()
+              .map((row) => StrategyPlan.fromJson(
+                    row.map((key, value) => MapEntry(key.toString(), value)),
+                  ))
+              .toList()
+          : const [],
+      provider: json['strategist_provider']?.toString() ?? '',
+      model: json['strategist_model']?.toString() ?? '',
+    );
+  }
+}
+
+class CampaignCreateResult {
+  const CampaignCreateResult({
+    required this.campaignId,
+    required this.planId,
+    required this.planTitle,
+    required this.createdCount,
+    required this.jobs,
+  });
+
+  final String campaignId;
+  final String planId;
+  final String planTitle;
+  final int createdCount;
+  final List<ContentJob> jobs;
+
+  factory CampaignCreateResult.fromJson(Map<String, dynamic> json) {
+    final rawJobs = json['jobs'];
+    return CampaignCreateResult(
+      campaignId: json['campaign_id']?.toString() ?? '',
+      planId: json['plan_id']?.toString() ?? '',
+      planTitle: json['plan_title']?.toString() ?? '',
+      createdCount: (json['created_count'] as num?)?.toInt() ?? 0,
+      jobs: rawJobs is List
+          ? rawJobs
+              .whereType<Map>()
+              .map((row) => ContentJob.fromJson(
+                    row.map((key, value) => MapEntry(key.toString(), value)),
+                  ))
+              .toList()
+          : const [],
+    );
+  }
+}
+
 class PublishingConnection {
   const PublishingConnection({
     required this.platformId,
@@ -321,6 +493,57 @@ class ContentJobService {
       throw Exception('Idea analysis returned an invalid response.');
     }
     return IdeaAnalysis.fromJson(
+      body.map((key, value) => MapEntry(key.toString(), value)),
+    );
+  }
+
+
+  Future<IdeaStrategy> strategizeIdea(String idea) async {
+    final response = await _client
+        .post(
+          Uri.parse('$_baseUrl/v1/content-jobs/idea/strategize'),
+          headers: await _headers(json: true),
+          body: jsonEncode({'idea': idea}),
+        )
+        .timeout(const Duration(seconds: 90));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Strategize idea');
+    }
+    final body = jsonDecode(response.body);
+    if (body is! Map) {
+      throw Exception('Strategy returned an invalid response.');
+    }
+    return IdeaStrategy.fromJson(
+      body.map((key, value) => MapEntry(key.toString(), value)),
+    );
+  }
+
+  Future<CampaignCreateResult> createStrategyPlan({
+    required String idea,
+    required String planId,
+    bool generateNow = true,
+  }) async {
+    final response = await _client
+        .post(
+          Uri.parse('$_baseUrl/v1/content-jobs/idea/plan/create'),
+          headers: await _headers(json: true),
+          body: jsonEncode({
+            'idea': idea,
+            'plan_id': planId,
+            'action': generateNow ? 'generate' : 'save',
+          }),
+        )
+        .timeout(const Duration(seconds: 120));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Create strategy plan');
+    }
+    final body = jsonDecode(response.body);
+    if (body is! Map) {
+      throw Exception('Campaign creation returned an invalid response.');
+    }
+    return CampaignCreateResult.fromJson(
       body.map((key, value) => MapEntry(key.toString(), value)),
     );
   }
