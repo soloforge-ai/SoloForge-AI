@@ -441,9 +441,32 @@ class _IdeaComposerCard extends StatelessWidget {
   final ValueChanged<IdeaRecommendation> onGenerate;
   final ValueChanged<IdeaRecommendation> onSave;
 
+  String _priorityLabel(String decision) {
+    switch (decision) {
+      case 'SELECTED':
+        return 'พร้อมทำ';
+      case 'BACKLOG':
+        return 'คิวสำรอง';
+      case 'ARCHIVED':
+        return 'ไอเดียสำรอง';
+      default:
+        return decision;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final options = analysis?.options ?? const <IdeaRecommendation>[];
+    final recommended = options.isEmpty
+        ? null
+        : options.firstWhere(
+            (item) => item.recommended,
+            orElse: () => options.first,
+          );
+    final alternatives = recommended == null
+        ? const <IdeaRecommendation>[]
+        : options.where((item) => item.id != recommended.id).toList();
+
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -494,84 +517,57 @@ class _IdeaComposerCard extends StatelessWidget {
             if (analysis != null) ...[
               const SizedBox(height: 14),
               Text(
-                'MiniBoss ${analysis!.minibossScore}/100 · ${analysis!.minibossDecision}',
+                'MiniBoss ${analysis!.minibossScore}/100 · ${_priorityLabel(analysis!.minibossDecision)}',
                 style: const TextStyle(
                   fontWeight: FontWeight.w800,
                   color: AshColors.indigoMist,
                 ),
               ),
-              const SizedBox(height: 10),
-              ...options.map(
-                (option) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AshColors.blackPlum,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: option.recommended
-                            ? AshColors.mutedRose
-                            : AshColors.indigoMist.withValues(alpha: 0.35),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                option.title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  color: AshColors.boneWhite,
-                                ),
-                              ),
-                            ),
-                            if (option.recommended)
-                              const Chip(label: Text('Recommended')),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(option.reason),
-                        const SizedBox(height: 6),
-                        Text(
-                          '${option.platforms.join(' / ')} · ${option.goal} · Fit ${option.fitScore}',
-                          style: const TextStyle(
-                            color: AshColors.smokeSilver,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Hook: ${option.hookDirection}',
-                          style: const TextStyle(
-                            color: AshColors.smokeSilver,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: FilledButton(
-                                onPressed: busy ? null : () => onGenerate(option),
-                                child: const Text('Generate this'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            OutlinedButton(
-                              onPressed: busy ? null : () => onSave(option),
-                              child: const Text('Save idea'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+              if (analysis!.minibossDecision == 'ARCHIVED') ...[
+                const SizedBox(height: 4),
+                const Text(
+                  'คะแนนนี้ใช้จัดลำดับไอเดียเท่านั้น คุณยังเลือกสร้างคอนเทนต์นี้ได้',
+                  style: TextStyle(
+                    color: AshColors.smokeSilver,
+                    fontSize: 12,
                   ),
                 ),
-              ),
+              ],
+              const SizedBox(height: 10),
+              if (recommended != null)
+                _IdeaRecommendationCard(
+                  option: recommended,
+                  busy: busy,
+                  onGenerate: onGenerate,
+                  onSave: onSave,
+                ),
+              if (alternatives.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  childrenPadding: EdgeInsets.zero,
+                  title: Text(
+                    'ดูตัวเลือกอื่น (${alternatives.length})',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: AshColors.smokeSilver,
+                    ),
+                  ),
+                  children: [
+                    ...alternatives.map(
+                      (option) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _IdeaRecommendationCard(
+                          option: option,
+                          busy: busy,
+                          onGenerate: onGenerate,
+                          onSave: onSave,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ],
         ),
@@ -579,6 +575,91 @@ class _IdeaComposerCard extends StatelessWidget {
     );
   }
 }
+
+class _IdeaRecommendationCard extends StatelessWidget {
+  const _IdeaRecommendationCard({
+    required this.option,
+    required this.busy,
+    required this.onGenerate,
+    required this.onSave,
+  });
+
+  final IdeaRecommendation option;
+  final bool busy;
+  final ValueChanged<IdeaRecommendation> onGenerate;
+  final ValueChanged<IdeaRecommendation> onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AshColors.blackPlum,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: option.recommended
+              ? AshColors.mutedRose
+              : AshColors.indigoMist.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  option.title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: AshColors.boneWhite,
+                  ),
+                ),
+              ),
+              if (option.recommended)
+                const Chip(label: Text('Recommended')),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(option.reason),
+          const SizedBox(height: 6),
+          Text(
+            '${option.platforms.join(' / ')} · ${option.goal} · Fit ${option.fitScore}',
+            style: const TextStyle(
+              color: AshColors.smokeSilver,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Hook: ${option.hookDirection}',
+            style: const TextStyle(
+              color: AshColors.smokeSilver,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  onPressed: busy ? null : () => onGenerate(option),
+                  child: const Text('Generate this'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: busy ? null : () => onSave(option),
+                child: const Text('Save idea'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _QueueSummary extends StatelessWidget {
   const _QueueSummary({
     required this.active,

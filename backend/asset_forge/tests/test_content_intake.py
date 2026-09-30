@@ -35,6 +35,18 @@ def test_recommender_always_returns_four_choices() -> None:
     }
 
 
+def test_recommender_prefers_promo_post_for_ebook_link() -> None:
+    result = content_intake.recommend_formats(
+        "สร้างโพสต์โปรโมต ebook https://example.com/book"
+    )
+
+    assert len(result["options"]) == 4
+    assert result["recommended_format"] == "promo_post"
+    assert result["options"][0]["goal"] == "conversion"
+    assert result["options"][0]["needs_video"] is False
+    assert result["miniboss"]["score"] >= 60
+
+
 def test_find_recommendation_rejects_unknown_format() -> None:
     try:
         content_intake.find_recommendation("AI idea", "podcast")
