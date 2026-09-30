@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from backend.pollinations_oauth_router import (
     get_pollinations_access_token_from_authorization,
 )
+from backend.content_intake import find_recommendation, recommend_formats, score_idea
 
 from backend.shared_supabase import supabase_request as _supabase_request
 
@@ -51,6 +52,16 @@ _GENERATED_PACKAGE_KEYS = {
 }
 
 
+class IdeaAnalyzeRequest(BaseModel):
+    idea: str = Field(min_length=3, max_length=4000)
+
+
+class IdeaCreateRequest(BaseModel):
+    idea: str = Field(min_length=3, max_length=4000)
+    recommendation_id: str = Field(min_length=1, max_length=80)
+    action: str = Field(default="generate", pattern="^(generate|save)$")
+
+
 class ContentDraftUpdate(BaseModel):
     hook: str | None = Field(default=None, max_length=4000)
     script: str | None = Field(default=None, max_length=20000)
@@ -91,6 +102,90 @@ def _patch_job(job_id: str, body: dict[str, object]) -> dict[str, object]:
     if not rows:
         raise HTTPException(status_code=409, detail="Content job update was not applied")
     return dict(rows[0])
+
+
+
+@router.post("/idea/analyze")
+def analyze_idea(request: IdeaAnalyzeRequest) -> dict[str, object]:
+    return recommend_formats(request.idea)
+
+
+@router.post("/idea/create")
+def create_from_idea(
+    request: IdeaCreateRequest,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    _require_session(authorization)
+    try:
+        recommendation = find_recommendation(
+            request.idea,
+            request.recommendation_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    score = score_idea(request.idea)
+    next_status = "SELECTED" if request.action == "generate" else "BACKLOG"
+    recommendation_set = recommend_formats(request.idea)
+    package = {
+        "format": recommendation["id"],
+        "goal": recommendation["goal"],
+        "priority": "MEDIUM",
+        "target_platforms": recommendation["platforms"],
+        "needs_video": recommendation["needs_video"],
+        "generation_brief": {
+            "hook_direction": recommendation["hook_direction"],
+            "recommendation_reason": recommendation["reason"],
+            "production_difficulty": recommendation["production_difficulty"],
+        },
+        "idea_composer": {
+            "recommender_version": recommendation_set["recommender_version"],
+            "recommended": recommendation["recommended"],
+            "fit_score": recommendation["fit_score"],
+            "human_action": request.action,
+            "miniboss_original_decision": score["decision"],
+            "human_override": request.action == "generate" and score["decision"] != "SELECTED",
+        },
+    }
+    rows = _supabase_request(
+        "POST",
+        "content_jobs",
+        body={
+            "idea": request.idea.strip(),
+            "source": "app_idea_composer",
+            "status": next_status,
+            "score": score["score"],
+            "score_reason": score["reason"],
+            "score_breakdown": score["breakdown"],
+            "score_version": score["version"],
+            "scored_at": _now(),
+            "publish_platform": recommendation["platforms"][0],
+            "content_package": package,
+            "qa_status": "PENDING",
+            "updated_at": _now(),
+        },
+        prefer="return=representation",
+    ) or []
+    if not rows:
+        raise HTTPException(status_code=500, detail="Content job was not created")
+
+    job = dict(rows[0])
+    _supabase_request(
+        "POST",
+        "content_job_events",
+        body={
+            "content_job_id": job["id"],
+            "event_type": "IDEA_COMPOSER_CREATED",
+            "actor": "app",
+            "metadata": {
+                "format": recommendation["id"],
+                "action": request.action,
+                "fit_score": recommendation["fit_score"],
+            },
+            "occurred_at": _now(),
+        },
+    )
+    return job
 
 
 @router.get("")

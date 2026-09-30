@@ -5,6 +5,95 @@ import 'package:http/http.dart' as http;
 import '../models/content_job.dart';
 import 'pollinations_session_service.dart';
 
+class IdeaRecommendation {
+  const IdeaRecommendation({
+    required this.id,
+    required this.title,
+    required this.rank,
+    required this.fitScore,
+    required this.recommended,
+    required this.platforms,
+    required this.goal,
+    required this.needsVideo,
+    required this.hookDirection,
+    required this.productionDifficulty,
+    required this.reason,
+  });
+
+  final String id;
+  final String title;
+  final int rank;
+  final int fitScore;
+  final bool recommended;
+  final List<String> platforms;
+  final String goal;
+  final bool needsVideo;
+  final String hookDirection;
+  final String productionDifficulty;
+  final String reason;
+
+  factory IdeaRecommendation.fromJson(Map<String, dynamic> json) {
+    final rawPlatforms = json['platforms'];
+    return IdeaRecommendation(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      rank: (json['rank'] as num?)?.toInt() ?? 0,
+      fitScore: (json['fit_score'] as num?)?.toInt() ?? 0,
+      recommended: json['recommended'] == true,
+      platforms: rawPlatforms is List
+          ? rawPlatforms.map((value) => value.toString()).toList()
+          : const [],
+      goal: json['goal']?.toString() ?? '',
+      needsVideo: json['needs_video'] == true,
+      hookDirection: json['hook_direction']?.toString() ?? '',
+      productionDifficulty:
+          json['production_difficulty']?.toString() ?? '',
+      reason: json['reason']?.toString() ?? '',
+    );
+  }
+}
+
+class IdeaAnalysis {
+  const IdeaAnalysis({
+    required this.idea,
+    required this.recommendedFormat,
+    required this.options,
+    required this.minibossScore,
+    required this.minibossDecision,
+  });
+
+  final String idea;
+  final String recommendedFormat;
+  final List<IdeaRecommendation> options;
+  final int minibossScore;
+  final String minibossDecision;
+
+  factory IdeaAnalysis.fromJson(Map<String, dynamic> json) {
+    final rawOptions = json['options'];
+    final rawMiniBoss = json['miniboss'];
+    final miniboss = rawMiniBoss is Map
+        ? rawMiniBoss.map((key, value) => MapEntry(key.toString(), value))
+        : const <String, dynamic>{};
+
+    return IdeaAnalysis(
+      idea: json['idea']?.toString() ?? '',
+      recommendedFormat: json['recommended_format']?.toString() ?? '',
+      options: rawOptions is List
+          ? rawOptions
+              .whereType<Map>()
+              .map((row) => IdeaRecommendation.fromJson(
+                    row.map(
+                      (key, value) => MapEntry(key.toString(), value),
+                    ),
+                  ))
+              .toList()
+          : const [],
+      minibossScore: (miniboss['score'] as num?)?.toInt() ?? 0,
+      minibossDecision: miniboss['decision']?.toString() ?? '',
+    );
+  }
+}
+
 class PublishingConnection {
   const PublishingConnection({
     required this.platformId,
@@ -212,6 +301,51 @@ class ContentJobService {
         (key, value) => MapEntry(key.toString(), value),
       ),
     );
+  }
+
+
+  Future<IdeaAnalysis> analyzeIdea(String idea) async {
+    final response = await _client
+        .post(
+          Uri.parse('$_baseUrl/v1/content-jobs/idea/analyze'),
+          headers: const {'Content-Type': 'application/json'},
+          body: jsonEncode({'idea': idea}),
+        )
+        .timeout(const Duration(seconds: 20));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Analyze idea');
+    }
+    final body = jsonDecode(response.body);
+    if (body is! Map) {
+      throw Exception('Idea analysis returned an invalid response.');
+    }
+    return IdeaAnalysis.fromJson(
+      body.map((key, value) => MapEntry(key.toString(), value)),
+    );
+  }
+
+  Future<ContentJob> createFromIdea({
+    required String idea,
+    required String recommendationId,
+    required bool generateNow,
+  }) async {
+    final response = await _client
+        .post(
+          Uri.parse('$_baseUrl/v1/content-jobs/idea/create'),
+          headers: await _headers(json: true),
+          body: jsonEncode({
+            'idea': idea,
+            'recommendation_id': recommendationId,
+            'action': generateNow ? 'generate' : 'save',
+          }),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, generateNow ? 'Generate idea' : 'Save idea');
+    }
+    return _decodeJob(response);
   }
 
   Future<List<ContentJob>> getJobs({int limit = 100}) async {
