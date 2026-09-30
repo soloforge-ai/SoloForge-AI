@@ -411,6 +411,163 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+class _IdeaComposerCard extends StatelessWidget {
+  const _IdeaComposerCard({
+    required this.controller,
+    required this.busy,
+    required this.analysis,
+    required this.error,
+    required this.onAnalyze,
+    required this.onGenerate,
+    required this.onSave,
+  });
+
+  final TextEditingController controller;
+  final bool busy;
+  final IdeaAnalysis? analysis;
+  final String? error;
+  final VoidCallback onAnalyze;
+  final ValueChanged<IdeaRecommendation> onGenerate;
+  final ValueChanged<IdeaRecommendation> onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = analysis?.options ?? const <IdeaRecommendation>[];
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'วันนี้อยากทำคอนเทนต์เรื่องอะไร?',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+                color: AshColors.boneWhite,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'ใส่ไอเดีย แล้ว SoloForge จะแนะนำรูปแบบ Platform และ Hook direction ให้',
+              style: TextStyle(color: AshColors.smokeSilver),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              enabled: !busy,
+              minLines: 2,
+              maxLines: 5,
+              decoration: InputDecoration(
+                hintText: 'เช่น ทำ AI Character 5 รูป แต่หน้ากลายเป็นคนละคน',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            FilledButton.icon(
+              onPressed: busy ? null : onAnalyze,
+              icon: const Icon(Icons.auto_awesome),
+              label: Text(busy ? 'กำลังวิเคราะห์...' : 'Analyze Idea'),
+            ),
+            if (busy) ...[
+              const SizedBox(height: 8),
+              const LinearProgressIndicator(),
+            ],
+            if (error != null) ...[
+              const SizedBox(height: 10),
+              Text(error!, style: const TextStyle(color: AshColors.mutedRose)),
+            ],
+            if (analysis != null) ...[
+              const SizedBox(height: 14),
+              Text(
+                'MiniBoss ${analysis!.minibossScore}/100 · ${analysis!.minibossDecision}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: AshColors.indigoMist,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...options.map(
+                (option) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AshColors.blackPlum,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: option.recommended
+                            ? AshColors.mutedRose
+                            : AshColors.indigoMist.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                option.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: AshColors.boneWhite,
+                                ),
+                              ),
+                            ),
+                            if (option.recommended)
+                              const Chip(label: Text('Recommended')),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(option.reason),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${option.platforms.join(' / ')} · ${option.goal} · Fit ${option.fitScore}',
+                          style: const TextStyle(
+                            color: AshColors.smokeSilver,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Hook: ${option.hookDirection}',
+                          style: const TextStyle(
+                            color: AshColors.smokeSilver,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FilledButton(
+                                onPressed: busy ? null : () => onGenerate(option),
+                                child: const Text('Generate this'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton(
+                              onPressed: busy ? null : () => onSave(option),
+                              child: const Text('Save idea'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
 class _QueueSummary extends StatelessWidget {
   const _QueueSummary({
     required this.active,
