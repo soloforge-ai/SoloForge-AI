@@ -118,13 +118,15 @@ def recommend_formats(idea: str) -> dict[str, Any]:
     )
     sales_signal = _has_any(
         text,
-        "ขาย", "สินค้า", "affiliate", "คอมมิชชั่น", "โปร", "ราคา", "ซื้อ",
+        "ขาย", "สินค้า", "affiliate", "คอมมิชชั่น", "โปร", "โปรโมชั่น",
+        "โปรโมท", "โปรโมต", "promotion", "promo", "ราคา", "ซื้อ", "ebook",
+        "e-book", "หนังสือ", "ลิงก์", "link", "http://", "https://",
     )
 
     scores = {
         "short_video_demo": 54
         + (28 if demo_signal else 0)
-        + (8 if sales_signal else 0),
+        + (4 if sales_signal else 0),
         "carousel": 52
         + (20 if educational_signal else 0)
         + (5 if demo_signal else 0),
@@ -132,6 +134,8 @@ def recommend_formats(idea: str) -> dict[str, Any]:
         + (30 if personal_signal else 0),
         "question_post": 46
         + (22 if discussion_signal else 0),
+        "promo_post": 48
+        + (36 if sales_signal else 0),
     }
 
     specs = {
@@ -171,9 +175,27 @@ def recommend_formats(idea: str) -> dict[str, Any]:
             "production_difficulty": "LOW",
             "reason": "เหมาะกับการเปิดบทสนทนาและเก็บสัญญาณว่าคนสนใจประเด็นนี้แค่ไหน",
         },
+        "promo_post": {
+            "title": "Promo / Sales Post",
+            "platforms": ["instagram", "facebook"],
+            "goal": "conversion",
+            "needs_video": False,
+            "hook_direction": "เปิดด้วยประโยชน์หรือผลลัพธ์ที่คนจะได้ แล้วค่อยพาไปที่สินค้าและคำชวนทำต่อ",
+            "production_difficulty": "LOW",
+            "reason": "เหมาะกับไอเดียที่ตั้งใจโปรโมตสินค้า ebook ลิงก์ หรือข้อเสนอเพื่อให้เกิดการคลิกหรือซื้อ",
+        },
     }
 
-    ranked = sorted(scores, key=lambda key: scores[key], reverse=True)
+    candidate_keys = [
+        "short_video_demo",
+        "carousel",
+        "personal_post",
+        "question_post",
+    ]
+    if sales_signal:
+        candidate_keys.append("promo_post")
+
+    ranked = sorted(candidate_keys, key=lambda key: scores[key], reverse=True)[:4]
     options: list[dict[str, Any]] = []
     for index, key in enumerate(ranked):
         spec = specs[key]
