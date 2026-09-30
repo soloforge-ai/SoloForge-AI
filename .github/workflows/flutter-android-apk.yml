@@ -3,6 +3,7 @@ name: Build SoloForge Android APK
 on:
   push:
     branches:
+      - main
       - feature/asset-forge-mvp
     paths:
       - 'frontend/**'
