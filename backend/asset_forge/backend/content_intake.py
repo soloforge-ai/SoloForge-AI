@@ -100,7 +100,8 @@ def recommend_formats(idea: str) -> dict[str, Any]:
     text = _normalize(idea)
     demo_signal = _has_any(
         text,
-        "ลอง", "ทดลอง", "รีวิว", "เทียบ", "ก่อน", "หลัง", "before", "after",
+        "ลอง", "ทดลอง", "รีวิว", "เทียบ", "before", "after",
+        "ก่อนใช้", "หลังใช้", "ก่อนทำ", "หลังทำ",
         "ทำไม", "ปัญหา", "พัง", "ไม่เหมือน", "เปลี่ยน",
     )
     educational_signal = _has_any(
