@@ -188,6 +188,8 @@ class IdeaStrategy {
     required this.plans,
     required this.provider,
     required this.model,
+    required this.minibossScore,
+    required this.minibossDecision,
   });
 
   final String idea;
@@ -200,6 +202,8 @@ class IdeaStrategy {
   final List<StrategyPlan> plans;
   final String provider;
   final String model;
+  final int minibossScore;
+  final String minibossDecision;
 
   factory IdeaStrategy.fromJson(Map<String, dynamic> json) {
     final rawStrategy = json['strategy'];
@@ -208,6 +212,10 @@ class IdeaStrategy {
         : const <String, dynamic>{};
     final rawPlans = json['plans'];
     final rawMissing = strategy['missing_inputs'];
+    final rawMiniBoss = json['miniboss'];
+    final miniboss = rawMiniBoss is Map
+        ? rawMiniBoss.map((key, value) => MapEntry(key.toString(), value))
+        : const <String, dynamic>{};
     return IdeaStrategy(
       idea: json['idea']?.toString() ?? '',
       angle: strategy['angle']?.toString() ?? '',
@@ -228,6 +236,8 @@ class IdeaStrategy {
           : const [],
       provider: json['strategist_provider']?.toString() ?? '',
       model: json['strategist_model']?.toString() ?? '',
+      minibossScore: (miniboss['score'] as num?)?.toInt() ?? 0,
+      minibossDecision: miniboss['decision']?.toString() ?? '',
     );
   }
 }
