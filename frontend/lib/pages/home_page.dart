@@ -8,6 +8,7 @@ import 'about_page.dart';
 import 'analytics_page.dart';
 import 'asset_forge_page.dart';
 import 'content_job_page.dart';
+import 'settings_page.dart';
 
 enum QueueFilter { all, today, review, blocked, published }
 
@@ -277,6 +278,16 @@ class _HomePageState extends State<HomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const AnalyticsPage()),
+              );
+            },
+          ),
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsPage()),
               );
             },
           ),
