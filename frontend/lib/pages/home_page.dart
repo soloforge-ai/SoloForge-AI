@@ -29,7 +29,7 @@ class _HomePageState extends State<HomePage> {
   String _keyword = '';
   bool _loading = true;
   bool _ideaBusy = false;
-  IdeaAnalysis? _ideaAnalysis;
+  IdeaStrategy? _ideaStrategy;
   String? _ideaError;
   String? _error;
 
@@ -51,12 +51,12 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _ideaBusy = true;
       _ideaError = null;
-      _ideaAnalysis = null;
+      _ideaStrategy = null;
     });
     try {
-      final analysis = await _contentJobService.analyzeIdea(idea);
+      final strategy = await _contentJobService.strategizeIdea(idea);
       if (!mounted) return;
-      setState(() => _ideaAnalysis = analysis);
+      setState(() => _ideaStrategy = strategy);
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -67,31 +67,32 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _createIdeaJob(
-    IdeaRecommendation recommendation, {
-    required bool generateNow,
-  }) async {
+  Future<void> _createStrategyPlan(StrategyPlan plan) async {
     if (_ideaBusy) return;
     setState(() {
       _ideaBusy = true;
       _ideaError = null;
     });
     try {
-      final job = await _contentJobService.createFromIdea(
+      final result = await _contentJobService.createStrategyPlan(
         idea: _ideaController.text.trim(),
-        recommendationId: recommendation.id,
-        generateNow: generateNow,
+        planId: plan.id,
+        generateNow: true,
       );
       if (!mounted) return;
       setState(() {
         _ideaController.clear();
-        _ideaAnalysis = null;
+        _ideaStrategy = null;
       });
       await _loadJobs();
       if (!mounted) return;
-      if (generateNow) {
-        await _openJob(job);
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'สร้าง ${result.createdCount} Content Jobs จาก ${result.planTitle} แล้ว',
+          ),
+        ),
+      );
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -311,17 +312,10 @@ class _HomePageState extends State<HomePage> {
             _IdeaComposerCard(
               controller: _ideaController,
               busy: _ideaBusy,
-              analysis: _ideaAnalysis,
+              strategy: _ideaStrategy,
               error: _ideaError,
               onAnalyze: _analyzeIdea,
-              onGenerate: (recommendation) => _createIdeaJob(
-                recommendation,
-                generateNow: true,
-              ),
-              onSave: (recommendation) => _createIdeaJob(
-                recommendation,
-                generateNow: false,
-              ),
+              onUsePlan: _createStrategyPlan,
             ),
             const SizedBox(height: 10),
             HeroBanner(onPressed: _openStickerForge),
@@ -426,20 +420,18 @@ class _IdeaComposerCard extends StatelessWidget {
   const _IdeaComposerCard({
     required this.controller,
     required this.busy,
-    required this.analysis,
+    required this.strategy,
     required this.error,
     required this.onAnalyze,
-    required this.onGenerate,
-    required this.onSave,
+    required this.onUsePlan,
   });
 
   final TextEditingController controller;
   final bool busy;
-  final IdeaAnalysis? analysis;
+  final IdeaStrategy? strategy;
   final String? error;
   final VoidCallback onAnalyze;
-  final ValueChanged<IdeaRecommendation> onGenerate;
-  final ValueChanged<IdeaRecommendation> onSave;
+  final ValueChanged<StrategyPlan> onUsePlan;
 
   String _priorityLabel(String decision) {
     switch (decision) {
@@ -456,17 +448,7 @@ class _IdeaComposerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final options = analysis?.options ?? const <IdeaRecommendation>[];
-    final recommended = options.isEmpty
-        ? null
-        : options.firstWhere(
-            (item) => item.recommended,
-            orElse: () => options.first,
-          );
-    final alternatives = recommended == null
-        ? const <IdeaRecommendation>[]
-        : options.where((item) => item.id != recommended.id).toList();
-
+    final selected = strategy;
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -475,7 +457,7 @@ class _IdeaComposerCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'วันนี้อยากทำคอนเทนต์เรื่องอะไร?',
+              'โยนไอเดียมา เดี๋ยว SoloForge วางแผนให้',
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w900,
@@ -484,7 +466,7 @@ class _IdeaComposerCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             const Text(
-              'ใส่ไอเดีย แล้ว SoloForge จะแนะนำรูปแบบ Platform และ Hook direction ให้',
+              'SoloForge จะวิเคราะห์มุมคอนเทนต์ เสนอแผน และแตกเป็น Content Jobs ให้ทำต่อได้',
               style: TextStyle(color: AshColors.smokeSilver),
             ),
             const SizedBox(height: 12),
@@ -494,7 +476,7 @@ class _IdeaComposerCard extends StatelessWidget {
               minLines: 2,
               maxLines: 5,
               decoration: InputDecoration(
-                hintText: 'เช่น ทำ AI Character 5 รูป แต่หน้ากลายเป็นคนละคน',
+                hintText: 'เช่น เขาบอกว่าใช้ AI ทำ Digital Product ขายได้ เราเลยลอง',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -504,7 +486,7 @@ class _IdeaComposerCard extends StatelessWidget {
             FilledButton.icon(
               onPressed: busy ? null : onAnalyze,
               icon: const Icon(Icons.auto_awesome),
-              label: Text(busy ? 'กำลังวิเคราะห์...' : 'Analyze Idea'),
+              label: Text(busy ? 'กำลังวางกลยุทธ์...' : 'วางแผนคอนเทนต์'),
             ),
             if (busy) ...[
               const SizedBox(height: 8),
@@ -514,60 +496,38 @@ class _IdeaComposerCard extends StatelessWidget {
               const SizedBox(height: 10),
               Text(error!, style: const TextStyle(color: AshColors.mutedRose)),
             ],
-            if (analysis != null) ...[
+            if (selected != null) ...[
               const SizedBox(height: 14),
               Text(
-                'MiniBoss ${analysis!.minibossScore}/100 · ${_priorityLabel(analysis!.minibossDecision)}',
+                'MiniBoss ${selected.minibossScore}/100 · ${_priorityLabel(selected.minibossDecision)}',
                 style: const TextStyle(
                   fontWeight: FontWeight.w800,
                   color: AshColors.indigoMist,
                 ),
               ),
-              if (analysis!.minibossDecision == 'ARCHIVED') ...[
-                const SizedBox(height: 4),
-                const Text(
-                  'คะแนนนี้ใช้จัดลำดับไอเดียเท่านั้น คุณยังเลือกสร้างคอนเทนต์นี้ได้',
-                  style: TextStyle(
-                    color: AshColors.smokeSilver,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
               const SizedBox(height: 10),
-              if (recommended != null)
-                _IdeaRecommendationCard(
-                  option: recommended,
-                  busy: busy,
-                  onGenerate: onGenerate,
-                  onSave: onSave,
+              _StrategySummary(strategy: selected),
+              const SizedBox(height: 12),
+              const Text(
+                'เลือกแผนที่จะทำต่อ',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: AshColors.boneWhite,
                 ),
-              if (alternatives.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                ExpansionTile(
-                  tilePadding: EdgeInsets.zero,
-                  childrenPadding: EdgeInsets.zero,
-                  title: Text(
-                    'ดูตัวเลือกอื่น (${alternatives.length})',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: AshColors.smokeSilver,
-                    ),
+              ),
+              const SizedBox(height: 8),
+              ...selected.plans.map(
+                (plan) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _StrategyPlanCard(
+                    plan: plan,
+                    recommended: plan.id == selected.recommendedPlanId,
+                    busy: busy,
+                    onUsePlan: onUsePlan,
                   ),
-                  children: [
-                    ...alternatives.map(
-                      (option) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _IdeaRecommendationCard(
-                          option: option,
-                          busy: busy,
-                          onGenerate: onGenerate,
-                          onSave: onSave,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
-              ],
+              ),
             ],
           ],
         ),
@@ -576,18 +536,10 @@ class _IdeaComposerCard extends StatelessWidget {
   }
 }
 
-class _IdeaRecommendationCard extends StatelessWidget {
-  const _IdeaRecommendationCard({
-    required this.option,
-    required this.busy,
-    required this.onGenerate,
-    required this.onSave,
-  });
+class _StrategySummary extends StatelessWidget {
+  const _StrategySummary({required this.strategy});
 
-  final IdeaRecommendation option;
-  final bool busy;
-  final ValueChanged<IdeaRecommendation> onGenerate;
-  final ValueChanged<IdeaRecommendation> onSave;
+  final IdeaStrategy strategy;
 
   @override
   Widget build(BuildContext context) {
@@ -597,7 +549,68 @@ class _IdeaRecommendationCard extends StatelessWidget {
         color: AshColors.blackPlum,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: option.recommended
+          color: AshColors.indigoMist.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            strategy.angle,
+            style: const TextStyle(
+              color: AshColors.mutedRose,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(strategy.objective),
+          const SizedBox(height: 6),
+          Text(
+            strategy.rationale,
+            style: const TextStyle(color: AshColors.smokeSilver),
+          ),
+          if (strategy.missingInputs.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            const Text(
+              'สิ่งที่ยังต้องเตรียม',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            ...strategy.missingInputs.map(
+              (item) => Text(
+                '• $item',
+                style: const TextStyle(color: AshColors.smokeSilver),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StrategyPlanCard extends StatelessWidget {
+  const _StrategyPlanCard({
+    required this.plan,
+    required this.recommended,
+    required this.busy,
+    required this.onUsePlan,
+  });
+
+  final StrategyPlan plan;
+  final bool recommended;
+  final bool busy;
+  final ValueChanged<StrategyPlan> onUsePlan;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AshColors.blackPlum,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: recommended
               ? AshColors.mutedRose
               : AshColors.indigoMist.withValues(alpha: 0.35),
         ),
@@ -609,50 +622,66 @@ class _IdeaRecommendationCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  option.title,
+                  plan.title,
                   style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     color: AshColors.boneWhite,
                   ),
                 ),
               ),
-              if (option.recommended)
-                const Chip(label: Text('Recommended')),
+              Chip(label: Text('${plan.jobCount} งาน')),
+              if (recommended) ...[
+                const SizedBox(width: 6),
+                const Chip(label: Text('แนะนำ')),
+              ],
             ],
           ),
           const SizedBox(height: 6),
-          Text(option.reason),
+          Text(plan.summary),
           const SizedBox(height: 6),
           Text(
-            '${option.platforms.join(' / ')} · ${option.goal} · Fit ${option.fitScore}',
+            '${plan.platforms.join(' / ')} · ${plan.goal}',
             style: const TextStyle(
               color: AshColors.smokeSilver,
               fontSize: 12,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Hook: ${option.hookDirection}',
-            style: const TextStyle(
-              color: AshColors.smokeSilver,
-              fontSize: 12,
+          const SizedBox(height: 6),
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: EdgeInsets.zero,
+            title: const Text(
+              'ดูรายละเอียดแผน',
+              style: TextStyle(
+                color: AshColors.smokeSilver,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Row(
             children: [
-              Expanded(
-                child: FilledButton(
-                  onPressed: busy ? null : () => onGenerate(option),
-                  child: const Text('Generate this'),
+              ...plan.jobs.map(
+                (job) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '${job.sequence}. ${job.title} · ${job.format}\n'
+                      'Hook: ${job.hookDirection}'
+                      '${job.dependsOn.isEmpty ? '' : '\nรอข้อมูล: ${job.dependsOn.join(', ')}'}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: busy ? null : () => onSave(option),
-                child: const Text('Save idea'),
-              ),
             ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: busy ? null : () => onUsePlan(plan),
+              icon: const Icon(Icons.playlist_add_check),
+              label: Text('เลือกแผนนี้ · สร้าง ${plan.jobCount} งาน'),
+            ),
           ),
         ],
       ),
