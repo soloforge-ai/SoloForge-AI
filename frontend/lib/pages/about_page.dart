@@ -116,6 +116,12 @@ class AboutPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
+                  'AI generation powered by Pollinations.ai',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
                   '© 2026 SoloForge AI',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
