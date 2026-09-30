@@ -44,6 +44,7 @@ def test_recommender_prefers_promo_post_for_ebook_link() -> None:
     assert result["recommended_format"] == "promo_post"
     assert result["options"][0]["goal"] == "conversion"
     assert result["options"][0]["needs_video"] is False
+    assert result["miniboss"]["score"] >= 60
 
 
 def test_find_recommendation_rejects_unknown_format() -> None:
