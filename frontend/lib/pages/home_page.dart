@@ -20,18 +20,85 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final ContentJobService _contentJobService = ContentJobService();
+  final TextEditingController _ideaController = TextEditingController();
 
   List<ContentJob> _allJobs = const [];
   List<ContentJob> _jobs = const [];
   QueueFilter _filter = QueueFilter.all;
   String _keyword = '';
   bool _loading = true;
+  bool _ideaBusy = false;
+  IdeaAnalysis? _ideaAnalysis;
+  String? _ideaError;
   String? _error;
 
   @override
   void initState() {
     super.initState();
     _loadJobs();
+  }
+
+  @override
+  void dispose() {
+    _ideaController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _analyzeIdea() async {
+    final idea = _ideaController.text.trim();
+    if (idea.length < 3 || _ideaBusy) return;
+    setState(() {
+      _ideaBusy = true;
+      _ideaError = null;
+      _ideaAnalysis = null;
+    });
+    try {
+      final analysis = await _contentJobService.analyzeIdea(idea);
+      if (!mounted) return;
+      setState(() => _ideaAnalysis = analysis);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _ideaError = error.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) setState(() => _ideaBusy = false);
+    }
+  }
+
+  Future<void> _createIdeaJob(
+    IdeaRecommendation recommendation, {
+    required bool generateNow,
+  }) async {
+    if (_ideaBusy) return;
+    setState(() {
+      _ideaBusy = true;
+      _ideaError = null;
+    });
+    try {
+      final job = await _contentJobService.createFromIdea(
+        idea: _ideaController.text.trim(),
+        recommendationId: recommendation.id,
+        generateNow: generateNow,
+      );
+      if (!mounted) return;
+      setState(() {
+        _ideaController.clear();
+        _ideaAnalysis = null;
+      });
+      await _loadJobs();
+      if (!mounted) return;
+      if (generateNow) {
+        await _openJob(job);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _ideaError = error.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) setState(() => _ideaBusy = false);
+    }
   }
 
   Future<void> _loadJobs() async {
@@ -230,6 +297,22 @@ class _HomePageState extends State<HomePage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
           children: [
+            _IdeaComposerCard(
+              controller: _ideaController,
+              busy: _ideaBusy,
+              analysis: _ideaAnalysis,
+              error: _ideaError,
+              onAnalyze: _analyzeIdea,
+              onGenerate: (recommendation) => _createIdeaJob(
+                recommendation,
+                generateNow: true,
+              ),
+              onSave: (recommendation) => _createIdeaJob(
+                recommendation,
+                generateNow: false,
+              ),
+            ),
+            const SizedBox(height: 10),
             HeroBanner(onPressed: _openStickerForge),
             const SizedBox(height: 10),
             _QueueSummary(
