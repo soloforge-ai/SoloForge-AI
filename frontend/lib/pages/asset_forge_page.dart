@@ -58,7 +58,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
   final PollinationsSessionService _pollinationsSession = PollinationsSessionService();
 
   bool get hasBackend => widget.useBackend ?? assetForgeApiUrl.trim().isNotEmpty;
-  bool get builderEnabled => !isGenerating && (!hasBackend || isPollinationsConnected);
+  bool get builderEnabled => !isGenerating;
 
   AssetForgeCharacterConfig get characterConfig => AssetForgeCharacterConfig(
         characterType: characterType,
@@ -134,7 +134,10 @@ class _AssetForgePageState extends State<AssetForgePage> {
     try {
       await _pollinationsSession.connect();
       if (!mounted) return;
-      setState(() => pollinationsStatus = 'Waiting for authorization...');
+      setState(() {
+        isConnectingPollinations = false;
+        pollinationsStatus = 'Waiting for authorization...';
+      });
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -403,7 +406,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
 
   Future<void> _generateWithBackend() async {
     final baseUrl = assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
-    final authHeaders = await _pollinationsSession.authorizationHeaders();
+    final authHeaders = await _pollinationsSession.optionalAuthorizationHeaders();
 
     setState(() {
       status = 'Connecting to Asset Forge server...';
@@ -459,7 +462,10 @@ class _AssetForgePageState extends State<AssetForgePage> {
       generatedFiles = files;
       zipBase64 = body['zip_base64']?.toString();
       previewBytes = sourceBytes;
-      status = 'Asset Pack Ready!';
+      final generationMode = body['generation_mode']?.toString();
+      status = generationMode == 'local_fallback'
+          ? 'Asset Pack Ready! · Local fallback'
+          : 'Asset Pack Ready!';
       isGenerating = false;
       showEarnPollenHint = false;
     });
@@ -471,11 +477,6 @@ class _AssetForgePageState extends State<AssetForgePage> {
 
   Future<void> generateAssets() async {
     if (isGenerating) return;
-    if (hasBackend && !isPollinationsConnected) {
-      setState(() => errorMessage = 'Connect Pollinations before generating assets.');
-      return;
-    }
-
     setState(() {
       isGenerating = true;
       progress = 0.0;
@@ -581,8 +582,8 @@ class _AssetForgePageState extends State<AssetForgePage> {
             const SizedBox(height: 8),
             Text(
               connected
-                  ? 'Connected. One generation creates the four-pose Quick Pack.'
-                  : 'Connect Pollinations first. Character Builder unlocks after authorization.',
+                  ? 'Connected. AI generation will be used when available.'
+                  : 'Not connected. Asset Forge will use the local fallback so you can keep working.',
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -778,7 +779,9 @@ class _AssetForgePageState extends State<AssetForgePage> {
                       Text('$style • $theme • $quantity stickers'),
                       if (hasBackend && !isPollinationsConnected) ...[
                         const SizedBox(height: 8),
-                        const Text('Connect Pollinations to unlock these controls.'),
+                        const Text(
+                          'Local fallback active — Pollinations is optional for this pack.',
+                        ),
                       ],
                     ],
                   ),
