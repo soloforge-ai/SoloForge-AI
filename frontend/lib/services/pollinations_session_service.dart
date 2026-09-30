@@ -184,6 +184,14 @@ class PollinationsSessionService {
     return {'Authorization': 'Bearer $token'};
   }
 
+  Future<Map<String, String>> optionalAuthorizationHeaders() async {
+    final token = await readSessionToken();
+    if (token == null || token.isEmpty) {
+      return const <String, String>{};
+    }
+    return {'Authorization': 'Bearer $token'};
+  }
+
   int? _asInt(Object? value) {
     if (value is int) return value;
     return int.tryParse(value?.toString() ?? '');
