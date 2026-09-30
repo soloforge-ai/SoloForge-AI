@@ -114,7 +114,7 @@ export default async function agent({
 
   const action = actionFor(gate.choice);
 
-  return Response.json({
+  const result = {
     agent: "SoloForge Content Gatekeeper",
     decision: gate.choice,
     confidence: gate.confidence ?? null,
@@ -127,5 +127,22 @@ export default async function agent({
       decision_id: decision.id ?? null,
       usage: decision.usage ?? null,
     },
-  });
+  };
+
+  if (body?.stream === true) {
+    return pollinations("/v1/responses", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model: "openai/gpt-5.4-nano",
+        input:
+          "Return the following JSON object exactly, with no markdown and no extra commentary:\n" +
+          JSON.stringify(result),
+        stream: true,
+        max_output_tokens: 300,
+      }),
+    });
+  }
+
+  return Response.json(result);
 }
