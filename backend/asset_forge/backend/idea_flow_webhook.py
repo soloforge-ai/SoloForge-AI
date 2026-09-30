@@ -14,6 +14,8 @@ from typing import Any
 
 from fastapi import APIRouter, Header, HTTPException, Request
 
+from backend.content_intake import score_idea
+
 router = APIRouter(prefix="/telegram/idea-inbox", tags=["idea-inbox"])
 
 HELP = """SoloForge Idea Flow
@@ -193,95 +195,6 @@ def _format_jobs(rows: list[dict[str, object]]) -> str:
     return "\n".join(lines).strip()
 
 
-MINIBOSS_SCORE_VERSION = "miniboss_v0_rule_boundaryfix1_feedback1"
-
-def _miniboss_score(idea: str) -> dict[str, object]:
-    """Deterministic V0 scorer so the pipeline works without a paid LLM key."""
-    text = " ".join((idea or "").lower().split())
-
-    def has_term(term: str) -> bool:
-        term = term.lower()
-        # Avoid false positives such as "product" matching "production".
-        # For English/ASCII terms, require token boundaries. Thai terms still use
-        # substring matching because Thai text is not whitespace-tokenized reliably.
-        if re.fullmatch(r"[a-z0-9_ -]+", term):
-            pattern = rf"(?<![a-z0-9_]){re.escape(term)}(?![a-z0-9_])"
-            return re.search(pattern, text) is not None
-        return term in text
-
-    def has_any(*terms: str) -> bool:
-        return any(has_term(term) for term in terms)
-
-    audience_fit = 12
-    if has_any("ai", "เครื่องมือ", "แอป", "ทำงาน", "ครีเอเตอร์", "creator", "affiliate"):
-        audience_fit += 5
-    if has_any("ประหยัดเวลา", "รายได้", "เงิน", "productivity", "งาน"):
-        audience_fit += 3
-    audience_fit = min(audience_fit, 20)
-
-    hook_potential = 10
-    if has_any("ฟรี", "ทดลอง", "จริง", "คุ้ม", "ได้ไหม", "แทนมนุษย์", "ไม่ต้อง"):
-        hook_potential += 6
-    if len(text) >= 35:
-        hook_potential += 2
-    if has_any("ai", "เครื่องมือ", "แอป"):
-        hook_potential += 2
-    hook_potential = min(hook_potential, 20)
-
-    revenue_potential = 8
-    if has_any("affiliate", "สินค้า", "product", "รายได้", "เงิน", "ขาย", "คอมมิชชั่น"):
-        revenue_potential += 10
-    if has_any("เครื่องมือ", "แอป", "tool", "software", "saas"):
-        revenue_potential += 5
-    if has_any("ฟรี", "ทดลอง"):
-        revenue_potential += 2
-    revenue_potential = min(revenue_potential, 25)
-
-    trend_potential = 8
-    if has_any("ai", "automation", "agent", "เครื่องมือ", "แอป"):
-        trend_potential += 5
-    if has_any("ทดลอง", "รีวิว", "เทียบ", "จริง"):
-        trend_potential += 2
-    trend_potential = min(trend_potential, 15)
-
-    brand_fit = 6
-    if has_any("ai", "เครื่องมือ", "แอป", "automation"):
-        brand_fit += 2
-    if has_any("ทดลอง", "ใช้จริง", "รายได้", "affiliate", "ประหยัดเวลา"):
-        brand_fit += 2
-    brand_fit = min(brand_fit, 10)
-
-    production_ease = 7
-    if has_any("เครื่องมือ", "แอป", "เว็บ", "website", "tool", "ai"):
-        production_ease += 2
-    if has_any("ทดลอง", "รีวิว", "สอน", "วิธี", "เทียบ"):
-        production_ease += 1
-    production_ease = min(production_ease, 10)
-
-    breakdown = {
-        "audience_fit": audience_fit,
-        "hook_potential": hook_potential,
-        "revenue_potential": revenue_potential,
-        "trend_potential": trend_potential,
-        "brand_fit": brand_fit,
-        "production_ease": production_ease,
-    }
-    total = int(sum(breakdown.values()))
-    decision = "SELECTED" if total >= 80 else "BACKLOG" if total >= 60 else "ARCHIVED"
-    reason = (
-        f"Audience {audience_fit}/20, Hook {hook_potential}/20, "
-        f"Revenue {revenue_potential}/25, Trend {trend_potential}/15, "
-        f"Brand {brand_fit}/10, Ease {production_ease}/10"
-    )
-    return {
-        "score": total,
-        "decision": decision,
-        "breakdown": breakdown,
-        "reason": reason,
-        "version": MINIBOSS_SCORE_VERSION,
-    }
-
-
 class SupabaseIdeaFlowService:
     def __init__(self) -> None:
         self.mutation_committed = False
@@ -339,10 +252,10 @@ class SupabaseIdeaFlowService:
                 "decision": row.get("status"),
                 "breakdown": row.get("score_breakdown") or {},
                 "reason": row.get("score_reason") or "already scored",
-                "version": row.get("score_version") or MINIBOSS_SCORE_VERSION,
+                "version": row.get("score_version") or str(score_idea(str(row.get("idea") or ""))["version"]),
             }
 
-        result = _miniboss_score(str(row.get("idea") or ""))
+        result = score_idea(str(row.get("idea") or ""))
         package = dict(row.get("content_package") or {})
         feedback = feedback_for_candidate(
             platform=str(row.get("publish_platform") or "") or None,
