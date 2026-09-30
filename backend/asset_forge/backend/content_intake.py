@@ -4,7 +4,7 @@ import re
 from typing import Any
 
 MINIBOSS_SCORE_VERSION = "miniboss_v0_rule_boundaryfix1_feedback1"
-RECOMMENDER_VERSION = "format_recommender_v0.1"
+RECOMMENDER_VERSION = "format_recommender_v0.2"
 
 
 def _normalize(text: str) -> str:
@@ -43,7 +43,11 @@ def score_idea(idea: str) -> dict[str, object]:
     hook_potential = min(hook_potential, 20)
 
     revenue_potential = 8
-    if _has_any(text, "affiliate", "สินค้า", "product", "รายได้", "เงิน", "ขาย", "คอมมิชชั่น"):
+    if _has_any(
+        text,
+        "affiliate", "สินค้า", "product", "รายได้", "เงิน", "ขาย", "คอมมิชชั่น",
+        "โปรโมต", "โปรโมท", "promotion", "promo", "ebook", "e-book", "หนังสือ",
+    ):
         revenue_potential += 10
     if _has_any(text, "เครื่องมือ", "แอป", "tool", "software", "saas"):
         revenue_potential += 5
@@ -118,7 +122,7 @@ def recommend_formats(idea: str) -> dict[str, Any]:
     )
     sales_signal = _has_any(
         text,
-        "ขาย", "สินค้า", "affiliate", "คอมมิชชั่น", "โปร", "โปรโมชั่น",
+        "ขาย", "สินค้า", "affiliate", "คอมมิชชั่น", "โปรโมชั่น",
         "โปรโมท", "โปรโมต", "promotion", "promo", "ราคา", "ซื้อ", "ebook",
         "e-book", "หนังสือ", "ลิงก์", "link", "http://", "https://",
     )
