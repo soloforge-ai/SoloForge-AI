@@ -4,63 +4,257 @@
 >
 > Project Scanner must not overwrite this file. Scanner-generated implementation observations belong under `tools/scanner/output/`.
 
+## Source-of-Truth Date
+
+2026-10-01
+
+---
+
 ## Active Product Direction
 
-SoloForge Product-to-Post
+### SoloForge State Reset
+
+The project has enough implemented capability to stop expanding horizontally.
+
+The immediate objective is to convert the current codebase into one clearly defined, verified production baseline.
+
+Active sequence:
 
 ```text
-Product
-→ Extract / load product data
-→ Evaluate product opportunity
-→ Select selling angle
-→ Generate creative + caption
-→ Review
-→ Export ready-to-post package
+Source of Truth
+→ PR Cleanup
+→ Content Factory E2E Proof
+→ Idea #003 Validation Loop
 ```
 
-The near-term goal is to prove this workflow with one real product before expanding architecture or adding unrelated verticals.
+No unrelated roadmap expansion should interrupt this sequence.
 
-## NOW — Prove Product-to-Post
+---
 
-1. Obtain a usable live qualification result for a text provider.
-2. Keep model qualification separate from workflow execution success.
-3. Do not switch the production ContentEngine provider without explicit owner approval.
-4. Audit the existing Product Forge path for only the smallest missing end-to-end gaps.
-5. Run one real product through `Product → Ready-to-Post`.
-6. Verify the result is useful, reviewable, and manually exportable.
+# NOW — State Reset
 
-Manual steps are acceptable until the commercial workflow is proven.
+## Phase 1 — Source of Truth
 
-## COMPLETED / RETAINED
+Synchronize:
 
-- Product Catalog and discovery foundation
-- Feed Processor and MiniBoss ranking
-- Product Intelligence and Product Forge foundation
-- Content Engine and prompt infrastructure
+- `README.md`
+- `docs/CURRENT_SPRINT.md`
+- `docs/ROADMAP.md`
+- `.ai/AI_CONTEXT.md`
+
+The documentation must distinguish:
+
+- production / verified
+- implemented / needs E2E
+- retained
+- experimental / open PR
+- frozen
+
+Success condition:
+
+> A new contributor or AI assistant can identify the current production baseline and next gate without reconstructing project history from old chats or branches.
+
+---
+
+## Phase 2 — PR Cleanup
+
+Review all open pull requests.
+
+Every PR must receive one explicit disposition:
+
+```text
+MERGE
+CLOSE
+ARCHIVE
+KEEP
+```
+
+Priority review includes current open work related to:
+
+- strategist / campaign planning
+- Graphify integration
+- subtitle timing
+- Affiliate Agent / AI Content Factory
+- historical Income Engine branches
+- older feature branches that no longer match current direction
+
+Principle:
+
+> Code in an open branch is not part of production until it is intentionally accepted into the current product direction.
+
+Success condition:
+
+> `main` is the unambiguous production baseline.
+
+---
+
+# NEXT — Content Factory E2E Proof
+
+Run one real content idea through:
+
+```text
+Idea
+→ Analyze / MiniBoss
+→ AI Generate
+→ Review
+→ Approve
+→ Asset Generation
+→ SoloForge Branding
+→ TTS / Final Render when required
+→ Ready to Publish
+→ Publora
+→ Real Published Post
+```
+
+## E2E Evidence Requirements
+
+Record at minimum:
+
+- input idea
+- content job ID
+- MiniBoss score / decision
+- generation provider / model where available
+- generated hook / script / caption / CTA
+- review state
+- approval event
+- asset state
+- storage path or generated media reference
+- branding metadata
+- audio/render state if required
+- Publora post/group ID
+- publishing status
+- real destination evidence
+
+## E2E Success Condition
+
+The milestone is green only when one real job completes the full intended route.
+
+Green unit tests, APK builds, or backend health checks are necessary supporting evidence but are not substitutes for this proof.
+
+---
+
+# AFTER E2E — Idea #003 Validation Loop
+
+Once the publishing path is proven, SoloForge shifts from a content-production-only model toward a demand-validation model.
+
+Approved business process:
+
+```text
+Audience Problem
+↓
+Content
+↓
+Lead Magnet
+↓
+Lead Capture
+↓
+Observe / Survey Pain
+↓
+Offer
+↓
+Pre-sell
+↓
+Build Only If Validated
+↓
+Deliver
+↓
+Measure
+```
+
+Core principle:
+
+> **Don't build inventory. Build validated offers.**
+
+Thai operating rule:
+
+> **อย่าผลิตของเพิ่มเพราะเราผลิตได้ — ผลิตเมื่อมีหลักฐานว่าคนต้องการ**
+
+## First Validation Experiment
+
+Use an existing product rather than creating a new inventory item:
+
+**AI Character Consistency Kit**
+
+Target funnel:
+
+```text
+AI HackWork Content
+↓
+Free Character Consistency Mini Checklist
+↓
+Landing Page
+↓
+Email Capture
+↓
+SoloForge Lead DB
+↓
+3 Useful Emails
+↓
+AI Character Consistency Kit
+↓
+Payhip
+```
+
+Primary measurements:
+
+- Views
+- Landing Page CTR
+- Signup %
+- Qualified Leads
+- Product CTR
+- Purchase %
+- Revenue per Lead
+
+The purpose is to identify whether failure is caused by distribution, message, offer, pricing, trust, or product-market fit.
+
+---
+
+# COMPLETED / RETAINED FOUNDATIONS
+
+The following foundations should be preserved unless an E2E blocker requires a targeted change:
+
+- Flutter application foundation
+- Product Catalog and discovery
+- Feed Processor
+- MiniBoss ranking
+- Product Intelligence / Product Forge foundations
+- Content Engine / prompt infrastructure
+- Content Job workflow
+- idea analysis / content-format recommendation
+- AI generation infrastructure
 - Asset Forge v1 — Working Product #1
-- Pollinations OAuth/session infrastructure required by Asset Forge
-- Character Memory bridge used by Asset Forge runtime
-- Asset Forge output-quality processing
-- Cleanup Scope Reset #1
-- Text Model Qualification Harness
-- Live Text Qualification Runner
+- Pollinations OAuth/session infrastructure
+- Character Memory bridge
+- output-quality processing
+- asset generation
+- SoloForge branding
+- TTS / audio generation
+- subtitle / final render pipeline
+- Supabase runtime persistence / storage
+- Publora integration
+- analytics / performance foundations
+- retained Telegram integrations
+- Android APK CI
+- Render production smoke
+- Project Scanner / project intelligence
 
-## NEXT — Only After One Real E2E Pass
+---
 
-Use evidence from the first real Product-to-Post run to decide the next smallest product improvement.
+# IMPLEMENTED / NEEDS E2E
 
-Possible work may include only gaps proven by the E2E result, such as:
+Do not promote these to fully production-proven status before the current E2E milestone:
 
-- better product input or extraction
-- stronger selling-angle selection
-- provider integration after qualification approval
-- clearer review UX
-- practical export packaging
-- performance/result tracking needed to close the revenue feedback loop
+- continuous Idea → Publish orchestration
+- live AI provider execution within the exact E2E route
+- complete worker progression for a real job
+- real Publora publication from that job
+- real destination publication confirmation
+- closed-loop performance learning
+- unattended 24/7 content operation
 
-Do not promote a possible item to active work without owner approval.
+---
 
-## FROZEN / NOT ACTIVE ROADMAP DRIVERS
+# FROZEN / NOT ACTIVE ROADMAP DRIVERS
 
 - Chat Prawtwan expansion
 - Idea Flow / Telegram Idea Inbox expansion
@@ -68,24 +262,39 @@ Do not promote a possible item to active work without owner approval.
 - new agent systems
 - new memory systems
 - billing
-- autonomous social posting
-- unrelated business verticals
+- unrelated product verticals
 - broad architecture refactors
 
-Existing retained implementations may remain in the repository without being active roadmap priorities.
+Existing retained implementations may remain in the repository without becoming active roadmap priorities.
 
-## Roadmap Authority
+---
+
+# Roadmap Decision Rule
+
+Before adding a new product capability, ask:
+
+1. Does it block the current E2E proof?
+2. Does evidence from the E2E test require it?
+3. Does it directly support Idea #003 after E2E?
+4. Does it reduce manual work on a proven business loop?
+
+If the answer is no to all four, it should not enter active development.
+
+---
+
+# Roadmap Authority
 
 Priority order for current project intent:
 
 1. Explicit owner instruction
-2. `docs/CURRENT_SPRINT.md` — active human-approved development state
-3. `docs/ROADMAP.md` — human-approved product direction
-4. `.ai/AI_TASK.md` and `.ai/AI_CONTEXT.md` — synchronized AI working context
-5. Project Scanner output — observed implementation only
+2. `docs/CURRENT_SPRINT.md`
+3. `docs/ROADMAP.md`
+4. `.ai/AI_CONTEXT.md`
+5. `.ai/AI_TASK.md`
+6. Project Scanner output
 
-Generated scanner output must never be used to infer or replace human product intent.
+Generated scanner output must never replace human-approved product direction.
 
 ---
 
-Last updated: 2026-09-06 — Scanner authority separation approved.
+Last updated: 2026-10-01 — State Reset sequence approved: Source of Truth → PR Cleanup → Content Factory E2E Proof → Idea #003 Validation Loop.
