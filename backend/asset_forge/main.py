@@ -564,8 +564,16 @@ def _zip_files(
     return output.getvalue()
 
 
+def _embedded_workers_enabled() -> bool:
+    value = os.getenv("SOLOFORGE_RUN_EMBEDDED_WORKERS", "true").strip().lower()
+    return value not in {"0", "false", "no", "off"}
+
+
 @app.on_event("startup")
 async def start_content_workers() -> None:
+    if not _embedded_workers_enabled():
+        print("embedded_content_workers_disabled")
+        return
     asyncio.create_task(content_worker_loop())
     asyncio.create_task(content_router_loop())
     asyncio.create_task(content_asset_worker_loop())
