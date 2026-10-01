@@ -38,9 +38,10 @@ SoloForge AI
 │   └── Digital Products
 │
 ├── AI HackWork
-│   ├── Data / Analytics Services
-│   ├── Automation Services
-│   └── Tech Knowledge Products
+│   ├── Content
+│   ├── Digital Assets
+│   ├── eBooks
+│   └── Packs / Templates / Toolkits
 │
 ├── Manifest Glow Lab
 │   └── Spiritual / Lifestyle Digital Products
@@ -333,75 +334,139 @@ Retain the implementation but do not allocate active product-development time un
 
 ## Brand Role
 
-**AI HackWork = commercial service and practical knowledge brand.**
+**AI HackWork = practical AI / Data / Automation content and digital-product brand.**
 
-It should monetize skills that require customization or human delivery.
+Its primary job is to turn practical knowledge, workflows, templates, and reusable assets into content that attracts an audience and digital products that can be sold repeatedly.
 
-SoloForge AI should own repeatable software and scalable products.
+SoloForge AI provides the technology, automation, generation systems, and reusable product infrastructure behind AI HackWork.
 
----
-
-## 8.1 Excel / Data Analysis Service
-
-**Brand:** AI HackWork  
-**Type:** Service  
-**Status:** SELLING  
-**Revenue Model:** project fee  
-**Priority:** P1 — Cash flow
-
----
-
-## 8.2 Dashboard / Power BI / Excel Dashboard
-
-**Brand:** AI HackWork  
-**Type:** Service  
-**Status:** SELLING  
-**Revenue Model:** project fee  
-**Priority:** P1
-
----
-
-## 8.3 Business Analysis
-
-**Brand:** AI HackWork  
-**Type:** Service  
-**Status:** SELLING  
-**Revenue Model:** project fee  
-**Priority:** P1
-
----
-
-## 8.4 AI Automation / Telegram Bot Service
-
-**Brand:** AI HackWork  
-**Type:** Productized Service  
-**Status:** VALIDATION  
-**Revenue Model:** setup + customization + maintenance  
-**Priority:** P1
-
-### Migration Rule
-
-When 3+ clients request substantially the same workflow:
+### Core Flywheel
 
 ```text
-Custom Service
-→ Standardize
-→ Template
-→ Productize
-→ Move reusable core to SoloForge AI
+Useful Content
+→ Audience / Discovery
+→ Problem Awareness
+→ Digital Asset / eBook / Pack
+→ Sale
+→ Customer Feedback
+→ Improve / Bundle / Automate
+→ More Content
 ```
 
-This is a key portfolio flywheel.
+The goal is scalable product revenue, not primarily time-for-money client work.
 
 ---
 
-## 8.5 Excel / Data Knowledge Products
+## 8.1 AI HackWork Content
+
+**Brand:** AI HackWork  
+**Type:** Content / Audience Engine  
+**Status:** ACTIVE  
+**Revenue Role:** acquisition and product discovery  
+**Priority:** P1
+
+Content themes may include:
+
+- practical AI workflows
+- data analysis
+- Excel / Power BI
+- automation
+- Telegram bots
+- AI agents
+- creator workflows
+- productivity systems
+- real build-in-public experiments
+
+### Content Rule
+
+Content should lead naturally to a reusable product, asset, pack, ebook, or toolkit whenever appropriate.
+
+---
+
+## 8.2 Digital Assets
+
+**Brand:** AI HackWork  
+**Type:** Digital Product  
+**Status:** ACTIVE PRODUCT LINE  
+**Revenue Model:** one-time purchase / bundles  
+**Priority:** P1
+
+Examples:
+
+- templates
+- prompt assets
+- worksheets
+- checklists
+- automation files
+- dashboards
+- reusable AI assets
+- creator resources
+
+---
+
+## 8.3 eBooks
 
 **Brand:** AI HackWork  
 **Type:** Publishing / Digital Product  
-**Status:** DEVELOPMENT / CONTENT ASSET  
-**Revenue Model:** ebook / template / course-like digital products  
+**Status:** ACTIVE PRODUCT LINE  
+**Revenue Model:** ebook sales  
+**Priority:** P1 / P2 depending on title
+
+Examples include practical books around:
+
+- Excel
+- AI workflows
+- automation
+- data analysis
+- productivity
+- solo business systems
+
+---
+
+## 8.4 Packs / Kits / Toolkits
+
+**Brand:** AI HackWork  
+**Type:** Digital Product Bundle  
+**Status:** ACTIVE PRODUCT LINE  
+**Revenue Model:** one-time purchase / bundle / upsell  
+**Priority:** P1
+
+Examples:
+
+- prompt packs
+- workflow packs
+- template packs
+- creator kits
+- automation starter packs
+- data-analysis packs
+- AI productivity kits
+
+---
+
+## 8.5 Service Work
+
+**Brand:** AI HackWork  
+**Type:** Optional Validation Channel  
+**Status:** SECONDARY / OPPORTUNISTIC  
 **Priority:** P2
+
+Custom service work may still be accepted when it:
+
+1. generates immediate cash;
+2. exposes a repeatable customer problem;
+3. creates reusable IP that can become a digital product.
+
+### Productization Rule
+
+```text
+Client Problem
+→ Deliver Solution
+→ Extract Reusable Method
+→ Turn Into Asset / Template / Pack / eBook
+→ Sell Repeatedly
+```
+
+Service work should not become the long-term center of AI HackWork.
 
 ---
 
@@ -605,8 +670,8 @@ These build reusable technology and long-term platform value.
 ## P1 — Revenue Validation / Cash Flow
 
 1. **AI Character Consistency Kit**
-2. **AI HackWork Data / Dashboard / Analysis Services**
-3. **AI Automation / Telegram Bot Services**
+2. **AI HackWork Assets / eBooks / Packs**
+3. **AI HackWork Content → Product Funnel**
 4. Existing Manifest Glow Lab sellable inventory
 
 These should generate real customer and revenue evidence.
@@ -666,18 +731,19 @@ Low fulfillment cost and globally scalable.
 
 ---
 
-### C. Productized Service Revenue
+### C. Content-to-Digital-Product Revenue
 
 ```text
-AI HackWork
-→ Client Problem
-→ Paid Delivery
-→ Discover Repeatable Pattern
-→ Standardize
-→ SoloForge Product
+AI HackWork Content
+→ Audience / Problem Discovery
+→ Asset / eBook / Pack / Toolkit
+→ Automated Store Delivery
+→ Bundle / Upsell
 ```
 
-Best mechanism for funding development and finding validated SaaS opportunities.
+This is the primary AI HackWork monetization engine.
+
+Optional client work may still be used as a research and product-validation channel, but it is not the core business model.
 
 ---
 
@@ -781,7 +847,7 @@ This portfolio combines:
 
 ### Existing SoloForge business portfolio context
 - AI Character Consistency Kit
-- AI HackWork services
+- AI HackWork content and digital products
 - Manifest Glow Lab
 - AZURETEIR / น้ำตาสีคราม
 - Tarot / Seven Numbers / Oracle
