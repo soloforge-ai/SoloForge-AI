@@ -6,128 +6,277 @@
 
 ## Active Initiative
 
-SoloForge Product-to-Post
+**SoloForge State Reset**
 
 ## Current Implementation
 
-Text Model Qualification + Product-to-Post E2E Preparation
+**Content Factory E2E Proof Preparation**
 
 ## Status
 
 In Progress
 
-## Product Objective
+## Source-of-Truth Date
 
-Prove the original commercial workflow with one real product:
-
-```text
-Product
-→ Extract / load product data
-→ Evaluate product opportunity
-→ Select selling angle
-→ Generate creative + caption
-→ Review
-→ Export ready-to-post package
-```
-
-The immediate product goal is to complete this workflow for one real product before expanding architecture or adding unrelated verticals.
-
-## Completed In This Cycle
-
-### Cleanup Scope Reset #1
-
-Merged and complete.
-
-The active product surface is intentionally narrowed to Product-to-Post while retaining reusable shared infrastructure.
-
-Retained active foundations:
-
-- Product Catalog and discovery
-- Feed Processor and MiniBoss
-- Product Intelligence and Product Forge
-- Content Engine
-- Asset Forge as a reusable creative/image-processing component
-- Pollinations OAuth/session infrastructure required by Asset Forge
-- Asset Forge Character Memory and output-quality runtime dependencies
-
-Chat Prawtwan and Developer Tools entry points were removed from Home, and confirmed dead/legacy Flutter Product/Sticker/Test implementations were removed.
-
-### Text Model Qualification Harness
-
-Merged and complete as isolated qualification infrastructure.
-
-It can compare supported text providers against one Product-to-Post output contract without changing the production ContentEngine provider automatically.
-
-### Live Text Qualification Runner
-
-Merged and available for manual live qualification runs through GitHub Actions.
-
-A successful workflow run is not, by itself, a provider approval. Qualification evidence must be judged from the generated report and the owner remains the final production gate.
-
-## Current Gate
-
-1. Obtain a usable live text-model qualification result.
-2. Do not switch the production ContentEngine provider until the owner explicitly approves a qualified provider.
-3. Inspect the existing Product Forge path and identify only the smallest missing gaps required for one real Product-to-Post E2E run.
-4. Run one real product through the complete workflow and verify the result is useful, reviewable, and manually exportable/postable.
-
-## Product Definition of Done
-
-The next product milestone must demonstrate one real product completing the active path:
-
-1. Product data is available in SoloForge.
-2. The product is evaluated.
-3. SoloForge provides useful selling-angle guidance.
-4. Creative output is generated or prepared.
-5. Caption/content is generated.
-6. The user can review the result.
-7. The result can be exported and posted manually.
-
-Manual steps are acceptable until the end-to-end business workflow is proven.
-
-## Frozen Initiatives
-
-The following merged/completed capabilities are retained but are not active roadmap drivers:
-
-- Chat Prawtwan MVP
-- Idea Flow / Telegram Idea Inbox
-- SoloForge Income Engine P1
-
-Income Engine P1 remains historical validated work. `P2 — Opportunity Library v0` and later Income Engine expansion are not active and must not proceed unless the owner explicitly re-authorizes them.
-
-## Completed Product Retained
-
-Asset Forge v1 remains Working Product #1 after owner-accepted Android E2E evidence on 2026-09-04.
-
-Its default contract remains:
-
-- 4 poses
-- 1 AI generation
-- local review/fix/export without automatic additional Pollen
-
-Residual light fringe remains tracked separately as GitHub Issue #48 and does not reopen Asset Forge v1 by default.
-
-## Architecture Rule
-
-Project Scanner describes observable repository structure and implementation signals.
-
-This document describes human-approved current development intent.
-
-These are different concepts and must remain separate.
-
-## Explicit Non-Goals For The Active Gate
-
-Do not add or expand:
-
-- new agents
-- new memory systems
-- billing
-- autonomous posting
-- unrelated product verticals
-- broad architecture refactors
-
-unless the owner explicitly changes priority.
+2026-10-01
 
 ---
 
-Last updated: 2026-09-05 — Cleanup #1, Text Model Qualification Harness, and Live Qualification Runner are merged; active gate is provider qualification followed by one real Product-to-Post E2E run.
+## Why This Reset Exists
+
+SoloForge implementation has advanced beyond the previous Product-to-Post documentation.
+
+The repository now contains working foundations for content jobs, idea analysis, AI generation, asset generation, branding, TTS, final rendering, Publora publishing, analytics, Telegram workflows, Android APK builds, and Render production checks.
+
+The immediate risk is no longer lack of features.
+
+The immediate risk is that documentation, open branches, and end-to-end verification do not clearly identify what is production-ready versus merely implemented.
+
+Therefore this cycle freezes feature expansion and performs a state reset before additional product growth.
+
+---
+
+## Active Sequence
+
+The owner-approved sequence is:
+
+### 1. Update Source of Truth
+
+Synchronize the main project documents with the implementation state as of 2026-10-01.
+
+Required state labels:
+
+- **PRODUCTION / VERIFIED** — proven in the relevant production path
+- **IMPLEMENTED / NEEDS E2E** — code exists but the complete production workflow is not yet proven
+- **RETAINED** — working or reusable infrastructure retained without being the active roadmap driver
+- **EXPERIMENTAL / OPEN PR** — not part of production `main`
+- **FROZEN** — must not expand without owner approval
+
+### 2. PR Cleanup
+
+Review open pull requests and explicitly classify each as:
+
+- MERGE
+- CLOSE
+- ARCHIVE
+- KEEP
+
+The purpose is to restore `main` as the single clear production baseline.
+
+### 3. Content Factory E2E Proof
+
+Run one real content idea through the actual workflow:
+
+```text
+Idea
+→ Analyze / MiniBoss
+→ AI Generate
+→ Review
+→ Approve
+→ Asset Generation
+→ SoloForge Branding
+→ TTS / Final Render when required
+→ Ready to Publish
+→ Publora
+→ Real Published Post
+```
+
+### 4. Idea #003 Validation Loop
+
+Only after the Content Factory E2E path is green:
+
+```text
+Audience / Pain
+→ Content
+→ Lead Magnet
+→ Lead Capture
+→ Validation
+→ Offer
+→ Pre-sell
+→ Build
+→ Deliver
+```
+
+Core business rule:
+
+> **Don't build inventory. Build validated offers.**
+
+---
+
+## Current Definition of Done
+
+The current milestone is complete only when one real content job:
+
+1. begins from a real idea inside SoloForge;
+2. receives an analysis / MiniBoss decision;
+3. produces usable AI-generated content;
+4. is reviewable by the user;
+5. is explicitly approved;
+6. receives the required asset;
+7. carries SoloForge branding;
+8. completes audio/render stages when its route requires them;
+9. reaches `READY_TO_PUBLISH`;
+10. is submitted through Publora;
+11. reaches a real publishing destination;
+12. has traceable evidence for the major state transitions.
+
+A component test or green CI job alone does not satisfy this Definition of Done.
+
+---
+
+## Verified / Retained Foundations on main
+
+The following implementation foundations are present and should be preserved:
+
+### Product / Discovery
+
+- Product Catalog and discovery
+- Feed Processor
+- MiniBoss scoring and ranking
+- Product Intelligence / Product Forge foundations
+
+### Content Operations
+
+- Content Job model and API
+- idea analysis
+- content-format recommendations
+- review/edit/approve workflow
+- content state management
+- content analytics foundations
+- performance ingestion / feedback foundations
+
+### AI / Creative
+
+- multi-provider text-generation infrastructure
+- Asset Forge v1
+- Pollinations image-generation infrastructure
+- local asset fallback
+- SoloForge AI visual branding
+- Character Memory bridge used by Asset Forge
+- output-quality processing
+
+### Media
+
+- Edge TTS integration
+- audio worker
+- subtitle generation
+- final FFmpeg render
+- Supabase media storage paths
+
+### Publishing
+
+- Publora publishing integration
+- publishing-account validation
+- publish-now / scheduling flow
+- publishing-status synchronization
+
+### Platform / Delivery
+
+- Flutter application
+- FastAPI backend
+- Render deployment blueprint
+- Android APK GitHub Actions build
+- Render production smoke workflow
+- Supabase-backed runtime data
+- retained Telegram integrations
+
+---
+
+## Implemented but Still Requires E2E Proof
+
+Do not label the following as fully production-proven until the E2E milestone is complete:
+
+- one continuous Idea → Publish workflow
+- live text provider behavior within that exact tested workflow
+- automatic progression through all required workers for one real job
+- real Publora publication from the same job
+- real platform publication confirmation
+- performance feedback from the published result
+- unattended 24/7 operation
+
+---
+
+## Known Current Risks
+
+### 1. Documentation Drift
+
+Previous documentation still described the early-September Product-to-Post / provider-qualification phase even though the repository had progressed substantially.
+
+This State Reset corrects the human-maintained source of truth.
+
+### 2. Open PR Drift
+
+Multiple open pull requests represent alternative or unfinished directions.
+
+They must not be assumed to be production merely because code exists in a branch.
+
+### 3. Partial Verification
+
+Current automated smoke coverage proves important backend / Asset Forge health but does not prove the full content production chain.
+
+### 4. Media Quality Follow-up
+
+Subtitle timing quality remains a known area of active/open work and must be judged separately from core state-machine correctness.
+
+---
+
+## Retained Completed Product
+
+Asset Forge v1 remains **Working Product #1** after owner-accepted Android E2E evidence on 2026-09-04.
+
+Its retained contract remains:
+
+- 4 poses
+- 1 AI generation
+- local review / fix / export
+- no automatic paid regeneration by default
+
+Non-blocking visual polish must not reopen the whole product unless it blocks the active E2E path.
+
+---
+
+## Frozen / Not Active Roadmap Drivers
+
+Do not expand unless the owner explicitly changes priority:
+
+- Chat Prawtwan expansion
+- Idea Flow / Telegram Idea Inbox expansion
+- SoloForge Income Engine P2+
+- new agent systems
+- new memory systems
+- billing
+- unrelated product verticals
+- broad architecture refactors
+
+---
+
+## Explicit Non-Goals Until E2E Is Green
+
+Do not add:
+
+- another content engine
+- another AI provider solely for experimentation
+- another social-publishing architecture
+- new autonomous agents
+- new product verticals
+- broad UI polish
+- billing
+- large refactors
+
+If an E2E failure exposes a blocker, fix the smallest blocker only.
+
+---
+
+## Architecture Rule
+
+`docs/CURRENT_SPRINT.md` describes human-approved current development intent.
+
+`docs/ROADMAP.md` describes human-approved product direction.
+
+Project Scanner describes observable repository structure and implementation signals.
+
+These concepts must remain separate.
+
+---
+
+Last updated: 2026-10-01 — SoloForge State Reset established. Active gate is Source of Truth → PR Cleanup → Content Factory E2E Proof → Idea #003 Validation Loop.
