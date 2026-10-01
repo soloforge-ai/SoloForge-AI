@@ -41,6 +41,44 @@ def classify_route(content_package: dict[str, Any]) -> str:
     return "TEXT"
 
 
+def _route_approved_row(row: dict[str, Any]) -> dict[str, Any] | None:
+    job_id = urllib.parse.quote(str(row["id"]), safe="")
+    package = dict(row.get("content_package") or {})
+    route = classify_route(package)
+    package.update(
+        {
+            "pipeline_route": route,
+            "router_version": ROUTER_VERSION,
+            "routed_at": _now(),
+            **provenance_metadata(),
+        }
+    )
+    next_status = "READY_TO_PUBLISH" if route == "TEXT" else "ASSET_QUEUED"
+    updated = _supabase_request(
+        "PATCH",
+        f"content_jobs?id=eq.{job_id}&status=eq.APPROVED",
+        body={
+            "status": next_status,
+            "content_package": package,
+            "updated_at": _now(),
+            "error_message": None,
+        },
+        prefer="return=representation",
+    ) or []
+    return dict(updated[0]) if updated else None
+
+
+def route_approved_job(job_id: str) -> dict[str, Any] | None:
+    encoded = urllib.parse.quote(job_id, safe="")
+    rows = _supabase_request(
+        "GET",
+        f"content_jobs?id=eq.{encoded}&status=eq.APPROVED"
+        "&select=id,idea_flow_id,status,content_package"
+        "&limit=1",
+    ) or []
+    return _route_approved_row(dict(rows[0])) if rows else None
+
+
 def _claim_approved(limit: int = 4) -> list[dict[str, Any]]:
     rows = _supabase_request(
         "GET",
@@ -51,31 +89,9 @@ def _claim_approved(limit: int = 4) -> list[dict[str, Any]]:
 
     claimed: list[dict[str, Any]] = []
     for row in rows:
-        job_id = urllib.parse.quote(str(row["id"]), safe="")
-        package = dict(row.get("content_package") or {})
-        route = classify_route(package)
-        package.update(
-            {
-                "pipeline_route": route,
-                "router_version": ROUTER_VERSION,
-                "routed_at": _now(),
-                **provenance_metadata(),
-            }
-        )
-        next_status = "READY_TO_PUBLISH" if route == "TEXT" else "ASSET_QUEUED"
-        updated = _supabase_request(
-            "PATCH",
-            f"content_jobs?id=eq.{job_id}&status=eq.APPROVED",
-            body={
-                "status": next_status,
-                "content_package": package,
-                "updated_at": _now(),
-                "error_message": None,
-            },
-            prefer="return=representation",
-        ) or []
-        if updated:
-            claimed.append(dict(updated[0]))
+        routed = _route_approved_row(dict(row))
+        if routed is not None:
+            claimed.append(routed)
     return claimed
 
 
