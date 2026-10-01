@@ -8,7 +8,7 @@
 
 ## 1. Portfolio Principle
 
-SoloForge AI should operate as the **master technology and product studio**.
+SoloForge AI should operate as the **production studio, technology layer, and operating system behind the portfolio**.
 
 Not everything built by SoloForge is a standalone product.
 
@@ -28,32 +28,58 @@ This distinction prevents portfolio sprawl.
 
 # 2. Brand Architecture
 
+SoloForge operates as the **production studio, technology layer, and operating system behind the portfolio**.
+
+The primary customer-facing brands are:
+
 ```text
 SoloForge AI
 │
-├── SoloForge Products
-│   ├── Software / Apps
-│   ├── Creator Tools
-│   ├── Automation Tools
-│   └── Digital Products
+├── PRODUCES / POWERS
 │
 ├── AI HackWork
-│   ├── Content
-│   ├── Digital Assets
-│   ├── eBooks
-│   └── Packs / Templates / Toolkits
+│   └── Tech Digital Products
+│       ├── Content
+│       ├── Digital Assets
+│       ├── eBooks
+│       ├── Packs
+│       ├── Templates
+│       └── Toolkits
 │
 ├── Manifest Glow Lab
-│   └── Spiritual / Lifestyle Digital Products
+│   └── Spiritual Art Digital Products
+│       ├── Wallpapers
+│       ├── Spiritual Art
+│       ├── Goddess / Zodiac Collections
+│       └── Digital Spiritual Collections
 │
-├── AZURETEIR / น้ำตาสีคราม
-│   └── Romance / Emotional Fiction & Author IP
-│
-└── Experimental Product Lines
-    ├── Tarot / Oracle
-    ├── Pi Utilities
-    └── Career Utilities
+└── น้ำตาสีคราม / Namtasikhram
+    └── Original Fiction + Healing eBooks
+        ├── Original Novels
+        ├── Emotional / Relationship Fiction
+        ├── Healing Writing
+        └── Healing eBooks
 ```
+
+### Brand roles
+
+**SoloForge AI**  
+Production engine, automation layer, AI systems, reusable technology, product infrastructure, and internal operating system.
+
+**AI HackWork**  
+Customer-facing technology content and digital-product distribution brand.
+
+**Manifest Glow Lab**  
+Customer-facing spiritual art and digital lifestyle brand.
+
+**น้ำตาสีคราม / Namtasikhram**  
+Customer-facing original fiction, emotional storytelling, and healing eBook brand.
+
+### Architecture rule
+
+SoloForge may build the systems and assets behind all three brands, but the customer-facing identity should remain appropriate to each market.
+
+Do not force SoloForge's technical visual identity onto Manifest Glow Lab or Namtasikhram.
 
 ---
 
@@ -474,7 +500,7 @@ Service work should not become the long-term center of AI HackWork.
 
 ## Brand Role
 
-**Consumer-facing spiritual / lifestyle digital product brand.**
+**Consumer-facing spiritual art digital product brand.**
 
 It should remain visually and commercially distinct from the SoloForge technology brand.
 
@@ -547,11 +573,11 @@ SoloForge may provide the technology and automation infrastructure behind it.
 
 ---
 
-# 10. AZURETEIR / น้ำตาสีคราม
+# 10. น้ำตาสีคราม / Namtasikhram
 
 ## Brand Role
 
-Author and emotional-fiction IP brand.
+Original fiction, emotional storytelling, and healing eBook brand.
 
 Technology should support production, but the reader-facing brand should remain independent from SoloForge's technical aesthetic.
 
@@ -559,7 +585,7 @@ Technology should support production, but the reader-facing brand should remain 
 
 ## 10.1 Try It Again
 
-**Brand:** AZURETEIR / น้ำตาสีคราม  
+**Brand:** น้ำตาสีคราม / Namtasikhram  
 **Type:** Novel / IP  
 **Status:** PUBLISHED  
 **Revenue Model:** ebook / reading platform  
@@ -569,7 +595,7 @@ Technology should support production, but the reader-facing brand should remain 
 
 ## 10.2 Happy Anniversary 7th
 
-**Brand:** AZURETEIR / น้ำตาสีคราม  
+**Brand:** น้ำตาสีคราม / Namtasikhram  
 **Type:** Novel / IP  
 **Status:** DEVELOPMENT / EXPANSION  
 **Revenue Model:** ebook / publishing  
@@ -579,7 +605,7 @@ Technology should support production, but the reader-facing brand should remain 
 
 ## 10.3 Future Romance / Emotional Fiction
 
-**Brand:** AZURETEIR / น้ำตาสีคราม  
+**Brand:** น้ำตาสีคราม / Namtasikhram  
 **Type:** IP Portfolio  
 **Status:** PIPELINE
 
@@ -849,7 +875,7 @@ This portfolio combines:
 - AI Character Consistency Kit
 - AI HackWork content and digital products
 - Manifest Glow Lab
-- AZURETEIR / น้ำตาสีคราม
+- น้ำตาสีคราม / Namtasikhram
 - Tarot / Seven Numbers / Oracle
 - Pi Profit Tracker
 - Career OS
