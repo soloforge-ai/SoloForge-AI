@@ -52,7 +52,7 @@ LeadFlow introduces the automation workflow, user commands, and admin functions 
 A new inquiry is captured through a simple four-step conversational flow: company name, contact method, automation requirement, and estimated budget.
 
 <p align="center">
-  <img src="assets/02-lead-intake-flow.jpg" width="360" alt="LeadFlow guided lead intake flow">
+  <img src="assets/02-lead-intake-flow.png" width="360" alt="LeadFlow guided lead intake flow">
 </p>
 
 ### 3. Qualification — Automatic Lead Scoring
@@ -68,7 +68,7 @@ After submission, LeadFlow stores the request and automatically assigns a qualif
 The admin receives the complete lead context, qualification score, budget, and one-tap **Approve / Reject** controls.
 
 <p align="center">
-  <img src="assets/04-admin-approval-workflow.jpg" width="360" alt="LeadFlow admin approval workflow">
+  <img src="assets/04-admin-approval-workflow.png" width="360" alt="LeadFlow admin approval workflow">
 </p>
 
 ### 5. Approved — Automatic Status Update
@@ -76,7 +76,7 @@ The admin receives the complete lead context, qualification score, budget, and o
 Once approved, the lead status changes to **APPROVED** and the requester receives an automatic confirmation, completing the workflow.
 
 <p align="center">
-  <img src="assets/05-approved-status.jpg" width="360" alt="LeadFlow approved lead status update">
+  <img src="assets/05-approved-status.png" width="360" alt="LeadFlow approved lead status update">
 </p>
 
 ## Commands
