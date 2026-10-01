@@ -3,13 +3,16 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import urllib.parse
 
-from fastapi import APIRouter, Header, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from backend.pollinations_oauth_router import (
     get_pollinations_access_token_from_authorization,
 )
 from backend.content_intake import find_recommendation, recommend_formats, score_idea
+from backend.content_generation import process_selected_job
+from backend.content_router import route_approved_job
+from backend.content_asset_generation import process_asset_job
 
 from backend.shared_supabase import supabase_request as _supabase_request
 
@@ -91,6 +94,12 @@ def _get_row(job_id: str) -> dict[str, object]:
     return dict(rows[0])
 
 
+def _continue_approved_job(job_id: str) -> None:
+    routed = route_approved_job(job_id)
+    if routed and routed.get("status") == "ASSET_QUEUED":
+        process_asset_job(job_id)
+
+
 def _patch_job(job_id: str, body: dict[str, object]) -> dict[str, object]:
     encoded = urllib.parse.quote(job_id, safe="")
     rows = _supabase_request(
@@ -113,6 +122,7 @@ def analyze_idea(request: IdeaAnalyzeRequest) -> dict[str, object]:
 @router.post("/idea/create")
 def create_from_idea(
     request: IdeaCreateRequest,
+    background_tasks: BackgroundTasks,
     authorization: str | None = Header(default=None),
 ) -> dict[str, object]:
     _require_session(authorization)
@@ -185,6 +195,8 @@ def create_from_idea(
             "occurred_at": _now(),
         },
     )
+    if request.action == "generate":
+        background_tasks.add_task(process_selected_job, str(job["id"]))
     return job
 
 
@@ -250,6 +262,7 @@ def update_content_draft(
 @router.post("/{job_id}/approve")
 def approve_content_job(
     job_id: str,
+    background_tasks: BackgroundTasks,
     authorization: str | None = Header(default=None),
 ) -> dict[str, object]:
     _require_session(authorization)
@@ -260,7 +273,7 @@ def approve_content_job(
             detail="Only READY_FOR_REVIEW content can be approved",
         )
     now = _now()
-    return _patch_job(
+    approved = _patch_job(
         job_id,
         {
             "status": "APPROVED",
@@ -270,11 +283,14 @@ def approve_content_job(
             "error_message": None,
         },
     )
+    background_tasks.add_task(_continue_approved_job, job_id)
+    return approved
 
 
 @router.post("/{job_id}/regenerate")
 def regenerate_content_job(
     job_id: str,
+    background_tasks: BackgroundTasks,
     authorization: str | None = Header(default=None),
 ) -> dict[str, object]:
     _require_session(authorization)
@@ -290,7 +306,7 @@ def regenerate_content_job(
     for key in _GENERATED_PACKAGE_KEYS:
         package.pop(key, None)
 
-    return _patch_job(
+    selected = _patch_job(
         job_id,
         {
             "status": "SELECTED",
@@ -310,3 +326,5 @@ def regenerate_content_job(
             "updated_at": _now(),
         },
     )
+    background_tasks.add_task(process_selected_job, job_id)
+    return selected

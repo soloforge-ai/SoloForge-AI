@@ -31,37 +31,52 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _claim_asset_job(job_id: str) -> dict[str, Any] | None:
+    encoded = urllib.parse.quote(job_id, safe="")
+    rows = _supabase_request(
+        "GET",
+        f"content_jobs?id=eq.{encoded}&status=eq.ASSET_QUEUED"
+        "&select=id,idea_flow_id,idea,visual_prompt,retry_count,content_package"
+        "&limit=1",
+    ) or []
+    if not rows:
+        return None
+
+    row = dict(rows[0])
+    package = dict(row.get("content_package") or {})
+    package.update(
+        {
+            "asset_status": "GENERATING",
+            "asset_worker_version": ASSET_WORKER_VERSION,
+        }
+    )
+    updated = _supabase_request(
+        "PATCH",
+        f"content_jobs?id=eq.{encoded}&status=eq.ASSET_QUEUED",
+        body={
+            "status": "ASSET_GENERATING",
+            "content_package": package,
+            "error_message": None,
+            "updated_at": _now(),
+        },
+        prefer="return=representation",
+    ) or []
+    return dict(updated[0]) if updated else None
+
+
 def _claim_assets(limit: int = 2) -> list[dict[str, Any]]:
     rows = _supabase_request(
         "GET",
         "content_jobs?status=eq.ASSET_QUEUED"
-        "&select=id,idea_flow_id,idea,visual_prompt,retry_count,content_package"
+        "&select=id"
         f"&order=updated_at.asc&limit={limit}",
     ) or []
 
     claimed: list[dict[str, Any]] = []
     for row in rows:
-        job_id = urllib.parse.quote(str(row["id"]), safe="")
-        package = dict(row.get("content_package") or {})
-        package.update(
-            {
-                "asset_status": "GENERATING",
-                "asset_worker_version": ASSET_WORKER_VERSION,
-            }
-        )
-        updated = _supabase_request(
-            "PATCH",
-            f"content_jobs?id=eq.{job_id}&status=eq.ASSET_QUEUED",
-            body={
-                "status": "ASSET_GENERATING",
-                "content_package": package,
-                "error_message": None,
-                "updated_at": _now(),
-            },
-            prefer="return=representation",
-        ) or []
-        if updated:
-            claimed.append(dict(updated[0]))
+        job = _claim_asset_job(str(row["id"]))
+        if job is not None:
+            claimed.append(job)
     return claimed
 
 
@@ -143,38 +158,45 @@ def _fail_asset(job: dict[str, Any], exc: Exception) -> None:
     )
 
 
+def _process_claimed_asset(job: dict[str, Any]) -> bool:
+    try:
+        prompt = str(job.get("visual_prompt") or "").strip()
+        if not prompt:
+            prompt = (
+                "Editorial social media visual, clean premium creator-tech design, "
+                f"topic: {str(job.get('idea') or '')[:400]}"
+            )
+        package = dict(job.get("content_package") or {})
+        data, provider_meta = generate_asset(
+            prompt,
+            fallback_title=str(job.get("idea") or "SoloForge")[:240],
+            fallback_subtitle=str(package.get("goal") or "").strip() or None,
+        )
+        data, brand_meta = stamp_image_bytes(data)
+        provider_meta = {**provider_meta, **brand_meta}
+        object_path = f"{job['id']}/cover.png"
+        _upload_asset(data, object_path)
+        _finish_asset(job, object_path, provider_meta)
+        return True
+    except Exception as exc:
+        print(
+            "content_asset_error",
+            {
+                "idea_flow_id": job.get("idea_flow_id"),
+                "exception_type": type(exc).__name__,
+            },
+        )
+        _fail_asset(job, exc)
+        return False
+
+
+def process_asset_job(job_id: str) -> bool:
+    job = _claim_asset_job(job_id)
+    return _process_claimed_asset(job) if job is not None else False
+
+
 def process_assets_once() -> int:
-    processed = 0
-    for job in _claim_assets():
-        try:
-            prompt = str(job.get("visual_prompt") or "").strip()
-            if not prompt:
-                prompt = (
-                    "Editorial social media visual, clean premium creator-tech design, "
-                    f"topic: {str(job.get('idea') or '')[:400]}"
-                )
-            package = dict(job.get("content_package") or {})
-            data, provider_meta = generate_asset(
-                prompt,
-                fallback_title=str(job.get("idea") or "SoloForge")[:240],
-                fallback_subtitle=str(package.get("goal") or "").strip() or None,
-            )
-            data, brand_meta = stamp_image_bytes(data)
-            provider_meta = {**provider_meta, **brand_meta}
-            object_path = f"{job['id']}/cover.png"
-            _upload_asset(data, object_path)
-            _finish_asset(job, object_path, provider_meta)
-            processed += 1
-        except Exception as exc:
-            print(
-                "content_asset_error",
-                {
-                    "idea_flow_id": job.get("idea_flow_id"),
-                    "exception_type": type(exc).__name__,
-                },
-            )
-            _fail_asset(job, exc)
-    return processed
+    return sum(1 for job in _claim_assets() if _process_claimed_asset(job))
 
 
 async def content_asset_worker_loop() -> None:

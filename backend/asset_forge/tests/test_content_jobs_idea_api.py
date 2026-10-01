@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from fastapi import BackgroundTasks
+
 from backend.asset_forge.backend import content_jobs_api
 
 
@@ -42,16 +44,19 @@ def test_create_from_idea_generates_selected_job(monkeypatch) -> None:
 
     monkeypatch.setattr(content_jobs_api, "_supabase_request", fake_request)
 
+    background_tasks = BackgroundTasks()
     result = content_jobs_api.create_from_idea(
         content_jobs_api.IdeaCreateRequest(
             idea="ลองใช้ AI ทำรูปแล้วหน้าไม่เหมือนกัน",
             recommendation_id="short_video_demo",
             action="generate",
         ),
+        background_tasks=background_tasks,
         authorization=None,
     )
 
     assert result["status"] == "SELECTED"
+    assert len(background_tasks.tasks) == 1
     assert result["content_package"]["format"] == "short_video_demo"
     assert result["content_package"]["needs_video"] is True
     assert any(
@@ -77,14 +82,50 @@ def test_create_from_idea_can_save_to_backlog(monkeypatch) -> None:
 
     monkeypatch.setattr(content_jobs_api, "_supabase_request", fake_request)
 
+    background_tasks = BackgroundTasks()
     result = content_jobs_api.create_from_idea(
         content_jobs_api.IdeaCreateRequest(
             idea="เล่าประสบการณ์ตอนทำงานเองทุกอย่าง",
             recommendation_id="personal_post",
             action="save",
         ),
+        background_tasks=background_tasks,
         authorization=None,
     )
 
     assert result["status"] == "BACKLOG"
+    assert len(background_tasks.tasks) == 0
     assert result["content_package"]["idea_composer"]["human_action"] == "save"
+
+
+
+def test_approve_triggers_job_scoped_routing(monkeypatch) -> None:
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+    calls = []
+
+    monkeypatch.setattr(
+        content_jobs_api,
+        "_get_row",
+        lambda job_id: {
+            "id": job_id,
+            "status": "READY_FOR_REVIEW",
+            "content_package": {"format": "carousel"},
+        },
+    )
+
+    def fake_patch(job_id, body):
+        calls.append((job_id, body))
+        return {"id": job_id, **body}
+
+    monkeypatch.setattr(content_jobs_api, "_patch_job", fake_patch)
+
+    background_tasks = BackgroundTasks()
+    result = content_jobs_api.approve_content_job(
+        "33333333-3333-3333-3333-333333333333",
+        background_tasks=background_tasks,
+        authorization=None,
+    )
+
+    assert result["status"] == "APPROVED"
+    assert len(background_tasks.tasks) == 1
+    assert calls[0][0] == "33333333-3333-3333-3333-333333333333"

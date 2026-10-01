@@ -193,6 +193,25 @@ def _fallback_package(idea: str) -> dict[str, Any]:
     }
 
 
+def _claim_selected_job(job_id: str) -> dict[str, Any] | None:
+    encoded = urllib.parse.quote(job_id, safe="")
+    rows = _supabase_request(
+        "GET",
+        f"content_jobs?id=eq.{encoded}&status=eq.SELECTED"
+        "&select=id,idea_flow_id,idea,status,retry_count,content_package"
+        "&limit=1",
+    ) or []
+    if not rows:
+        return None
+    updated = _supabase_request(
+        "PATCH",
+        f"content_jobs?id=eq.{encoded}&status=eq.SELECTED",
+        body={"status": "GENERATING", "error_message": None},
+        prefer="return=representation",
+    ) or []
+    return dict(updated[0]) if updated else None
+
+
 def _claim_selected(limit: int = 2) -> list[dict[str, Any]]:
     rows = _supabase_request(
         "GET",
@@ -202,15 +221,9 @@ def _claim_selected(limit: int = 2) -> list[dict[str, Any]]:
     ) or []
     claimed: list[dict[str, Any]] = []
     for row in rows:
-        job_id = urllib.parse.quote(str(row["id"]), safe="")
-        updated = _supabase_request(
-            "PATCH",
-            f"content_jobs?id=eq.{job_id}&status=eq.SELECTED",
-            body={"status": "GENERATING", "error_message": None},
-            prefer="return=representation",
-        ) or []
-        if updated:
-            claimed.append(dict(updated[0]))
+        job = _claim_selected_job(str(row["id"]))
+        if job is not None:
+            claimed.append(job)
     return claimed
 
 
@@ -258,46 +271,57 @@ def _fail_job(job: dict[str, Any], exc: Exception) -> None:
     )
 
 
+def _process_claimed_job(job: dict[str, Any]) -> bool:
+    idea_id = job.get("idea_flow_id") or "?"
+    try:
+        package_context = dict(job.get("content_package") or {})
+        targets = package_context.get("target_platforms") or []
+        platform = (
+            str(targets[0]).lower()
+            if isinstance(targets, list) and targets
+            else str(package_context.get("publish_platform") or "").lower()
+        )
+        feedback = feedback_for_candidate(
+            platform=platform or None,
+            content_format=str(package_context.get("format") or ""),
+        )
+        package_context["performance_feedback"] = feedback
+        result = _call_provider(
+            str(job.get("idea") or ""),
+            package_context,
+        )
+        if result is None:
+            package, provider, model = (
+                _fallback_package(str(job.get("idea") or "")),
+                "template_fallback",
+                "v0",
+            )
+        else:
+            package, provider, model = result
+        package["performance_feedback"] = feedback
+        _finish_job(job, package, provider, model)
+        _send_telegram(
+            f"✍️ Job #{idea_id} — READY_FOR_REVIEW\n"
+            f"Hook: {package['hook']}\n\n"
+            f"ใช้ /job {idea_id} เพื่อตรวจสถานะ"
+        )
+        return True
+    except Exception as exc:
+        print("content_generation_error", {
+            "idea_flow_id": idea_id,
+            "exception_type": type(exc).__name__,
+        })
+        _fail_job(job, exc)
+        return False
+
+
+def process_selected_job(job_id: str) -> bool:
+    job = _claim_selected_job(job_id)
+    return _process_claimed_job(job) if job is not None else False
+
+
 def process_selected_once() -> int:
-    processed = 0
-    for job in _claim_selected():
-        idea_id = job.get("idea_flow_id") or "?"
-        try:
-            package_context = dict(job.get("content_package") or {})
-            targets = package_context.get("target_platforms") or []
-            platform = (
-                str(targets[0]).lower()
-                if isinstance(targets, list) and targets
-                else str(package_context.get("publish_platform") or "").lower()
-            )
-            feedback = feedback_for_candidate(
-                platform=platform or None,
-                content_format=str(package_context.get("format") or ""),
-            )
-            package_context["performance_feedback"] = feedback
-            result = _call_provider(
-                str(job.get("idea") or ""),
-                package_context,
-            )
-            if result is None:
-                package, provider, model = _fallback_package(str(job.get("idea") or "")), "template_fallback", "v0"
-            else:
-                package, provider, model = result
-            package["performance_feedback"] = feedback
-            _finish_job(job, package, provider, model)
-            _send_telegram(
-                f"✍️ Job #{idea_id} — READY_FOR_REVIEW\n"
-                f"Hook: {package['hook']}\n\n"
-                f"ใช้ /job {idea_id} เพื่อตรวจสถานะ"
-            )
-            processed += 1
-        except Exception as exc:
-            print("content_generation_error", {
-                "idea_flow_id": idea_id,
-                "exception_type": type(exc).__name__,
-            })
-            _fail_job(job, exc)
-    return processed
+    return sum(1 for job in _claim_selected() if _process_claimed_job(job))
 
 
 async def content_worker_loop() -> None:
