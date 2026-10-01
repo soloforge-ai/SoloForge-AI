@@ -48,9 +48,6 @@ SoloForge AI
 ├── AZURETEIR / น้ำตาสีคราม
 │   └── Romance / Emotional Fiction & Author IP
 │
-├── Ai Nightfall
-│   └── Horror / Dark Fiction IP
-│
 └── Experimental Product Lines
     ├── Tarot / Oracle
     ├── Pi Utilities
@@ -523,26 +520,9 @@ Technology should support production, but the reader-facing brand should remain 
 
 ---
 
-# 11. Ai Nightfall
+# 11. Tarot / Oracle Product Line
 
-## Brand Role
-
-Horror / dark fiction author imprint.
-
-## Products
-
-- horror fiction
-- short stories
-- future dark-fiction ebooks
-
-**Status:** IP BRAND / PIPELINE  
-**Priority:** P3 unless active release plan exists
-
----
-
-# 12. Tarot / Oracle Product Line
-
-## 12.1 Tarot App
+## 11.1 Tarot App
 
 **Brand:** Experimental / future SoloForge product decision required  
 **Type:** Web App / Utility  
@@ -552,7 +532,7 @@ Horror / dark fiction author imprint.
 
 ---
 
-## 12.2 Seven Numbers
+## 11.2 Seven Numbers
 
 **Type:** Divination Utility  
 **Status:** DEVELOPMENT / PROTOTYPE  
@@ -560,7 +540,7 @@ Horror / dark fiction author imprint.
 
 ---
 
-## 12.3 Oracle Lookup System
+## 11.3 Oracle Lookup System
 
 **Type:** Data / Rules Engine  
 **Status:** VERIFICATION / DATA QA  
@@ -574,9 +554,9 @@ Treat it as a separate vertical until commercial fit is proven.
 
 ---
 
-# 13. Pi Product Line
+# 12. Pi Product Line
 
-## 13.1 Pi Profit Tracker
+## 12.1 Pi Profit Tracker
 
 **Brand:** Experimental SoloForge Utility  
 **Type:** App  
@@ -586,14 +566,14 @@ Treat it as a separate vertical until commercial fit is proven.
 
 ---
 
-## 13.2 Pi Seller Toolkit
+## 12.2 Pi Seller Toolkit
 
 **Type:** Product Concept  
 **Status:** CONCEPT / DEPRIORITIZED RELATIVE TO PI PROFIT TRACKER
 
 ---
 
-# 14. Career Utility Line
+# 13. Career Utility Line
 
 ## Career OS
 
@@ -609,7 +589,7 @@ Do not commercialize until there is evidence that the workflow solves a repeatab
 
 ---
 
-# 15. Portfolio Priority Map
+# 14. Portfolio Priority Map
 
 ## P0 — Core Company-Building
 
@@ -650,14 +630,13 @@ Only create these when they reuse assets already built.
 1. Tarot / Seven Numbers / Oracle
 2. Pi utilities
 3. Career OS
-4. Ai Nightfall expansion
-5. unrelated experimental apps
+4. unrelated experimental apps
 
 These must not consume the execution capacity required by P0/P1.
 
 ---
 
-# 16. Monetization Architecture
+# 15. Monetization Architecture
 
 SoloForge should operate with four complementary revenue engines.
 
@@ -715,7 +694,7 @@ Builds reusable long-tail assets.
 
 ---
 
-# 17. Product Promotion Rule
+# 16. Product Promotion Rule
 
 Do not promote internal components as separate products unless users understand and value them independently.
 
@@ -739,7 +718,7 @@ Customers buy outcomes, not internal architecture.
 
 ---
 
-# 18. New Product Gate
+# 17. New Product Gate
 
 Before adding another product to the portfolio, all five questions must be answered:
 
@@ -753,7 +732,7 @@ If answers are weak, classify it as **CONCEPT**, not an active product.
 
 ---
 
-# 19. Portfolio Scorecard Fields
+# 18. Portfolio Scorecard Fields
 
 Every product should eventually be tracked with:
 
@@ -785,7 +764,7 @@ This structure can later become a spreadsheet or internal SoloForge portfolio da
 
 ---
 
-# 20. Source Status
+# 19. Source Status
 
 This portfolio combines:
 
@@ -805,7 +784,6 @@ This portfolio combines:
 - AI HackWork services
 - Manifest Glow Lab
 - AZURETEIR / น้ำตาสีคราม
-- Ai Nightfall
 - Tarot / Seven Numbers / Oracle
 - Pi Profit Tracker
 - Career OS
@@ -814,7 +792,7 @@ Items outside the core repository should remain explicitly classified by commerc
 
 ---
 
-# 21. Final Portfolio Rule
+# 20. Final Portfolio Rule
 
 **Build fewer products. Reuse more systems.**
 
