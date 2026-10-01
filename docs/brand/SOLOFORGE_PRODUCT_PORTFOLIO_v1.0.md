@@ -67,7 +67,7 @@ SoloForge AI
 Production engine, automation layer, AI systems, reusable technology, product infrastructure, and internal operating system.
 
 **AI HackWork**  
-Customer-facing technology content and digital-product distribution brand.
+Content lab, experimentation channel, audience-building surface, and distribution channel for technology products. Products promoted through AI HackWork may carry the **SoloForge AI** product brand.
 
 **Manifest Glow Lab**  
 Customer-facing spiritual art and digital lifestyle brand.
@@ -358,141 +358,165 @@ Retain the implementation but do not allocate active product-development time un
 
 # 8. AI HackWork
 
-## Brand Role
+## Channel Role
 
-**AI HackWork = practical AI / Data / Automation content and digital-product brand.**
+**AI HackWork = Content Lab + Experimentation Channel + Distribution Channel.**
 
-Its primary job is to turn practical knowledge, workflows, templates, and reusable assets into content that attracts an audience and digital products that can be sold repeatedly.
+AI HackWork is not required to own the product brand.
 
-SoloForge AI provides the technology, automation, generation systems, and reusable product infrastructure behind AI HackWork.
+Its main role is to:
 
-### Core Flywheel
+- test content topics
+- test hooks and formats
+- discover audience pain points
+- validate demand
+- publish practical AI / Data / Automation content
+- distribute SoloForge AI technology products
+- test product messaging before scaling
+- feed audience and demand signals back into SoloForge
+
+### Brand relationship
 
 ```text
-Useful Content
-→ Audience / Discovery
-→ Problem Awareness
-→ Digital Asset / eBook / Pack
-→ Sale
-→ Customer Feedback
-→ Improve / Bundle / Automate
-→ More Content
+SoloForge AI
+→ builds / owns the product
+→ packages the product
+→ defines product identity
+→ supplies reusable systems
+
+AI HackWork
+→ tests content
+→ tests messaging
+→ builds audience
+→ distributes SoloForge AI products
+→ collects market feedback
 ```
 
-The goal is scalable product revenue, not primarily time-for-money client work.
+A product discovered, tested, or promoted through AI HackWork may still be sold under the **SoloForge AI** brand.
+
+### Default rule
+
+**Product Brand = SoloForge AI**  
+**Content / Distribution Channel = AI HackWork**
+
+Use a separate AI HackWork product brand only when there is a specific commercial reason to do so.
 
 ---
 
 ## 8.1 AI HackWork Content
 
-**Brand:** AI HackWork  
-**Type:** Content / Audience Engine  
+**Type:** Content / Audience / Validation Engine  
 **Status:** ACTIVE  
-**Revenue Role:** acquisition and product discovery  
 **Priority:** P1
 
-Content themes may include:
+Core themes:
 
 - practical AI workflows
-- data analysis
-- Excel / Power BI
+- Data / Excel / Power BI
 - automation
 - Telegram bots
 - AI agents
 - creator workflows
 - productivity systems
-- real build-in-public experiments
+- build-in-public experiments
+- tests of new SoloForge product ideas
 
-### Content Rule
+### Content objective
 
-Content should lead naturally to a reusable product, asset, pack, ebook, or toolkit whenever appropriate.
+Content should answer at least one of these:
+
+1. Does this topic attract the right audience?
+2. Does this pain point repeat?
+3. Does this content create product demand?
+4. Does this angle improve conversion?
+5. Should SoloForge build or package a product around it?
 
 ---
 
-## 8.2 Digital Assets
+## 8.2 Product Distribution
 
-**Brand:** AI HackWork  
-**Type:** Digital Product  
-**Status:** ACTIVE PRODUCT LINE  
-**Revenue Model:** one-time purchase / bundles  
+**Channel:** AI HackWork  
+**Product Brand:** SoloForge AI  
+**Type:** Distribution / Product Marketing  
+**Status:** ACTIVE  
 **Priority:** P1
 
-Examples:
+Products may include:
 
+- digital assets
+- eBooks
+- packs
 - templates
-- prompt assets
-- worksheets
-- checklists
-- automation files
-- dashboards
-- reusable AI assets
-- creator resources
+- toolkits
+- creator utilities
+- automation starter kits
+- data-analysis products
+- AI workflow products
+
+### Example
+
+```text
+AI HackWork Content
+→ audience discovers a problem
+→ CTA to product
+→ SoloForge AI product page
+→ purchase
+→ automated delivery
+→ feedback
+→ improve product + content
+```
 
 ---
 
-## 8.3 eBooks
+## 8.3 Experimentation Rule
 
-**Brand:** AI HackWork  
-**Type:** Publishing / Digital Product  
-**Status:** ACTIVE PRODUCT LINE  
-**Revenue Model:** ebook sales  
-**Priority:** P1 / P2 depending on title
+AI HackWork may deliberately test multiple:
 
-Examples include practical books around:
+- hooks
+- formats
+- product angles
+- content pillars
+- audience segments
+- CTA styles
+- pricing messages
 
-- Excel
-- AI workflows
-- automation
-- data analysis
-- productivity
-- solo business systems
+The channel may look more experimental than the SoloForge corporate/product presence.
+
+However, **the product itself must still follow SoloForge product quality, visual, and packaging standards.**
 
 ---
 
-## 8.4 Packs / Kits / Toolkits
+## 8.4 Productization Loop
 
-**Brand:** AI HackWork  
-**Type:** Digital Product Bundle  
-**Status:** ACTIVE PRODUCT LINE  
-**Revenue Model:** one-time purchase / bundle / upsell  
-**Priority:** P1
+```text
+Content Experiment
+→ Engagement / Demand Signal
+→ Repeated Problem
+→ SoloForge Builds Reusable Solution
+→ Package as SoloForge AI Product
+→ AI HackWork Distributes
+→ Measure Sales / Feedback
+→ Iterate
+```
 
-Examples:
-
-- prompt packs
-- workflow packs
-- template packs
-- creator kits
-- automation starter packs
-- data-analysis packs
-- AI productivity kits
+This is the preferred AI HackWork → SoloForge growth loop.
 
 ---
 
 ## 8.5 Service Work
 
-**Brand:** AI HackWork  
-**Type:** Optional Validation Channel  
-**Status:** SECONDARY / OPPORTUNISTIC  
-**Priority:** P2
+Custom client work is optional and secondary.
 
-Custom service work may still be accepted when it:
+Use it only when it:
 
-1. generates immediate cash;
-2. exposes a repeatable customer problem;
-3. creates reusable IP that can become a digital product.
+1. generates useful short-term cash;
+2. exposes a repeatable problem;
+3. creates reusable knowledge or assets;
+4. can lead to a SoloForge AI product.
 
-### Productization Rule
+The long-term goal is not to maximize service hours.
 
-```text
-Client Problem
-→ Deliver Solution
-→ Extract Reusable Method
-→ Turn Into Asset / Template / Pack / eBook
-→ Sell Repeatedly
-```
-
-Service work should not become the long-term center of AI HackWork.
+The goal is to convert market learning into scalable products.
 
 ---
 
@@ -695,9 +719,9 @@ These build reusable technology and long-term platform value.
 
 ## P1 — Revenue Validation / Cash Flow
 
-1. **AI Character Consistency Kit**
-2. **AI HackWork Assets / eBooks / Packs**
-3. **AI HackWork Content → Product Funnel**
+1. **SoloForge AI digital products distributed through AI HackWork**
+2. **AI HackWork Content → Demand Validation Funnel**
+3. **AI Character Consistency Kit**
 4. Existing Manifest Glow Lab sellable inventory
 
 These should generate real customer and revenue evidence.
@@ -757,19 +781,22 @@ Low fulfillment cost and globally scalable.
 
 ---
 
-### C. Content-to-Digital-Product Revenue
+### C. Content-to-SoloForge-Product Revenue
 
 ```text
 AI HackWork Content
 → Audience / Problem Discovery
-→ Asset / eBook / Pack / Toolkit
-→ Automated Store Delivery
+→ SoloForge AI Product
+→ Product Page / Store
+→ Automated Delivery
 → Bundle / Upsell
 ```
 
-This is the primary AI HackWork monetization engine.
+AI HackWork is primarily the experimentation and distribution layer.
 
-Optional client work may still be used as a research and product-validation channel, but it is not the core business model.
+SoloForge AI is the preferred product brand and production layer.
+
+Optional client work may still be used as a research and validation channel, but it is not the core business model.
 
 ---
 
@@ -873,7 +900,7 @@ This portfolio combines:
 
 ### Existing SoloForge business portfolio context
 - AI Character Consistency Kit
-- AI HackWork content and digital products
+- AI HackWork content, experimentation, and distribution channel
 - Manifest Glow Lab
 - น้ำตาสีคราม / Namtasikhram
 - Tarot / Seven Numbers / Oracle
