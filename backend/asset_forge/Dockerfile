@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY main.py ./
 COPY runtime.py ./
+COPY worker.py ./
 COPY backend ./backend
 COPY data ./data
 # Canonical generic masters are runtime data and must ship in the Render image.
