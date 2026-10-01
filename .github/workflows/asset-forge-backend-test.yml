@@ -49,6 +49,7 @@ jobs:
         run: |
           python -m compileall -q backend/asset_forge/main.py
           python -m compileall -q backend/asset_forge/runtime.py
+          python -m compileall -q backend/asset_forge/worker.py
           python -m compileall -q backend/asset_forge/backend
           python -m compileall -q backend/pollinations_oauth.py
           python -m compileall -q backend/pollinations_oauth_router.py
@@ -77,4 +78,5 @@ jobs:
             backend/asset_forge/tests/test_branding.py \
             backend/asset_forge/tests/test_content_intake.py \
             backend/asset_forge/tests/test_content_jobs_idea_api.py \
+            backend/asset_forge/tests/test_worker_runtime.py \
             tools/scanner/tests/test_output_exclusion.py
