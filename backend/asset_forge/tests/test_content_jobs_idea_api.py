@@ -129,3 +129,77 @@ def test_approve_triggers_job_scoped_routing(monkeypatch) -> None:
     assert result["status"] == "APPROVED"
     assert len(background_tasks.tasks) == 1
     assert calls[0][0] == "33333333-3333-3333-3333-333333333333"
+
+
+
+def test_draft_edit_marks_semantic_fidelity_stale(monkeypatch) -> None:
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+    monkeypatch.setattr(
+        content_jobs_api,
+        "_get_row",
+        lambda job_id: {
+            "id": job_id,
+            "status": "READY_FOR_REVIEW",
+            "content_package": {
+                "format": "carousel",
+                "semantic_fidelity": {
+                    "status": "PASS",
+                    "reason": "Generated body preserves subject anchors.",
+                    "required_anchors": ["automation"],
+                    "matched_anchors": ["automation"],
+                },
+            },
+        },
+    )
+
+    patched = {}
+
+    def fake_patch(job_id, body):
+        patched.update(body)
+        return {"id": job_id, "status": "READY_FOR_REVIEW", **body}
+
+    monkeypatch.setattr(content_jobs_api, "_patch_job", fake_patch)
+
+    result = content_jobs_api.update_content_draft(
+        "44444444-4444-4444-4444-444444444444",
+        content_jobs_api.ContentDraftUpdate(caption="Edited caption"),
+        authorization=None,
+    )
+
+    semantic = result["content_package"]["semantic_fidelity"]
+    assert semantic["status"] == "STALE"
+    assert "Regenerate before approval" in semantic["reason"]
+    assert semantic["stale_at"]
+
+
+def test_approve_rejects_failed_or_stale_semantic_fidelity(monkeypatch) -> None:
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+
+    for semantic_status in ("FAIL", "STALE"):
+        monkeypatch.setattr(
+            content_jobs_api,
+            "_get_row",
+            lambda job_id, status=semantic_status: {
+                "id": job_id,
+                "status": "READY_FOR_REVIEW",
+                "content_package": {
+                    "format": "carousel",
+                    "semantic_fidelity": {"status": status},
+                },
+            },
+        )
+
+        background_tasks = BackgroundTasks()
+        try:
+            content_jobs_api.approve_content_job(
+                "55555555-5555-5555-5555-555555555555",
+                background_tasks=background_tasks,
+                authorization=None,
+            )
+        except Exception as exc:
+            assert getattr(exc, "status_code", None) == 409
+            assert "semantic fidelity" in str(getattr(exc, "detail", "")).lower()
+        else:
+            raise AssertionError(f"{semantic_status} semantic status must block approval")
+
+        assert len(background_tasks.tasks) == 0
