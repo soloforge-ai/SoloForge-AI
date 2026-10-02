@@ -100,3 +100,41 @@ def test_enforce_semantic_fidelity_raises_non_retryable_error() -> None:
                 "onscreen_text": [],
             },
         )
+
+
+
+def test_provider_defaults_use_current_gemini_and_pollinations_models() -> None:
+    providers = {
+        provider: {
+            "key_env": key_env,
+            "model_env": model_env,
+            "default_model": default_model,
+            "endpoint": endpoint,
+        }
+        for provider, key_env, model_env, default_model, endpoint
+        in content_generation.PROVIDERS
+    }
+
+    assert providers["gemini"]["default_model"] == "gemini-3.8-flash"
+    assert providers["pollinations"]["default_model"] == "openai/gpt-5.4-nano"
+
+
+def test_pollinations_publishable_key_is_not_used_for_server_generation(
+    monkeypatch,
+) -> None:
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.setenv("POLLINATIONS_API_KEY", "pk_example_publishable_key")
+
+    def fail_urlopen(*_args, **_kwargs):
+        raise AssertionError("publishable Pollinations key must not reach generation endpoint")
+
+    monkeypatch.setattr(content_generation.urllib.request, "urlopen", fail_urlopen)
+
+    result = content_generation._call_provider(
+        "Telegram Bot automation",
+        {"format": "question_post", "target_platforms": ["facebook"]},
+    )
+
+    assert result is None
