@@ -203,3 +203,64 @@ def test_approve_rejects_failed_or_stale_semantic_fidelity(monkeypatch) -> None:
             raise AssertionError(f"{semantic_status} semantic status must block approval")
 
         assert len(background_tasks.tasks) == 0
+
+
+
+def test_asset_preview_returns_signed_media_url(monkeypatch) -> None:
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+    monkeypatch.setattr(
+        content_jobs_api,
+        "_get_row",
+        lambda job_id: {
+            "id": job_id,
+            "status": "READY_TO_PUBLISH",
+            "content_package": {
+                "pipeline_route": "VISUAL",
+                "asset_status": "READY",
+                "asset_storage_path": f"{job_id}/cover.png",
+            },
+        },
+    )
+    monkeypatch.setattr(
+        content_jobs_api,
+        "media_urls_for_job",
+        lambda job: ["https://example.invalid/signed-cover.png"],
+    )
+
+    result = content_jobs_api.get_asset_preview(
+        "66666666-6666-6666-6666-666666666666",
+        authorization=None,
+    )
+
+    assert result["url"] == "https://example.invalid/signed-cover.png"
+    assert result["media_type"] == "image"
+    assert result["asset_status"] == "READY"
+    assert result["pipeline_route"] == "VISUAL"
+
+
+def test_asset_preview_returns_404_when_asset_missing(monkeypatch) -> None:
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+    monkeypatch.setattr(
+        content_jobs_api,
+        "_get_row",
+        lambda job_id: {
+            "id": job_id,
+            "status": "READY_TO_PUBLISH",
+            "content_package": {
+                "pipeline_route": "VISUAL",
+                "asset_status": "PENDING",
+            },
+        },
+    )
+    monkeypatch.setattr(content_jobs_api, "media_urls_for_job", lambda job: [])
+
+    try:
+        content_jobs_api.get_asset_preview(
+            "77777777-7777-7777-7777-777777777777",
+            authorization=None,
+        )
+    except Exception as exc:
+        assert getattr(exc, "status_code", None) == 404
+        assert "generated asset" in str(getattr(exc, "detail", "")).lower()
+    else:
+        raise AssertionError("missing asset preview must return 404")
