@@ -35,7 +35,8 @@ class JobQueuePresentation {
   };
 
   static bool isFailure(ContentJob job) =>
-      job.blocker != null || job.status.endsWith('_FAILED');
+      job.status.endsWith('_FAILED') ||
+      (job.blocker != null && job.status != 'BACKLOG');
 
   static QueueFilter groupFor(ContentJob job) {
     if (job.status == 'READY_FOR_REVIEW' ||
@@ -48,6 +49,9 @@ class JobQueuePresentation {
     }
     if (job.status == 'PUBLISHED' || job.publishStatus == 'PUBLISHED') {
       return QueueFilter.completed;
+    }
+    if (_backlogStatuses.contains(job.status)) {
+      return QueueFilter.backlog;
     }
     return QueueFilter.backlog;
   }
@@ -276,28 +280,24 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  int get _reviewCount => _allJobs
-      .where((job) => JobQueuePresentation.groupFor(job) == QueueFilter.actionRequired)
+  int get _actionRequiredCount => _allJobs
+      .where((job) =>
+          JobQueuePresentation.groupFor(job) == QueueFilter.actionRequired)
       .length;
 
-  int get _workingCount => _allJobs
-      .where((job) => const {
-            'GENERATING',
-            'ASSET_QUEUED',
-            'ASSET_GENERATING',
-            'ASSET_READY',
-            'AUDIO_GENERATING',
-            'RENDERING',
-            'PUBLISHING',
-          }.contains(job.status))
+  int get _processingCount => _allJobs
+      .where((job) =>
+          JobQueuePresentation.groupFor(job) == QueueFilter.processing)
       .length;
 
-  int get _blockedCount =>
-      _allJobs.where(JobQueuePresentation.isFailure).length;
+  int get _backlogCount => _allJobs
+      .where((job) =>
+          JobQueuePresentation.groupFor(job) == QueueFilter.backlog)
+      .length;
 
-  int get _queuedCount => _allJobs
-      .where((job) => const {'NEW', 'SCORED', 'SELECTED', 'BACKLOG'}
-          .contains(job.status))
+  int get _completedCount => _allJobs
+      .where((job) =>
+          JobQueuePresentation.groupFor(job) == QueueFilter.completed)
       .length;
 
   int get _activeCount => _allJobs
@@ -393,10 +393,10 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 10),
             _QueueSummary(
               active: _activeCount,
-              review: _reviewCount,
-              working: _workingCount,
-              queued: _queuedCount,
-              blocked: _blockedCount,
+              actionRequired: _actionRequiredCount,
+              processing: _processingCount,
+              backlog: _backlogCount,
+              completed: _completedCount,
             ),
             const SizedBox(height: 10),
             TextField(
@@ -728,17 +728,17 @@ class _IdeaRecommendationCard extends StatelessWidget {
 class _QueueSummary extends StatelessWidget {
   const _QueueSummary({
     required this.active,
-    required this.review,
-    required this.working,
-    required this.queued,
-    required this.blocked,
+    required this.actionRequired,
+    required this.processing,
+    required this.backlog,
+    required this.completed,
   });
 
   final int active;
-  final int review;
-  final int working;
-  final int queued;
-  final int blocked;
+  final int actionRequired;
+  final int processing;
+  final int backlog;
+  final int completed;
 
   @override
   Widget build(BuildContext context) {
@@ -761,10 +761,10 @@ class _QueueSummary extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _CountPill(label: 'Review', value: review),
-                _CountPill(label: 'Working', value: working),
-                _CountPill(label: 'Queued', value: queued),
-                _CountPill(label: 'Blocked', value: blocked),
+                _CountPill(label: 'Action', value: actionRequired),
+                _CountPill(label: 'Processing', value: processing),
+                _CountPill(label: 'Backlog', value: backlog),
+                _CountPill(label: 'Completed', value: completed),
               ],
             ),
           ],
