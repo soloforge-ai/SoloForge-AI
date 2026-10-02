@@ -44,21 +44,12 @@ class ContentQualityReview {
     }
 
     final status = raw['status']?.toString().trim().toUpperCase();
-    final generatedAt = job.generatedAt;
-    final updatedAt = job.updatedAt;
-    final stale = generatedAt != null &&
-        updatedAt != null &&
-        updatedAt.isAfter(generatedAt.add(const Duration(seconds: 2)));
 
     return ContentQualityReview(
-      status: stale
-          ? 'STALE'
-          : (status == null || status.isEmpty ? 'NOT_AVAILABLE' : status),
-      reason: stale
-          ? 'Draft changed after AI generation. Regenerate before approval so semantic fidelity can be checked again.'
-          : (raw['reason']?.toString().trim().isNotEmpty == true
-              ? raw['reason'].toString().trim()
-              : 'No semantic fidelity reason was recorded.'),
+      status: status == null || status.isEmpty ? 'NOT_AVAILABLE' : status,
+      reason: raw['reason']?.toString().trim().isNotEmpty == true
+          ? raw['reason'].toString().trim()
+          : 'No semantic fidelity reason was recorded.',
       matchedAnchors: strings(raw['matched_anchors']),
       requiredAnchors: strings(raw['required_anchors']),
       available: status != null && status.isNotEmpty,

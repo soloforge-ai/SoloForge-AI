@@ -249,6 +249,21 @@ def update_content_draft(
     for key, value in body.items():
         package[key] = value
 
+    semantic = package.get("semantic_fidelity")
+    if isinstance(semantic, dict):
+        semantic = dict(semantic)
+        semantic.update(
+            {
+                "status": "STALE",
+                "reason": (
+                    "Draft changed after AI generation. Regenerate before approval "
+                    "so semantic fidelity can be checked again."
+                ),
+                "stale_at": _now(),
+            }
+        )
+        package["semantic_fidelity"] = semantic
+
     body.update(
         {
             "content_package": package,
@@ -272,6 +287,19 @@ def approve_content_job(
             status_code=409,
             detail="Only READY_FOR_REVIEW content can be approved",
         )
+
+    package = dict(current.get("content_package") or {})
+    semantic = package.get("semantic_fidelity")
+    if isinstance(semantic, dict):
+        semantic_status = str(semantic.get("status") or "").strip().upper()
+        if semantic_status in {"FAIL", "STALE"}:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Content must pass semantic fidelity before approval. "
+                    "Regenerate the draft and review it again."
+                ),
+            )
     now = _now()
     approved = _patch_job(
         job_id,

@@ -59,7 +59,24 @@ void main() {
     expect(review.blocksApproval, isTrue);
   });
 
-  test('draft edited after generation makes semantic review stale', () {
+  test('explicit stale semantic review blocks approval', () {
+    final review = ContentQualityReview.fromJob(
+      jobWithQuality({
+        'status': 'STALE',
+        'reason':
+            'Draft changed after AI generation. Regenerate before approval so semantic fidelity can be checked again.',
+        'required_anchors': ['telegram'],
+        'matched_anchors': ['telegram'],
+      }),
+    );
+
+    expect(review.available, isTrue);
+    expect(review.status, 'STALE');
+    expect(review.blocksApproval, isTrue);
+    expect(review.reason, contains('Regenerate before approval'));
+  });
+
+  test('later pipeline updated_at does not make a fresh PASS stale', () {
     final generatedAt = DateTime.parse('2026-10-02T10:00:00Z');
     final review = ContentQualityReview.fromJob(
       jobWithQuality(
@@ -70,14 +87,12 @@ void main() {
           'matched_anchors': ['telegram'],
         },
         generatedAt: generatedAt,
-        updatedAt: generatedAt.add(const Duration(minutes: 1)),
+        updatedAt: generatedAt.add(const Duration(minutes: 5)),
       ),
     );
 
-    expect(review.available, isTrue);
-    expect(review.status, 'STALE');
-    expect(review.blocksApproval, isTrue);
-    expect(review.reason, contains('Regenerate before approval'));
+    expect(review.status, 'PASS');
+    expect(review.blocksApproval, isFalse);
   });
 
   test('legacy job without semantic metadata stays reviewable', () {
