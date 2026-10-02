@@ -21,7 +21,7 @@ ContentJob jobWithQuality(
     updatedAt: updatedAt,
     contentPackage: {
       'format': 'question_post',
-      if (semanticFidelity != null) 'semantic_fidelity': semanticFidelity,
+      'semantic_fidelity': ?semanticFidelity,
     },
   );
 }
