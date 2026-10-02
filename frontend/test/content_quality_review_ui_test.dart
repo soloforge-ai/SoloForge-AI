@@ -2,7 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/models/content_job.dart';
 import 'package:frontend/pages/content_job_page.dart';
 
-ContentJob jobWithQuality(dynamic semanticFidelity) {
+ContentJob jobWithQuality(
+  dynamic semanticFidelity, {
+  DateTime? generatedAt,
+  DateTime? updatedAt,
+}) {
   return ContentJob(
     id: '11111111-1111-1111-1111-111111111111',
     idea: 'Telegram Bot automation',
@@ -13,6 +17,8 @@ ContentJob jobWithQuality(dynamic semanticFidelity) {
     caption: 'ตัวอย่างการต่อ Telegram Bot ให้กลายเป็น automation workflow',
     generatorProvider: 'gemini',
     generatorModel: 'gemini-3.5-flash-lite',
+    generatedAt: generatedAt,
+    updatedAt: updatedAt,
     contentPackage: {
       'format': 'question_post',
       if (semanticFidelity != null) 'semantic_fidelity': semanticFidelity,
@@ -51,6 +57,27 @@ void main() {
     expect(review.available, isTrue);
     expect(review.status, 'FAIL');
     expect(review.blocksApproval, isTrue);
+  });
+
+  test('draft edited after generation makes semantic review stale', () {
+    final generatedAt = DateTime.parse('2026-10-02T10:00:00Z');
+    final review = ContentQualityReview.fromJob(
+      jobWithQuality(
+        {
+          'status': 'PASS',
+          'reason': 'Generated body preserves subject anchors.',
+          'required_anchors': ['telegram'],
+          'matched_anchors': ['telegram'],
+        },
+        generatedAt: generatedAt,
+        updatedAt: generatedAt.add(const Duration(minutes: 1)),
+      ),
+    );
+
+    expect(review.available, isTrue);
+    expect(review.status, 'STALE');
+    expect(review.blocksApproval, isTrue);
+    expect(review.reason, contains('Regenerate before approval'));
   });
 
   test('legacy job without semantic metadata stays reviewable', () {
