@@ -6,6 +6,7 @@ import asyncio
 from datetime import datetime, timezone
 import json
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -14,7 +15,7 @@ from typing import Any
 from backend.performance_feedback import feedback_for_candidate
 from backend.shared_supabase import supabase_request as _supabase_request
 
-GENERATOR_VERSION = "content_gen_v0.3_feedback"
+GENERATOR_VERSION = "content_gen_v0.4_quality_gate"
 SYSTEM_PROMPT = """You are SoloForge Content Strategist for the Ai HackWork brand.
 Create Thai content that follows the supplied CONTENT BRIEF exactly.
 Return ONLY one JSON object with these keys:
@@ -35,6 +36,77 @@ Rules:
 - Never copy a historical hook verbatim; transfer only supported structural patterns or angles.
 - If performance_feedback is INSUFFICIENT_DATA, ignore it and follow the original content brief.
 """
+
+_GENERIC_ANCHORS = {
+    "ai", "content", "post", "video", "tool", "tools", "app", "apps",
+    "ทำ", "ใช้", "สร้าง", "วันนี้", "อยาก", "ลอง", "เรื่อง", "แบบ", "มากกว่า",
+    "รู้หรือยัง", "ที่คิด",
+}
+
+
+class NonRetryableGenerationError(RuntimeError):
+    """Generation cannot succeed without a configuration or quality change."""
+
+
+def _idea_anchors(idea: str) -> list[str]:
+    raw = re.findall(r"[A-Za-z0-9][A-Za-z0-9._+-]*|[\u0E00-\u0E7F]{3,}", idea.lower())
+    anchors: list[str] = []
+    for token in raw:
+        cleaned = token.strip("._+-")
+        if len(cleaned) < 3 or cleaned in _GENERIC_ANCHORS:
+            continue
+        if cleaned not in anchors:
+            anchors.append(cleaned)
+    return anchors
+
+
+def _semantic_fidelity(idea: str, package: dict[str, Any]) -> dict[str, Any]:
+    anchors = _idea_anchors(idea)
+    body_parts = [
+        str(package.get("script") or ""),
+        str(package.get("caption") or ""),
+        str(package.get("cta") or ""),
+        " ".join(str(value) for value in (package.get("onscreen_text") or [])),
+    ]
+    body = " ".join(body_parts).lower()
+
+    latin_anchors = [
+        token for token in anchors
+        if re.fullmatch(r"[a-z0-9][a-z0-9._+-]*", token)
+    ]
+    required = latin_anchors or anchors[:4]
+    matched = [token for token in required if token in body]
+
+    if not required:
+        return {
+            "status": "PASS",
+            "version": "semantic_fidelity_v0.1",
+            "required_anchors": [],
+            "matched_anchors": [],
+            "reason": "No stable lexical anchors available; manual review remains required.",
+        }
+
+    return {
+        "status": "PASS" if matched else "FAIL",
+        "version": "semantic_fidelity_v0.1",
+        "required_anchors": required,
+        "matched_anchors": matched,
+        "reason": (
+            "Generated body preserves at least one subject anchor from the idea."
+            if matched
+            else "Generated body lost the idea's identifiable subject anchors."
+        ),
+    }
+
+
+def _enforce_semantic_fidelity(idea: str, package: dict[str, Any]) -> dict[str, Any]:
+    result = _semantic_fidelity(idea, package)
+    if result["status"] != "PASS":
+        raise NonRetryableGenerationError(
+            "Generated content failed semantic fidelity QA"
+        )
+    return result
+
 
 PROVIDERS = [
     ("gemini", "GEMINI_API_KEY", "GEMINI_MODEL",
@@ -153,44 +225,18 @@ def _call_provider(
                 body = json.loads(response.read().decode("utf-8"))
             content = body["choices"][0]["message"]["content"]
             return _extract_json(content), provider, model
+        except urllib.error.HTTPError as exc:
+            print("content_provider_error", {
+                "provider": provider,
+                "exception_type": type(exc).__name__,
+                "status": exc.code,
+            })
         except Exception as exc:
             print("content_provider_error", {
                 "provider": provider,
                 "exception_type": type(exc).__name__,
             })
     return None
-
-
-def _fallback_package(idea: str) -> dict[str, Any]:
-    return {
-        "hook": f"เครื่องมือนี้จะช่วยประหยัดเวลาได้จริงแค่ไหน? มาลองจากโจทย์นี้: {idea[:70]}",
-        "script": (
-            "วันนี้เราจะทดสอบแบบไม่อวยก่อนว่าเครื่องมือแนวนี้ช่วยลดเวลางานได้จริงไหม "
-            "เริ่มจากกำหนดงานเดิมหนึ่งชิ้น จับเวลาก่อนใช้ จากนั้นลองใช้ AI หรือเครื่องมือที่เกี่ยวข้อง "
-            "แล้วเทียบเวลาที่ใช้ คุณภาพผลลัพธ์ และจุดที่ยังต้องแก้เอง "
-            "ถ้าผลต่างชัดค่อยสรุปว่าเหมาะกับใคร ไม่เหมาะกับใคร และควรใช้ตอนไหน"
-        ),
-        "caption": (
-            "จะรีวิวเครื่องมือแบบไม่เดา: เทียบเวลา คุณภาพ และงานที่ยังต้องแก้เองก่อนสรุปว่าใช้จริงคุ้มไหม"
-        ),
-        "cta": "อยากให้ทดสอบเครื่องมือไหนต่อ ส่งชื่อมาได้เลย",
-        "onscreen_text": [
-            "ช่วยประหยัดเวลาได้จริงไหม?",
-            "จับเวลาก่อนใช้",
-            "ทดลองกับงานจริง",
-            "เทียบเวลา + คุณภาพ",
-            "ค่อยสรุปว่าคุ้มไหม",
-        ],
-        "visual_prompt": (
-            "Vertical 9:16 modern AI productivity test, laptop and phone UI, timer, clean desk, "
-            "Thai creator-tech aesthetic, crisp interface closeups, no fake brand claims"
-        ),
-        "motion_prompt": (
-            "Fast clean cuts, timer animation, screen-recording style inserts, subtle zooms, "
-            "kinetic Thai captions, 30-45 seconds"
-        ),
-        "risk_level": "LOW",
-    }
 
 
 def _claim_selected_job(job_id: str) -> dict[str, Any] | None:
@@ -259,7 +305,8 @@ def _finish_job(job: dict[str, Any], package: dict[str, Any],
 def _fail_job(job: dict[str, Any], exc: Exception) -> None:
     job_id = urllib.parse.quote(str(job["id"]), safe="")
     retry_count = int(job.get("retry_count") or 0) + 1
-    status = "SELECTED" if retry_count <= 2 else "GENERATION_FAILED"
+    retryable = not isinstance(exc, NonRetryableGenerationError)
+    status = "SELECTED" if retryable and retry_count <= 2 else "GENERATION_FAILED"
     _supabase_request(
         "PATCH",
         f"content_jobs?id=eq.{job_id}",
@@ -286,19 +333,18 @@ def _process_claimed_job(job: dict[str, Any]) -> bool:
             content_format=str(package_context.get("format") or ""),
         )
         package_context["performance_feedback"] = feedback
+        idea = str(job.get("idea") or "")
         result = _call_provider(
-            str(job.get("idea") or ""),
+            idea,
             package_context,
         )
         if result is None:
-            package, provider, model = (
-                _fallback_package(str(job.get("idea") or "")),
-                "template_fallback",
-                "v0",
+            raise NonRetryableGenerationError(
+                "No AI generation provider succeeded; refusing template fallback"
             )
-        else:
-            package, provider, model = result
+        package, provider, model = result
         package["performance_feedback"] = feedback
+        package["semantic_fidelity"] = _enforce_semantic_fidelity(idea, package)
         _finish_job(job, package, provider, model)
         _send_telegram(
             f"✍️ Job #{idea_id} — READY_FOR_REVIEW\n"
