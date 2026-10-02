@@ -2,15 +2,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/models/content_job.dart';
 import 'package:frontend/pages/home_page.dart';
 
-ContentJob job(String status, {String publishStatus = 'PENDING'}) {
+ContentJob job(
+  String status, {
+  String publishStatus = 'PENDING',
+  bool needsVideo = false,
+}) {
   return ContentJob(
     id: '9fa31f8e-3a34-405a-9aaa-4e487e68fd32',
     idea: 'Telegram Bot automation',
     status: status,
     publishPlatform: 'facebook',
     publishStatus: publishStatus,
-    contentPackage: const {
+    contentPackage: {
       'format': 'question_post',
+      'needs_video': needsVideo,
     },
   );
 }
@@ -36,6 +41,17 @@ void main() {
     expect(JobQueuePresentation.statusRank(review), 0);
     expect(JobQueuePresentation.statusRank(publish), 0);
     expect(JobQueuePresentation.statusRank(failed), 1);
+  });
+
+  test('passive video backlog is not misclassified as action required', () {
+    final videoBacklog = job('BACKLOG', needsVideo: true);
+
+    expect(videoBacklog.blocker, 'Waiting for video pipeline');
+    expect(JobQueuePresentation.isFailure(videoBacklog), isFalse);
+    expect(
+      JobQueuePresentation.groupFor(videoBacklog),
+      QueueFilter.backlog,
+    );
   });
 
   test('processing completed and backlog states remain distinguishable', () {
