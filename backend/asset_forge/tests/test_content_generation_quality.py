@@ -115,7 +115,7 @@ def test_provider_defaults_use_current_gemini_and_pollinations_models() -> None:
         in content_generation.PROVIDERS
     }
 
-    assert providers["gemini"]["default_model"] == "gemini-3.8-flash"
+    assert providers["gemini"]["default_model"] == "gemini-3.5-flash-lite"
     assert providers["pollinations"]["default_model"] == "openai/gpt-5.4-nano"
 
 
