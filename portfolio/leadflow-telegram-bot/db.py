@@ -42,6 +42,11 @@ def init_db():
             updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
         """)
+        conn.execute("""
+            UPDATE notification_outbox
+            SET status = 'PENDING', updated_at = CURRENT_TIMESTAMP
+            WHERE status = 'SENDING'
+        """)
         conn.commit()
 
 def create_lead(user_id, username, name, contact, need, budget, score, label):
@@ -109,14 +114,41 @@ def enqueue_notification(event_key, notification_type, lead_id, chat_id, text, p
         conn.commit()
         return row
 
-def pending_notifications(limit=20):
+def claim_notification(notification_id):
     with connect() as conn:
-        return conn.execute("""
-            SELECT * FROM notification_outbox
-            WHERE status = 'PENDING'
-            ORDER BY id ASC
-            LIMIT ?
-        """, (limit,)).fetchall()
+        cur = conn.execute("""
+            UPDATE notification_outbox
+            SET status = 'SENDING', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'PENDING'
+        """, (notification_id,))
+        if cur.rowcount != 1:
+            conn.commit()
+            return None
+        row = conn.execute(
+            "SELECT * FROM notification_outbox WHERE id = ?",
+            (notification_id,),
+        ).fetchone()
+        conn.commit()
+        return row
+
+def claim_pending_notifications(limit=20):
+    with connect() as conn:
+        ids = [
+            row["id"]
+            for row in conn.execute("""
+                SELECT id FROM notification_outbox
+                WHERE status = 'PENDING'
+                ORDER BY id ASC
+                LIMIT ?
+            """, (limit,)).fetchall()
+        ]
+
+    claimed = []
+    for notification_id in ids:
+        row = claim_notification(notification_id)
+        if row is not None:
+            claimed.append(row)
+    return claimed
 
 def mark_notification_sent(notification_id):
     with connect() as conn:
@@ -126,7 +158,7 @@ def mark_notification_sent(notification_id):
                 attempts = attempts + 1,
                 last_error = NULL,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = ? AND status = 'PENDING'
+            WHERE id = ? AND status = 'SENDING'
         """, (notification_id,))
         conn.commit()
         return cur.rowcount == 1
@@ -137,7 +169,7 @@ def mark_notification_failed(notification_id, error, max_attempts=5):
             "SELECT attempts, status FROM notification_outbox WHERE id = ?",
             (notification_id,),
         ).fetchone()
-        if not row or row["status"] != "PENDING":
+        if not row or row["status"] != "SENDING":
             return False
 
         attempts = int(row["attempts"]) + 1
@@ -148,7 +180,7 @@ def mark_notification_failed(notification_id, error, max_attempts=5):
                 attempts = ?,
                 last_error = ?,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = ? AND status = 'PENDING'
+            WHERE id = ? AND status = 'SENDING'
         """, (next_status, attempts, str(error)[:500], notification_id))
         conn.commit()
         return cur.rowcount == 1
