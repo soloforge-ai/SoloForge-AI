@@ -26,6 +26,22 @@ def init_db():
             updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
         """)
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS notification_outbox (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_key TEXT NOT NULL UNIQUE,
+            notification_type TEXT NOT NULL,
+            lead_id INTEGER,
+            chat_id INTEGER NOT NULL,
+            text TEXT NOT NULL,
+            parse_mode TEXT NOT NULL DEFAULT 'HTML',
+            status TEXT NOT NULL DEFAULT 'PENDING',
+            attempts INTEGER NOT NULL DEFAULT 0,
+            last_error TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
         conn.commit()
 
 def create_lead(user_id, username, name, contact, need, budget, score, label):
@@ -77,3 +93,71 @@ def stats():
             "rejected": rejected,
             "avg_score": round(avg_score, 1),
         }
+
+
+def enqueue_notification(event_key, notification_type, lead_id, chat_id, text, parse_mode="HTML"):
+    with connect() as conn:
+        conn.execute("""
+            INSERT OR IGNORE INTO notification_outbox (
+                event_key, notification_type, lead_id, chat_id, text, parse_mode
+            ) VALUES (?, ?, ?, ?, ?, ?)
+        """, (event_key, notification_type, lead_id, chat_id, text, parse_mode))
+        row = conn.execute(
+            "SELECT * FROM notification_outbox WHERE event_key = ?",
+            (event_key,),
+        ).fetchone()
+        conn.commit()
+        return row
+
+def pending_notifications(limit=20):
+    with connect() as conn:
+        return conn.execute("""
+            SELECT * FROM notification_outbox
+            WHERE status = 'PENDING'
+            ORDER BY id ASC
+            LIMIT ?
+        """, (limit,)).fetchall()
+
+def mark_notification_sent(notification_id):
+    with connect() as conn:
+        cur = conn.execute("""
+            UPDATE notification_outbox
+            SET status = 'SENT',
+                attempts = attempts + 1,
+                last_error = NULL,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'PENDING'
+        """, (notification_id,))
+        conn.commit()
+        return cur.rowcount == 1
+
+def mark_notification_failed(notification_id, error, max_attempts=5):
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT attempts, status FROM notification_outbox WHERE id = ?",
+            (notification_id,),
+        ).fetchone()
+        if not row or row["status"] != "PENDING":
+            return False
+
+        attempts = int(row["attempts"]) + 1
+        next_status = "FAILED" if attempts >= max_attempts else "PENDING"
+        cur = conn.execute("""
+            UPDATE notification_outbox
+            SET status = ?,
+                attempts = ?,
+                last_error = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'PENDING'
+        """, (next_status, attempts, str(error)[:500], notification_id))
+        conn.commit()
+        return cur.rowcount == 1
+
+def outbox_stats():
+    with connect() as conn:
+        rows = conn.execute("""
+            SELECT status, COUNT(*) AS count
+            FROM notification_outbox
+            GROUP BY status
+        """).fetchall()
+        return {row["status"]: row["count"] for row in rows}
