@@ -69,6 +69,54 @@ class LeadFlowTest(unittest.TestCase):
             run(bot.stats_cmd(user, SimpleNamespace()))
         self.assertIn("Admin only", user.message.reply_text.await_args.args[0])
 
+    def test_admin_notification_failure_is_persisted_and_retried(self):
+        context = SimpleNamespace(
+            user_data={"lead": {
+                "name": "Name",
+                "contact": "contact",
+                "need": "Telegram bot",
+            }},
+            bot=SimpleNamespace(
+                send_message=AsyncMock(side_effect=[RuntimeError("telegram down"), None])
+            ),
+        )
+        update = self.update("1000 USD")
+
+        run(bot.lead_budget(update, context))
+
+        stats = db.outbox_stats()
+        self.assertEqual(stats.get("PENDING"), 1)
+
+        delivered = run(bot.drain_notification_outbox(context.bot))
+        self.assertEqual(delivered, 1)
+        stats = db.outbox_stats()
+        self.assertEqual(stats.get("SENT"), 1)
+        self.assertIsNone(stats.get("PENDING"))
+
+    def test_outbox_event_key_is_idempotent(self):
+        first = db.enqueue_notification(
+            "lead:1:admin:new", "ADMIN_NEW_LEAD", 1, 99, "hello"
+        )
+        second = db.enqueue_notification(
+            "lead:1:admin:new", "ADMIN_NEW_LEAD", 1, 99, "different"
+        )
+
+        self.assertEqual(first["id"], second["id"])
+        claimed = db.claim_pending_notifications()
+        self.assertEqual(len(claimed), 1)
+
+    def test_stuck_sending_notification_is_recovered_on_init(self):
+        row = db.enqueue_notification(
+            "lead:1:owner:APPROVED", "LEAD_STATUS", 1, 12, "approved"
+        )
+        claimed = db.claim_notification(row["id"])
+        self.assertIsNotNone(claimed)
+        self.assertEqual(db.outbox_stats().get("SENDING"), 1)
+
+        db.init_db()
+
+        self.assertEqual(db.outbox_stats().get("PENDING"), 1)
+
     def test_replayed_callback_does_not_notify_twice(self):
         lead_id = db.create_lead(12, "someone", "Name", "contact", "need", "budget", 30, "COLD")
         query = SimpleNamespace(from_user=SimpleNamespace(id=99), data=f"approve:{lead_id}",
@@ -82,6 +130,7 @@ class LeadFlowTest(unittest.TestCase):
         self.assertEqual(db.get_lead(lead_id)["status"], "APPROVED")
         self.assertEqual(context.bot.send_message.await_count, 1)
         self.assertEqual(query.edit_message_reply_markup.await_count, 1)
+        self.assertEqual(db.outbox_stats().get("SENT"), 1)
         query.from_user.id = 12
         run(bot.admin_action(update, context))
         self.assertEqual(context.bot.send_message.await_count, 1)
@@ -95,3 +144,41 @@ class LeadFlowTest(unittest.TestCase):
                 run(bot.lead_budget(update, context))
         update.message.reply_text.assert_not_awaited()
         context.bot.send_message.assert_not_awaited()
+        self.assertEqual(db.outbox_stats(), {})
+
+
+    def test_owner_notification_survives_admin_message_failure(self):
+        lead_id = db.create_lead(
+            12, "someone", "Name", "contact", "need", "budget", 30, "COLD"
+        )
+        query = SimpleNamespace(
+            from_user=SimpleNamespace(id=99),
+            data=f"approve:{lead_id}",
+            answer=AsyncMock(),
+            edit_message_reply_markup=AsyncMock(
+                side_effect=RuntimeError("admin message unavailable")
+            ),
+            message=SimpleNamespace(reply_text=AsyncMock()),
+        )
+        update = SimpleNamespace(callback_query=query)
+        context = SimpleNamespace(bot=SimpleNamespace(send_message=AsyncMock()))
+
+        run(bot.admin_action(update, context))
+
+        self.assertEqual(db.get_lead(lead_id)["status"], "APPROVED")
+        self.assertEqual(context.bot.send_message.await_count, 1)
+        self.assertEqual(db.outbox_stats().get("SENT"), 1)
+
+    def test_outbox_stops_retrying_after_max_attempts(self):
+        row = db.enqueue_notification(
+            "lead:1:owner:REJECTED", "LEAD_STATUS", 1, 12, "rejected"
+        )
+        telegram_bot = SimpleNamespace(
+            send_message=AsyncMock(side_effect=RuntimeError("telegram down"))
+        )
+
+        for _ in range(5):
+            run(bot.drain_notification_outbox(telegram_bot))
+
+        self.assertEqual(db.outbox_stats().get("FAILED"), 1)
+        self.assertEqual(telegram_bot.send_message.await_count, 5)
