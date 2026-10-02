@@ -254,12 +254,20 @@ def _call_provider(
         api_key = os.getenv(key_env, "").strip()
         if not api_key:
             continue
-        if provider == "pollinations" and not api_key.startswith("sk_"):
-            print("content_provider_skipped", {
-                "provider": provider,
-                "reason": "server_key_must_use_sk_prefix",
-            })
-            continue
+        if provider == "pollinations":
+            enabled = os.getenv("POLLINATIONS_TEXT_ENABLED", "false").strip().lower()
+            if enabled not in {"1", "true", "yes", "on"}:
+                print("content_provider_skipped", {
+                    "provider": provider,
+                    "reason": "text_fallback_disabled",
+                })
+                continue
+            if not api_key.startswith("sk_"):
+                print("content_provider_skipped", {
+                    "provider": provider,
+                    "reason": "server_key_must_use_sk_prefix",
+                })
+                continue
         model = os.getenv(model_env, default_model).strip() or default_model
         context = content_package or {}
         brief = {
