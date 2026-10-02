@@ -34,6 +34,11 @@ REVENUE_OPPORTUNITY_FIELDS = (
     "own_product",
     "estimated_effort",
     "revenue_score",
+    "demand",
+    "content_fit",
+    "monetization",
+    "conversion_potential",
+    "effort_efficiency",
 )
 
 
@@ -55,10 +60,15 @@ def _load_facebook_voice_profile() -> dict[str, Any]:
 def _revenue_opportunity(context: dict[str, Any]) -> dict[str, Any]:
     nested = context.get("revenue_opportunity")
     source = nested if isinstance(nested, dict) else context
+    has_revenue_context = (
+        isinstance(nested, dict)
+        or any(key in context for key in REVENUE_OPPORTUNITY_FIELDS)
+    )
+    if not has_revenue_context:
+        return {}
     return {
         key: source.get(key)
         for key in REVENUE_OPPORTUNITY_FIELDS
-        if source.get(key) not in (None, "")
     }
 
 
