@@ -1,0 +1,37 @@
+name: LeadFlow Test
+
+on:
+  push:
+    paths:
+      - 'portfolio/leadflow-telegram-bot/**'
+      - '.github/workflows/leadflow-test.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'portfolio/leadflow-telegram-bot/**'
+      - '.github/workflows/leadflow-test.yml'
+  workflow_dispatch:
+
+jobs:
+  leadflow-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install LeadFlow dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r portfolio/leadflow-telegram-bot/requirements.txt
+
+      - name: Compile LeadFlow
+        run: python -m compileall -q portfolio/leadflow-telegram-bot
+
+      - name: Run LeadFlow regression tests
+        run: python -m unittest discover -s portfolio/leadflow-telegram-bot -p 'test_*.py' -v
