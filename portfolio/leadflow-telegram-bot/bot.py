@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import suppress
 import logging
 from html import escape
 import os
@@ -8,7 +10,19 @@ from telegram.ext import (
     ContextTypes, MessageHandler, filters,
 )
 
-from db import init_db, create_lead, get_lead, update_status, recent_leads, stats
+from db import (
+    claim_notification,
+    claim_pending_notifications,
+    create_lead,
+    enqueue_notification,
+    get_lead,
+    init_db,
+    mark_notification_failed,
+    mark_notification_sent,
+    recent_leads,
+    stats,
+    update_status,
+)
 from scoring import score_lead
 
 load_dotenv()
@@ -27,6 +41,69 @@ FOOTER = "\n\nPowered by SoloForge AI"
 
 def is_admin(user_id: int) -> bool:
     return ADMIN_CHAT_ID is not None and user_id == ADMIN_CHAT_ID
+
+def _admin_keyboard(lead_id: int):
+    return InlineKeyboardMarkup([[
+        InlineKeyboardButton("✅ Approve", callback_data=f"approve:{lead_id}"),
+        InlineKeyboardButton("❌ Reject", callback_data=f"reject:{lead_id}"),
+    ]])
+
+async def _deliver_claimed_notification(telegram_bot, row) -> bool:
+    kwargs = {
+        "chat_id": row["chat_id"],
+        "text": row["text"],
+        "parse_mode": row["parse_mode"],
+    }
+    if row["notification_type"] == "ADMIN_NEW_LEAD" and row["lead_id"] is not None:
+        kwargs["reply_markup"] = _admin_keyboard(int(row["lead_id"]))
+
+    try:
+        await telegram_bot.send_message(**kwargs)
+    except Exception as exc:
+        mark_notification_failed(row["id"], exc)
+        logger.exception(
+            "Could not deliver outbox notification",
+            extra={"notification_id": row["id"], "event_key": row["event_key"]},
+        )
+        return False
+
+    mark_notification_sent(row["id"])
+    return True
+
+async def _deliver_notification(telegram_bot, notification_id: int) -> bool:
+    row = claim_notification(notification_id)
+    if row is None:
+        return False
+    return await _deliver_claimed_notification(telegram_bot, row)
+
+async def drain_notification_outbox(telegram_bot, limit: int = 20) -> int:
+    delivered = 0
+    for row in claim_pending_notifications(limit):
+        if await _deliver_claimed_notification(telegram_bot, row):
+            delivered += 1
+    return delivered
+
+async def _outbox_retry_loop(application):
+    while True:
+        await asyncio.sleep(30)
+        try:
+            await drain_notification_outbox(application.bot)
+        except Exception:
+            logger.exception("LeadFlow outbox retry cycle failed")
+
+async def _post_init(application):
+    await drain_notification_outbox(application.bot)
+    application.bot_data["outbox_retry_task"] = asyncio.create_task(
+        _outbox_retry_loop(application)
+    )
+
+async def _post_shutdown(application):
+    task = application.bot_data.pop("outbox_retry_task", None)
+    if task is None:
+        return
+    task.cancel()
+    with suppress(asyncio.CancelledError):
+        await task
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
@@ -132,22 +209,8 @@ async def lead_budget(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lead["need"], lead["budget"], score, label
     )
 
-    await update.message.reply_text(
-        "✅ <b>Lead submitted successfully</b>\n\n"
-        f"Lead ID: #{lead_id}\n"
-        f"Qualification: {label} ({score}/100)\n"
-        "Status: PENDING\n\n"
-        "Your request has been sent to the team."
-        + FOOTER,
-        parse_mode="HTML",
-    )
-
+    notification = None
     if ADMIN_CHAT_ID:
-        keyboard = InlineKeyboardMarkup([[
-            InlineKeyboardButton("✅ Approve", callback_data=f"approve:{lead_id}"),
-            InlineKeyboardButton("❌ Reject", callback_data=f"reject:{lead_id}"),
-        ]])
-
         admin_text = (
             f"🔥 <b>NEW LEAD #{lead_id}</b>\n\n"
             f"<b>Name:</b> {escape(lead['name'])}\n"
@@ -160,16 +223,26 @@ async def lead_budget(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"<b>User ID:</b> <code>{user.id}</code>"
             + FOOTER
         )
+        notification = enqueue_notification(
+            event_key=f"lead:{lead_id}:admin:new",
+            notification_type="ADMIN_NEW_LEAD",
+            lead_id=lead_id,
+            chat_id=ADMIN_CHAT_ID,
+            text=admin_text,
+        )
 
-        try:
-            await context.bot.send_message(
-                chat_id=ADMIN_CHAT_ID,
-                text=admin_text,
-                parse_mode="HTML",
-                reply_markup=keyboard,
-            )
-        except Exception:
-            logger.exception("Could not send admin notification")
+    await update.message.reply_text(
+        "✅ <b>Lead submitted successfully</b>\n\n"
+        f"Lead ID: #{lead_id}\n"
+        f"Qualification: {label} ({score}/100)\n"
+        "Status: PENDING\n\n"
+        "Your request has been received and queued for the team."
+        + FOOTER,
+        parse_mode="HTML",
+    )
+
+    if notification is not None:
+        await _deliver_notification(context.bot, int(notification["id"]))
 
     context.user_data.pop("lead", None)
     return ConversationHandler.END
@@ -199,12 +272,6 @@ async def admin_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text("Lead already decided. No change was made." + FOOTER)
         return
 
-    symbol = "✅" if status == "APPROVED" else "❌"
-    await query.edit_message_reply_markup(reply_markup=None)
-    await query.message.reply_text(
-        f"{symbol} Lead #{lead_id} → {status}" + FOOTER
-    )
-
     if status == "APPROVED":
         user_text = (
             f"✅ <b>Lead #{lead_id} approved</b>\n\n"
@@ -218,14 +285,24 @@ async def admin_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "The team will not move forward with this request at this time."
         )
 
+    notification = enqueue_notification(
+        event_key=f"lead:{lead_id}:owner:{status}",
+        notification_type="LEAD_STATUS",
+        lead_id=lead_id,
+        chat_id=lead["telegram_user_id"],
+        text=user_text + FOOTER,
+    )
+
+    symbol = "✅" if status == "APPROVED" else "❌"
     try:
-        await context.bot.send_message(
-            chat_id=lead["telegram_user_id"],
-            text=user_text + FOOTER,
-            parse_mode="HTML",
+        await query.edit_message_reply_markup(reply_markup=None)
+        await query.message.reply_text(
+            f"{symbol} Lead #{lead_id} → {status}" + FOOTER
         )
     except Exception:
-        logger.exception("Could not notify lead owner")
+        logger.exception("Could not update admin decision message")
+
+    await _deliver_notification(context.bot, int(notification["id"]))
 
 async def leads_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
@@ -271,7 +348,13 @@ def build_app():
         raise RuntimeError("BOT_TOKEN is missing. Set it in .env.")
 
     init_db()
-    app = Application.builder().token(BOT_TOKEN).build()
+    app = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .post_init(_post_init)
+        .post_shutdown(_post_shutdown)
+        .build()
+    )
 
     conv = ConversationHandler(
         entry_points=[CommandHandler("newlead", newlead)],
