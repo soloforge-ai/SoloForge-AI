@@ -60,3 +60,29 @@ def test_status_never_exposes_provider_credential() -> None:
     )
 
     assert result == {"authenticated": True, "session_type": "soloforge"}
+
+
+def test_refresh_rotates_valid_app_session_without_provider(monkeypatch) -> None:
+    original = soloforge_session.issue_session()
+
+    monkeypatch.setattr(
+        soloforge_session,
+        "get_pollinations_access_token_from_authorization",
+        lambda _: (_ for _ in ()).throw(
+            AssertionError("refresh must not call provider auth")
+        ),
+    )
+
+    refreshed = soloforge_session.refresh_soloforge_session(
+        f"Bearer {original.session_id}"
+    )
+
+    assert refreshed["session_type"] == "soloforge"
+    assert refreshed["session_token"] != original.session_id
+    assert soloforge_session.validate_session_token(refreshed["session_token"]) is True
+
+
+def test_refresh_rejects_invalid_app_session() -> None:
+    with pytest.raises(HTTPException) as exc:
+        soloforge_session.refresh_soloforge_session("Bearer invalid")
+    assert exc.value.status_code == 401
