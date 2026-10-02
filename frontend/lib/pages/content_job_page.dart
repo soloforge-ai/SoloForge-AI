@@ -5,6 +5,56 @@ import '../models/content_job.dart';
 import '../services/content_job_service.dart';
 import '../widgets/content/publishing_dialogs.dart';
 
+class ContentQualityReview {
+  const ContentQualityReview({
+    required this.status,
+    required this.reason,
+    required this.matchedAnchors,
+    required this.requiredAnchors,
+    required this.available,
+  });
+
+  final String status;
+  final String reason;
+  final List<String> matchedAnchors;
+  final List<String> requiredAnchors;
+  final bool available;
+
+  bool get blocksApproval => available && status == 'FAIL';
+
+  static ContentQualityReview fromJob(ContentJob job) {
+    final raw = job.contentPackage['semantic_fidelity'];
+    if (raw is! Map) {
+      return const ContentQualityReview(
+        status: 'NOT_AVAILABLE',
+        reason: 'Semantic fidelity metadata is not available for this job.',
+        matchedAnchors: [],
+        requiredAnchors: [],
+        available: false,
+      );
+    }
+
+    List<String> strings(dynamic value) {
+      if (value is! List) return const [];
+      return value
+          .map((item) => item.toString().trim())
+          .where((item) => item.isNotEmpty)
+          .toList(growable: false);
+    }
+
+    final status = raw['status']?.toString().trim().toUpperCase();
+    return ContentQualityReview(
+      status: status == null || status.isEmpty ? 'NOT_AVAILABLE' : status,
+      reason: raw['reason']?.toString().trim().isNotEmpty == true
+          ? raw['reason'].toString().trim()
+          : 'No semantic fidelity reason was recorded.',
+      matchedAnchors: strings(raw['matched_anchors']),
+      requiredAnchors: strings(raw['required_anchors']),
+      available: status != null && status.isNotEmpty,
+    );
+  }
+}
+
 class ContentJobPage extends StatefulWidget {
   const ContentJobPage({super.key, required this.job});
 
@@ -208,7 +258,11 @@ class _ContentJobPageState extends State<ContentJobPage> {
   bool get _canEdit =>
       _job.status == 'READY_FOR_REVIEW' || _job.status == 'BACKLOG';
 
-  bool get _canApprove => _job.status == 'READY_FOR_REVIEW';
+  ContentQualityReview get _qualityReview =>
+      ContentQualityReview.fromJob(_job);
+
+  bool get _canApprove =>
+      _job.status == 'READY_FOR_REVIEW' && !_qualityReview.blocksApproval;
   bool get _canPublish => _job.status == 'READY_TO_PUBLISH';
 
   bool get _canRegenerate => const {
@@ -293,6 +347,15 @@ class _ContentJobPageState extends State<ContentJobPage> {
               const LinearProgressIndicator(),
             ],
             const SizedBox(height: 16),
+            _ContentQualityReviewCard(
+              idea: _job.idea,
+              hook: _hook.text,
+              caption: _caption.text,
+              provider: _job.generatorProvider,
+              model: _job.generatorModel,
+              review: _qualityReview,
+            ),
+            const SizedBox(height: 4),
             _DraftField(
               title: 'Hook',
               controller: _hook,
@@ -405,13 +468,41 @@ class _ContentJobPageState extends State<ContentJobPage> {
                 label: const Text('Save Draft'),
               ),
             if (!_editing) ...[
+              if (_job.status == 'READY_FOR_REVIEW' &&
+                  _qualityReview.blocksApproval) ...[
+                Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.block_outlined,
+                          color: AshColors.mutedRose,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Approval blocked: generated content failed semantic fidelity QA.',
+                            style: const TextStyle(
+                              color: AshColors.mutedRose,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               if (_canApprove)
                 FilledButton.icon(
                   onPressed: _busy ? null : _approve,
                   icon: const Icon(Icons.check_circle_outline),
                   label: const Text('Approve'),
                 ),
-              if (_canApprove) const SizedBox(height: 8),
+              if (_job.status == 'READY_FOR_REVIEW') const SizedBox(height: 8),
               if (_canRegenerate)
                 OutlinedButton.icon(
                   onPressed: _busy ? null : _regenerate,
@@ -432,6 +523,130 @@ class _ContentJobPageState extends State<ContentJobPage> {
                   label: const Text('Schedule'),
                 ),
               ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ContentQualityReviewCard extends StatelessWidget {
+  const _ContentQualityReviewCard({
+    required this.idea,
+    required this.hook,
+    required this.caption,
+    required this.provider,
+    required this.model,
+    required this.review,
+  });
+
+  final String idea;
+  final String hook;
+  final String caption;
+  final String? provider;
+  final String? model;
+  final ContentQualityReview review;
+
+  String get _statusLabel {
+    if (!review.available) return 'Not available';
+    if (review.status == 'PASS') return 'PASS';
+    if (review.status == 'FAIL') return 'FAIL';
+    return review.status;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final generated = [
+      if (hook.trim().isNotEmpty) 'Hook: ${hook.trim()}',
+      if (caption.trim().isNotEmpty) 'Caption: ${caption.trim()}',
+    ].join('\n\n');
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Content Quality Review',
+              style: TextStyle(
+                color: AshColors.mutedRose,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Original Idea',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 5),
+            Text(idea.trim().isEmpty ? '—' : idea.trim()),
+            const SizedBox(height: 12),
+            const Text(
+              'Generated Content',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 5),
+            Text(generated.isEmpty ? '—' : generated),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Text(
+                  'Semantic Fidelity',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(width: 8),
+                _Chip(label: _statusLabel),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              review.reason,
+              style: const TextStyle(color: AshColors.smokeSilver),
+            ),
+            if (review.requiredAnchors.isNotEmpty) ...[
+              const SizedBox(height: 7),
+              Text(
+                'Required: ${review.requiredAnchors.join(', ')}',
+                style: const TextStyle(
+                  color: AshColors.smokeSilver,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+            if (review.matchedAnchors.isNotEmpty) ...[
+              const SizedBox(height: 3),
+              Text(
+                'Matched: ${review.matchedAnchors.join(', ')}',
+                style: const TextStyle(
+                  color: AshColors.smokeSilver,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+            if ((provider?.trim().isNotEmpty ?? false) ||
+                (model?.trim().isNotEmpty ?? false)) ...[
+              const SizedBox(height: 7),
+              Text(
+                'Generated by ${provider?.trim().isNotEmpty == true ? provider!.trim() : 'unknown'}'
+                '${model?.trim().isNotEmpty == true ? ' · ${model!.trim()}' : ''}',
+                style: const TextStyle(
+                  color: AshColors.smokeSilver,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+            if (!review.available) ...[
+              const SizedBox(height: 7),
+              const Text(
+                'Legacy job: review the draft manually before approval.',
+                style: TextStyle(
+                  color: AshColors.smokeSilver,
+                  fontSize: 12,
+                ),
+              ),
             ],
           ],
         ),
