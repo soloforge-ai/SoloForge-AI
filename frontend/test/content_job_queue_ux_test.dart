@@ -92,3 +92,45 @@ void main() {
     );
   });
 }
+
+
+  test('search matches multiple terms across human-readable job metadata', () {
+    final review = job('READY_FOR_REVIEW');
+
+    expect(
+      JobQueuePresentation.matchesSearch(review, 'telegram review'),
+      isTrue,
+    );
+    expect(
+      JobQueuePresentation.matchesSearch(review, 'facebook question'),
+      isTrue,
+    );
+    expect(
+      JobQueuePresentation.matchesSearch(review, 'ready review'),
+      isTrue,
+    );
+    expect(
+      JobQueuePresentation.matchesSearch(review, 'publish now'),
+      isFalse,
+    );
+  });
+
+  test('search is case-insensitive and supports short job id', () {
+    final review = job('READY_FOR_REVIEW');
+
+    expect(
+      JobQueuePresentation.matchesSearch(review, '9FA31F8E'),
+      isTrue,
+    );
+    expect(
+      JobQueuePresentation.matchesSearch(review, 'TELEGRAM FACEBOOK'),
+      isTrue,
+    );
+  });
+
+  test('empty search matches every job', () {
+    expect(
+      JobQueuePresentation.matchesSearch(job('BACKLOG'), '   '),
+      isTrue,
+    );
+  });
