@@ -13,6 +13,29 @@ import 'settings_page.dart';
 enum QueueFilter { all, actionRequired, processing, completed, backlog }
 
 class JobQueuePresentation {
+  static bool matchesSearch(ContentJob job, String query) {
+    final terms = query
+        .trim()
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((term) => term.isNotEmpty)
+        .toList(growable: false);
+    if (terms.isEmpty) return true;
+
+    final haystack = [
+      job.contentId,
+      job.idea,
+      job.status,
+      statusLabel(job.status),
+      actionLabel(job),
+      job.format,
+      job.publishPlatform,
+      groupFor(job).name,
+    ].join(' ').toLowerCase();
+
+    return terms.every(haystack.contains);
+  }
+
   static const _processingStatuses = {
     'GENERATING',
     'APPROVED',
@@ -124,6 +147,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ContentJobService _contentJobService = ContentJobService();
   final TextEditingController _ideaController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   List<ContentJob> _allJobs = const [];
   List<ContentJob> _jobs = const [];
@@ -144,6 +168,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _ideaController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -228,11 +253,8 @@ class _HomePageState extends State<HomePage> {
     final keyword = _keyword.trim().toLowerCase();
 
     var jobs = _allJobs.where((job) {
-      if (keyword.isNotEmpty) {
-        final haystack =
-            '${job.contentId} ${job.idea} ${job.status} ${job.format} ${job.publishPlatform}'
-                .toLowerCase();
-        if (!haystack.contains(keyword)) return false;
+      if (!JobQueuePresentation.matchesSearch(job, keyword)) {
+        return false;
       }
 
       switch (_filter) {
@@ -303,6 +325,13 @@ class _HomePageState extends State<HomePage> {
   int get _activeCount => _allJobs
       .where((job) => !const {'PUBLISHED', 'ARCHIVED'}.contains(job.status))
       .length;
+
+  int _filterCount(QueueFilter filter) {
+    if (filter == QueueFilter.all) return _allJobs.length;
+    return _allJobs
+        .where((job) => JobQueuePresentation.groupFor(job) == filter)
+        .length;
+  }
 
   String _filterLabel(QueueFilter filter) {
     switch (filter) {
@@ -400,13 +429,25 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 10),
             TextField(
+              controller: _searchController,
               onChanged: (value) {
                 _keyword = value;
                 _applyFilters();
               },
               decoration: InputDecoration(
-                hintText: 'Search content jobs...',
+                hintText: 'Search idea, status, platform, format...',
                 prefixIcon: const Icon(Icons.search, size: 19),
+                suffixIcon: _keyword.trim().isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Clear search',
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          _keyword = '';
+                          _applyFilters();
+                        },
+                      ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -424,7 +465,9 @@ class _HomePageState extends State<HomePage> {
                   final selected = filter == _filter;
                   return ChoiceChip(
                     selected: selected,
-                    label: Text(_filterLabel(filter)),
+                    label: Text(
+                      '${_filterLabel(filter)} (${_filterCount(filter)})',
+                    ),
                     onSelected: (_) {
                       _filter = filter;
                       _applyFilters();
@@ -451,7 +494,9 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const Spacer(),
                 Text(
-                  '${_jobs.length} jobs',
+                  _jobs.length == _allJobs.length
+                      ? '${_jobs.length} jobs'
+                      : '${_jobs.length} of ${_allJobs.length}',
                   style: const TextStyle(color: AshColors.smokeSilver),
                 ),
               ],
@@ -465,9 +510,28 @@ class _HomePageState extends State<HomePage> {
             else if (_error != null)
               _ErrorCard(message: _error!, onRetry: _loadJobs)
             else if (_jobs.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 48),
-                child: Center(child: Text('No content jobs in this view.')),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 48),
+                child: Center(
+                  child: Column(
+                    children: [
+                      const Text('No content jobs match this view.'),
+                      if (_keyword.trim().isNotEmpty || _filter != QueueFilter.all) ...[
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            _searchController.clear();
+                            _keyword = '';
+                            _filter = QueueFilter.all;
+                            _applyFilters();
+                          },
+                          icon: const Icon(Icons.filter_alt_off_outlined),
+                          label: const Text('Clear search & filters'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               )
             else
               ..._jobs.map(
