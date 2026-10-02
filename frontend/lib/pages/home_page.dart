@@ -10,7 +10,109 @@ import 'asset_forge_page.dart';
 import 'content_job_page.dart';
 import 'settings_page.dart';
 
-enum QueueFilter { all, today, review, blocked, published }
+enum QueueFilter { all, actionRequired, processing, completed, backlog }
+
+class JobQueuePresentation {
+  static const _processingStatuses = {
+    'GENERATING',
+    'APPROVED',
+    'ASSET_QUEUED',
+    'ASSET_GENERATING',
+    'ASSET_READY',
+    'AUDIO_GENERATING',
+    'AUDIO_READY',
+    'FINAL_RENDERING',
+    'RENDERING',
+    'PUBLISHING',
+  };
+
+  static const _backlogStatuses = {
+    'NEW',
+    'SCORED',
+    'SELECTED',
+    'BACKLOG',
+    'ARCHIVED',
+  };
+
+  static bool isFailure(ContentJob job) =>
+      job.status.endsWith('_FAILED') ||
+      (job.blocker != null && job.status != 'BACKLOG');
+
+  static QueueFilter groupFor(ContentJob job) {
+    if (job.status == 'READY_FOR_REVIEW' ||
+        job.status == 'READY_TO_PUBLISH' ||
+        isFailure(job)) {
+      return QueueFilter.actionRequired;
+    }
+    if (_processingStatuses.contains(job.status)) {
+      return QueueFilter.processing;
+    }
+    if (job.status == 'PUBLISHED' || job.publishStatus == 'PUBLISHED') {
+      return QueueFilter.completed;
+    }
+    if (_backlogStatuses.contains(job.status)) {
+      return QueueFilter.backlog;
+    }
+    return QueueFilter.backlog;
+  }
+
+  static String statusLabel(String status) {
+    const labels = {
+      'NEW': 'New',
+      'SCORING': 'Scoring',
+      'SCORED': 'Scored',
+      'SELECTED': 'Queued',
+      'BACKLOG': 'Backlog',
+      'ARCHIVED': 'Archived',
+      'GENERATING': 'Generating',
+      'READY_FOR_REVIEW': 'Ready for Review',
+      'APPROVED': 'Approved',
+      'ASSET_QUEUED': 'Asset Queued',
+      'ASSET_GENERATING': 'Generating Asset',
+      'ASSET_READY': 'Asset Ready',
+      'ASSET_FAILED': 'Asset Failed',
+      'AUDIO_GENERATING': 'Generating Audio',
+      'AUDIO_READY': 'Audio Ready',
+      'AUDIO_FAILED': 'Audio Failed',
+      'FINAL_RENDERING': 'Final Rendering',
+      'RENDERING': 'Rendering',
+      'RENDER_FAILED': 'Render Failed',
+      'READY_TO_PUBLISH': 'Ready to Publish',
+      'PUBLISHING': 'Publishing',
+      'PUBLISHED': 'Published',
+      'GENERATION_FAILED': 'Generation Failed',
+      'PUBLISH_FAILED': 'Publish Failed',
+    };
+    return labels[status] ?? status.replaceAll('_', ' ');
+  }
+
+  static String actionLabel(ContentJob job) {
+    if (job.status == 'READY_FOR_REVIEW') return 'Review now';
+    if (job.status == 'READY_TO_PUBLISH') return 'Publish now';
+    if (isFailure(job)) return 'Needs attention';
+    if (groupFor(job) == QueueFilter.processing) return 'Processing';
+    if (groupFor(job) == QueueFilter.completed) return 'Completed';
+    return 'Saved for later';
+  }
+
+  static int statusRank(ContentJob job) {
+    switch (groupFor(job)) {
+      case QueueFilter.actionRequired:
+        return job.status == 'READY_FOR_REVIEW' ||
+                job.status == 'READY_TO_PUBLISH'
+            ? 0
+            : 1;
+      case QueueFilter.processing:
+        return 2;
+      case QueueFilter.backlog:
+        return job.status == 'ARCHIVED' ? 4 : 3;
+      case QueueFilter.completed:
+        return 5;
+      case QueueFilter.all:
+        return 6;
+    }
+  }
+}
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -123,8 +225,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _applyFilters() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
     final keyword = _keyword.trim().toLowerCase();
 
     var jobs = _allJobs.where((job) {
@@ -138,22 +238,17 @@ class _HomePageState extends State<HomePage> {
       switch (_filter) {
         case QueueFilter.all:
           return true;
-        case QueueFilter.today:
-          final due = job.plannedDate;
-          return due != null &&
-              DateTime(due.year, due.month, due.day) == today;
-        case QueueFilter.review:
-          return job.status == 'READY_FOR_REVIEW';
-        case QueueFilter.blocked:
-          return job.blocker != null || job.status.endsWith('_FAILED');
-        case QueueFilter.published:
-          return job.status == 'PUBLISHED' ||
-              job.publishStatus == 'PUBLISHED';
+        case QueueFilter.actionRequired:
+        case QueueFilter.processing:
+        case QueueFilter.completed:
+        case QueueFilter.backlog:
+          return JobQueuePresentation.groupFor(job) == _filter;
       }
     }).toList();
 
     jobs.sort((a, b) {
-      final byStatus = _statusRank(a.status).compareTo(_statusRank(b.status));
+      final byStatus = JobQueuePresentation.statusRank(a)
+          .compareTo(JobQueuePresentation.statusRank(b));
       if (byStatus != 0) return byStatus;
       final aDue = a.plannedDate ?? DateTime(2100);
       final bDue = b.plannedDate ?? DateTime(2100);
@@ -166,33 +261,6 @@ class _HomePageState extends State<HomePage> {
       _jobs = jobs;
       _loading = false;
     });
-  }
-
-  int _statusRank(String status) {
-    const ranks = {
-      'READY_FOR_REVIEW': 0,
-      'GENERATION_FAILED': 1,
-      'ASSET_FAILED': 1,
-      'AUDIO_FAILED': 1,
-      'RENDER_FAILED': 1,
-      'PUBLISH_FAILED': 1,
-      'GENERATING': 2,
-      'ASSET_QUEUED': 2,
-      'ASSET_GENERATING': 2,
-      'ASSET_READY': 2,
-      'AUDIO_GENERATING': 2,
-      'RENDERING': 2,
-      'PUBLISHING': 2,
-      'SELECTED': 3,
-      'SCORED': 4,
-      'BACKLOG': 5,
-      'NEW': 6,
-      'APPROVED': 7,
-      'READY_TO_PUBLISH': 8,
-      'PUBLISHED': 9,
-      'ARCHIVED': 10,
-    };
-    return ranks[status] ?? 50;
   }
 
   void _openStickerForge() {
@@ -212,27 +280,24 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  int get _reviewCount =>
-      _allJobs.where((job) => job.status == 'READY_FOR_REVIEW').length;
-
-  int get _workingCount => _allJobs
-      .where((job) => const {
-            'GENERATING',
-            'ASSET_QUEUED',
-            'ASSET_GENERATING',
-            'ASSET_READY',
-            'AUDIO_GENERATING',
-            'RENDERING',
-            'PUBLISHING',
-          }.contains(job.status))
+  int get _actionRequiredCount => _allJobs
+      .where((job) =>
+          JobQueuePresentation.groupFor(job) == QueueFilter.actionRequired)
       .length;
 
-  int get _blockedCount =>
-      _allJobs.where((job) => job.blocker != null).length;
+  int get _processingCount => _allJobs
+      .where((job) =>
+          JobQueuePresentation.groupFor(job) == QueueFilter.processing)
+      .length;
 
-  int get _queuedCount => _allJobs
-      .where((job) => const {'NEW', 'SCORED', 'SELECTED', 'BACKLOG'}
-          .contains(job.status))
+  int get _backlogCount => _allJobs
+      .where((job) =>
+          JobQueuePresentation.groupFor(job) == QueueFilter.backlog)
+      .length;
+
+  int get _completedCount => _allJobs
+      .where((job) =>
+          JobQueuePresentation.groupFor(job) == QueueFilter.completed)
       .length;
 
   int get _activeCount => _allJobs
@@ -243,14 +308,14 @@ class _HomePageState extends State<HomePage> {
     switch (filter) {
       case QueueFilter.all:
         return 'All';
-      case QueueFilter.today:
-        return 'Today';
-      case QueueFilter.review:
-        return 'Review';
-      case QueueFilter.blocked:
-        return 'Blocked';
-      case QueueFilter.published:
-        return 'Published';
+      case QueueFilter.actionRequired:
+        return 'Action Required';
+      case QueueFilter.processing:
+        return 'Processing';
+      case QueueFilter.completed:
+        return 'Completed';
+      case QueueFilter.backlog:
+        return 'Backlog';
     }
   }
 
@@ -328,10 +393,10 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 10),
             _QueueSummary(
               active: _activeCount,
-              review: _reviewCount,
-              working: _workingCount,
-              queued: _queuedCount,
-              blocked: _blockedCount,
+              actionRequired: _actionRequiredCount,
+              processing: _processingCount,
+              backlog: _backlogCount,
+              completed: _completedCount,
             ),
             const SizedBox(height: 10),
             TextField(
@@ -663,17 +728,17 @@ class _IdeaRecommendationCard extends StatelessWidget {
 class _QueueSummary extends StatelessWidget {
   const _QueueSummary({
     required this.active,
-    required this.review,
-    required this.working,
-    required this.queued,
-    required this.blocked,
+    required this.actionRequired,
+    required this.processing,
+    required this.backlog,
+    required this.completed,
   });
 
   final int active;
-  final int review;
-  final int working;
-  final int queued;
-  final int blocked;
+  final int actionRequired;
+  final int processing;
+  final int backlog;
+  final int completed;
 
   @override
   Widget build(BuildContext context) {
@@ -696,10 +761,10 @@ class _QueueSummary extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _CountPill(label: 'Review', value: review),
-                _CountPill(label: 'Working', value: working),
-                _CountPill(label: 'Queued', value: queued),
-                _CountPill(label: 'Blocked', value: blocked),
+                _CountPill(label: 'Action', value: actionRequired),
+                _CountPill(label: 'Processing', value: processing),
+                _CountPill(label: 'Backlog', value: backlog),
+                _CountPill(label: 'Completed', value: completed),
               ],
             ),
           ],
@@ -756,42 +821,60 @@ class _ContentJobCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: AshColors.blackPlum,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                  Expanded(
                     child: Text(
-                      job.contentId,
-                      style: const TextStyle(fontWeight: FontWeight.w900),
+                      job.idea,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: AshColors.boneWhite,
+                      ),
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 10),
                   _StatusBadge(status: job.status),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
-                job.idea,
-                maxLines: 3,
+                'Job #${job.contentId} · ${job.publishPlatform} · ${job.format}',
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: AshColors.boneWhite,
+                  color: AshColors.smokeSilver,
+                  fontSize: 12,
                 ),
               ),
               const SizedBox(height: 9),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
+              Row(
                 children: [
-                  Text('★ ${job.score?.toStringAsFixed(0) ?? '-'}'),
-                  Text(job.publishPlatform),
-                  Text(job.format),
-                  Text(dueLabel),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        Text('★ ${job.score?.toStringAsFixed(0) ?? '-'}'),
+                        Text(dueLabel),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    JobQueuePresentation.actionLabel(job),
+                    style: const TextStyle(
+                      color: AshColors.indigoMist,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: AshColors.indigoMist,
+                  ),
                 ],
               ),
               if (job.blocker != null) ...[
@@ -838,7 +921,7 @@ class _StatusBadge extends StatelessWidget {
         ),
       ),
       child: Text(
-        status.replaceAll('_', ' '),
+        JobQueuePresentation.statusLabel(status),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
