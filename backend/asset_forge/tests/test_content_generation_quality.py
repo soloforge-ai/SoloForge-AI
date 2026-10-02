@@ -284,3 +284,44 @@ def test_transient_provider_stops_after_max_attempts(monkeypatch) -> None:
     assert result is None
     assert calls == content_generation.PROVIDER_MAX_ATTEMPTS
     assert sleeps == [1, 2]
+
+
+
+def test_provider_fallback_runs_after_transient_retry_exhaustion(monkeypatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
+    monkeypatch.setenv("GROQ_API_KEY", "test-groq-key")
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("POLLINATIONS_API_KEY", raising=False)
+
+    calls: list[str] = []
+    sleeps: list[int] = []
+
+    def fake_urlopen(req, **_kwargs):
+        host = req.full_url
+        calls.append(host)
+        if "generativelanguage.googleapis.com" in host:
+            raise urllib.error.HTTPError(
+                url=host,
+                code=503,
+                msg="Service Unavailable",
+                hdrs=None,
+                fp=io.BytesIO(b""),
+            )
+        if "api.groq.com" in host:
+            return _FakeResponse(_provider_payload())
+        raise AssertionError(f"unexpected provider URL: {host}")
+
+    monkeypatch.setattr(content_generation.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(content_generation.time, "sleep", sleeps.append)
+
+    result = content_generation._call_provider(
+        "Telegram Bot automation",
+        {"format": "question_post", "target_platforms": ["facebook"]},
+    )
+
+    assert result is not None
+    _package, provider, _model = result
+    assert provider == "groq"
+    assert sum("generativelanguage.googleapis.com" in url for url in calls) == 3
+    assert sum("api.groq.com" in url for url in calls) == 1
+    assert sleeps == [1, 2]
