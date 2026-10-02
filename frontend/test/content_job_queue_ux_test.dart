@@ -91,8 +91,6 @@ void main() {
       'Completed',
     );
   });
-}
-
 
   test('search matches multiple terms across human-readable job metadata', () {
     final review = job('READY_FOR_REVIEW');
@@ -134,3 +132,4 @@ void main() {
       isTrue,
     );
   });
+}
