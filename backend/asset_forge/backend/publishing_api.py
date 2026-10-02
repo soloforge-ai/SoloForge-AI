@@ -8,9 +8,7 @@ import urllib.parse
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 
-from backend.pollinations_oauth_router import (
-    get_pollinations_access_token_from_authorization,
-)
+from backend.soloforge_session import require_soloforge_session
 
 from backend.shared_supabase import supabase_request as _supabase_request
 
@@ -39,8 +37,7 @@ class ScheduleRequest(PublishRequest):
 
 
 def _require_session(authorization: str | None) -> None:
-    if not get_pollinations_access_token_from_authorization(authorization):
-        raise HTTPException(status_code=401, detail="SoloForge session required")
+    require_soloforge_session(authorization)
 
 
 def _get_job(job_id: str) -> dict[str, object]:
