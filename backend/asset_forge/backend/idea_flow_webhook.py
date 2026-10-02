@@ -157,8 +157,26 @@ def _status_progress(status: str) -> list[str]:
         lines.append(f"{icon} {name}")
     return lines
 
+def _job_reference(row: dict[str, object]) -> str:
+    idea_id = row.get("idea_flow_id")
+    if idea_id is not None:
+        return str(idea_id)
+
+    package = row.get("content_package")
+    if isinstance(package, dict):
+        content_id = package.get("content_id")
+        if content_id:
+            return str(content_id)
+
+    job_id = row.get("id")
+    if job_id:
+        return str(job_id)
+
+    return "unknown"
+
+
 def _format_job(row: dict[str, object]) -> str:
-    idea_id = row.get("idea_flow_id") or "?"
+    idea_id = _job_reference(row)
     status = str(row.get("status") or "UNKNOWN")
     score = row.get("score")
     idea = str(row.get("idea") or "")
@@ -182,7 +200,7 @@ def _format_jobs(rows: list[dict[str, object]]) -> str:
         return "ยังไม่มี Content Job"
     lines = ["📋 SoloForge Jobs", ""]
     for row in rows:
-        idea_id = row.get("idea_flow_id") or "?"
+        idea_id = _job_reference(row)
         status = str(row.get("status") or "UNKNOWN")
         score = row.get("score")
         score_text = f" {score}/100" if score is not None else ""
@@ -314,25 +332,46 @@ class SupabaseIdeaFlowService:
 
     def list_content_jobs(self, limit: int = 10) -> list[dict[str, object]]:
         path = (
-            "content_jobs?select=idea_flow_id,idea,status,score,publish_platform,publish_status,"
-            "hook,caption,video_url,voice_profile,audio_status,audio_storage_path,created_at,updated_at"
+            "content_jobs?select=id,idea_flow_id,idea,status,score,publish_platform,publish_status,"
+            "hook,caption,video_url,voice_profile,audio_status,audio_storage_path,content_package,created_at,updated_at"
             f"&order=created_at.desc&limit={limit}"
         )
         return list(_supabase_request("GET", path) or [])
 
-    def get_content_job(self, idea_id: int) -> dict[str, object]:
-        rows = _supabase_request(
-            "GET",
-            "content_jobs"
-            f"?idea_flow_id=eq.{idea_id}"
-            "&select=idea_flow_id,idea,status,score,score_breakdown,score_reason,"
+    def get_content_job(self, job_ref: str) -> dict[str, object]:
+        ref = str(job_ref).strip()
+        if not ref:
+            raise ValueError("Job reference is required")
+
+        select = (
+            "id,idea_flow_id,idea,status,score,score_breakdown,score_reason,"
             "publish_platform,publish_status,hook,script,caption,cta,video_url,"
             "voice_profile,audio_status,audio_storage_path,audio_generated_at,"
-            "created_at,updated_at,scored_at"
-            "&limit=1",
-        ) or []
+            "content_package,created_at,updated_at,scored_at"
+        )
+
+        rows: list[dict[str, object]] = []
+        if ref.isdigit():
+            rows = _supabase_request(
+                "GET",
+                f"content_jobs?idea_flow_id=eq.{ref}&select={select}&limit=1",
+            ) or []
+        else:
+            encoded = urllib.parse.quote(ref, safe="")
+            rows = _supabase_request(
+                "GET",
+                f"content_jobs?id=eq.{encoded}&select={select}&limit=1",
+            ) or []
+            if not rows:
+                encoded_json = urllib.parse.quote(ref, safe="")
+                rows = _supabase_request(
+                    "GET",
+                    f"content_jobs?content_package->>content_id=eq.{encoded_json}"
+                    f"&select={select}&limit=1",
+                ) or []
+
         if not rows:
-            raise ValueError(f"Job #{idea_id} not found")
+            raise ValueError(f"Job #{ref} not found")
         return dict(rows[0])
 
     def latest_content_job(self) -> dict[str, object]:
@@ -505,7 +544,7 @@ def handle_text(
     if cmd == "/job":
         if len(parts) < 2:
             return "ใช้: /job ID"
-        return _format_job(service.get_content_job(int(parts[1])))
+        return _format_job(service.get_content_job(parts[1]))
     if cmd == "/list":
         return _format_list(service.list(parts[1] if len(parts) > 1 else None))
     if cmd == "/search":

@@ -418,8 +418,23 @@ def _fail_job(job: dict[str, Any], exc: Exception) -> None:
     )
 
 
+def _job_reference(job: dict[str, Any]) -> str:
+    idea_id = job.get("idea_flow_id")
+    if idea_id is not None:
+        return str(idea_id)
+
+    package = job.get("content_package")
+    if isinstance(package, dict):
+        content_id = package.get("content_id")
+        if content_id:
+            return str(content_id)
+
+    job_id = job.get("id")
+    return str(job_id) if job_id else "unknown"
+
+
 def _process_claimed_job(job: dict[str, Any]) -> bool:
-    idea_id = job.get("idea_flow_id") or "?"
+    idea_id = _job_reference(job)
     try:
         package_context = dict(job.get("content_package") or {})
         targets = package_context.get("target_platforms") or []
