@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import re
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -23,6 +24,11 @@ VOICE_PROFILE_PATH = (
     / "config"
     / "facebook_personal_voice_v1.json"
 )
+
+TRANSIENT_PROVIDER_HTTP_STATUSES = {429, 500, 502, 503, 504}
+PROVIDER_MAX_ATTEMPTS = 3
+PROVIDER_BACKOFF_SECONDS = (1, 2)
+
 
 REVENUE_OPPORTUNITY_FIELDS = (
     "content_topic",
@@ -320,22 +326,43 @@ def _call_provider(
             headers=headers,
             method="POST",
         )
-        try:
-            with urllib.request.urlopen(req, timeout=60) as response:
-                body = json.loads(response.read().decode("utf-8"))
-            content = body["choices"][0]["message"]["content"]
-            return _extract_json(content), provider, model
-        except urllib.error.HTTPError as exc:
-            print("content_provider_error", {
-                "provider": provider,
-                "exception_type": type(exc).__name__,
-                "status": exc.code,
-            })
-        except Exception as exc:
-            print("content_provider_error", {
-                "provider": provider,
-                "exception_type": type(exc).__name__,
-            })
+        for attempt in range(1, PROVIDER_MAX_ATTEMPTS + 1):
+            try:
+                with urllib.request.urlopen(req, timeout=60) as response:
+                    body = json.loads(response.read().decode("utf-8"))
+                content = body["choices"][0]["message"]["content"]
+                return _extract_json(content), provider, model
+            except urllib.error.HTTPError as exc:
+                transient = exc.code in TRANSIENT_PROVIDER_HTTP_STATUSES
+                print("content_provider_error", {
+                    "provider": provider,
+                    "exception_type": type(exc).__name__,
+                    "status": exc.code,
+                    "attempt": attempt,
+                    "max_attempts": PROVIDER_MAX_ATTEMPTS,
+                    "transient": transient,
+                })
+                if not transient or attempt >= PROVIDER_MAX_ATTEMPTS:
+                    break
+                delay = PROVIDER_BACKOFF_SECONDS[
+                    min(attempt - 1, len(PROVIDER_BACKOFF_SECONDS) - 1)
+                ]
+                print("content_provider_retry", {
+                    "provider": provider,
+                    "status": exc.code,
+                    "attempt": attempt + 1,
+                    "delay_seconds": delay,
+                })
+                time.sleep(delay)
+            except Exception as exc:
+                print("content_provider_error", {
+                    "provider": provider,
+                    "exception_type": type(exc).__name__,
+                    "attempt": attempt,
+                    "max_attempts": PROVIDER_MAX_ATTEMPTS,
+                    "transient": False,
+                })
+                break
     return None
 
 
