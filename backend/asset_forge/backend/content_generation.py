@@ -19,7 +19,7 @@ from backend.shared_supabase import supabase_request as _supabase_request
 GENERATOR_VERSION = "content_gen_v0.5_revenue_voice"
 
 VOICE_PROFILE_PATH = (
-    Path(__file__).resolve().parents[3]
+    Path(__file__).resolve().parent
     / "config"
     / "facebook_personal_voice_v1.json"
 )
