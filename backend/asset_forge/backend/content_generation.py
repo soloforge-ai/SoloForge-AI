@@ -6,6 +6,7 @@ import asyncio
 from datetime import datetime, timezone
 import json
 import os
+from pathlib import Path
 import re
 import urllib.error
 import urllib.parse
@@ -15,17 +16,92 @@ from typing import Any
 from backend.performance_feedback import feedback_for_candidate
 from backend.shared_supabase import supabase_request as _supabase_request
 
-GENERATOR_VERSION = "content_gen_v0.4_quality_gate"
+GENERATOR_VERSION = "content_gen_v0.5_revenue_voice"
+
+VOICE_PROFILE_PATH = (
+    Path(__file__).resolve().parents[3]
+    / "config"
+    / "facebook_personal_voice_v1.json"
+)
+
+REVENUE_OPPORTUNITY_FIELDS = (
+    "content_topic",
+    "content_type",
+    "revenue_source",
+    "affiliate_platform",
+    "affiliate_link",
+    "mission_name",
+    "own_product",
+    "estimated_effort",
+    "revenue_score",
+    "demand",
+    "content_fit",
+    "monetization",
+    "conversion_potential",
+    "effort_efficiency",
+)
+
+
+def _load_facebook_voice_profile() -> dict[str, Any]:
+    try:
+        with VOICE_PROFILE_PATH.open("r", encoding="utf-8") as handle:
+            value = json.load(handle)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise NonRetryableGenerationError(
+            f"Cannot load Facebook voice profile: {type(exc).__name__}"
+        ) from exc
+    if not isinstance(value, dict):
+        raise NonRetryableGenerationError(
+            "Facebook voice profile must be a JSON object"
+        )
+    return value
+
+
+def _revenue_opportunity(context: dict[str, Any]) -> dict[str, Any]:
+    nested = context.get("revenue_opportunity")
+    source = nested if isinstance(nested, dict) else context
+    has_revenue_context = (
+        isinstance(nested, dict)
+        or any(key in context for key in REVENUE_OPPORTUNITY_FIELDS)
+    )
+    if not has_revenue_context:
+        return {}
+    return {
+        key: source.get(key)
+        for key in REVENUE_OPPORTUNITY_FIELDS
+    }
+
+
+def _is_facebook_personal(context: dict[str, Any]) -> bool:
+    channel = str(context.get("channel") or "").strip().lower()
+    voice_profile = str(context.get("voice_profile") or "").strip().lower()
+    targets = context.get("target_platforms") or []
+    target_values = (
+        [str(item).strip().lower() for item in targets]
+        if isinstance(targets, list)
+        else [str(targets).strip().lower()]
+    )
+    return (
+        channel == "facebook_personal"
+        or voice_profile == "facebook_personal_voice_v1"
+        or "facebook_personal" in target_values
+    )
+
 SYSTEM_PROMPT = """You are SoloForge Content Strategist for the Ai HackWork brand.
 Create Thai content that follows the supplied CONTENT BRIEF exactly.
 Return ONLY one JSON object with these keys:
-hook, script, caption, cta, onscreen_text, visual_prompt, motion_prompt, risk_level.
+hook, script, caption, cta, content_type, affiliate_placement, comment_text, onscreen_text, visual_prompt, motion_prompt, risk_level.
 Rules:
 - Respect target_platforms, format, goal, angle, and generation_brief when supplied.
 - Do not force a video format when the brief asks for a personal post, carousel, question post, or breakdown post.
 - For video briefs, make the script production-ready for the requested format.
 - Hook must be immediate and specific.
 - Preserve the user's first-person voice when the idea is written from a personal perspective.
+- When facebook_voice_profile is supplied, follow it as the authoritative style contract and use เรา as the first-person pronoun.
+- For Facebook personal content, content must come before selling; do not open with a hard sales pitch.
+- affiliate_placement must say where the supplied affiliate link should appear (for example comment, caption, or none).
+- comment_text must be ready to paste. Include an affiliate link only when one was supplied in revenue_opportunity; never invent a URL.
+- revenue_opportunity is monetization context, not evidence. Never invent mission eligibility, commission, price, product performance, or personal-use experience.
 - Do not invent personal-use claims, income claims, test results, prices, discounts, or product facts.
 - If the idea says to test or compare something but no evidence is supplied, frame it as a test plan, not as completed experience.
 - risk_level must be LOW, MEDIUM, or HIGH.
@@ -162,6 +238,9 @@ def _extract_json(text: str) -> dict[str, Any]:
         raise ValueError("Model JSON missing required fields")
     if value["risk_level"] not in {"LOW", "MEDIUM", "HIGH"}:
         value["risk_level"] = "MEDIUM"
+    value.setdefault("content_type", "unspecified")
+    value.setdefault("affiliate_placement", "none")
+    value.setdefault("comment_text", "")
     if not isinstance(value["onscreen_text"], list):
         value["onscreen_text"] = [str(value["onscreen_text"])]
     return value
@@ -188,9 +267,16 @@ def _call_provider(
                 "generation_brief",
                 "source_context",
                 "performance_feedback",
+                "channel",
+                "voice_profile",
             )
             if context.get(key) is not None
         }
+        revenue_opportunity = _revenue_opportunity(context)
+        if revenue_opportunity:
+            brief["revenue_opportunity"] = revenue_opportunity
+        if _is_facebook_personal(context):
+            brief["facebook_voice_profile"] = _load_facebook_voice_profile()
         payload = {
             "model": model,
             "messages": [
@@ -344,6 +430,11 @@ def _process_claimed_job(job: dict[str, Any]) -> bool:
             )
         package, provider, model = result
         package["performance_feedback"] = feedback
+        revenue_opportunity = _revenue_opportunity(package_context)
+        if revenue_opportunity:
+            package["revenue_opportunity"] = revenue_opportunity
+        if _is_facebook_personal(package_context):
+            package["voice_profile_id"] = "facebook_personal_voice_v1"
         package["semantic_fidelity"] = _enforce_semantic_fidelity(idea, package)
         _finish_job(job, package, provider, model)
         _send_telegram(
