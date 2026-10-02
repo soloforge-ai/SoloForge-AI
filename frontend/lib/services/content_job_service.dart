@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/content_job.dart';
 import 'pollinations_session_service.dart';
+import 'soloforge_session_service.dart';
 
 class IdeaRecommendation {
   const IdeaRecommendation({
@@ -284,12 +285,12 @@ class ContentAssetPreview {
 class ContentJobService {
   ContentJobService({
     http.Client? client,
-    PollinationsSessionService? sessionService,
+    SoloForgeSessionService? sessionService,
   })  : _client = client ?? http.Client(),
-        _sessionService = sessionService ?? PollinationsSessionService();
+        _sessionService = sessionService ?? SoloForgeSessionService();
 
   final http.Client _client;
-  final PollinationsSessionService _sessionService;
+  final SoloForgeSessionService _sessionService;
 
   String get _baseUrl =>
       assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');

@@ -6,9 +6,7 @@ import urllib.parse
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from backend.pollinations_oauth_router import (
-    get_pollinations_access_token_from_authorization,
-)
+from backend.soloforge_session import require_soloforge_session
 from backend.content_intake import find_recommendation, recommend_formats, score_idea
 from backend.content_generation import process_selected_job
 from backend.content_router import route_approved_job
@@ -80,8 +78,7 @@ def _now() -> str:
 
 
 def _require_session(authorization: str | None) -> None:
-    if not get_pollinations_access_token_from_authorization(authorization):
-        raise HTTPException(status_code=401, detail="SoloForge session required")
+    require_soloforge_session(authorization)
 
 
 def _get_row(job_id: str) -> dict[str, object]:

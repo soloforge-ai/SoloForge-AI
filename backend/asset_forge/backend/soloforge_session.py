@@ -115,6 +115,21 @@ def exchange_legacy_session(
     }
 
 
+@router.post("/refresh")
+def refresh_soloforge_session(
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Rotate a still-valid app session without involving any provider."""
+
+    require_soloforge_session(authorization)
+    session = issue_session()
+    return {
+        "session_token": session.session_id,
+        "expires_at": session.expires_at,
+        "session_type": "soloforge",
+    }
+
+
 @router.get("/status")
 def soloforge_session_status(
     authorization: str | None = Header(default=None),
