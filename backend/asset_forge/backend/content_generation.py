@@ -186,7 +186,7 @@ def _enforce_semantic_fidelity(idea: str, package: dict[str, Any]) -> dict[str, 
 
 PROVIDERS = [
     ("gemini", "GEMINI_API_KEY", "GEMINI_MODEL",
-     "gemini-3.8-flash", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"),
+     "gemini-3.5-flash-lite", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"),
     ("groq", "GROQ_API_KEY", "GROQ_MODEL",
      "openai/gpt-oss-120b", "https://api.groq.com/openai/v1/chat/completions"),
     ("openrouter", "OPENROUTER_API_KEY", "OPENROUTER_MODEL",
