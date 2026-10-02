@@ -138,3 +138,183 @@ def test_pollinations_publishable_key_is_not_used_for_server_generation(
     )
 
     assert result is None
+
+
+
+def _facebook_context() -> dict:
+    return {
+        "channel": "facebook_personal",
+        "voice_profile": "facebook_personal_voice_v1",
+        "target_platforms": ["facebook_personal"],
+        "source_context": {
+            "visible_benefits": [
+                "Member coupon: 40% off up to 100 THB",
+                "ShopeeFood coupon: 50% off up to 70 THB",
+            ]
+        },
+        "revenue_opportunity": {
+            "affiliate_link": "https://s.shopee.co.th/example",
+        },
+    }
+
+
+def _facebook_package(**overrides) -> dict:
+    package = {
+        "hook": "เห็นสิทธิ ShopeeVIP แล้วเราเอามาสรุปไว้ให้ดูง่าย ๆ",
+        "script": "",
+        "caption": (
+            "เราเห็นข้อมูลในหน้าที่แนบมาว่ามีส่วนลด 40% สูงสุด 100 บาท "
+            "และ ShopeeFood 50% สูงสุด 70 บาท เลยสรุปตัวเลขตามหน้าที่เห็นไว้ให้"
+        ),
+        "cta": "ลองเช็กสิทธิของตัวเองได้จากพิกัดในคอมเมนต์",
+        "comment_text": (
+            "พิกัด ShopeeVIP: https://s.shopee.co.th/example"
+        ),
+        "affiliate_placement": "comment",
+        "onscreen_text": [],
+    }
+    package.update(overrides)
+    return package
+
+
+def test_facebook_voice_qa_accepts_supported_personal_post() -> None:
+    result = content_generation._facebook_voice_qa(
+        _facebook_package(),
+        _facebook_context(),
+    )
+
+    assert result["status"] == "PASS"
+    assert result["version"] == "facebook_voice_qa_v1"
+    assert result["failures"] == []
+
+
+@pytest.mark.parametrize("term", ["ผม", "ครับ"])
+def test_facebook_voice_qa_rejects_banned_voice_terms(term: str) -> None:
+    package = _facebook_package(
+        caption=f"เราเห็นข้อมูลตามหน้าที่แนบมาแล้ว {term}"
+    )
+
+    result = content_generation._facebook_voice_qa(
+        package,
+        _facebook_context(),
+    )
+
+    assert result["status"] == "FAIL"
+    assert any(item.startswith("banned_voice_terms:") for item in result["failures"])
+
+
+def test_facebook_voice_qa_requires_เรา() -> None:
+    package = _facebook_package(
+        hook="สรุปสิทธิ ShopeeVIP จากหน้าที่แนบมา",
+        caption="มีส่วนลด 40% สูงสุด 100 บาท และ ShopeeFood 50% สูงสุด 70 บาท",
+        cta="เช็กสิทธิได้จากพิกัดในคอมเมนต์",
+    )
+
+    result = content_generation._facebook_voice_qa(
+        package,
+        _facebook_context(),
+    )
+
+    assert result["status"] == "FAIL"
+    assert "missing_first_person_เรา" in result["failures"]
+
+
+def test_facebook_voice_qa_rejects_suspicious_encoding() -> None:
+    package = _facebook_package(
+        caption="เราไล่ดูข้อมูลครôm ๆ จากหน้าที่แนบมา"
+    )
+
+    result = content_generation._facebook_voice_qa(
+        package,
+        _facebook_context(),
+    )
+
+    assert result["status"] == "FAIL"
+    assert "suspicious_character_encoding" in result["failures"]
+
+
+def test_facebook_voice_qa_requires_affiliate_link_in_comment() -> None:
+    package = _facebook_package(
+        comment_text="พิกัด ShopeeVIP อยู่ในคอมเมนต์นี้"
+    )
+
+    result = content_generation._facebook_voice_qa(
+        package,
+        _facebook_context(),
+    )
+
+    assert result["status"] == "FAIL"
+    assert "affiliate_link_missing_from_comment" in result["failures"]
+
+
+def test_facebook_voice_qa_rejects_affiliate_link_in_caption_when_comment_expected() -> None:
+    package = _facebook_package(
+        caption=(
+            "เราเห็นข้อมูลตามหน้าที่แนบมา "
+            "https://s.shopee.co.th/example"
+        )
+    )
+
+    result = content_generation._facebook_voice_qa(
+        package,
+        _facebook_context(),
+    )
+
+    assert result["status"] == "FAIL"
+    assert "affiliate_link_leaked_outside_comment" in result["failures"]
+
+
+def test_facebook_voice_qa_rejects_unsupported_discount_claim() -> None:
+    package = _facebook_package(
+        caption=(
+            "เราเห็นข้อมูลตามหน้าที่แนบมา และมีส่วนลด 90% สูงสุด 999 บาท"
+        )
+    )
+
+    result = content_generation._facebook_voice_qa(
+        package,
+        _facebook_context(),
+    )
+
+    assert result["status"] == "FAIL"
+    assert "unsupported_percentage_claims:90" in result["failures"]
+    assert "unsupported_money_claims:999" in result["failures"]
+
+
+def test_facebook_voice_qa_rejects_unsupported_personal_experience() -> None:
+    package = _facebook_package(
+        hook="เราเพิ่งลองกดเข้า ShopeeVIP แล้วเห็นคูปองขึ้นมา"
+    )
+
+    result = content_generation._facebook_voice_qa(
+        package,
+        _facebook_context(),
+    )
+
+    assert result["status"] == "FAIL"
+    assert "unsupported_personal_experience" in result["failures"]
+
+
+def test_facebook_voice_qa_allows_personal_experience_with_source_evidence() -> None:
+    context = _facebook_context()
+    context["source_context"]["personal_experience"] = (
+        "User explicitly stated they opened the ShopeeVIP page."
+    )
+    package = _facebook_package(
+        hook="เราเพิ่งลองกดเข้า ShopeeVIP แล้วเห็นคูปองขึ้นมา"
+    )
+
+    result = content_generation._facebook_voice_qa(package, context)
+
+    assert result["status"] == "PASS"
+
+
+def test_enforce_facebook_voice_qa_is_non_retryable() -> None:
+    with pytest.raises(
+        content_generation.NonRetryableGenerationError,
+        match="facebook_voice_qa_v1",
+    ):
+        content_generation._enforce_facebook_voice_qa(
+            _facebook_package(caption="ผมสรุปไว้ให้ครับ"),
+            _facebook_context(),
+        )
