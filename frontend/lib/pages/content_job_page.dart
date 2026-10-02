@@ -20,7 +20,8 @@ class ContentQualityReview {
   final List<String> requiredAnchors;
   final bool available;
 
-  bool get blocksApproval => available && status == 'FAIL';
+  bool get blocksApproval =>
+      available && (status == 'FAIL' || status == 'STALE');
 
   static ContentQualityReview fromJob(ContentJob job) {
     final raw = job.contentPackage['semantic_fidelity'];
@@ -43,11 +44,21 @@ class ContentQualityReview {
     }
 
     final status = raw['status']?.toString().trim().toUpperCase();
+    final generatedAt = job.generatedAt;
+    final updatedAt = job.updatedAt;
+    final stale = generatedAt != null &&
+        updatedAt != null &&
+        updatedAt.isAfter(generatedAt.add(const Duration(seconds: 2)));
+
     return ContentQualityReview(
-      status: status == null || status.isEmpty ? 'NOT_AVAILABLE' : status,
-      reason: raw['reason']?.toString().trim().isNotEmpty == true
-          ? raw['reason'].toString().trim()
-          : 'No semantic fidelity reason was recorded.',
+      status: stale
+          ? 'STALE'
+          : (status == null || status.isEmpty ? 'NOT_AVAILABLE' : status),
+      reason: stale
+          ? 'Draft changed after AI generation. Regenerate before approval so semantic fidelity can be checked again.'
+          : (raw['reason']?.toString().trim().isNotEmpty == true
+              ? raw['reason'].toString().trim()
+              : 'No semantic fidelity reason was recorded.'),
       matchedAnchors: strings(raw['matched_anchors']),
       requiredAnchors: strings(raw['required_anchors']),
       available: status != null && status.isNotEmpty,
@@ -484,7 +495,9 @@ class _ContentJobPageState extends State<ContentJobPage> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Approval blocked: generated content failed semantic fidelity QA.',
+                            _qualityReview.status == 'STALE'
+                                ? 'Approval blocked: draft changed after AI generation. Regenerate to run semantic QA again.'
+                                : 'Approval blocked: generated content failed semantic fidelity QA.',
                             style: const TextStyle(
                               color: AshColors.mutedRose,
                               fontWeight: FontWeight.w700,
@@ -552,6 +565,7 @@ class _ContentQualityReviewCard extends StatelessWidget {
     if (!review.available) return 'Not available';
     if (review.status == 'PASS') return 'PASS';
     if (review.status == 'FAIL') return 'FAIL';
+    if (review.status == 'STALE') return 'Needs recheck';
     return review.status;
   }
 
