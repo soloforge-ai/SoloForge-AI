@@ -225,6 +225,12 @@ def _call_provider(
                 body = json.loads(response.read().decode("utf-8"))
             content = body["choices"][0]["message"]["content"]
             return _extract_json(content), provider, model
+        except urllib.error.HTTPError as exc:
+            print("content_provider_error", {
+                "provider": provider,
+                "exception_type": type(exc).__name__,
+                "status": exc.code,
+            })
         except Exception as exc:
             print("content_provider_error", {
                 "provider": provider,
