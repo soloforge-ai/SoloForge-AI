@@ -258,6 +258,29 @@ class ContentFeedback {
   }
 }
 
+class ContentAssetPreview {
+  const ContentAssetPreview({
+    required this.url,
+    required this.mediaType,
+    required this.assetStatus,
+    required this.pipelineRoute,
+  });
+
+  final String url;
+  final String mediaType;
+  final String? assetStatus;
+  final String? pipelineRoute;
+
+  factory ContentAssetPreview.fromJson(Map<String, dynamic> json) {
+    return ContentAssetPreview(
+      url: json['url']?.toString() ?? '',
+      mediaType: json['media_type']?.toString() ?? 'image',
+      assetStatus: json['asset_status']?.toString(),
+      pipelineRoute: json['pipeline_route']?.toString(),
+    );
+  }
+}
+
 class ContentJobService {
   ContentJobService({
     http.Client? client,
@@ -436,6 +459,31 @@ class ContentJobService {
     return ContentFeedback.fromJson(
       body.map((key, value) => MapEntry(key.toString(), value)),
     );
+  }
+
+  Future<ContentAssetPreview> getAssetPreview(String id) async {
+    final response = await _client
+        .get(
+          Uri.parse('$_baseUrl/v1/content-jobs/$id/asset-preview'),
+          headers: await _headers(),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Asset preview');
+    }
+
+    final body = jsonDecode(response.body);
+    if (body is! Map) {
+      throw Exception('Asset preview returned an invalid response.');
+    }
+    final preview = ContentAssetPreview.fromJson(
+      body.map((key, value) => MapEntry(key.toString(), value)),
+    );
+    if (preview.url.trim().isEmpty) {
+      throw Exception('Asset preview did not return a media URL.');
+    }
+    return preview;
   }
 
   Future<ContentJob> getJob(String id) async {
