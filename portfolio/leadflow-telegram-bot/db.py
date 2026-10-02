@@ -44,13 +44,16 @@ def get_lead(lead_id):
         return conn.execute("SELECT * FROM leads WHERE id = ?", (lead_id,)).fetchone()
 
 def update_status(lead_id, status):
+    if status not in ("APPROVED", "REJECTED"):
+        raise ValueError("Invalid lead status")
     with connect() as conn:
-        conn.execute("""
+        cur = conn.execute("""
             UPDATE leads
             SET status = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
+            WHERE id = ? AND status = 'PENDING'
         """, (status, lead_id))
         conn.commit()
+        return cur.rowcount == 1
 
 def recent_leads(limit=10):
     with connect() as conn:

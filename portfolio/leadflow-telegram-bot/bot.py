@@ -1,4 +1,5 @@
 import logging
+from html import escape
 import os
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -81,7 +82,11 @@ async def newlead(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return NAME
 
 async def lead_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["lead"]["name"] = update.message.text.strip()
+    value = update.message.text.strip()
+    if not value:
+        await update.message.reply_text("Name is required. Please enter your name or company name.")
+        return NAME
+    context.user_data["lead"]["name"] = value
     await update.message.reply_text(
         "2/4 What is the best way to contact you?\n"
         "For example: email, @Telegram username, or another preferred contact method."
@@ -89,7 +94,11 @@ async def lead_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return CONTACT
 
 async def lead_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["lead"]["contact"] = update.message.text.strip()
+    value = update.message.text.strip()
+    if not value:
+        await update.message.reply_text("Contact is required. Please enter a contact method.")
+        return CONTACT
+    context.user_data["lead"]["contact"] = value
     await update.message.reply_text(
         "3/4 What would you like us to automate?\n\n"
         "Example: Build a Telegram bot that captures leads, notifies the sales team, "
@@ -98,7 +107,11 @@ async def lead_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return NEED
 
 async def lead_need(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["lead"]["need"] = update.message.text.strip()
+    value = update.message.text.strip()
+    if not value:
+        await update.message.reply_text("Project details are required. Please describe your request.")
+        return NEED
+    context.user_data["lead"]["need"] = value
     await update.message.reply_text(
         "4/4 What is your estimated budget?\n"
         "You can include the currency, for example: $1,000 or 20,000 THB."
@@ -108,6 +121,9 @@ async def lead_need(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def lead_budget(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lead = context.user_data["lead"]
     lead["budget"] = update.message.text.strip()
+    if not lead["budget"]:
+        await update.message.reply_text("Budget is required. Please enter an estimate or 'Not sure'.")
+        return BUDGET
     score, label = score_lead(lead["budget"], lead["need"])
 
     user = update.effective_user
@@ -134,13 +150,13 @@ async def lead_budget(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         admin_text = (
             f"🔥 <b>NEW LEAD #{lead_id}</b>\n\n"
-            f"<b>Name:</b> {lead['name']}\n"
-            f"<b>Contact:</b> {lead['contact']}\n"
-            f"<b>Need:</b> {lead['need']}\n"
-            f"<b>Budget:</b> {lead['budget']}\n\n"
+            f"<b>Name:</b> {escape(lead['name'])}\n"
+            f"<b>Contact:</b> {escape(lead['contact'])}\n"
+            f"<b>Need:</b> {escape(lead['need'])}\n"
+            f"<b>Budget:</b> {escape(lead['budget'])}\n\n"
             f"<b>Score:</b> {score}/100 — {label}\n"
             f"<b>Status:</b> PENDING\n"
-            f"<b>Telegram:</b> @{user.username or '-'}\n"
+            f"<b>Telegram:</b> @{escape(user.username or '-')}\n"
             f"<b>User ID:</b> <code>{user.id}</code>"
             + FOOTER
         )
@@ -165,12 +181,11 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def admin_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
-
     if not is_admin(query.from_user.id):
         await query.answer("Admin only", show_alert=True)
         return
 
+    await query.answer()
     action, lead_id_raw = query.data.split(":", 1)
     lead_id = int(lead_id_raw)
     lead = get_lead(lead_id)
@@ -180,7 +195,9 @@ async def admin_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     status = "APPROVED" if action == "approve" else "REJECTED"
-    update_status(lead_id, status)
+    if not update_status(lead_id, status):
+        await query.message.reply_text("Lead already decided. No change was made." + FOOTER)
+        return
 
     symbol = "✅" if status == "APPROVED" else "❌"
     await query.edit_message_reply_markup(reply_markup=None)
@@ -224,7 +241,7 @@ async def leads_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for r in rows:
         lines.append(
             f"#{r['id']} | {r['label']} {r['score']}/100 | {r['status']}\n"
-            f"{r['name']} — {r['budget']}"
+            f"{escape(r['name'])} — {escape(r['budget'])}"
         )
 
     await update.message.reply_text(

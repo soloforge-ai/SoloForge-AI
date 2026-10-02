@@ -145,3 +145,10 @@ This version is intentionally lightweight for portfolio demonstration. A product
 ---
 
 **LeadFlow — Powered by SoloForge AI**
+
+## Local verification
+
+From this directory, install `requirements.txt` and run `python -m unittest discover -p 'test_*.py' -v`.
+The tests use a temporary SQLite database and mocked Telegram calls. They verify input rejection,
+HTML escaping, admin access, one-time decisions, and failure behavior. Live Telegram delivery
+and deployment still require a separate end-to-end check with configured credentials.

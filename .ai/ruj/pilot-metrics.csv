@@ -1,0 +1,2 @@
+task_id,task_title,mode,final_revision,status,first_pass_success,rework_count,escaped_errors,escaped_errors_observed_through,decision_reversal_count,elapsed_minutes,operating_cost_estimate,cost_currency,evidence_path,notes
+LF-001,LeadFlow local audit,SELF_REVIEW,,DONE_LOCAL,false,1,,,0,,,,.ai/ruj/LF-001.md,Live Telegram not verified; no independent agent QA
