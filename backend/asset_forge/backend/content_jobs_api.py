@@ -13,6 +13,7 @@ from backend.content_intake import find_recommendation, recommend_formats, score
 from backend.content_generation import process_selected_job
 from backend.content_router import route_approved_job
 from backend.content_asset_generation import process_asset_job
+from backend.publora_publishing import media_urls_for_job
 
 from backend.shared_supabase import supabase_request as _supabase_request
 
@@ -220,6 +221,28 @@ def get_content_job(
 ) -> dict[str, object]:
     _require_session(authorization)
     return _get_row(job_id)
+
+
+@router.get("/{job_id}/asset-preview")
+def get_asset_preview(
+    job_id: str,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    _require_session(authorization)
+    job = _get_row(job_id)
+    package = dict(job.get("content_package") or {})
+    route = str(package.get("pipeline_route") or "").strip().upper()
+
+    urls = media_urls_for_job(job)
+    if not urls:
+        raise HTTPException(status_code=404, detail="No generated asset is available")
+
+    return {
+        "url": urls[0],
+        "media_type": "video" if route == "VIDEO" else "image",
+        "asset_status": package.get("asset_status"),
+        "pipeline_route": route or None,
+    }
 
 
 @router.patch("/{job_id}/draft")

@@ -81,6 +81,9 @@ class _ContentJobPageState extends State<ContentJobPage> {
   bool _editing = false;
   String? _error;
   ContentFeedback? _feedback;
+  ContentAssetPreview? _assetPreview;
+  bool _assetPreviewLoading = false;
+  String? _assetPreviewError;
 
   @override
   void initState() {
@@ -93,6 +96,46 @@ class _ContentJobPageState extends State<ContentJobPage> {
     _visualPrompt = TextEditingController(text: _job.visualPrompt ?? '');
     _motionPrompt = TextEditingController(text: _job.motionPrompt ?? '');
     _loadFeedback();
+    _loadAssetPreview();
+  }
+
+  bool get _hasPreviewableAsset =>
+      _job.assetStatus == 'READY' &&
+      ((_job.pipelineRoute == 'VIDEO' &&
+              (_job.videoStoragePath?.trim().isNotEmpty ?? false)) ||
+          (_job.pipelineRoute != 'VIDEO' &&
+              (_job.assetStoragePath?.trim().isNotEmpty ?? false)));
+
+  Future<void> _loadAssetPreview() async {
+    if (!_hasPreviewableAsset) {
+      if (!mounted) return;
+      setState(() {
+        _assetPreview = null;
+        _assetPreviewError = null;
+        _assetPreviewLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _assetPreviewLoading = true;
+      _assetPreviewError = null;
+    });
+
+    try {
+      final preview = await _service.getAssetPreview(_job.id);
+      if (!mounted) return;
+      setState(() => _assetPreview = preview);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _assetPreview = null;
+        _assetPreviewError =
+            error.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) setState(() => _assetPreviewLoading = false);
+    }
   }
 
   Future<void> _loadFeedback() async {
@@ -138,6 +181,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
         _editing = false;
       });
       _syncControllers(updated);
+      await _loadAssetPreview();
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -348,6 +392,17 @@ class _ContentJobPageState extends State<ContentJobPage> {
               const SizedBox(height: 12),
               const LinearProgressIndicator(),
             ],
+            if (_hasPreviewableAsset ||
+                _assetPreviewLoading ||
+                _assetPreviewError != null) ...[
+              const SizedBox(height: 16),
+              _AssetPreviewCard(
+                preview: _assetPreview,
+                loading: _assetPreviewLoading,
+                error: _assetPreviewError,
+                onRetry: _loadAssetPreview,
+              ),
+            ],
             const SizedBox(height: 16),
             _ContentQualityReviewCard(
               idea: _job.idea,
@@ -530,6 +585,126 @@ class _ContentJobPageState extends State<ContentJobPage> {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AssetPreviewCard extends StatelessWidget {
+  const _AssetPreviewCard({
+    required this.preview,
+    required this.loading,
+    required this.error,
+    required this.onRetry,
+  });
+
+  final ContentAssetPreview? preview;
+  final bool loading;
+  final String? error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(14, 14, 14, 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.image_outlined,
+                  size: 20,
+                  color: AshColors.mutedRose,
+                ),
+                SizedBox(width: 7),
+                Text(
+                  'Generated Asset Preview',
+                  style: TextStyle(
+                    color: AshColors.mutedRose,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (loading)
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (error != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Preview unavailable: $error',
+                    style: const TextStyle(color: AshColors.smokeSilver),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry Preview'),
+                  ),
+                ],
+              ),
+            )
+          else if (preview?.mediaType == 'image')
+            Image.network(
+              preview!.url,
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return const SizedBox(
+                  height: 220,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              },
+              errorBuilder: (context, _, _) => Padding(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'The generated image could not be displayed.',
+                      style: TextStyle(color: AshColors.smokeSilver),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: onRetry,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Refresh Preview'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (preview != null)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(14, 8, 14, 14),
+              child: Text(
+                'Video asset is ready. Video playback preview is not included in this image-preview task.',
+                style: TextStyle(color: AshColors.smokeSilver),
+              ),
+            ),
+          if (preview != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+              child: Text(
+                '${preview!.pipelineRoute ?? 'Asset'} · ${preview!.assetStatus ?? 'READY'}',
+                style: const TextStyle(
+                  color: AshColors.smokeSilver,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
