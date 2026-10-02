@@ -16,7 +16,7 @@ from typing import Any
 from backend.performance_feedback import feedback_for_candidate
 from backend.shared_supabase import supabase_request as _supabase_request
 
-GENERATOR_VERSION = "content_gen_v0.5_revenue_voice"
+GENERATOR_VERSION = "content_gen_v0.6_facebook_voice_qa"
 
 VOICE_PROFILE_PATH = (
     Path(__file__).resolve().parent
@@ -180,6 +180,164 @@ def _enforce_semantic_fidelity(idea: str, package: dict[str, Any]) -> dict[str, 
     if result["status"] != "PASS":
         raise NonRetryableGenerationError(
             "Generated content failed semantic fidelity QA"
+        )
+    return result
+
+
+def _facebook_personal_text(package: dict[str, Any]) -> str:
+    parts = [
+        str(package.get("hook") or ""),
+        str(package.get("script") or ""),
+        str(package.get("caption") or ""),
+        str(package.get("cta") or ""),
+        str(package.get("comment_text") or ""),
+        " ".join(str(value) for value in (package.get("onscreen_text") or [])),
+    ]
+    return "\n".join(part for part in parts if part)
+
+
+def _extract_percent_claims(text: str) -> set[str]:
+    return {
+        match.group(1).replace(",", "")
+        for match in re.finditer(r"(?<!\d)(\d+(?:\.\d+)?)\s*%", text)
+    }
+
+
+def _extract_money_claims(text: str) -> set[str]:
+    values: set[str] = set()
+    patterns = (
+        r"฿\s*(\d+(?:,\d{3})*(?:\.\d+)?)",
+        r"(?<!\d)(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:บาท|THB)\b",
+    )
+    for pattern in patterns:
+        for match in re.finditer(pattern, text, flags=re.IGNORECASE):
+            values.add(match.group(1).replace(",", ""))
+    return values
+
+
+def _has_unsupported_personal_experience(
+    body: str,
+    source_context: dict[str, Any],
+) -> bool:
+    evidence_keys = (
+        "personal_experience",
+        "experience_evidence",
+        "observed_by_user",
+        "user_experience",
+    )
+    if any(source_context.get(key) for key in evidence_keys):
+        return False
+
+    experience_pattern = re.compile(
+        r"เรา\s*(?:เคย|เพิ่ง|ลอง|ได้|ใช้|ซื้อ|สั่ง|กด|เจอ|เห็น|ทดสอบ|ทดลอง|เปิด|เข้า)"
+    )
+    return bool(experience_pattern.search(body))
+
+
+def _facebook_voice_qa(
+    package: dict[str, Any],
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Deterministic QA for facebook_personal_voice_v1.
+
+    This gate validates voice markers, encoding integrity, affiliate placement,
+    and a conservative subset of unsupported commercial/personal claims.
+    """
+    failures: list[str] = []
+    body = _facebook_personal_text(package)
+
+    if "เรา" not in body:
+        failures.append("missing_first_person_เรา")
+
+    banned_pronoun_pattern = re.compile(
+        r"(^|[\s,.;!?…:()\[\]{}\"'“”‘’/\\-])(ผม|ครับ)(?=$|[\s,.;!?…:()\[\]{}\"'“”‘’/\\-])"
+    )
+    banned = sorted({match.group(2) for match in banned_pronoun_pattern.finditer(body)})
+    if banned:
+        failures.append("banned_voice_terms:" + ",".join(banned))
+
+    if re.search(r"[\u00C0-\u024F\uFFFD]", body) or "Ã" in body or "Â" in body:
+        failures.append("suspicious_character_encoding")
+
+    revenue = _revenue_opportunity(context)
+    affiliate_link = str(revenue.get("affiliate_link") or "").strip()
+    placement = str(package.get("affiliate_placement") or "none").strip().lower()
+    comment_text = str(package.get("comment_text") or "")
+    caption = str(package.get("caption") or "")
+    non_comment_body = "\n".join(
+        str(package.get(key) or "")
+        for key in ("hook", "script", "caption", "cta")
+    )
+
+    if affiliate_link:
+        if placement not in {"comment", "caption"}:
+            failures.append("affiliate_placement_invalid")
+        elif placement == "comment":
+            if affiliate_link not in comment_text:
+                failures.append("affiliate_link_missing_from_comment")
+            if affiliate_link in non_comment_body:
+                failures.append("affiliate_link_leaked_outside_comment")
+        elif placement == "caption":
+            if affiliate_link not in caption:
+                failures.append("affiliate_link_missing_from_caption")
+            if affiliate_link in comment_text:
+                failures.append("affiliate_link_leaked_into_comment")
+
+    source_context = context.get("source_context")
+    if not isinstance(source_context, dict):
+        source_context = {}
+    source_text = json.dumps(source_context, ensure_ascii=False)
+
+    generated_percents = _extract_percent_claims(body)
+    source_percents = _extract_percent_claims(source_text)
+    unsupported_percents = sorted(generated_percents - source_percents)
+    if unsupported_percents:
+        failures.append(
+            "unsupported_percentage_claims:" + ",".join(unsupported_percents)
+        )
+
+    generated_money = _extract_money_claims(body)
+    source_money = _extract_money_claims(source_text)
+    unsupported_money = sorted(generated_money - source_money)
+    if unsupported_money:
+        failures.append(
+            "unsupported_money_claims:" + ",".join(unsupported_money)
+        )
+
+    if _has_unsupported_personal_experience(body, source_context):
+        failures.append("unsupported_personal_experience")
+
+    return {
+        "status": "PASS" if not failures else "FAIL",
+        "version": "facebook_voice_qa_v1",
+        "failures": failures,
+        "checks": {
+            "uses_เรา": "เรา" in body,
+            "banned_terms": banned,
+            "affiliate_placement": placement,
+            "affiliate_link_present": (
+                not affiliate_link
+                or affiliate_link in comment_text
+                or affiliate_link in caption
+            ),
+            "source_percent_claims": sorted(source_percents),
+            "generated_percent_claims": sorted(generated_percents),
+            "source_money_claims": sorted(source_money),
+            "generated_money_claims": sorted(generated_money),
+        },
+    }
+
+
+def _enforce_facebook_voice_qa(
+    package: dict[str, Any],
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    result = _facebook_voice_qa(package, context)
+    if result["status"] != "PASS":
+        raise NonRetryableGenerationError(
+            "Generated content failed facebook_voice_qa_v1: "
+            + "; ".join(result["failures"])
         )
     return result
 
@@ -464,6 +622,10 @@ def _process_claimed_job(job: dict[str, Any]) -> bool:
             package["revenue_opportunity"] = revenue_opportunity
         if _is_facebook_personal(package_context):
             package["voice_profile_id"] = "facebook_personal_voice_v1"
+            package["facebook_voice_qa"] = _enforce_facebook_voice_qa(
+                package,
+                package_context,
+            )
         package["semantic_fidelity"] = _enforce_semantic_fidelity(idea, package)
         _finish_job(job, package, provider, model)
         _send_telegram(
