@@ -401,6 +401,16 @@ def pollinations_callback(
         # Keep the transaction alive until its normal TTL expires. A transient
         # provider failure must not consume the OAuth state and turn a retry
         # into a misleading "Invalid or expired OAuth state" error.
+        # The exception text only contains the provider OAuth error code/
+        # description; never log the authorization code or PKCE verifier.
+        print(
+            "pollinations_token_exchange_failed",
+            {
+                "exception_type": type(exc).__name__,
+                "detail": str(exc),
+                "client": "return_to" if transaction.return_to else "browser",
+            },
+        )
         raise HTTPException(
             status_code=502,
             detail="Pollinations token exchange failed. Please retry the connection.",
