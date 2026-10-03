@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -64,30 +65,44 @@ class PollinationsSessionService {
   }
 
   Future<void> connect() async {
-  final existingSession = await status();
+    final existingSession = await status();
+    if (existingSession.connected) {
+      return;
+    }
 
-  if (existingSession.connected) {
-    return;
-  }
+    final queryParameters = <String, String>{};
+    LaunchMode mode = LaunchMode.externalApplication;
+    String? webOnlyWindowName;
 
-  final loginUri = Uri.parse('$_baseUrl/auth/pollinations/login').replace(
-    queryParameters: const {
-      'client': 'mobile',
-      'return_to': _returnTo,
-    },
-  );
+    if (kIsWeb) {
+      queryParameters['client'] = 'web';
+      queryParameters['return_to'] = Uri.base.resolve('/').replace(
+        queryParameters: const <String, String>{},
+        fragment: '',
+      ).toString();
+      mode = LaunchMode.platformDefault;
+      webOnlyWindowName = '_self';
+    } else {
+      queryParameters['client'] = 'mobile';
+      queryParameters['return_to'] = _returnTo;
+    }
 
-  final opened = await launchUrl(
-    loginUri,
-    mode: LaunchMode.externalApplication,
-  );
-
-  if (!opened) {
-    throw const PollinationsSessionException(
-      'Could not open the Pollinations authorization page.',
+    final loginUri = Uri.parse('$_baseUrl/auth/pollinations/login').replace(
+      queryParameters: queryParameters,
     );
+
+    final opened = await launchUrl(
+      loginUri,
+      mode: mode,
+      webOnlyWindowName: webOnlyWindowName,
+    );
+
+    if (!opened) {
+      throw const PollinationsSessionException(
+        'Could not open the Pollinations authorization page.',
+      );
+    }
   }
-}
 
   bool isPollinationsCallback(Uri uri) {
     return uri.scheme == 'soloforge' &&
@@ -106,7 +121,27 @@ class PollinationsSessionService {
         'Pollinations authorization did not return a handoff code.',
       );
     }
+    return _exchangeHandoffCode(code);
+  }
 
+  Future<PollinationsSessionState> handleWebCallbackIfPresent() async {
+    if (!kIsWeb) {
+      return status();
+    }
+
+    final existing = await readSessionToken();
+    if (existing != null && existing.isNotEmpty) {
+      return status();
+    }
+
+    final code = Uri.base.queryParameters['code'];
+    if (code == null || code.isEmpty) {
+      return status();
+    }
+    return _exchangeHandoffCode(code);
+  }
+
+  Future<PollinationsSessionState> _exchangeHandoffCode(String code) async {
     final exchangeUri = Uri.parse('$_baseUrl/auth/pollinations/mobile/exchange');
     final response = await _client.post(
       exchangeUri,
