@@ -86,3 +86,22 @@ def test_refresh_rejects_invalid_app_session() -> None:
     with pytest.raises(HTTPException) as exc:
         soloforge_session.refresh_soloforge_session("Bearer invalid")
     assert exc.value.status_code == 401
+
+
+def test_first_party_bootstrap_issues_app_session(monkeypatch) -> None:
+    monkeypatch.setattr(soloforge_session, "_supabase_user_id", lambda _: "user-123")
+
+    result = soloforge_session.bootstrap_first_party_session("Bearer supabase-token")
+
+    assert result["session_type"] == "soloforge"
+    assert result["identity_provider"] == "supabase"
+    assert soloforge_session.validate_session_token(result["session_token"]) is True
+    assert "supabase-token" not in str(result)
+
+
+def test_first_party_bootstrap_rejects_invalid_identity(monkeypatch) -> None:
+    monkeypatch.setattr(soloforge_session, "_supabase_user_id", lambda _: None)
+
+    with pytest.raises(HTTPException) as exc:
+        soloforge_session.bootstrap_first_party_session("Bearer invalid")
+    assert exc.value.status_code == 401

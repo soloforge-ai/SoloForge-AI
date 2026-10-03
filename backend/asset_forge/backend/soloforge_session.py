@@ -7,6 +7,8 @@ import hmac
 import os
 import secrets
 import time
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 
 from fastapi import APIRouter, Header, HTTPException
@@ -94,6 +96,49 @@ def bearer_token(authorization: str | None) -> str | None:
 def require_soloforge_session(authorization: str | None) -> None:
     if not validate_session_token(bearer_token(authorization)):
         raise HTTPException(status_code=401, detail="SoloForge session required")
+
+
+def _supabase_user_id(authorization: str | None) -> str | None:
+    """Validate a Supabase access token server-side and return its user id."""
+
+    token = bearer_token(authorization)
+    base_url = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
+    publishable_key = os.getenv("SUPABASE_PUBLISHABLE_KEY", "").strip()
+    if not token or not base_url or not publishable_key:
+        return None
+    request = urllib.request.Request(
+        f"{base_url}/auth/v1/user",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "apikey": publishable_key,
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            payload = __import__("json").loads(response.read().decode("utf-8"))
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, ValueError):
+        return None
+    user_id = str(payload.get("id") or "").strip()
+    return user_id or None
+
+
+@router.post("/bootstrap")
+def bootstrap_first_party_session(
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Issue an app session after validating a first-party Supabase identity."""
+
+    user_id = _supabase_user_id(authorization)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Valid SoloForge identity required")
+    session = issue_session()
+    return {
+        "session_token": session.session_id,
+        "expires_at": session.expires_at,
+        "session_type": "soloforge",
+        "identity_provider": "supabase",
+    }
 
 
 @router.post("/exchange")
