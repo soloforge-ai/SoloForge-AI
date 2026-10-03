@@ -69,7 +69,7 @@ class HeroBanner extends StatelessWidget {
               onPressed: onPressed,
               icon: const Icon(Icons.emoji_emotions_outlined, size: 16),
               label: const Text(
-                'สร้างสติ๊กเกอร์',
+                'Create Sticker',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11),
               ),
               style: FilledButton.styleFrom(
