@@ -33,6 +33,10 @@ def _client(monkeypatch):
         "POLLINATIONS_MOBILE_RETURN_TO",
         "soloforge://oauth/pollinations",
     )
+    monkeypatch.setenv(
+        "POLLINATIONS_WEB_RETURN_TO",
+        "https://soloforge-ai-web.onrender.com/",
+    )
     app = FastAPI()
     app.include_router(router_module.router)
     return TestClient(app, base_url="https://testserver")
@@ -85,6 +89,55 @@ def test_mobile_return_url_is_allowlisted(monkeypatch):
     )
     assert response.status_code == 400
     assert "Unsupported mobile return URL" in response.text
+
+def test_web_return_url_is_allowlisted(monkeypatch):
+    client = _client(monkeypatch)
+    valid = client.get(
+        "/auth/pollinations/login",
+        params={
+            "client": "web",
+            "return_to": "https://soloforge-ai-web.onrender.com/",
+        },
+        follow_redirects=False,
+    )
+    assert valid.status_code == 302
+
+    invalid = client.get(
+        "/auth/pollinations/login",
+        params={"client": "web", "return_to": "https://evil.example/"},
+        follow_redirects=False,
+    )
+    assert invalid.status_code == 400
+    assert "Unsupported web return URL" in invalid.text
+
+
+def test_web_callback_returns_one_time_handoff_to_app(monkeypatch):
+    client = _client(monkeypatch)
+    monkeypatch.setattr(router_module, "exchange_authorization_code", _fake_exchange)
+    login = client.get(
+        "/auth/pollinations/login",
+        params={
+            "client": "web",
+            "return_to": "https://soloforge-ai-web.onrender.com/",
+        },
+        follow_redirects=False,
+    )
+    state = parse_qs(urlparse(login.headers["location"]).query)["state"][0]
+
+    callback = client.get(
+        "/auth/pollinations/callback",
+        params={"code": "oauth-code", "state": state},
+        follow_redirects=False,
+    )
+    assert callback.status_code == 302
+    target = urlparse(callback.headers["location"])
+    assert f"{target.scheme}://{target.netloc}{target.path}" == (
+        "https://soloforge-ai-web.onrender.com/"
+    )
+    handoff_code = parse_qs(target.query)["code"][0]
+    assert handoff_code
+    assert "sk_test_secret" not in callback.headers["location"]
+
 
 
 def test_callback_rejects_state_from_another_browser(monkeypatch):

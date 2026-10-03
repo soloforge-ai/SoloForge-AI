@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
 import '../models/content_job.dart';
 import '../services/content_job_service.dart';
+import '../services/pollinations_session_service.dart';
 import '../widgets/home/hero_banner.dart';
 import 'about_page.dart';
 import 'analytics_page.dart';
@@ -146,6 +148,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final ContentJobService _contentJobService = ContentJobService();
+  final PollinationsSessionService _pollinationsSession =
+      PollinationsSessionService();
   final TextEditingController _ideaController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
 
@@ -155,21 +159,115 @@ class _HomePageState extends State<HomePage> {
   String _keyword = '';
   bool _loading = true;
   bool _ideaBusy = false;
+  bool _pollinationsLoading = true;
+  bool _pollinationsConnected = false;
+  bool _pollinationsConnecting = false;
   IdeaAnalysis? _ideaAnalysis;
   String? _ideaError;
   String? _error;
+  String? _pollinationsError;
 
   @override
   void initState() {
     super.initState();
+    _loadPollinationsConnection();
     _loadJobs();
   }
 
   @override
   void dispose() {
+    _pollinationsSession.dispose();
     _ideaController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadPollinationsConnection() async {
+    if (mounted) {
+      setState(() {
+        _pollinationsLoading = true;
+        _pollinationsError = null;
+      });
+    }
+
+    try {
+      if (!kIsWeb) {
+        await _pollinationsSession.startListening(
+          onCallback: (uri) async {
+            if (!_pollinationsSession.isPollinationsCallback(uri)) return;
+            final state = await _pollinationsSession.handleCallback(uri);
+            if (!mounted) return;
+            setState(() {
+              _pollinationsConnected = state.connected;
+              _pollinationsLoading = false;
+              _pollinationsConnecting = false;
+              _pollinationsError = null;
+            });
+          },
+        );
+      }
+
+      final state = kIsWeb
+          ? await _pollinationsSession.handleWebCallbackIfPresent()
+          : await _pollinationsSession.status();
+      if (!mounted) return;
+      setState(() {
+        _pollinationsConnected = state.connected;
+        _pollinationsLoading = false;
+        _pollinationsConnecting = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _pollinationsConnected = false;
+        _pollinationsLoading = false;
+        _pollinationsConnecting = false;
+        _pollinationsError = error.toString();
+      });
+    }
+  }
+
+  Future<void> _connectPollinations() async {
+    if (_pollinationsConnecting) return;
+    setState(() {
+      _pollinationsConnecting = true;
+      _pollinationsError = null;
+    });
+
+    try {
+      await _pollinationsSession.connect();
+      if (!kIsWeb && mounted) {
+        setState(() => _pollinationsConnecting = false);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _pollinationsConnecting = false;
+        _pollinationsError = error.toString();
+      });
+    }
+  }
+
+  Future<void> _disconnectPollinations() async {
+    if (_pollinationsConnecting) return;
+    setState(() {
+      _pollinationsConnecting = true;
+      _pollinationsError = null;
+    });
+    try {
+      await _pollinationsSession.disconnect();
+      if (!mounted) return;
+      setState(() {
+        _pollinationsConnected = false;
+        _pollinationsConnecting = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _pollinationsConnecting = false;
+        _pollinationsError = error.toString();
+      });
+    }
   }
 
   Future<void> _analyzeIdea() async {
@@ -418,6 +516,16 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 10),
+            _PollinationsConnectionCard(
+              loading: _pollinationsLoading,
+              connected: _pollinationsConnected,
+              connecting: _pollinationsConnecting,
+              error: _pollinationsError,
+              onConnect: _connectPollinations,
+              onDisconnect: _disconnectPollinations,
+              onRefresh: _loadPollinationsConnection,
+            ),
+            const SizedBox(height: 10),
             HeroBanner(onPressed: _openStickerForge),
             const SizedBox(height: 10),
             _QueueSummary(
@@ -544,6 +652,118 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PollinationsConnectionCard extends StatelessWidget {
+  const _PollinationsConnectionCard({
+    required this.loading,
+    required this.connected,
+    required this.connecting,
+    required this.error,
+    required this.onConnect,
+    required this.onDisconnect,
+    required this.onRefresh,
+  });
+
+  final bool loading;
+  final bool connected;
+  final bool connecting;
+  final String? error;
+  final VoidCallback onConnect;
+  final VoidCallback onDisconnect;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = connected ? Colors.greenAccent : AshColors.smokeSilver;
+    final statusLabel = connected ? 'Connected' : 'Not connected';
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.hub_outlined,
+                  color: AshColors.indigoMist,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Pollinations',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: AshColors.boneWhite,
+                    ),
+                  ),
+                ),
+                if (loading)
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else ...[
+                  Icon(Icons.circle, size: 10, color: statusColor),
+                  const SizedBox(width: 6),
+                  Text(
+                    statusLabel,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: statusColor,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              connected
+                  ? 'AI generation powered by Pollinations.ai. This device is authorized.'
+                  : 'Connect a Pollinations account to use AI generation with that user\'s Pollen.',
+              style: const TextStyle(color: AshColors.smokeSilver),
+            ),
+            if (error != null && error!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                error!,
+                style: const TextStyle(color: AshColors.mutedRose),
+              ),
+            ],
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                if (!connected)
+                  FilledButton.icon(
+                    onPressed: loading || connecting ? null : onConnect,
+                    icon: const Icon(Icons.link),
+                    label: Text(
+                      connecting ? 'Connecting...' : 'Connect Pollinations',
+                    ),
+                  )
+                else
+                  OutlinedButton.icon(
+                    onPressed: connecting ? null : onDisconnect,
+                    icon: const Icon(Icons.link_off),
+                    label: const Text('Disconnect'),
+                  ),
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: 'Refresh Pollinations status',
+                  onPressed: loading || connecting ? null : onRefresh,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
           ],
         ),
       ),

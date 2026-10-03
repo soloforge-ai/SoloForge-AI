@@ -31,6 +31,7 @@ _HANDOFF_TTL_SECONDS = 120
 _SESSION_COOKIE = "__Host-soloforge_session"
 _STATE_COOKIE = "__Host-soloforge_oauth_state"
 _DEFAULT_MOBILE_RETURN_TO = "soloforge://oauth/pollinations"
+_DEFAULT_WEB_RETURN_TO = "https://soloforge-ai-web.onrender.com/"
 
 
 @dataclass
@@ -306,15 +307,26 @@ def _session_id_from_authorization(authorization: str | None) -> str | None:
     return value.strip()
 
 
-def _validate_return_to(return_to: str | None) -> str | None:
+def _validate_return_to(return_to: str | None, *, client: str) -> str | None:
     if not return_to:
         return None
-    allowed = os.getenv(
-        "POLLINATIONS_MOBILE_RETURN_TO",
-        _DEFAULT_MOBILE_RETURN_TO,
-    ).strip()
+    if client == "mobile":
+        allowed = os.getenv(
+            "POLLINATIONS_MOBILE_RETURN_TO",
+            _DEFAULT_MOBILE_RETURN_TO,
+        ).strip()
+        error = "Unsupported mobile return URL."
+    elif client == "web":
+        allowed = os.getenv(
+            "POLLINATIONS_WEB_RETURN_TO",
+            _DEFAULT_WEB_RETURN_TO,
+        ).strip()
+        error = "Unsupported web return URL."
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported OAuth client.")
+
     if return_to != allowed:
-        raise HTTPException(status_code=400, detail="Unsupported mobile return URL.")
+        raise HTTPException(status_code=400, detail=error)
     return return_to
 
 
@@ -328,16 +340,24 @@ def pollinations_login(
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
-    mobile_return_to = None
+    resolved_return_to = None
     if client == "mobile":
-        mobile_return_to = _validate_return_to(return_to or _DEFAULT_MOBILE_RETURN_TO)
+        resolved_return_to = _validate_return_to(
+            return_to or _DEFAULT_MOBILE_RETURN_TO,
+            client="mobile",
+        )
+    elif client == "web":
+        resolved_return_to = _validate_return_to(
+            return_to or _DEFAULT_WEB_RETURN_TO,
+            client="web",
+        )
 
     verifier, challenge, state = create_pkce_transaction()
     with _lock:
         _transactions[state] = _OAuthTransaction(
             verifier=verifier,
             created_at=time.time(),
-            return_to=mobile_return_to,
+            return_to=resolved_return_to,
         )
 
     authorization_url = build_authorization_url(
