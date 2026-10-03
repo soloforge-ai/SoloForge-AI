@@ -32,6 +32,14 @@ class SoloForgeSessionService {
   static const _sessionKey = 'soloforge_session_token';
   static const _expiresAtKey = 'soloforge_session_expires_at';
   static const _refreshWindowSeconds = 7 * 24 * 60 * 60;
+  static const _supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://dhazxwfzaccrttckuylw.supabase.co',
+  );
+  static const _supabasePublishableKey = String.fromEnvironment(
+    'SUPABASE_PUBLISHABLE_KEY',
+    defaultValue: 'sb_publishable_3_UQoHsxK1k8_umfgdTHBA_s5nhhKoL',
+  );
 
   final http.Client _client;
   final FlutterSecureStorage _storage;
@@ -58,6 +66,10 @@ class SoloForgeSessionService {
       await _clearAppSession();
     }
 
+    final bootstrapped = await _bootstrapFirstPartySession();
+    if (bootstrapped != null) {
+      return bootstrapped;
+    }
     return _migrateLegacySession();
   }
 
@@ -88,6 +100,38 @@ class SoloForgeSessionService {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       await _storeResponse(response);
     }
+  }
+
+  Future<String?> _bootstrapFirstPartySession() async {
+    final signupResponse = await _client.post(
+      Uri.parse('$_supabaseUrl/auth/v1/signup'),
+      headers: {
+        'apikey': _supabasePublishableKey,
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(const <String, Object>{}),
+    );
+    if (signupResponse.statusCode < 200 || signupResponse.statusCode >= 300) {
+      return null;
+    }
+
+    final signupBody = jsonDecode(signupResponse.body);
+    if (signupBody is! Map) {
+      return null;
+    }
+    final accessToken = signupBody['access_token']?.toString();
+    if (accessToken == null || accessToken.isEmpty) {
+      return null;
+    }
+
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/auth/soloforge/bootstrap'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return null;
+    }
+    return _storeResponse(response);
   }
 
   Future<String> _migrateLegacySession() async {
