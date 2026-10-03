@@ -82,6 +82,30 @@ Implemented does not automatically mean the complete commercial workflow has bee
 
 ---
 
+# 🌼 Pollinations Integration
+
+SoloForge AI integrates with [Pollinations.ai](https://pollinations.ai) for authenticated AI generation.
+
+Live app: https://soloforge-ai-web.onrender.com
+
+Key integration points:
+
+- OAuth 2.1 + PKCE authorization through `https://enter.pollinations.ai`
+- Text generation through `https://gen.pollinations.ai/v1/chat/completions`
+- Image generation through `https://gen.pollinations.ai/image/`
+- Image editing through `https://gen.pollinations.ai/v1/images/edits`
+- User Pollinations sessions are handled server-side; provider access tokens are not exposed to the Flutter frontend
+
+Implementation files:
+
+- `backend/asset_forge/backend/pollinations_oauth.py`
+- `backend/asset_forge/backend/pollinations_oauth_router.py`
+- `backend/asset_forge/backend/content_generation.py`
+- `backend/asset_forge/backend/asset_provider.py`
+- `backend/asset_forge/main.py`
+- `frontend/lib/services/pollinations_session_service.dart`
+- `frontend/lib/pages/home_page.dart`
+
 # 🚧 Current Gate
 
 Before expanding the product, SoloForge must complete these steps in order:
