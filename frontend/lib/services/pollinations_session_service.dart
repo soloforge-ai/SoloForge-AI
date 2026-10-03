@@ -76,10 +76,7 @@ class PollinationsSessionService {
 
     if (kIsWeb) {
       queryParameters['client'] = 'web';
-      queryParameters['return_to'] = Uri.base.resolve('/').replace(
-        queryParameters: const <String, String>{},
-        fragment: '',
-      ).toString();
+      queryParameters['return_to'] = '${Uri.base.origin}/';
       mode = LaunchMode.platformDefault;
       webOnlyWindowName = '_self';
     } else {
