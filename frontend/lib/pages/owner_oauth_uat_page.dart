@@ -73,7 +73,7 @@ class _OwnerOAuthUatPageState extends State<OwnerOAuthUatPage> {
   Widget build(BuildContext context) {
     final user = _session?.user;
     return Scaffold(
-      appBar: AppBar(title: const Text('SoloForge owner sign-in test')),
+      appBar: AppBar(title: Text(widget.identityOnly ? 'Owner sign-in test' : 'SoloForge sign-in')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -96,7 +96,8 @@ class _OwnerOAuthUatPageState extends State<OwnerOAuthUatPage> {
                     : (widget.ownerAccessMessage ?? 'Owner access is unavailable. Please retry.'),
                     textAlign: TextAlign.center),
                 const SizedBox(height: 16),
-                SelectableText('Supabase user ID: ${user.id}', textAlign: TextAlign.center),
+                if (widget.identityOnly)
+                  SelectableText('Supabase user ID: ${user.id}', textAlign: TextAlign.center),
                 const SizedBox(height: 20),
                 if (!widget.identityOnly)
                   FilledButton(onPressed: widget.onRetry, child: const Text('Retry owner access')),
