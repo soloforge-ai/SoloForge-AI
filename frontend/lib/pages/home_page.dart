@@ -456,16 +456,19 @@ class _HomePageState extends State<HomePage> {
 
   int get _actionRequiredCount => _allJobs
       .where((job) =>
+          JobQueuePresentation.inFilter(job, QueueFilter.active) &&
           JobQueuePresentation.groupFor(job) == QueueFilter.actionRequired)
       .length;
 
   int get _processingCount => _allJobs
       .where((job) =>
+          JobQueuePresentation.inFilter(job, QueueFilter.active) &&
           JobQueuePresentation.groupFor(job) == QueueFilter.processing)
       .length;
 
   int get _backlogCount => _allJobs
       .where((job) =>
+          JobQueuePresentation.inFilter(job, QueueFilter.active) &&
           JobQueuePresentation.groupFor(job) == QueueFilter.backlog)
       .length;
 
@@ -662,7 +665,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const Spacer(),
                 TextButton.icon(
-                  onPressed: _loading ? null : _resetQueue,
+                  onPressed: _loading || _error != null ? null : _resetQueue,
                   icon: const Icon(Icons.cancel_outlined),
                   label: const Text('Reset Queue'),
                 ),
