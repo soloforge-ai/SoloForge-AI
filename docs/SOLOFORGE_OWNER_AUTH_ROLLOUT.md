@@ -18,8 +18,9 @@ the exact server-side owner UUID plus GitHub in trusted `app_metadata.providers`
 Anonymous sign-in, another GitHub user, and legacy Pollinations exchange cannot
 obtain owner sessions. Unbound v1 sessions are rejected. v2 app sessions expire
 after 15 minutes by default (maximum 1 hour); renewal requires a fresh
-Supabase owner bearer. Existing mobile GitHub sessions persist via the
-Supabase Flutter SDK. The publishable key is safe for a client; all service
+Supabase owner bearer. Flutter requests a short-lived app bearer for each
+private API call and never persists it. The mobile GitHub session persists via
+the Supabase Flutter SDK. The publishable key is safe for a client; all service
 keys and OAuth client secrets remain server-side.
 
 ## Deployment gate and lockout recovery
@@ -33,7 +34,7 @@ keys and OAuth client secrets remain server-side.
    `SOLOFORGE_SESSION_SECRET` exist on Render without printing their values.
 4. Deploy backend and compatible app together only after owner approval.
    The backend immediately rejects old v1 sessions. The owner can recover
-   by signing in with GitHub again; the client obtains a new v2 session.
+   by signing in with GitHub again; the client obtains new v2 sessions.
 5. If the owner GitHub identity must change, verify the replacement in
    `auth.users` and `auth.identities` first, then change only the server-side
    `SOLOFORGE_OWNER_USER_ID`. The APK never carries an owner allowlist.
