@@ -54,4 +54,33 @@ void main() {
     expect(requests, 1);
     service.dispose();
   });
+  test('new service instance obtains a fresh app bearer for a restored owner', () async {
+    OwnerIdentity? identity = (userId: 'owner', accessToken: 'owner-supabase');
+    var requests = 0;
+    final client = MockClient((request) async {
+      expect(request.url.path, '/auth/soloforge/bootstrap');
+      expect(request.headers['Authorization'], 'Bearer owner-supabase');
+      requests++;
+      return http.Response('{"session_token":"owner-app-$requests"}', 200);
+    });
+    final first = SoloForgeSessionService(
+      currentIdentity: () => identity,
+      client: client,
+    );
+    expect((await first.authorizationHeaders())['Authorization'], 'Bearer owner-app-1');
+    final restarted = SoloForgeSessionService(
+      currentIdentity: () => identity,
+      client: client,
+    );
+    expect((await restarted.authorizationHeaders())['Authorization'], 'Bearer owner-app-2');
+    expect(requests, 2);
+    identity = null;
+    await expectLater(
+      restarted.authorizationHeaders(),
+      throwsA(isA<SoloForgeSessionException>()),
+    );
+    expect(requests, 2);
+    restarted.dispose();
+  });
+
 }
