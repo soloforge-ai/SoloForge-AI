@@ -13,10 +13,10 @@ void main() {
 
     await tester.pump();
 
-    await tester.tap(find.text('สร้างสติ๊กเกอร์'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(AssetForgePage), findsOneWidget);
+    expect(find.text('สร้างสติ๊กเกอร์'), findsNothing);
+    expect(find.text('Reset Queue'), findsNothing);
+    expect(find.text('Connect Pollinations'), findsNothing);
+    expect(find.byType(AssetForgePage), findsNothing);
   });
 
   testWidgets('Pollen demo is locked to one four-sticker pack', (tester) async {
