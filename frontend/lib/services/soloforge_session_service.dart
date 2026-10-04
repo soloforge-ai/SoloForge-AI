@@ -2,51 +2,32 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'pollinations_session_service.dart';
 
 class SoloForgeSessionException implements Exception {
   const SoloForgeSessionException(this.message);
-
   final String message;
-
   @override
   String toString() => message;
 }
 
-/// First-party application session.
-///
-/// Pollinations is used only as a one-time migration proof when an existing
-/// SoloForge app session is not present. Provider credentials remain stored
-/// separately and are never returned as the application bearer token.
+/// Backend owner session obtained only from a persisted Supabase GitHub login.
+/// Pollinations credentials are separate and never authorize private APIs.
 class SoloForgeSessionService {
-  SoloForgeSessionService({
-    http.Client? client,
-    FlutterSecureStorage? storage,
-    PollinationsSessionService? legacySessionService,
-  })  : _client = client ?? http.Client(),
-        _storage = storage ?? const FlutterSecureStorage(),
-        _legacySessionService =
-            legacySessionService ?? PollinationsSessionService();
+  SoloForgeSessionService({http.Client? client, FlutterSecureStorage? storage})
+      : _client = client ?? http.Client(),
+        _storage = storage ?? const FlutterSecureStorage();
 
   static const _sessionKey = 'soloforge_session_token';
   static const _expiresAtKey = 'soloforge_session_expires_at';
-  static const _refreshWindowSeconds = 7 * 24 * 60 * 60;
-  static const _supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://dhazxwfzaccrttckuylw.supabase.co',
-  );
-  static const _supabasePublishableKey = String.fromEnvironment(
-    'SUPABASE_PUBLISHABLE_KEY',
-    defaultValue: 'sb_publishable_3_UQoHsxK1k8_umfgdTHBA_s5nhhKoL',
-  );
+  static const _refreshWindowSeconds = 5 * 60;
 
   final http.Client _client;
   final FlutterSecureStorage _storage;
-  final PollinationsSessionService _legacySessionService;
 
-  String get _baseUrl =>
-      assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
+  String get _baseUrl => assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
 
   Future<String?> readSessionToken() => _storage.read(key: _sessionKey);
 
@@ -56,21 +37,20 @@ class SoloForgeSessionService {
   }
 
   Future<String> _ensureSession() async {
+    // A stored app token alone must not unlock a signed-out device.
+    if (Supabase.instance.client.auth.currentSession == null) {
+      await _clearAppSession();
+      throw const SoloForgeSessionException('Sign in with GitHub to continue.');
+    }
     final current = await readSessionToken();
     if (current != null && current.isNotEmpty) {
-      final valid = await _status(current);
-      if (valid) {
-        await _refreshIfNeeded(current);
+      if (await _status(current)) {
+        await _refreshIfNeeded();
         return (await readSessionToken()) ?? current;
       }
       await _clearAppSession();
     }
-
-    final bootstrapped = await _bootstrapFirstPartySession();
-    if (bootstrapped != null) {
-      return bootstrapped;
-    }
-    return _migrateLegacySession();
+    return _bootstrapOwnerSession();
   }
 
   Future<bool> _status(String token) async {
@@ -78,77 +58,39 @@ class SoloForgeSessionService {
       Uri.parse('$_baseUrl/auth/soloforge/status'),
       headers: {'Authorization': 'Bearer $token'},
     );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      return false;
-    }
+    if (response.statusCode < 200 || response.statusCode >= 300) return false;
     final body = jsonDecode(response.body);
     return body is Map && body['authenticated'] == true;
   }
 
-  Future<void> _refreshIfNeeded(String token) async {
+  Future<void> _refreshIfNeeded() async {
     final raw = await _storage.read(key: _expiresAtKey);
     final expiresAt = int.tryParse(raw ?? '');
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    if (expiresAt != null && expiresAt - now > _refreshWindowSeconds) {
-      return;
-    }
-
+    if (expiresAt != null && expiresAt - now > _refreshWindowSeconds) return;
+    final supabaseToken = Supabase.instance.client.auth.currentSession?.accessToken;
+    if (supabaseToken == null) return;
     final response = await _client.post(
       Uri.parse('$_baseUrl/auth/soloforge/refresh'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': 'Bearer $supabaseToken'},
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {
       await _storeResponse(response);
     }
   }
 
-  Future<String?> _bootstrapFirstPartySession() async {
-    final signupResponse = await _client.post(
-      Uri.parse('$_supabaseUrl/auth/v1/signup'),
-      headers: {
-        'apikey': _supabasePublishableKey,
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(const <String, Object>{}),
-    );
-    if (signupResponse.statusCode < 200 || signupResponse.statusCode >= 300) {
-      return null;
-    }
-
-    final signupBody = jsonDecode(signupResponse.body);
-    if (signupBody is! Map) {
-      return null;
-    }
-    final accessToken = signupBody['access_token']?.toString();
+  Future<String> _bootstrapOwnerSession() async {
+    final accessToken = Supabase.instance.client.auth.currentSession?.accessToken;
     if (accessToken == null || accessToken.isEmpty) {
-      return null;
+      throw const SoloForgeSessionException('Sign in with GitHub to continue.');
     }
-
     final response = await _client.post(
       Uri.parse('$_baseUrl/auth/soloforge/bootstrap'),
       headers: {'Authorization': 'Bearer $accessToken'},
     );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      return null;
-    }
-    return _storeResponse(response);
-  }
-
-  Future<String> _migrateLegacySession() async {
-    final legacyToken = await _legacySessionService.readSessionToken();
-    if (legacyToken == null || legacyToken.isEmpty) {
+    if (response.statusCode != 200) {
       throw const SoloForgeSessionException(
-        'SoloForge app session is not initialized on this device.',
-      );
-    }
-
-    final response = await _client.post(
-      Uri.parse('$_baseUrl/auth/soloforge/exchange'),
-      headers: {'Authorization': 'Bearer $legacyToken'},
-    );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw const SoloForgeSessionException(
-        'Could not migrate the existing SoloForge session.',
+        'This GitHub identity is not authorized as the SoloForge owner.',
       );
     }
     return _storeResponse(response);
