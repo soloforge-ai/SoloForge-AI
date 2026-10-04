@@ -21,6 +21,14 @@ ContentJob job(
 }
 
 void main() {
+  test('cancelled and archived jobs remain visible in History', () {
+    for (final status in ['CANCELLED', 'ARCHIVED']) {
+      expect(JobQueuePresentation.inFilter(job(status), QueueFilter.active), isFalse);
+      expect(JobQueuePresentation.inFilter(job(status), QueueFilter.history), isTrue);
+      expect(JobQueuePresentation.inFilter(job(status), QueueFilter.all), isTrue);
+    }
+    expect(JobQueuePresentation.statusLabel('CANCELLED'), 'Cancelled');
+  });
   test('action-required states are grouped ahead of other work', () {
     final review = job('READY_FOR_REVIEW');
     final publish = job('READY_TO_PUBLISH');

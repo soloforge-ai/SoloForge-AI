@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import urllib.parse
+from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Body, Header, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from backend.soloforge_session import require_soloforge_session
@@ -12,6 +13,7 @@ from backend.content_generation import process_selected_job
 from backend.content_router import route_approved_job
 from backend.content_asset_generation import process_asset_job
 from backend.publora_publishing import media_urls_for_job
+from backend.publora_publishing import get_post
 
 from backend.shared_supabase import supabase_request as _supabase_request
 
@@ -73,6 +75,10 @@ class ContentDraftUpdate(BaseModel):
     motion_prompt: str | None = Field(default=None, max_length=20000)
 
 
+class QueueResetRequest(BaseModel):
+    confirmation: str
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -109,6 +115,70 @@ def _patch_job(job_id: str, body: dict[str, object]) -> dict[str, object]:
     if not rows:
         raise HTTPException(status_code=409, detail="Content job update was not applied")
     return dict(rows[0])
+
+
+def _require_cancel_owner(authorization: str | None) -> None:
+    # The queue reset boundary deliberately returns 403 for anonymous and
+    # authenticated non-owners alike; possession of a Supabase bearer is not
+    # sufficient to authorize a Content Factory mutation.
+    try:
+        _require_session(authorization)
+    except HTTPException as exc:
+        if exc.status_code in (401, 403):
+            raise HTTPException(status_code=403, detail="Owner session required") from exc
+        raise
+
+
+def _cancel_jobs(job_id: str | None) -> dict[str, object]:
+    if job_id is not None:
+        try:
+            job_id = str(UUID(job_id))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Invalid job ID") from exc
+    result = _supabase_request(
+        "POST", "rpc/cancel_content_jobs", body={"p_job_id": job_id}
+    )
+    if not isinstance(result, dict):
+        raise HTTPException(status_code=502, detail="Queue cancellation did not return a result")
+    if job_id is not None and result.get("selected") == 0:
+        raise HTTPException(status_code=404, detail="Content job not found")
+    # External lookup is read-only. A PUBLISHING row is never changed by the
+    # cancellation transaction; even a Publora draft requires reconciliation.
+    for skipped in result.get("skipped", []):
+        if skipped.get("reason") != "EXTERNAL_RECONCILIATION_REQUIRED":
+            continue
+        post_id = skipped.pop("publora_post_id", None)
+        if not post_id:
+            skipped["external_state"] = "UNKNOWN_NO_REFERENCE"
+            continue
+        try:
+            payload = get_post(str(post_id))
+            skipped["external_state"] = str(payload.get("status") or "UNKNOWN")
+        except RuntimeError:
+            skipped["external_state"] = "UNAVAILABLE"
+    if job_id is not None and result.get("skipped"):
+        raise HTTPException(status_code=409, detail=result["skipped"][0])
+    return result
+
+
+@router.post("/queue/reset", include_in_schema=False)  # Owner ops API; no product UI.
+def reset_content_queue(
+    request: QueueResetRequest | None = Body(default=None),
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    _require_cancel_owner(authorization)
+    if request is None or request.confirmation != "CANCEL ALL ACTIVE JOBS":
+        raise HTTPException(status_code=400, detail="Explicit queue reset confirmation required")
+    return _cancel_jobs(None)
+
+
+@router.post("/{job_id}/cancel")
+def cancel_content_job(
+    job_id: str,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    _require_cancel_owner(authorization)
+    return _cancel_jobs(job_id)
 
 
 

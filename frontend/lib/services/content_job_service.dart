@@ -398,6 +398,17 @@ class ContentJobService {
         .toList();
   }
 
+  Future<Map<String, dynamic>> cancelJob(String id) async {
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/v1/content-jobs/$id/cancel'),
+      headers: await _headers(),
+    ).timeout(const Duration(seconds: 30));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Cancel job');
+    }
+    return Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+  }
+
   Future<ContentAnalyticsSummary> getAnalyticsSummary() async {
     final response = await _client
         .get(

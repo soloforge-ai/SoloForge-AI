@@ -4,7 +4,7 @@ import 'package:frontend/pages/asset_forge_page.dart';
 import 'package:frontend/pages/home_page.dart';
 
 void main() {
-  testWidgets('home sticker CTA opens authenticated Asset Forge', (tester) async {
+  testWidgets('home keeps ops and specialist tools out of primary navigation', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: HomePage(),
@@ -13,10 +13,10 @@ void main() {
 
     await tester.pump();
 
-    await tester.tap(find.text('สร้างสติ๊กเกอร์'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(AssetForgePage), findsOneWidget);
+    expect(find.text('สร้างสติ๊กเกอร์'), findsNothing);
+    expect(find.text('Reset Queue'), findsNothing);
+    expect(find.text('Connect Pollinations'), findsNothing);
+    expect(find.byType(AssetForgePage), findsNothing);
   });
 
   testWidgets('Pollen demo is locked to one four-sticker pack', (tester) async {

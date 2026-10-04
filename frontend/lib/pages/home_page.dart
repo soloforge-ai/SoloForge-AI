@@ -1,20 +1,34 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
 import '../models/content_job.dart';
 import '../services/content_job_service.dart';
-import '../services/pollinations_session_service.dart';
-import '../widgets/home/hero_banner.dart';
 import 'about_page.dart';
 import 'analytics_page.dart';
-import 'asset_forge_page.dart';
 import 'content_job_page.dart';
 import 'settings_page.dart';
 
-enum QueueFilter { all, actionRequired, processing, completed, backlog }
+enum QueueFilter { active, actionRequired, processing, completed, backlog, history, all }
 
 class JobQueuePresentation {
+  static bool inFilter(ContentJob job, QueueFilter filter) {
+    final historical = const {'CANCELLED', 'ARCHIVED', 'PUBLISHED'}
+        .contains(job.status) || job.status.endsWith('_FAILED');
+    switch (filter) {
+      case QueueFilter.active:
+        return !historical;
+      case QueueFilter.history:
+        return historical;
+      case QueueFilter.all:
+        return true;
+      case QueueFilter.actionRequired:
+      case QueueFilter.processing:
+      case QueueFilter.completed:
+      case QueueFilter.backlog:
+        return groupFor(job) == filter;
+    }
+  }
+
   static bool matchesSearch(ContentJob job, String query) {
     final terms = query
         .trim()
@@ -89,6 +103,7 @@ class JobQueuePresentation {
       'SELECTED': 'Queued',
       'BACKLOG': 'Backlog',
       'ARCHIVED': 'Archived',
+      'CANCELLED': 'Cancelled',
       'GENERATING': 'Generating',
       'READY_FOR_REVIEW': 'Ready for Review',
       'APPROVED': 'Approved',
@@ -134,6 +149,8 @@ class JobQueuePresentation {
       case QueueFilter.completed:
         return 5;
       case QueueFilter.all:
+      case QueueFilter.active:
+      case QueueFilter.history:
         return 6;
     }
   }
@@ -148,126 +165,30 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final ContentJobService _contentJobService = ContentJobService();
-  final PollinationsSessionService _pollinationsSession =
-      PollinationsSessionService();
   final TextEditingController _ideaController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
 
   List<ContentJob> _allJobs = const [];
   List<ContentJob> _jobs = const [];
-  QueueFilter _filter = QueueFilter.all;
+  QueueFilter _filter = QueueFilter.active;
   String _keyword = '';
   bool _loading = true;
   bool _ideaBusy = false;
-  bool _pollinationsLoading = true;
-  bool _pollinationsConnected = false;
-  bool _pollinationsConnecting = false;
   IdeaAnalysis? _ideaAnalysis;
   String? _ideaError;
   String? _error;
-  String? _pollinationsError;
 
   @override
   void initState() {
     super.initState();
-    _loadPollinationsConnection();
     _loadJobs();
   }
 
   @override
   void dispose() {
-    _pollinationsSession.dispose();
     _ideaController.dispose();
     _searchController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadPollinationsConnection() async {
-    if (mounted) {
-      setState(() {
-        _pollinationsLoading = true;
-        _pollinationsError = null;
-      });
-    }
-
-    try {
-      if (!kIsWeb) {
-        await _pollinationsSession.startListening(
-          onCallback: (uri) async {
-            if (!_pollinationsSession.isPollinationsCallback(uri)) return;
-            final state = await _pollinationsSession.handleCallback(uri);
-            if (!mounted) return;
-            setState(() {
-              _pollinationsConnected = state.connected;
-              _pollinationsLoading = false;
-              _pollinationsConnecting = false;
-              _pollinationsError = null;
-            });
-          },
-        );
-      }
-
-      final state = kIsWeb
-          ? await _pollinationsSession.handleWebCallbackIfPresent()
-          : await _pollinationsSession.status();
-      if (!mounted) return;
-      setState(() {
-        _pollinationsConnected = state.connected;
-        _pollinationsLoading = false;
-        _pollinationsConnecting = false;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _pollinationsConnected = false;
-        _pollinationsLoading = false;
-        _pollinationsConnecting = false;
-        _pollinationsError = error.toString();
-      });
-    }
-  }
-
-  Future<void> _connectPollinations() async {
-    if (_pollinationsConnecting) return;
-    setState(() {
-      _pollinationsConnecting = true;
-      _pollinationsError = null;
-    });
-
-    try {
-      await _pollinationsSession.connect();
-      if (!kIsWeb && mounted) {
-        setState(() => _pollinationsConnecting = false);
-      }
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _pollinationsConnecting = false;
-        _pollinationsError = error.toString();
-      });
-    }
-  }
-
-  Future<void> _disconnectPollinations() async {
-    if (_pollinationsConnecting) return;
-    setState(() {
-      _pollinationsConnecting = true;
-      _pollinationsError = null;
-    });
-    try {
-      await _pollinationsSession.disconnect();
-      if (!mounted) return;
-      setState(() {
-        _pollinationsConnected = false;
-        _pollinationsConnecting = false;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _pollinationsConnecting = false;
-        _pollinationsError = error.toString();
-      });
-    }
   }
 
   Future<void> _analyzeIdea() async {
@@ -355,15 +276,7 @@ class _HomePageState extends State<HomePage> {
         return false;
       }
 
-      switch (_filter) {
-        case QueueFilter.all:
-          return true;
-        case QueueFilter.actionRequired:
-        case QueueFilter.processing:
-        case QueueFilter.completed:
-        case QueueFilter.backlog:
-          return JobQueuePresentation.groupFor(job) == _filter;
-      }
+      return JobQueuePresentation.inFilter(job, _filter);
     }).toList();
 
     jobs.sort((a, b) {
@@ -383,13 +296,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _openStickerForge() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const AssetForgePage()),
-    );
-  }
-
   Future<void> _openJob(ContentJob job) async {
     await Navigator.push(
       context,
@@ -402,16 +308,19 @@ class _HomePageState extends State<HomePage> {
 
   int get _actionRequiredCount => _allJobs
       .where((job) =>
+          JobQueuePresentation.inFilter(job, QueueFilter.active) &&
           JobQueuePresentation.groupFor(job) == QueueFilter.actionRequired)
       .length;
 
   int get _processingCount => _allJobs
       .where((job) =>
+          JobQueuePresentation.inFilter(job, QueueFilter.active) &&
           JobQueuePresentation.groupFor(job) == QueueFilter.processing)
       .length;
 
   int get _backlogCount => _allJobs
       .where((job) =>
+          JobQueuePresentation.inFilter(job, QueueFilter.active) &&
           JobQueuePresentation.groupFor(job) == QueueFilter.backlog)
       .length;
 
@@ -421,11 +330,13 @@ class _HomePageState extends State<HomePage> {
       .length;
 
   int get _activeCount => _allJobs
-      .where((job) => !const {'PUBLISHED', 'ARCHIVED'}.contains(job.status))
+      .where((job) => JobQueuePresentation.inFilter(job, QueueFilter.active))
       .length;
 
   int _filterCount(QueueFilter filter) {
     if (filter == QueueFilter.all) return _allJobs.length;
+    if (filter == QueueFilter.active) return _activeCount;
+    if (filter == QueueFilter.history) return _allJobs.length - _activeCount;
     return _allJobs
         .where((job) => JobQueuePresentation.groupFor(job) == filter)
         .length;
@@ -433,6 +344,10 @@ class _HomePageState extends State<HomePage> {
 
   String _filterLabel(QueueFilter filter) {
     switch (filter) {
+      case QueueFilter.active:
+        return 'Active';
+      case QueueFilter.history:
+        return 'History / Cancelled';
       case QueueFilter.all:
         return 'All';
       case QueueFilter.actionRequired:
@@ -515,18 +430,6 @@ class _HomePageState extends State<HomePage> {
                 generateNow: false,
               ),
             ),
-            const SizedBox(height: 10),
-            _PollinationsConnectionCard(
-              loading: _pollinationsLoading,
-              connected: _pollinationsConnected,
-              connecting: _pollinationsConnecting,
-              error: _pollinationsError,
-              onConnect: _connectPollinations,
-              onDisconnect: _disconnectPollinations,
-              onRefresh: _loadPollinationsConnection,
-            ),
-            const SizedBox(height: 10),
-            HeroBanner(onPressed: _openStickerForge),
             const SizedBox(height: 10),
             _QueueSummary(
               active: _activeCount,
@@ -624,13 +527,13 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     children: [
                       const Text('No content jobs match this view.'),
-                      if (_keyword.trim().isNotEmpty || _filter != QueueFilter.all) ...[
+                      if (_keyword.trim().isNotEmpty || _filter != QueueFilter.active) ...[
                         const SizedBox(height: 10),
                         OutlinedButton.icon(
                           onPressed: () {
                             _searchController.clear();
                             _keyword = '';
-                            _filter = QueueFilter.all;
+                            _filter = QueueFilter.active;
                             _applyFilters();
                           },
                           icon: const Icon(Icons.filter_alt_off_outlined),
@@ -652,118 +555,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PollinationsConnectionCard extends StatelessWidget {
-  const _PollinationsConnectionCard({
-    required this.loading,
-    required this.connected,
-    required this.connecting,
-    required this.error,
-    required this.onConnect,
-    required this.onDisconnect,
-    required this.onRefresh,
-  });
-
-  final bool loading;
-  final bool connected;
-  final bool connecting;
-  final String? error;
-  final VoidCallback onConnect;
-  final VoidCallback onDisconnect;
-  final VoidCallback onRefresh;
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = connected ? Colors.greenAccent : AshColors.smokeSilver;
-    final statusLabel = connected ? 'Connected' : 'Not connected';
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.hub_outlined,
-                  color: AshColors.indigoMist,
-                ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'Pollinations',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      color: AshColors.boneWhite,
-                    ),
-                  ),
-                ),
-                if (loading)
-                  const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else ...[
-                  Icon(Icons.circle, size: 10, color: statusColor),
-                  const SizedBox(width: 6),
-                  Text(
-                    statusLabel,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: statusColor,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              connected
-                  ? 'AI generation powered by Pollinations.ai. This device is authorized.'
-                  : 'Connect a Pollinations account to use AI generation with that user\'s Pollen.',
-              style: const TextStyle(color: AshColors.smokeSilver),
-            ),
-            if (error != null && error!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                error!,
-                style: const TextStyle(color: AshColors.mutedRose),
-              ),
-            ],
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                if (!connected)
-                  FilledButton.icon(
-                    onPressed: loading || connecting ? null : onConnect,
-                    icon: const Icon(Icons.link),
-                    label: Text(
-                      connecting ? 'Connecting...' : 'Connect Pollinations',
-                    ),
-                  )
-                else
-                  OutlinedButton.icon(
-                    onPressed: connecting ? null : onDisconnect,
-                    icon: const Icon(Icons.link_off),
-                    label: const Text('Disconnect'),
-                  ),
-                const SizedBox(width: 8),
-                IconButton(
-                  tooltip: 'Refresh Pollinations status',
-                  onPressed: loading || connecting ? null : onRefresh,
-                  icon: const Icon(Icons.refresh),
-                ),
-              ],
-            ),
           ],
         ),
       ),
