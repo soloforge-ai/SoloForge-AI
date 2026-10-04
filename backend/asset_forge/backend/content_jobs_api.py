@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import urllib.parse
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Body, Header, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from backend.soloforge_session import require_soloforge_session
@@ -73,6 +73,10 @@ class ContentDraftUpdate(BaseModel):
     cta: str | None = Field(default=None, max_length=4000)
     visual_prompt: str | None = Field(default=None, max_length=20000)
     motion_prompt: str | None = Field(default=None, max_length=20000)
+
+
+class QueueResetRequest(BaseModel):
+    confirmation: str
 
 
 def _now() -> str:
@@ -159,9 +163,12 @@ def _cancel_jobs(job_id: str | None) -> dict[str, object]:
 
 @router.post("/queue/reset")
 def reset_content_queue(
+    request: QueueResetRequest | None = Body(default=None),
     authorization: str | None = Header(default=None),
 ) -> dict[str, object]:
     _require_cancel_owner(authorization)
+    if request is None or request.confirmation != "CANCEL ALL ACTIVE JOBS":
+        raise HTTPException(status_code=400, detail="Explicit queue reset confirmation required")
     return _cancel_jobs(None)
 
 

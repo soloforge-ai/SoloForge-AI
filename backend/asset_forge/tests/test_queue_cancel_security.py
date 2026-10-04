@@ -69,7 +69,10 @@ def test_reset_reports_publishing_without_mutation(isolated_api, monkeypatch):
                              "publora_post_id": "draft-fixture"}]}
     monkeypatch.setattr(content_jobs_api, "_supabase_request", database)
     monkeypatch.setattr(content_jobs_api, "get_post", lambda post_id: {"status": "draft"})
-    response = client.post("/v1/content-jobs/queue/reset", headers=_owner(client))
+    headers = _owner(client)
+    assert client.post("/v1/content-jobs/queue/reset", headers=headers).status_code == 400
+    response = client.post("/v1/content-jobs/queue/reset", headers=headers,
+                           json={"confirmation": "CANCEL ALL ACTIVE JOBS"})
     assert response.status_code == 200
     assert response.json()["cancelled"] == 1
     assert response.json()["skipped"][0]["external_state"] == "draft"
