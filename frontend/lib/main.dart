@@ -9,7 +9,7 @@ Future<void> main() async {
   await Supabase.initialize(
     url: const String.fromEnvironment('SUPABASE_URL',
         defaultValue: 'https://dhazxwfzaccrttckuylw.supabase.co'),
-    anonKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY',
+    publishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY',
         defaultValue: 'sb_publishable_3_UQoHsxK1k8_umfgdTHBA_s5nhhKoL'),
   );
   runApp(const SoloForgeApp());
