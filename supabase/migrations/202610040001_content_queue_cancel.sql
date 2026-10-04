@@ -66,13 +66,15 @@ begin
       continue;
     end if;
     reason := null;
-    if job.status = 'PUBLISHING' or job.publora_post_id is not null then
+    if job.status = 'PUBLISHING' then
       reason := 'EXTERNAL_RECONCILIATION_REQUIRED';
     elsif job.status in (
       'ARCHIVED', 'PUBLISHED', 'GENERATION_FAILED', 'ASSET_FAILED',
       'AUDIO_FAILED', 'RENDER_FAILED', 'PUBLISH_FAILED'
     ) then
       reason := 'TERMINAL';
+    elsif job.publora_post_id is not null then
+      reason := 'EXTERNAL_RECONCILIATION_REQUIRED';
     elsif job.status in (
       'SCORING', 'GENERATING', 'ASSET_GENERATING', 'AUDIO_GENERATING',
       'FINAL_RENDERING', 'RENDERING'
