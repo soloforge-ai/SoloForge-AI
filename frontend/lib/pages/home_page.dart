@@ -12,9 +12,27 @@ import 'asset_forge_page.dart';
 import 'content_job_page.dart';
 import 'settings_page.dart';
 
-enum QueueFilter { all, actionRequired, processing, completed, backlog }
+enum QueueFilter { active, actionRequired, processing, completed, backlog, history, all }
 
 class JobQueuePresentation {
+  static bool inFilter(ContentJob job, QueueFilter filter) {
+    final historical = const {'CANCELLED', 'ARCHIVED', 'PUBLISHED'}
+        .contains(job.status) || job.status.endsWith('_FAILED');
+    switch (filter) {
+      case QueueFilter.active:
+        return !historical;
+      case QueueFilter.history:
+        return historical;
+      case QueueFilter.all:
+        return true;
+      case QueueFilter.actionRequired:
+      case QueueFilter.processing:
+      case QueueFilter.completed:
+      case QueueFilter.backlog:
+        return groupFor(job) == filter;
+    }
+  }
+
   static bool matchesSearch(ContentJob job, String query) {
     final terms = query
         .trim()
@@ -89,6 +107,7 @@ class JobQueuePresentation {
       'SELECTED': 'Queued',
       'BACKLOG': 'Backlog',
       'ARCHIVED': 'Archived',
+      'CANCELLED': 'Cancelled',
       'GENERATING': 'Generating',
       'READY_FOR_REVIEW': 'Ready for Review',
       'APPROVED': 'Approved',
@@ -134,6 +153,8 @@ class JobQueuePresentation {
       case QueueFilter.completed:
         return 5;
       case QueueFilter.all:
+      case QueueFilter.active:
+      case QueueFilter.history:
         return 6;
     }
   }
@@ -155,7 +176,7 @@ class _HomePageState extends State<HomePage> {
 
   List<ContentJob> _allJobs = const [];
   List<ContentJob> _jobs = const [];
-  QueueFilter _filter = QueueFilter.all;
+  QueueFilter _filter = QueueFilter.active;
   String _keyword = '';
   bool _loading = true;
   bool _ideaBusy = false;
@@ -355,15 +376,7 @@ class _HomePageState extends State<HomePage> {
         return false;
       }
 
-      switch (_filter) {
-        case QueueFilter.all:
-          return true;
-        case QueueFilter.actionRequired:
-        case QueueFilter.processing:
-        case QueueFilter.completed:
-        case QueueFilter.backlog:
-          return JobQueuePresentation.groupFor(job) == _filter;
-      }
+      return JobQueuePresentation.inFilter(job, _filter);
     }).toList();
 
     jobs.sort((a, b) {
@@ -400,6 +413,47 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _resetQueue() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancel all active jobs?'),
+        content: const Text(
+          'Jobs will not be deleted. History, assets and publishing references remain. '
+          'Eligible active processing will stop; cancelled jobs cannot automatically resume. '
+          'Jobs already submitted to Publora require separate reconciliation.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep jobs'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Cancel eligible jobs'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      final result = await _contentJobService.resetQueue();
+      if (!mounted) return;
+      await _loadJobs();
+      if (!mounted) return;
+      final skipped = result['skipped'] is List ? (result['skipped'] as List).length : 0;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Cancelled ${result['cancelled']} of ${result['eligible']} eligible jobs. '
+            '$skipped jobs need review or are already terminal.'),
+      ));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Queue reset failed: $error')),
+      );
+    }
+  }
+
   int get _actionRequiredCount => _allJobs
       .where((job) =>
           JobQueuePresentation.groupFor(job) == QueueFilter.actionRequired)
@@ -421,11 +475,13 @@ class _HomePageState extends State<HomePage> {
       .length;
 
   int get _activeCount => _allJobs
-      .where((job) => !const {'PUBLISHED', 'ARCHIVED'}.contains(job.status))
+      .where((job) => JobQueuePresentation.inFilter(job, QueueFilter.active))
       .length;
 
   int _filterCount(QueueFilter filter) {
     if (filter == QueueFilter.all) return _allJobs.length;
+    if (filter == QueueFilter.active) return _activeCount;
+    if (filter == QueueFilter.history) return _allJobs.length - _activeCount;
     return _allJobs
         .where((job) => JobQueuePresentation.groupFor(job) == filter)
         .length;
@@ -433,6 +489,10 @@ class _HomePageState extends State<HomePage> {
 
   String _filterLabel(QueueFilter filter) {
     switch (filter) {
+      case QueueFilter.active:
+        return 'Active';
+      case QueueFilter.history:
+        return 'History / Cancelled';
       case QueueFilter.all:
         return 'All';
       case QueueFilter.actionRequired:
@@ -601,6 +661,11 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 const Spacer(),
+                TextButton.icon(
+                  onPressed: _loading ? null : _resetQueue,
+                  icon: const Icon(Icons.cancel_outlined),
+                  label: const Text('Reset Queue'),
+                ),
                 Text(
                   _jobs.length == _allJobs.length
                       ? '${_jobs.length} jobs'
@@ -624,13 +689,13 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     children: [
                       const Text('No content jobs match this view.'),
-                      if (_keyword.trim().isNotEmpty || _filter != QueueFilter.all) ...[
+                      if (_keyword.trim().isNotEmpty || _filter != QueueFilter.active) ...[
                         const SizedBox(height: 10),
                         OutlinedButton.icon(
                           onPressed: () {
                             _searchController.clear();
                             _keyword = '';
-                            _filter = QueueFilter.all;
+                            _filter = QueueFilter.active;
                             _applyFilters();
                           },
                           icon: const Icon(Icons.filter_alt_off_outlined),

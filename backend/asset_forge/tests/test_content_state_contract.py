@@ -8,7 +8,7 @@ from backend.asset_forge.backend import content_generation
 from backend.asset_forge.backend.content_state import CONTENT_JOB_STATUSES
 
 
-MIGRATION = Path("supabase/migrations/202609280001_content_ops_v3.sql")
+MIGRATION = Path("supabase/migrations/202610040001_content_queue_cancel.sql")
 CORE_STATUS_FILES = [
     Path("backend/asset_forge/backend/content_generation.py"),
     Path("backend/asset_forge/backend/content_router.py"),

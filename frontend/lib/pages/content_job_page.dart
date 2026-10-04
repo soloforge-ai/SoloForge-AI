@@ -206,6 +206,41 @@ class _ContentJobPageState extends State<ContentJobPage> {
 
   Future<void> _approve() => _run(() => _service.approve(_job.id));
 
+  Future<void> _cancelJob() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancel this job?'),
+        content: const Text(
+          'The job remains in History with its events and assets. '
+          'It cannot automatically resume. Jobs already submitted to Publora '
+          'must be reconciled separately.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep job'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Cancel Job'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() { _busy = true; _error = null; });
+    try {
+      await _service.cancelJob(_job.id);
+      final updated = await _service.getJob(_job.id);
+      if (mounted) setState(() => _job = updated);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _publishNow() async {
     try {
       final plan = await choosePublishingPlan(
@@ -310,6 +345,11 @@ class _ContentJobPageState extends State<ContentJobPage> {
   bool get _canApprove =>
       _job.status == 'READY_FOR_REVIEW' && !_qualityReview.blocksApproval;
   bool get _canPublish => _job.status == 'READY_TO_PUBLISH';
+  bool get _canCancel => const {
+        'NEW', 'SCORED', 'SELECTED', 'BACKLOG', 'READY_FOR_REVIEW',
+        'APPROVED', 'ASSET_QUEUED', 'ASSET_READY', 'AUDIO_READY',
+        'READY_TO_PUBLISH',
+      }.contains(_job.status);
 
   bool get _canRegenerate => const {
         'BACKLOG',
@@ -568,6 +608,14 @@ class _ContentJobPageState extends State<ContentJobPage> {
                   icon: const Icon(Icons.refresh),
                   label: const Text('Regenerate'),
                 ),
+              if (_canCancel) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _busy ? null : _cancelJob,
+                  icon: const Icon(Icons.cancel_outlined),
+                  label: const Text('Cancel Job'),
+                ),
+              ],
               if (_canPublish) ...[
                 const SizedBox(height: 14),
                 FilledButton.icon(
