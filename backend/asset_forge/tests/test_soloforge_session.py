@@ -105,3 +105,25 @@ def test_first_party_bootstrap_rejects_invalid_identity(monkeypatch) -> None:
     with pytest.raises(HTTPException) as exc:
         soloforge_session.bootstrap_first_party_session("Bearer invalid")
     assert exc.value.status_code == 401
+
+
+def test_final_video_requires_app_session(monkeypatch) -> None:
+    from backend.asset_forge import main
+
+    def signed_url(job_id: str, expires_in: int) -> str:
+        assert job_id == "job-123"
+        assert expires_in == 600
+        return "https://example.invalid/signed-video"
+
+    monkeypatch.setattr(main, "create_signed_video_url", signed_url)
+    for authorization in (None, "Bearer invalid"):
+        with pytest.raises(HTTPException) as exc:
+            main.download_final_content_video("job-123", authorization)
+        assert exc.value.status_code == 401
+
+    session = soloforge_session.issue_session()
+    response = main.download_final_content_video(
+        "job-123", f"Bearer {session.session_id}"
+    )
+    assert response.status_code == 307
+    assert response.headers["location"] == "https://example.invalid/signed-video"
