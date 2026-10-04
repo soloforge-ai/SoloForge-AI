@@ -4,7 +4,7 @@ import 'package:frontend/pages/asset_forge_page.dart';
 import 'package:frontend/pages/home_page.dart';
 
 void main() {
-  testWidgets('home sticker CTA opens authenticated Asset Forge', (tester) async {
+  testWidgets('home keeps ops and specialist tools out of primary navigation', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: HomePage(),
