@@ -5,6 +5,7 @@ on:
   pull_request:
     branches:
       - main
+      - fix/ruj-batch-a-auth-gates
     paths-ignore:
       - 'graphify-out/**'
       - '**/*.md'

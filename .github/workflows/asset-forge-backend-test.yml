@@ -16,6 +16,7 @@ on:
   pull_request:
     branches:
       - main
+      - fix/ruj-batch-a-auth-gates
       - feature/asset-forge-mvp
     paths:
       - 'backend/asset_forge/**'
