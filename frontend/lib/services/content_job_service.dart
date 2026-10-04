@@ -409,18 +409,6 @@ class ContentJobService {
     return Map<String, dynamic>.from(jsonDecode(response.body) as Map);
   }
 
-  Future<Map<String, dynamic>> resetQueue() async {
-    final response = await _client.post(
-      Uri.parse('$_baseUrl/v1/content-jobs/queue/reset'),
-      headers: await _headers(json: true),
-      body: jsonEncode({'confirmation': 'CANCEL ALL ACTIVE JOBS'}),
-    ).timeout(const Duration(seconds: 60));
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      _throwFor(response, 'Reset queue');
-    }
-    return Map<String, dynamic>.from(jsonDecode(response.body) as Map);
-  }
-
   Future<ContentAnalyticsSummary> getAnalyticsSummary() async {
     final response = await _client
         .get(

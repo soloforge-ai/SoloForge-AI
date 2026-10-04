@@ -161,7 +161,7 @@ def _cancel_jobs(job_id: str | None) -> dict[str, object]:
     return result
 
 
-@router.post("/queue/reset")
+@router.post("/queue/reset", include_in_schema=False)  # Owner ops API; no product UI.
 def reset_content_queue(
     request: QueueResetRequest | None = Body(default=None),
     authorization: str | None = Header(default=None),
