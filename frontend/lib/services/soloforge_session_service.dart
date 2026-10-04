@@ -22,6 +22,7 @@ class SoloForgeSessionService {
 
   static const _sessionKey = 'soloforge_session_token';
   static const _expiresAtKey = 'soloforge_session_expires_at';
+  static const _ownerUserKey = 'soloforge_session_owner_user_id';
   static const _refreshWindowSeconds = 5 * 60;
 
   final http.Client _client;
@@ -42,6 +43,9 @@ class SoloForgeSessionService {
       await _clearAppSession();
       throw const SoloForgeSessionException('Sign in with GitHub to continue.');
     }
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final storedUserId = await _storage.read(key: _ownerUserKey);
+    if (userId == null || storedUserId != userId) await _clearAppSession();
     final current = await readSessionToken();
     if (current != null && current.isNotEmpty) {
       if (await _status(current)) {
@@ -105,6 +109,11 @@ class SoloForgeSessionService {
     if (token == null || token.isEmpty) {
       throw const SoloForgeSessionException('SoloForge session token is missing.');
     }
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw const SoloForgeSessionException('Sign in with GitHub to continue.');
+    }
+    await _storage.write(key: _ownerUserKey, value: userId);
     await _storage.write(key: _sessionKey, value: token);
     final expiresAt = body['expires_at']?.toString();
     if (expiresAt != null && expiresAt.isNotEmpty) {
@@ -114,6 +123,7 @@ class SoloForgeSessionService {
   }
 
   Future<void> _clearAppSession() async {
+    await _storage.delete(key: _ownerUserKey);
     await _storage.delete(key: _sessionKey);
     await _storage.delete(key: _expiresAtKey);
   }

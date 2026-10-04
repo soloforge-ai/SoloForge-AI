@@ -46,6 +46,8 @@ class _OwnerAppGateState extends State<OwnerAppGate> {
   StreamSubscription<AuthState>? _subscription;
   bool _authorized = false;
   bool _checking = true;
+  String? _ownerError;
+  int _checkGeneration = 0;
 
   @override
   void initState() {
@@ -58,20 +60,34 @@ class _OwnerAppGateState extends State<OwnerAppGate> {
 
   Future<void> _checkOwner() async {
     if (!mounted) return;
-    if (Supabase.instance.client.auth.currentSession == null) {
+    final generation = ++_checkGeneration;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null || Supabase.instance.client.auth.currentSession == null) {
       await _sessions.clear();
-      if (mounted) setState(() { _checking = false; _authorized = false; });
+      if (mounted && generation == _checkGeneration) {
+        setState(() { _checking = false; _authorized = false; });
+      }
       return;
     }
     setState(() { _checking = true; _authorized = false; });
     var authorized = false;
+    String? error;
     try {
       await _sessions.authorizationHeaders();
-      authorized = Supabase.instance.client.auth.currentSession != null;
+      authorized = Supabase.instance.client.auth.currentUser?.id == userId &&
+          Supabase.instance.client.auth.currentSession != null;
+    } on SoloForgeSessionException catch (exc) {
+      error = exc.message;
     } catch (_) {
-      authorized = false;
+      error = 'Cannot connect to SoloForge. Please retry.';
     }
-    if (mounted) setState(() { _checking = false; _authorized = authorized; });
+    if (mounted && generation == _checkGeneration) {
+      setState(() {
+        _checking = false;
+        _authorized = authorized;
+        _ownerError = error;
+      });
+    }
   }
 
   @override
@@ -86,6 +102,12 @@ class _OwnerAppGateState extends State<OwnerAppGate> {
     if (_checking) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    return _authorized ? const HomePage() : const OwnerOAuthUatPage();
+    return _authorized
+        ? const HomePage()
+        : OwnerOAuthUatPage(
+            identityOnly: false,
+            onRetry: _checkOwner,
+            ownerAccessMessage: _ownerError,
+          );
   }
 }

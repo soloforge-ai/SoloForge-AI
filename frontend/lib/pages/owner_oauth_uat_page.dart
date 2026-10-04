@@ -6,7 +6,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Identity-only UAT. Never exchanges an anonymous or unverified user for an
 /// owner-capable SoloForge backend session.
 class OwnerOAuthUatPage extends StatefulWidget {
-  const OwnerOAuthUatPage({super.key});
+  const OwnerOAuthUatPage({super.key, this.identityOnly = true, this.onRetry, this.ownerAccessMessage});
+
+  final bool identityOnly;
+  final VoidCallback? onRetry;
+  final String? ownerAccessMessage;
 
   @override
   State<OwnerOAuthUatPage> createState() => _OwnerOAuthUatPageState();
@@ -87,11 +91,15 @@ class _OwnerOAuthUatPageState extends State<OwnerOAuthUatPage> {
                   child: Text(_opening ? 'Opening GitHub…' : 'Continue with GitHub'),
                 ),
               ] else ...[
-                const Text('Supabase authentication succeeded. Owner access remains locked during this test.',
+                Text(widget.identityOnly
+                    ? 'Supabase authentication succeeded. Owner access remains locked during this test.'
+                    : (widget.ownerAccessMessage ?? 'Owner access is unavailable. Please retry.'),
                     textAlign: TextAlign.center),
                 const SizedBox(height: 16),
                 SelectableText('Supabase user ID: ${user.id}', textAlign: TextAlign.center),
                 const SizedBox(height: 20),
+                if (!widget.identityOnly)
+                  FilledButton(onPressed: widget.onRetry, child: const Text('Retry owner access')),
                 OutlinedButton(onPressed: _signOut, child: const Text('Sign out')),
               ],
               if (_error != null) ...[
