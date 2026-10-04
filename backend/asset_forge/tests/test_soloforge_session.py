@@ -24,16 +24,22 @@ def owner_configuration(monkeypatch):
     monkeypatch.delenv("SOLOFORGE_SESSION_NOT_BEFORE", raising=False)
 
 
-def _auth_user(monkeypatch, user_id=OWNER, providers=None, anonymous=False):
+def _auth_user(
+    monkeypatch, user_id=OWNER, providers=None, anonymous=False,
+    valid_bearer="supabase-github-token",
+):
     payload = {
         "id": user_id,
         "is_anonymous": anonymous,
         "app_metadata": {"providers": providers if providers is not None else ["github"]},
     }
-    monkeypatch.setattr(
-        auth.urllib.request, "urlopen",
-        lambda request, timeout: io.BytesIO(json.dumps(payload).encode("utf-8")),
-    )
+
+    def fake_urlopen(request, timeout):
+        if request.get_header("Authorization") != f"Bearer {valid_bearer}":
+            raise urllib.error.HTTPError(request.full_url, 401, "invalid bearer", {}, None)
+        return io.BytesIO(json.dumps(payload).encode("utf-8"))
+
+    monkeypatch.setattr(auth.urllib.request, "urlopen", fake_urlopen)
 
 
 def test_verified_github_owner_bootstraps_and_persists_app_session(monkeypatch):
@@ -65,7 +71,7 @@ def test_verified_github_owner_bootstraps_and_persists_app_session(monkeypatch):
 def test_anonymous_other_user_or_wrong_provider_cannot_bootstrap(
     monkeypatch, user_id, providers, anonymous
 ):
-    _auth_user(monkeypatch, user_id, providers, anonymous)
+    _auth_user(monkeypatch, user_id, providers, anonymous, valid_bearer="untrusted-supabase-token")
     with pytest.raises(HTTPException) as exc:
         auth.bootstrap_first_party_session("Bearer untrusted-supabase-token")
     assert exc.value.status_code == 403
