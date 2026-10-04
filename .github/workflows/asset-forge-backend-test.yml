@@ -59,7 +59,7 @@ jobs:
 
       - name: Run complete backend and scanner test suites
         run: |
-          python -m pytest -q \
+          PYTHONPATH=backend/asset_forge:. python -m pytest -q \
             backend/asset_forge/tests \
             backend/tests \
             tools/scanner/tests \
