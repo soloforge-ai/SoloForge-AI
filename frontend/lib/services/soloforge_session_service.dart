@@ -2,181 +2,81 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'pollinations_session_service.dart';
 
 class SoloForgeSessionException implements Exception {
   const SoloForgeSessionException(this.message);
-
   final String message;
-
   @override
   String toString() => message;
 }
 
-/// First-party application session.
-///
-/// Pollinations is used only as a one-time migration proof when an existing
-/// SoloForge app session is not present. Provider credentials remain stored
-/// separately and are never returned as the application bearer token.
+typedef OwnerIdentity = ({String userId, String accessToken});
+
+/// Requests a short-lived backend session for the current GitHub identity.
+/// No app bearer is cached, so an account switch cannot reuse an owner's token.
 class SoloForgeSessionService {
   SoloForgeSessionService({
     http.Client? client,
     FlutterSecureStorage? storage,
-    PollinationsSessionService? legacySessionService,
+    OwnerIdentity? Function()? currentIdentity,
   })  : _client = client ?? http.Client(),
         _storage = storage ?? const FlutterSecureStorage(),
-        _legacySessionService =
-            legacySessionService ?? PollinationsSessionService();
+        _currentIdentity = currentIdentity ?? _supabaseIdentity;
 
-  static const _sessionKey = 'soloforge_session_token';
-  static const _expiresAtKey = 'soloforge_session_expires_at';
-  static const _refreshWindowSeconds = 7 * 24 * 60 * 60;
-  static const _supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://dhazxwfzaccrttckuylw.supabase.co',
-  );
-  static const _supabasePublishableKey = String.fromEnvironment(
-    'SUPABASE_PUBLISHABLE_KEY',
-    defaultValue: 'sb_publishable_3_UQoHsxK1k8_umfgdTHBA_s5nhhKoL',
-  );
+  static const _legacySessionKey = 'soloforge_session_token';
+  static const _legacyExpiresAtKey = 'soloforge_session_expires_at';
+  static const _legacyOwnerKey = 'soloforge_session_owner_user_id';
 
   final http.Client _client;
   final FlutterSecureStorage _storage;
-  final PollinationsSessionService _legacySessionService;
+  final OwnerIdentity? Function() _currentIdentity;
 
-  String get _baseUrl =>
-      assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
+  static OwnerIdentity? _supabaseIdentity() {
+    final auth = Supabase.instance.client.auth;
+    final session = auth.currentSession;
+    final userId = auth.currentUser?.id;
+    if (session == null || userId == null) return null;
+    return (userId: userId, accessToken: session.accessToken);
+  }
 
-  Future<String?> readSessionToken() => _storage.read(key: _sessionKey);
+  String get _baseUrl => assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
 
   Future<Map<String, String>> authorizationHeaders() async {
-    final token = await _ensureSession();
-    return {'Authorization': 'Bearer $token'};
-  }
-
-  Future<String> _ensureSession() async {
-    final current = await readSessionToken();
-    if (current != null && current.isNotEmpty) {
-      final valid = await _status(current);
-      if (valid) {
-        await _refreshIfNeeded(current);
-        return (await readSessionToken()) ?? current;
-      }
-      await _clearAppSession();
+    final identity = _currentIdentity();
+    if (identity == null) {
+      throw const SoloForgeSessionException('Sign in with GitHub to continue.');
     }
-
-    final bootstrapped = await _bootstrapFirstPartySession();
-    if (bootstrapped != null) {
-      return bootstrapped;
-    }
-    return _migrateLegacySession();
-  }
-
-  Future<bool> _status(String token) async {
-    final response = await _client.get(
-      Uri.parse('$_baseUrl/auth/soloforge/status'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      return false;
-    }
-    final body = jsonDecode(response.body);
-    return body is Map && body['authenticated'] == true;
-  }
-
-  Future<void> _refreshIfNeeded(String token) async {
-    final raw = await _storage.read(key: _expiresAtKey);
-    final expiresAt = int.tryParse(raw ?? '');
-    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    if (expiresAt != null && expiresAt - now > _refreshWindowSeconds) {
-      return;
-    }
-
-    final response = await _client.post(
-      Uri.parse('$_baseUrl/auth/soloforge/refresh'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      await _storeResponse(response);
-    }
-  }
-
-  Future<String?> _bootstrapFirstPartySession() async {
-    final signupResponse = await _client.post(
-      Uri.parse('$_supabaseUrl/auth/v1/signup'),
-      headers: {
-        'apikey': _supabasePublishableKey,
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(const <String, Object>{}),
-    );
-    if (signupResponse.statusCode < 200 || signupResponse.statusCode >= 300) {
-      return null;
-    }
-
-    final signupBody = jsonDecode(signupResponse.body);
-    if (signupBody is! Map) {
-      return null;
-    }
-    final accessToken = signupBody['access_token']?.toString();
-    if (accessToken == null || accessToken.isEmpty) {
-      return null;
-    }
-
     final response = await _client.post(
       Uri.parse('$_baseUrl/auth/soloforge/bootstrap'),
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: {'Authorization': 'Bearer ${identity.accessToken}'},
     );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      return null;
+    // OAuth state can change while the request is in flight. Never return an
+    // owner bearer to a different or signed-out account on the same device.
+    if (_currentIdentity()?.userId != identity.userId) {
+      throw const SoloForgeSessionException('GitHub account changed. Please retry.');
     }
-    return _storeResponse(response);
-  }
-
-  Future<String> _migrateLegacySession() async {
-    final legacyToken = await _legacySessionService.readSessionToken();
-    if (legacyToken == null || legacyToken.isEmpty) {
+    if (response.statusCode != 200) {
       throw const SoloForgeSessionException(
-        'SoloForge app session is not initialized on this device.',
+        'This GitHub identity is not authorized as the SoloForge owner.',
       );
     }
-
-    final response = await _client.post(
-      Uri.parse('$_baseUrl/auth/soloforge/exchange'),
-      headers: {'Authorization': 'Bearer $legacyToken'},
-    );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw const SoloForgeSessionException(
-        'Could not migrate the existing SoloForge session.',
-      );
-    }
-    return _storeResponse(response);
-  }
-
-  Future<String> _storeResponse(http.Response response) async {
     final body = jsonDecode(response.body);
-    if (body is! Map) {
+    if (body is! Map || body['session_token'] is! String ||
+        (body['session_token'] as String).isEmpty) {
       throw const SoloForgeSessionException('Invalid SoloForge session response.');
     }
-    final token = body['session_token']?.toString();
-    if (token == null || token.isEmpty) {
-      throw const SoloForgeSessionException('SoloForge session token is missing.');
-    }
-    await _storage.write(key: _sessionKey, value: token);
-    final expiresAt = body['expires_at']?.toString();
-    if (expiresAt != null && expiresAt.isNotEmpty) {
-      await _storage.write(key: _expiresAtKey, value: expiresAt);
-    }
-    return token;
+    return {'Authorization': 'Bearer ${body['session_token']}'};
   }
 
-  Future<void> _clearAppSession() async {
-    await _storage.delete(key: _sessionKey);
-    await _storage.delete(key: _expiresAtKey);
+  /// Remove any v1/v2 tokens left by older APKs; no new app token is stored.
+  Future<void> clear() async {
+    await _storage.delete(key: _legacySessionKey);
+    await _storage.delete(key: _legacyExpiresAtKey);
+    await _storage.delete(key: _legacyOwnerKey);
   }
-
-  Future<void> clear() => _clearAppSession();
 
   void dispose() {
     _client.close();

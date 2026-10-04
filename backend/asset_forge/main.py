@@ -24,7 +24,7 @@ from backend.pollinations_oauth_router import (
     get_pollinations_access_token_from_authorization,
     router as pollinations_oauth_router,
 )
-from backend.soloforge_session import router as soloforge_session_router
+from backend.soloforge_session import require_soloforge_session, router as soloforge_session_router
 from backend.branding import stamp_image_bytes
 from backend.combined_telegram_webhook import router as idea_flow_webhook_router
 from backend.content_generation import content_worker_loop
@@ -594,7 +594,11 @@ def health() -> dict[str, str]:
 
 
 @app.get("/v1/content-video/{job_id}")
-def download_final_content_video(job_id: str) -> RedirectResponse:
+def download_final_content_video(
+    job_id: str,
+    authorization: str | None = Header(default=None),
+) -> RedirectResponse:
+    require_soloforge_session(authorization)
     try:
         signed_url = create_signed_video_url(job_id, expires_in=600)
     except ValueError as exc:
