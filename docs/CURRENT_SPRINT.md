@@ -168,6 +168,8 @@ The following implementation foundations are present and should be preserved:
 - Publora publishing integration
 - publishing-account validation
 - publish-now / scheduling flow
+- publish submission atomically claims `READY_TO_PUBLISH` jobs with no `publora_post_id` as `PUBLISHING` / `PENDING` before calling Publora; competing claims return HTTP 409 without submitting
+- ambiguous submission outcomes remain `PUBLISHING` / `PENDING` with no post ID for manual reconciliation; do not reset or automatically retry these jobs
 - publishing-status synchronization
 
 ### Platform / Delivery
