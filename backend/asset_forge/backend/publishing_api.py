@@ -51,17 +51,13 @@ def _get_job(job_id: str) -> dict[str, object]:
     return dict(rows[0])
 
 
-def _finish_submission(
+def _claim_submission(
     job: dict[str, object],
-    payload: dict[str, object],
     *,
     platform_ids: list[str],
     scheduled_time: datetime,
 ) -> dict[str, object]:
-    post_group_id = str(payload.get("postGroupId") or "").strip()
-    if not post_group_id:
-        raise HTTPException(status_code=502, detail="Publora did not return a postGroupId")
-
+    """Claim before external side effects; uncertain outcomes need reconciliation."""
     package = dict(job.get("content_package") or {})
     package.update(
         {
@@ -72,12 +68,37 @@ def _finish_submission(
     encoded = urllib.parse.quote(str(job["id"]), safe="")
     rows = _supabase_request(
         "PATCH",
-        f"content_jobs?id=eq.{encoded}&status=eq.READY_TO_PUBLISH",
+        f"content_jobs?id=eq.{encoded}&status=eq.READY_TO_PUBLISH"
+        "&publora_post_id=is.null",
         body={
             "status": "PUBLISHING",
-            "publish_status": "QUEUED",
-            "publora_post_id": post_group_id,
+            "publish_status": "PENDING",
             "content_package": package,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+        prefer="return=representation",
+    ) or []
+    if not rows:
+        raise HTTPException(status_code=409, detail="Content job changed before publishing")
+    return dict(rows[0])
+
+
+def _finish_submission(
+    job: dict[str, object],
+    payload: dict[str, object],
+) -> dict[str, object]:
+    post_group_id = payload.get("postGroupId")
+    if not isinstance(post_group_id, str) or not post_group_id.strip():
+        raise HTTPException(status_code=502, detail="Publora did not return a valid postGroupId")
+
+    encoded = urllib.parse.quote(str(job["id"]), safe="")
+    rows = _supabase_request(
+        "PATCH",
+        f"content_jobs?id=eq.{encoded}&status=eq.PUBLISHING"
+        "&publora_post_id=is.null",
+        body={
+            "publish_status": "QUEUED",
+            "publora_post_id": post_group_id.strip(),
             "error_message": None,
             "updated_at": datetime.now(timezone.utc).isoformat(),
         },
@@ -107,22 +128,19 @@ def _submit(
             raise ValueError(
                 "No connected Publora account matches this content. Select a connected account."
             )
+        job = _claim_submission(
+            job, platform_ids=selected, scheduled_time=scheduled_time,
+        )
         payload = submit_to_publora(
             job,
             platform_ids=selected,
             scheduled_time=scheduled_time,
         )
+        return _finish_submission(job, payload)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
-
-    return _finish_submission(
-        job,
-        payload,
-        platform_ids=selected,
-        scheduled_time=scheduled_time,
-    )
 
 
 @router.get("/connections")
