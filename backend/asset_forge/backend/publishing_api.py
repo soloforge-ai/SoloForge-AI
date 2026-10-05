@@ -72,7 +72,7 @@ def _finish_submission(
     encoded = urllib.parse.quote(str(job["id"]), safe="")
     rows = _supabase_request(
         "PATCH",
-        f"content_jobs?id=eq.{encoded}&status=eq.READY_TO_PUBLISH",
+        f"content_jobs?id=eq.{encoded}&status=eq.PUBLISHING&publora_post_id=is.null",
         body={
             "status": "PUBLISHING",
             "publish_status": "QUEUED",
@@ -107,18 +107,41 @@ def _submit(
             raise ValueError(
                 "No connected Publora account matches this content. Select a connected account."
             )
+        package = dict(job.get("content_package") or {})
+        package.update({
+            "publish_platform_ids": selected,
+            "scheduled_time": scheduled_time.astimezone(timezone.utc).isoformat(),
+        })
+        # Atomic compare-and-set: only the request receiving this row may submit.
+        # Persist the attempt before the external side effect; never auto-retry.
+        encoded = urllib.parse.quote(job_id, safe="")
+        claimed = _supabase_request(
+            "PATCH",
+            f"content_jobs?id=eq.{encoded}&status=eq.READY_TO_PUBLISH&publora_post_id=is.null",
+            body={
+                "status": "PUBLISHING",
+                "publish_status": "PENDING",
+                "content_package": package,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+            prefer="return=representation",
+        ) or []
+        if not claimed:
+            raise HTTPException(status_code=409, detail="Content job changed before publishing")
         payload = submit_to_publora(
-            job,
+            dict(claimed[0]),
             platform_ids=selected,
             scheduled_time=scheduled_time,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
+        # Keep PUBLISHING for reconciliation. A timeout can mean the remote
+        # submission succeeded; retrying without inspection risks duplicates.
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return _finish_submission(
-        job,
+        dict(claimed[0]),
         payload,
         platform_ids=selected,
         scheduled_time=scheduled_time,
