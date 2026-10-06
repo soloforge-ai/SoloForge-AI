@@ -15,8 +15,12 @@ def _load_font(size: int) -> ImageFont.ImageFont:
     candidates = [
         "/usr/share/fonts/truetype/noto/NotoSansThai-Regular.ttf",
         "/usr/share/fonts/opentype/noto/NotoSansThai-Regular.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     ]
+    for root in (Path("/usr/share/fonts"), Path("/usr/local/share/fonts")):
+        if root.exists():
+            candidates.extend(str(path) for path in root.rglob("NotoSansThai*.ttf"))
+    candidates.append("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
+
     for candidate in candidates:
         if Path(candidate).exists():
             return ImageFont.truetype(candidate, size=size)
