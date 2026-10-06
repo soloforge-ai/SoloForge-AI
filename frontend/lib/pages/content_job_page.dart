@@ -206,6 +206,9 @@ class _ContentJobPageState extends State<ContentJobPage> {
 
   Future<void> _approve() => _run(() => _service.approve(_job.id));
 
+  Future<void> _continuePipeline() =>
+      _run(() => _service.continuePipeline(_job.id));
+
   Future<void> _publishNow() async {
     try {
       final plan = await choosePublishingPlan(
@@ -310,6 +313,13 @@ class _ContentJobPageState extends State<ContentJobPage> {
   bool get _canApprove =>
       _job.status == 'READY_FOR_REVIEW' && !_qualityReview.blocksApproval;
   bool get _canPublish => _job.status == 'READY_TO_PUBLISH';
+
+  bool get _canContinue => const {
+        'APPROVED',
+        'ASSET_QUEUED',
+        'ASSET_READY',
+        'AUDIO_READY',
+      }.contains(_job.status);
 
   bool get _canRegenerate => const {
         'BACKLOG',
@@ -568,6 +578,14 @@ class _ContentJobPageState extends State<ContentJobPage> {
                   icon: const Icon(Icons.refresh),
                   label: const Text('Regenerate'),
                 ),
+              if (_canContinue) ...[
+                const SizedBox(height: 14),
+                FilledButton.icon(
+                  onPressed: _busy ? null : _continuePipeline,
+                  icon: const Icon(Icons.play_circle_outline),
+                  label: const Text('Continue Pipeline'),
+                ),
+              ],
               if (_canPublish) ...[
                 const SizedBox(height: 14),
                 FilledButton.icon(

@@ -194,6 +194,78 @@ def test_continue_approved_video_job_stops_when_asset_fails(monkeypatch) -> None
     assert calls == [("asset", "job-2")]
 
 
+def test_continue_endpoint_resumes_asset_ready_video_job(monkeypatch) -> None:
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+    monkeypatch.setattr(
+        content_jobs_api,
+        "_get_row",
+        lambda job_id: {
+            "id": job_id,
+            "status": "ASSET_READY",
+            "content_package": {"pipeline_route": "VIDEO"},
+        },
+    )
+
+    background_tasks = BackgroundTasks()
+    result = content_jobs_api.continue_content_job(
+        "resume-job",
+        background_tasks=background_tasks,
+        authorization=None,
+    )
+
+    assert result["status"] == "ASSET_READY"
+    assert len(background_tasks.tasks) == 1
+
+
+def test_resume_asset_ready_runs_audio_then_render(monkeypatch) -> None:
+    calls = []
+    monkeypatch.setattr(
+        content_jobs_api,
+        "process_video_asset_job",
+        lambda job_id: calls.append(("audio", job_id)) or True,
+    )
+    monkeypatch.setattr(
+        content_jobs_api,
+        "process_audio_ready_job",
+        lambda job_id: calls.append(("render", job_id)) or True,
+    )
+
+    content_jobs_api._resume_job("resume-job", "ASSET_READY")
+
+    assert calls == [
+        ("audio", "resume-job"),
+        ("render", "resume-job"),
+    ]
+
+
+def test_continue_endpoint_rejects_non_video_job(monkeypatch) -> None:
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+    monkeypatch.setattr(
+        content_jobs_api,
+        "_get_row",
+        lambda job_id: {
+            "id": job_id,
+            "status": "ASSET_READY",
+            "content_package": {"pipeline_route": "VISUAL"},
+        },
+    )
+
+    background_tasks = BackgroundTasks()
+    try:
+        content_jobs_api.continue_content_job(
+            "visual-job",
+            background_tasks=background_tasks,
+            authorization=None,
+        )
+    except Exception as exc:
+        assert getattr(exc, "status_code", None) == 409
+        assert "video" in str(getattr(exc, "detail", "")).lower()
+    else:
+        raise AssertionError("non-video resume must be rejected")
+
+    assert len(background_tasks.tasks) == 0
+
+
 def test_draft_edit_marks_semantic_fidelity_stale(monkeypatch) -> None:
     monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
     monkeypatch.setattr(

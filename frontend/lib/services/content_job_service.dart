@@ -608,6 +608,20 @@ class ContentJobService {
     return _decodeJob(response);
   }
 
+  Future<ContentJob> continuePipeline(String id) async {
+    final response = await _client
+        .post(
+          Uri.parse('$_baseUrl/v1/content-jobs/$id/continue'),
+          headers: await _headers(),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Continue pipeline');
+    }
+    return _decodeJob(response);
+  }
+
   Future<ContentJob> regenerate(String id) async {
     final response = await _client
         .post(
