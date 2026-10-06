@@ -710,6 +710,7 @@ class _AssetPreviewCard extends StatelessWidget {
               child: _NetworkVideoPreview(
                 key: ValueKey(preview!.url),
                 url: preview.url,
+                onRetry: onRetry,
               ),
             ),
           if (preview != null)
@@ -733,9 +734,11 @@ class _NetworkVideoPreview extends StatefulWidget {
   const _NetworkVideoPreview({
     super.key,
     required this.url,
+    required this.onRetry,
   });
 
   final String url;
+  final VoidCallback onRetry;
 
   @override
   State<_NetworkVideoPreview> createState() => _NetworkVideoPreviewState();
@@ -810,6 +813,12 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
               color: AshColors.smokeSilver,
               fontSize: 12,
             ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: widget.onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Refresh Preview'),
           ),
         ],
       );
