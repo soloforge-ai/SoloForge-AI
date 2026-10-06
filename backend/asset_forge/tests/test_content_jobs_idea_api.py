@@ -132,6 +132,68 @@ def test_approve_triggers_job_scoped_routing(monkeypatch) -> None:
 
 
 
+def test_continue_approved_video_job_runs_job_scoped_pipeline(monkeypatch) -> None:
+    calls = []
+
+    monkeypatch.setattr(
+        content_jobs_api,
+        "route_approved_job",
+        lambda job_id: {"id": job_id, "status": "ASSET_QUEUED"},
+    )
+    monkeypatch.setattr(
+        content_jobs_api,
+        "process_asset_job",
+        lambda job_id: calls.append(("asset", job_id)) or True,
+    )
+    monkeypatch.setattr(
+        content_jobs_api,
+        "process_video_asset_job",
+        lambda job_id: calls.append(("audio", job_id)) or True,
+    )
+    monkeypatch.setattr(
+        content_jobs_api,
+        "process_audio_ready_job",
+        lambda job_id: calls.append(("render", job_id)) or True,
+    )
+
+    content_jobs_api._continue_approved_job("job-1")
+
+    assert calls == [
+        ("asset", "job-1"),
+        ("audio", "job-1"),
+        ("render", "job-1"),
+    ]
+
+
+def test_continue_approved_video_job_stops_when_asset_fails(monkeypatch) -> None:
+    calls = []
+
+    monkeypatch.setattr(
+        content_jobs_api,
+        "route_approved_job",
+        lambda job_id: {"id": job_id, "status": "ASSET_QUEUED"},
+    )
+    monkeypatch.setattr(
+        content_jobs_api,
+        "process_asset_job",
+        lambda job_id: calls.append(("asset", job_id)) or False,
+    )
+    monkeypatch.setattr(
+        content_jobs_api,
+        "process_video_asset_job",
+        lambda job_id: calls.append(("audio", job_id)) or True,
+    )
+    monkeypatch.setattr(
+        content_jobs_api,
+        "process_audio_ready_job",
+        lambda job_id: calls.append(("render", job_id)) or True,
+    )
+
+    content_jobs_api._continue_approved_job("job-2")
+
+    assert calls == [("asset", "job-2")]
+
+
 def test_draft_edit_marks_semantic_fidelity_stale(monkeypatch) -> None:
     monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
     monkeypatch.setattr(

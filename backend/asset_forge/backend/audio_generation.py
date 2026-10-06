@@ -50,6 +50,32 @@ def _send_telegram(text: str) -> None:
         print("audio_worker_telegram_error", {"exception_type": type(exc).__name__})
 
 
+def _claim_video_asset(job_id: str) -> dict[str, Any] | None:
+    encoded = urllib.parse.quote(job_id, safe="")
+    rows = _supabase_request(
+        "GET",
+        f"content_jobs?id=eq.{encoded}&status=eq.ASSET_READY"
+        "&select=id,idea_flow_id,script,retry_count,voice_profile"
+        "&limit=1",
+    ) or []
+    if not rows:
+        return None
+
+    row = dict(rows[0])
+    updated = _supabase_request(
+        "PATCH",
+        f"content_jobs?id=eq.{encoded}&status=eq.ASSET_READY",
+        body={
+            "status": "AUDIO_GENERATING",
+            "audio_status": "GENERATING",
+            "voice_profile": str(row.get("voice_profile") or DEFAULT_VOICE_PROFILE),
+            "error_message": None,
+        },
+        prefer="return=representation",
+    ) or []
+    return dict(updated[0]) if updated else None
+
+
 def _claim_video_assets(limit: int = 2) -> list[dict[str, Any]]:
     rows = _supabase_request(
         "GET",
@@ -135,39 +161,47 @@ def _fail_audio(job: dict[str, Any], exc: Exception) -> None:
     )
 
 
+def _process_claimed_audio(job: dict[str, Any]) -> bool:
+    idea_id = job.get("idea_flow_id") or "?"
+    try:
+        script = str(job.get("script") or "").strip()
+        if not script:
+            raise ValueError("Approved content job has no script")
+
+        profile_id = str(job.get("voice_profile") or DEFAULT_VOICE_PROFILE)
+        with TemporaryDirectory(prefix="soloforge_audio_") as tmp:
+            local_path = Path(tmp) / "voice.mp3"
+            synthesize_to_file_sync(script, local_path, profile_id=profile_id)
+            storage_path = f"{job['id']}/{profile_id}.mp3"
+            _upload_audio(local_path, storage_path)
+
+        _finish_audio(job, storage_path)
+        _send_telegram(
+            f"🎙️ Job #{idea_id} — AUDIO_READY\n"
+            f"Voice: {profile_id}\n\n"
+            f"ขั้นต่อไป: Final Render"
+        )
+        return True
+    except Exception as exc:
+        print("content_audio_error", {
+            "idea_flow_id": idea_id,
+            "exception_type": type(exc).__name__,
+        })
+        _fail_audio(job, exc)
+        return False
+
+
+def process_video_asset_job(job_id: str) -> bool:
+    if not aira_enabled():
+        return False
+    job = _claim_video_asset(job_id)
+    return _process_claimed_audio(job) if job is not None else False
+
+
 def process_video_assets_once() -> int:
     if not aira_enabled():
         return 0
-
-    processed = 0
-    for job in _claim_video_assets():
-        idea_id = job.get("idea_flow_id") or "?"
-        try:
-            script = str(job.get("script") or "").strip()
-            if not script:
-                raise ValueError("Approved content job has no script")
-
-            profile_id = str(job.get("voice_profile") or DEFAULT_VOICE_PROFILE)
-            with TemporaryDirectory(prefix="soloforge_audio_") as tmp:
-                local_path = Path(tmp) / "voice.mp3"
-                synthesize_to_file_sync(script, local_path, profile_id=profile_id)
-                storage_path = f"{job['id']}/{profile_id}.mp3"
-                _upload_audio(local_path, storage_path)
-
-            _finish_audio(job, storage_path)
-            _send_telegram(
-                f"🎙️ Job #{idea_id} — AUDIO_READY\n"
-                f"Voice: {profile_id}\n\n"
-                f"ขั้นต่อไป: Final Render"
-            )
-            processed += 1
-        except Exception as exc:
-            print("content_audio_error", {
-                "idea_flow_id": idea_id,
-                "exception_type": type(exc).__name__,
-            })
-            _fail_audio(job, exc)
-    return processed
+    return sum(1 for job in _claim_video_assets() if _process_claimed_audio(job))
 
 
 async def audio_worker_loop() -> None:
