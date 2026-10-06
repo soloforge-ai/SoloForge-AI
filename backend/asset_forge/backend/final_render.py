@@ -348,6 +348,7 @@ def _fail(job: dict[str, Any], exc: Exception) -> None:
 
 
 def _process_claimed_render(job: dict[str, Any]) -> bool:
+    try:
         if not job.get("audio_storage_path"):
             raise ValueError("audio_storage_path is missing")
         with TemporaryDirectory(prefix="soloforge_render_") as tmp:
@@ -445,14 +446,14 @@ def _process_claimed_render(job: dict[str, Any]) -> bool:
             _storage_upload(VIDEO_BUCKET, object_path, output, "video/mp4")
 
         _finish(job, object_path, qa)
-        processed += 1
+        return True
     except Exception as exc:
         print("final_render_error", {
             "idea_flow_id": job.get("idea_flow_id"),
             "exception_type": type(exc).__name__,
         })
         _fail(job, exc)
-
+        return False
 
 
 def process_audio_ready_job(job_id: str) -> bool:
