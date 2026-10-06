@@ -709,7 +709,7 @@ class _AssetPreviewCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
               child: _NetworkVideoPreview(
                 key: ValueKey(preview!.url),
-                url: preview.url,
+                url: preview!.url,
                 onRetry: onRetry,
               ),
             ),
