@@ -79,10 +79,25 @@ declare
 begin
     update public.ops_notifications
     set delivery_status = 'SENDING',
+        attempts = case
+            when delivery_status = 'SENDING' then attempts + 1
+            else attempts
+        end,
+        last_error = case
+            when delivery_status = 'SENDING' then 'reclaimed expired delivery lock'
+            else last_error
+        end,
         locked_until = timezone('utc', now()) + interval '2 minutes',
         updated_at = timezone('utc', now())
     where id = p_notification_id
-      and delivery_status = 'PENDING'
+      and (
+          delivery_status = 'PENDING'
+          or (
+              delivery_status = 'SENDING'
+              and locked_until is not null
+              and locked_until <= timezone('utc', now())
+          )
+      )
     returning * into row_value;
 
     if row_value.id is null then
