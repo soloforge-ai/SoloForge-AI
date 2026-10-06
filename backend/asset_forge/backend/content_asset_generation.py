@@ -102,6 +102,13 @@ def _upload_asset(data: bytes, object_path: str) -> None:
         raise RuntimeError("Asset upload failed") from exc
 
 
+def _video_asset_is_publishable(provider_meta: dict[str, object]) -> bool:
+    return (
+        str(provider_meta.get("mode") or "").strip().lower() == "ai_generated"
+        and str(provider_meta.get("provider") or "").strip().lower() != "local_template"
+    )
+
+
 def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str, object]) -> None:
     job_id = urllib.parse.quote(str(job["id"]), safe="")
     package = dict(job.get("content_package") or {})
@@ -124,6 +131,31 @@ def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str
             "brand_position": provider_meta.get("brand_position"),
         }
     )
+
+    if route == "VIDEO" and not _video_asset_is_publishable(provider_meta):
+        package["asset_status"] = "FAILED"
+        package["asset_quality_gate"] = {
+            "status": "FAIL",
+            "reason": (
+                "VIDEO jobs require a real generated visual. "
+                "Local text-template fallback is not publishable."
+            ),
+        }
+        _supabase_request(
+            "PATCH",
+            f"content_jobs?id=eq.{job_id}&status=eq.ASSET_GENERATING",
+            body={
+                "status": "ASSET_FAILED",
+                "content_package": package,
+                "qa_status": "FAIL",
+                "error_message": (
+                    "Video visual generation fell back to local_template; "
+                    "final render was blocked to prevent a text-card video."
+                ),
+                "updated_at": _now(),
+            },
+        )
+        return
 
     next_status = "ASSET_READY" if route == "VIDEO" else "READY_TO_PUBLISH"
     _supabase_request(
