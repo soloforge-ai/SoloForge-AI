@@ -106,6 +106,29 @@ def _continue_approved_job(job_id: str) -> None:
     process_audio_ready_job(job_id)
 
 
+def _resume_job(job_id: str, status: str) -> None:
+    if status == "APPROVED":
+        _continue_approved_job(job_id)
+        return
+
+    if status == "ASSET_QUEUED":
+        if not process_asset_job(job_id):
+            return
+        if not process_video_asset_job(job_id):
+            return
+        process_audio_ready_job(job_id)
+        return
+
+    if status == "ASSET_READY":
+        if not process_video_asset_job(job_id):
+            return
+        process_audio_ready_job(job_id)
+        return
+
+    if status == "AUDIO_READY":
+        process_audio_ready_job(job_id)
+
+
 def _patch_job(job_id: str, body: dict[str, object]) -> dict[str, object]:
     encoded = urllib.parse.quote(job_id, safe="")
     rows = _supabase_request(
@@ -341,6 +364,33 @@ def approve_content_job(
     )
     background_tasks.add_task(_continue_approved_job, job_id)
     return approved
+
+
+@router.post("/{job_id}/continue")
+def continue_content_job(
+    job_id: str,
+    background_tasks: BackgroundTasks,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    _require_session(authorization)
+    current = _get_row(job_id)
+    status = str(current.get("status") or "")
+    if status not in {"APPROVED", "ASSET_QUEUED", "ASSET_READY", "AUDIO_READY"}:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot continue while status is {status}",
+        )
+
+    package = dict(current.get("content_package") or {})
+    route = str(package.get("pipeline_route") or "").strip().upper()
+    if status != "APPROVED" and route != "VIDEO":
+        raise HTTPException(
+            status_code=409,
+            detail="Continue is only supported for routed VIDEO jobs",
+        )
+
+    background_tasks.add_task(_resume_job, job_id, status)
+    return current
 
 
 @router.post("/{job_id}/regenerate")
