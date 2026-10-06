@@ -145,7 +145,11 @@ def recommend_formats(idea: str) -> dict[str, Any]:
     specs = {
         "short_video_demo": {
             "title": "Short Video Demo",
-            "platforms": ["tiktok", "instagram", "youtube"],
+            "platforms": (
+                ["facebook", "tiktok", "instagram", "youtube"]
+                if sales_signal
+                else ["tiktok", "instagram", "youtube"]
+            ),
             "goal": "reach",
             "needs_video": True,
             "hook_direction": "เปิดด้วยปัญหาหรือผลลัพธ์ที่เห็นทันที แล้วสาธิตให้ดู",

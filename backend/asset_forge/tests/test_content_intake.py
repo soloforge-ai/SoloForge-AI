@@ -14,6 +14,29 @@ def test_recommender_prefers_video_for_demo_problem() -> None:
     assert result["miniboss"]["score"] >= 0
 
 
+def test_recommender_routes_affiliate_short_video_to_facebook_first() -> None:
+    result = content_intake.recommend_formats(
+        "รีวิวสินค้าที่ใช้จริง ก่อนใช้สายชาร์จตกใต้โต๊ะ หลังใช้คลิปแม่เหล็กดีขึ้น "
+        "Shopee affiliate https://s.shopee.co.th/example"
+    )
+
+    video = next(
+        item for item in result["options"] if item["id"] == "short_video_demo"
+    )
+    assert video["platforms"] == ["facebook", "tiktok", "instagram", "youtube"]
+
+
+def test_recommender_keeps_non_sales_short_video_default_platform_order() -> None:
+    result = content_intake.recommend_formats(
+        "ลองใช้ AI ทำตัวละคร 5 รูปแล้วหน้าไม่เหมือนกัน ทำไมถึงเปลี่ยน"
+    )
+
+    video = next(
+        item for item in result["options"] if item["id"] == "short_video_demo"
+    )
+    assert video["platforms"] == ["tiktok", "instagram", "youtube"]
+
+
 def test_recommender_prefers_personal_post_for_experience() -> None:
     result = content_intake.recommend_formats(
         "เมื่อก่อนเราเคยทำงานทุกอย่างเอง ตอนนั้นรู้สึกว่าเสียเวลาเยอะมาก"
