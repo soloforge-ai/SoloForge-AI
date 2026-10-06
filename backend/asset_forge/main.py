@@ -37,6 +37,7 @@ from backend.telegram_miniapp import router as telegram_miniapp_router
 from backend.content_jobs_api import router as content_jobs_router
 from backend.analytics_api import router as analytics_router
 from backend.publishing_api import router as publishing_router
+from backend.ops_webhook import router as ops_webhook_router
 from backend.publora_publishing import publishing_worker_loop
 
 
@@ -58,6 +59,7 @@ app.include_router(telegram_miniapp_router)
 app.include_router(content_jobs_router)
 app.include_router(analytics_router)
 app.include_router(publishing_router)
+app.include_router(ops_webhook_router)
 
 CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
 CHARACTER_LIBRARY_BASE_URL = (
