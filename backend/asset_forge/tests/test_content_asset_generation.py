@@ -50,7 +50,7 @@ def test_finish_asset_blocks_video_local_template_fallback(monkeypatch) -> None:
     assert body["status"] == "ASSET_FAILED"
     assert body["qa_status"] == "FAIL"
     assert body["content_package"]["asset_status"] == "FAILED"
-    assert body["content_package"]["asset_quality_gate"]["status"] == "FAIL"
+    assert body["content_package"]["asset_quality_gate"]["result"] == "FAIL"
     assert "text-card video" in body["error_message"]
 
 
