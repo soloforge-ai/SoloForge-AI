@@ -750,6 +750,7 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
   void initState() {
     super.initState();
     _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _controller.addListener(_onVideoChanged);
     _initializeFuture = _controller.initialize().then((_) {
       if (!mounted) return;
       _controller.setLooping(false);
@@ -762,8 +763,13 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
     });
   }
 
+  void _onVideoChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    _controller.removeListener(_onVideoChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -852,7 +858,7 @@ class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
                 ),
                 Expanded(
                   child: Text(
-                    '\${_formatDuration(_controller.value.position)} / \${_formatDuration(_controller.value.duration)}',
+                    '${_formatDuration(_controller.value.position)} / ${_formatDuration(_controller.value.duration)}',
                     style: const TextStyle(
                       color: AshColors.smokeSilver,
                       fontSize: 12,
