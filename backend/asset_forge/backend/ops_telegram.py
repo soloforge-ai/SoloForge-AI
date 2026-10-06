@@ -110,8 +110,12 @@ def enqueue_and_deliver(event: OpsEvent) -> dict[str, object]:
     notification_id = int(row["id"])
     delivery_status = str(row.get("delivery_status") or "")
     delivered = False
-    if delivery_status == "PENDING":
+
+    # Always attempt an atomic claim unless the row is terminal. This lets a
+    # GitHub redelivery reclaim an expired SENDING lease after interruption.
+    if delivery_status not in {"SENT", "FAILED"}:
         delivered = deliver_notification(event, notification_id)
+
     return {
         "id": notification_id,
         "delivery_status": delivery_status,
