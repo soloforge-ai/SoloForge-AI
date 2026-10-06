@@ -135,7 +135,7 @@ def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str
     if route == "VIDEO" and not _video_asset_is_publishable(provider_meta):
         package["asset_status"] = "FAILED"
         package["asset_quality_gate"] = {
-            "status": "FAIL",
+            "result": "FAIL",
             "reason": (
                 "VIDEO jobs require a real generated visual. "
                 "Local text-template fallback is not publishable."
