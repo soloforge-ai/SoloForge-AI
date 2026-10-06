@@ -11,6 +11,8 @@ from backend.content_intake import find_recommendation, recommend_formats, score
 from backend.content_generation import process_selected_job
 from backend.content_router import route_approved_job
 from backend.content_asset_generation import process_asset_job
+from backend.audio_generation import process_video_asset_job
+from backend.final_render import process_audio_ready_job
 from backend.publora_publishing import media_urls_for_job
 
 from backend.shared_supabase import supabase_request as _supabase_request
@@ -94,8 +96,14 @@ def _get_row(job_id: str) -> dict[str, object]:
 
 def _continue_approved_job(job_id: str) -> None:
     routed = route_approved_job(job_id)
-    if routed and routed.get("status") == "ASSET_QUEUED":
-        process_asset_job(job_id)
+    if not routed or routed.get("status") != "ASSET_QUEUED":
+        return
+
+    if not process_asset_job(job_id):
+        return
+    if not process_video_asset_job(job_id):
+        return
+    process_audio_ready_job(job_id)
 
 
 def _patch_job(job_id: str, body: dict[str, object]) -> dict[str, object]:

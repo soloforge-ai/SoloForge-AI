@@ -231,6 +231,48 @@ def _recover_stale_rendering(stale_minutes: int = 10) -> int:
     return recovered
 
 
+def _claim_ready_job(job_id: str) -> dict[str, Any] | None:
+    encoded = urllib.parse.quote(job_id, safe="")
+    rows = _supabase_request(
+        "GET",
+        f"content_jobs?id=eq.{encoded}&status=eq.AUDIO_READY"
+        "&select=id,idea_flow_id,script,video_url,audio_storage_path,retry_count,content_package"
+        "&limit=1",
+    ) or []
+    if not rows:
+        return None
+
+    row = dict(rows[0])
+    package = dict(row.get("content_package") or {})
+    if not row.get("video_url") and not package.get("asset_storage_path"):
+        _supabase_request(
+            "PATCH",
+            f"content_jobs?id=eq.{encoded}&status=eq.AUDIO_READY",
+            body={
+                "render_status": "BLOCKED_NO_VIDEO",
+                "render_mode": "WAITING_FOR_BASE_VISUAL",
+                "render_qa": {
+                    "status": "BLOCKED",
+                    "reason": "video_url or asset_storage_path is required before final render",
+                },
+            },
+        )
+        return None
+
+    updated = _supabase_request(
+        "PATCH",
+        f"content_jobs?id=eq.{encoded}&status=eq.AUDIO_READY",
+        body={
+            "status": "FINAL_RENDERING",
+            "render_status": "RENDERING",
+            "render_mode": "MUX_VOICE_AND_SUBTITLES",
+            "error_message": None,
+        },
+        prefer="return=representation",
+    ) or []
+    return dict(updated[0]) if updated else None
+
+
 def _claim_ready(limit: int = 1) -> list[dict[str, Any]]:
     rows = _supabase_request(
         "GET",
@@ -305,119 +347,125 @@ def _fail(job: dict[str, Any], exc: Exception) -> None:
     )
 
 
-def process_audio_ready_once() -> int:
-    try:
-        _recover_stale_rendering()
-    except Exception as exc:
-        print("final_render_recovery_error", {"exception_type": type(exc).__name__})
-    processed = 0
-    for job in _claim_ready():
-        try:
-            if not job.get("audio_storage_path"):
-                raise ValueError("audio_storage_path is missing")
-            with TemporaryDirectory(prefix="soloforge_render_") as tmp:
-                root = Path(tmp)
-                base_video = root / "base.mp4"
-                audio = root / "voice.mp3"
-                srt = root / "subs.srt"
-                output = root / "final.mp4"
+def _process_claimed_render(job: dict[str, Any]) -> bool:
+        if not job.get("audio_storage_path"):
+            raise ValueError("audio_storage_path is missing")
+        with TemporaryDirectory(prefix="soloforge_render_") as tmp:
+            root = Path(tmp)
+            base_video = root / "base.mp4"
+            audio = root / "voice.mp3"
+            srt = root / "subs.srt"
+            output = root / "final.mp4"
 
-                _storage_download(AUDIO_BUCKET, str(job["audio_storage_path"]), audio)
-                audio_duration = _duration(audio)
+            _storage_download(AUDIO_BUCKET, str(job["audio_storage_path"]), audio)
+            audio_duration = _duration(audio)
 
-                package = dict(job.get("content_package") or {})
-                if job.get("video_url"):
-                    _download_url(str(job["video_url"]), base_video)
-                else:
-                    still = root / "base.png"
-                    asset_path = str(package.get("asset_storage_path") or "")
-                    if not asset_path:
-                        raise ValueError("asset_storage_path is missing")
-                    _storage_download(CONTENT_ASSET_BUCKET, asset_path, still)
-                    subprocess.run(
-                        [
-                            "ffmpeg", "-y",
-                            "-loop", "1", "-i", str(still),
-                            "-t", f"{audio_duration:.3f}",
-                            "-vf",
-                            "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,format=yuv420p",
-                            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
-                            "-pix_fmt", "yuv420p",
-                            str(base_video),
-                        ],
-                        check=True,
-                        capture_output=True,
-                    )
-
-                subtitle_count = _write_srt(str(job.get("script") or ""), audio_duration, srt)
-
-                style = (
-                    "FontName=Noto Sans Thai,FontSize=16,"
-                    "PrimaryColour=&H00FFFFFF,OutlineColour=&H80000000,"
-                    "BackColour=&H50000000,BorderStyle=3,Outline=1,Shadow=0,"
-                    "Alignment=2,MarginL=34,MarginR=34,MarginV=110"
-                )
-                video_filter = (
-                    "scale=720:1280:force_original_aspect_ratio=increase,"
-                    "crop=720:1280,"
-                    f"subtitles={srt}:force_style='{style}',"
-                    f"{ffmpeg_brand_filter()},"
-                    "format=yuv420p"
-                )
+            package = dict(job.get("content_package") or {})
+            if job.get("video_url"):
+                _download_url(str(job["video_url"]), base_video)
+            else:
+                still = root / "base.png"
+                asset_path = str(package.get("asset_storage_path") or "")
+                if not asset_path:
+                    raise ValueError("asset_storage_path is missing")
+                _storage_download(CONTENT_ASSET_BUCKET, asset_path, still)
                 subprocess.run(
                     [
                         "ffmpeg", "-y",
-                        "-threads", "1",
-                        "-stream_loop", "-1", "-i", str(base_video),
-                        "-i", str(audio),
-                        "-vf", video_filter,
-                        "-map", "0:v:0", "-map", "1:a:0",
+                        "-loop", "1", "-i", str(still),
                         "-t", f"{audio_duration:.3f}",
+                        "-vf",
+                        "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,format=yuv420p",
                         "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
-                        "-threads", "1",
-                        "-af", "aresample=48000,alimiter=limit=0.90",
-                        "-c:a", "aac", "-b:a", "160k", "-ar", "48000",
-                        "-movflags", "+faststart",
-                        str(output),
+                        "-pix_fmt", "yuv420p",
+                        str(base_video),
                     ],
                     check=True,
                     capture_output=True,
                 )
 
-                video_duration = _duration(output)
-                qa = {
-                    "status": "PASS",
-                    "render_version": RENDER_VERSION,
-                    "audio_duration_sec": round(audio_duration, 2),
-                    "video_duration_sec": round(video_duration, 2),
-                    "subtitle_segments": subtitle_count,
-                    "subtitle_layout": "lower_third",
-                    "resolution": "720x1280",
-                    "render_profile": "EXPERIMENT_LOW_MEMORY",
-                    "ffmpeg_threads": 1,
-                    "audio_present": True,
-                    "audio_codec": "aac_160k_48khz_limited",
-                    "duration_delta_sec": round(abs(video_duration - audio_duration), 2),
-                    "brand_applied": True,
-                    "brand_text": "SoloForge AI",
-                    "brand_stamp_version": BRAND_STAMP_VERSION,
-                    "brand_position": "bottom_right",
-                }
-                if abs(video_duration - audio_duration) > 1.5:
-                    raise RuntimeError("Final video duration does not match voiceover")
+            subtitle_count = _write_srt(str(job.get("script") or ""), audio_duration, srt)
 
-                object_path = f"{job['id']}/final.mp4"
-                _storage_upload(VIDEO_BUCKET, object_path, output, "video/mp4")
+            style = (
+                "FontName=Noto Sans Thai,FontSize=16,"
+                "PrimaryColour=&H00FFFFFF,OutlineColour=&H80000000,"
+                "BackColour=&H50000000,BorderStyle=3,Outline=1,Shadow=0,"
+                "Alignment=2,MarginL=34,MarginR=34,MarginV=110"
+            )
+            video_filter = (
+                "scale=720:1280:force_original_aspect_ratio=increase,"
+                "crop=720:1280,"
+                f"subtitles={srt}:force_style='{style}',"
+                f"{ffmpeg_brand_filter()},"
+                "format=yuv420p"
+            )
+            subprocess.run(
+                [
+                    "ffmpeg", "-y",
+                    "-threads", "1",
+                    "-stream_loop", "-1", "-i", str(base_video),
+                    "-i", str(audio),
+                    "-vf", video_filter,
+                    "-map", "0:v:0", "-map", "1:a:0",
+                    "-t", f"{audio_duration:.3f}",
+                    "-c:v", "libx264", "-preset", "ultrafast", "-crf", "26",
+                    "-threads", "1",
+                    "-af", "aresample=48000,alimiter=limit=0.90",
+                    "-c:a", "aac", "-b:a", "160k", "-ar", "48000",
+                    "-movflags", "+faststart",
+                    str(output),
+                ],
+                check=True,
+                capture_output=True,
+            )
 
-            _finish(job, object_path, qa)
-            processed += 1
-        except Exception as exc:
-            print("final_render_error", {
-                "idea_flow_id": job.get("idea_flow_id"),
-                "exception_type": type(exc).__name__,
-            })
-            _fail(job, exc)
-    return processed
+            video_duration = _duration(output)
+            qa = {
+                "status": "PASS",
+                "render_version": RENDER_VERSION,
+                "audio_duration_sec": round(audio_duration, 2),
+                "video_duration_sec": round(video_duration, 2),
+                "subtitle_segments": subtitle_count,
+                "subtitle_layout": "lower_third",
+                "resolution": "720x1280",
+                "render_profile": "EXPERIMENT_LOW_MEMORY",
+                "ffmpeg_threads": 1,
+                "audio_present": True,
+                "audio_codec": "aac_160k_48khz_limited",
+                "duration_delta_sec": round(abs(video_duration - audio_duration), 2),
+                "brand_applied": True,
+                "brand_text": "SoloForge AI",
+                "brand_stamp_version": BRAND_STAMP_VERSION,
+                "brand_position": "bottom_right",
+            }
+            if abs(video_duration - audio_duration) > 1.5:
+                raise RuntimeError("Final video duration does not match voiceover")
+
+            object_path = f"{job['id']}/final.mp4"
+            _storage_upload(VIDEO_BUCKET, object_path, output, "video/mp4")
+
+        _finish(job, object_path, qa)
+        processed += 1
+    except Exception as exc:
+        print("final_render_error", {
+            "idea_flow_id": job.get("idea_flow_id"),
+            "exception_type": type(exc).__name__,
+        })
+        _fail(job, exc)
+
+
+
+def process_audio_ready_job(job_id: str) -> bool:
+    job = _claim_ready_job(job_id)
+    return _process_claimed_render(job) if job is not None else False
+
+
+def process_audio_ready_once() -> int:
+    try:
+        _recover_stale_rendering()
+    except Exception as exc:
+        print("final_render_recovery_error", {"exception_type": type(exc).__name__})
+    return sum(1 for job in _claim_ready() if _process_claimed_render(job))
 
 
 async def final_render_worker_loop() -> None:
