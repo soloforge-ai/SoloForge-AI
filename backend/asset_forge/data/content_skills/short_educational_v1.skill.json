@@ -1,0 +1,189 @@
+{
+  "skill_id": "SHORT_EDUCATIONAL_V1",
+  "version": "0.1.0",
+  "status": "ACTIVE",
+  "intent": "Create one short educational content unit that teaches one clear idea quickly and routes the viewer to one relevant CTA.",
+  "input_contract": {
+    "required": [
+      "topic",
+      "audience",
+      "goal",
+      "cta"
+    ],
+    "optional": [
+      "product_id",
+      "source_facts",
+      "approved_assets",
+      "brand_rules",
+      "character_lock",
+      "platform"
+    ],
+    "defaults": {
+      "platform": "short_form",
+      "quality_mode": "EXPERIMENT",
+      "scene_count": 5,
+      "target_duration_sec": 25
+    }
+  },
+  "production_rules": {
+    "target_duration_sec": {
+      "min": 15,
+      "max": 25,
+      "hard_max": 35
+    },
+    "scene_count": {
+      "min": 3,
+      "max": 5,
+      "default": 5
+    },
+    "formula": [
+      "HOOK",
+      "ONE_IDEA",
+      "PROOF_OR_VALUE",
+      "CTA"
+    ],
+    "default_scene_roles": [
+      "HOOK",
+      "PROBLEM",
+      "EXPLANATION_OR_PROOF",
+      "RESULT",
+      "CTA"
+    ],
+    "hook_types": [
+      "PAIN",
+      "MISTAKE",
+      "RESULT",
+      "CURIOSITY",
+      "BEFORE_AFTER"
+    ],
+    "one_idea_only": true,
+    "one_cta_only": true,
+    "asset_priority": [
+      "EXISTING_ASSET",
+      "SCREENSHOT",
+      "TEMPLATE",
+      "SCREEN_RECORDING",
+      "GENERATED_ASSET"
+    ],
+    "editing_defaults": [
+      "HARD_CUT",
+      "ZOOM",
+      "PAN",
+      "TEXT_OVERLAY",
+      "AUTO_SUBTITLE",
+      "SIMPLE_MOTION"
+    ],
+    "generation_policy": {
+      "generate_new_asset_only_if_required": true,
+      "expensive_generation_requires_storyboard_approval": true
+    }
+  },
+  "prompt_grammar": {
+    "scene_visual": [
+      "WHO_OR_WHAT",
+      "ACTION",
+      "LOCATION",
+      "FRAMING",
+      "LENS",
+      "CAMERA_MOTION",
+      "LIGHT",
+      "MOOD",
+      "CONSTRAINTS"
+    ],
+    "instruction": "Compile structured fields into provider-specific prompts. Do not store provider-specific wording as core skill logic."
+  },
+  "output_contract": {
+    "required": [
+      "hook",
+      "script",
+      "scenes",
+      "asset_plan",
+      "caption",
+      "cta",
+      "qa"
+    ],
+    "scene_fields": [
+      "scene_no",
+      "role",
+      "duration_sec",
+      "narration",
+      "on_screen_text",
+      "visual_direction",
+      "asset_source",
+      "generation_needed"
+    ],
+    "approval_payload": true
+  },
+  "qa_rules": [
+    {
+      "id": "Q001",
+      "severity": "BLOCK",
+      "rule": "Exactly one core idea."
+    },
+    {
+      "id": "Q002",
+      "severity": "BLOCK",
+      "rule": "Exactly one CTA."
+    },
+    {
+      "id": "Q003",
+      "severity": "BLOCK",
+      "rule": "Scene count must be between 3 and 5."
+    },
+    {
+      "id": "Q004",
+      "severity": "BLOCK",
+      "rule": "Planned duration must not exceed 35 seconds."
+    },
+    {
+      "id": "Q005",
+      "severity": "WARN",
+      "rule": "Prefer approved/reusable assets before generated assets."
+    },
+    {
+      "id": "Q006",
+      "severity": "BLOCK",
+      "rule": "Claims must be supported by provided source facts when source facts are required."
+    },
+    {
+      "id": "Q007",
+      "severity": "BLOCK",
+      "rule": "Character identity must preserve the supplied Character Lock."
+    },
+    {
+      "id": "Q008",
+      "severity": "WARN",
+      "rule": "CTA must match the content goal and funnel stage."
+    },
+    {
+      "id": "Q009",
+      "severity": "BLOCK",
+      "rule": "Storyboard approval is required before expensive asset generation."
+    }
+  ],
+  "approval_policy": {
+    "human_actions": [
+      "APPROVE",
+      "REVISE",
+      "REJECT"
+    ],
+    "default_state": "READY_FOR_APPROVAL",
+    "auto_publish": false,
+    "approval_before_expensive_generation": true
+  },
+  "performance_memory": {
+    "enabled": false,
+    "future_fields": [
+      "retention",
+      "completion",
+      "saves",
+      "shares",
+      "profile_actions",
+      "clicks",
+      "leads",
+      "purchases",
+      "revenue"
+    ],
+    "future_action": "Version skill only after repeated evidence, not one isolated post."
+  }
+}
