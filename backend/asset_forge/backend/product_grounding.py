@@ -17,6 +17,12 @@ class ProductGroundingError(RuntimeError):
     """Raised when a commercial job lacks a safe, usable product reference."""
 
 
+class _SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _assert_safe_public_https_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def is_commercial_product_job(package: dict[str, Any]) -> bool:
     goal = str(package.get("goal") or "").strip().lower()
     placement = str(package.get("affiliate_placement") or "").strip().lower()
@@ -92,7 +98,8 @@ def download_grounded_product_image(
         },
         method="GET",
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
+    opener = urllib.request.build_opener(_SafeRedirectHandler())
+    with opener.open(request, timeout=timeout) as response:
         content_type = str(response.headers.get("Content-Type") or "").split(";", 1)[0].strip().lower()
         if not content_type.startswith("image/"):
             raise ProductGroundingError("Grounded product URL did not return an image")
