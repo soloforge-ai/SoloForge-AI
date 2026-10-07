@@ -103,11 +103,13 @@ def test_commercial_asset_uses_grounded_product_image(monkeypatch) -> None:
 
     def fake_download(url):
         calls["downloaded"] += 1
-        assert url == "https://cdn.example/product.jpg"
+        assert url == "https://down-th.img.susercontent.com/product.jpg"
         return b"image-bytes", {
             "provider": "product_source",
             "mode": "product_grounded",
             "provider_version": "product_grounding_v0.1",
+            "source_url": url,
+            "source_sha256": "abc123",
         }
 
     monkeypatch.setattr(content_asset_generation, "generate_asset", fail_generate)
@@ -116,7 +118,7 @@ def test_commercial_asset_uses_grounded_product_image(monkeypatch) -> None:
         "validate_product_grounding",
         lambda package: {
             "canonical_title": "Product",
-            "image_urls": ["https://cdn.example/product.jpg"],
+            "image_urls": ["https://down-th.img.susercontent.com/product.jpg"],
             "identity_status": "LOCKED",
         },
     )
@@ -150,7 +152,7 @@ def test_commercial_asset_uses_grounded_product_image(monkeypatch) -> None:
                 "pipeline_route": "VIDEO",
                 "product_grounding": {
                     "canonical_title": "Product",
-                    "image_urls": ["https://cdn.example/product.jpg"],
+                    "image_urls": ["https://down-th.img.susercontent.com/product.jpg"],
                 },
             },
         }
