@@ -104,13 +104,6 @@ def _upload_asset(data: bytes, object_path: str) -> None:
     try:
         with urllib.request.urlopen(request, timeout=90) as response:
             response.read()
-    except ProductGroundingError as exc:
-        package = dict(job.get("content_package") or {})
-        package["product_grounding_status"] = "BLOCKED"
-        package["product_grounding_error"] = str(exc)
-        job["content_package"] = package
-        _fail_asset(job, exc)
-        return False
     except Exception as exc:
         raise RuntimeError("Asset upload failed") from exc
 
@@ -189,9 +182,12 @@ def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str
 def _fail_asset(job: dict[str, Any], exc: Exception) -> None:
     job_id = urllib.parse.quote(str(job["id"]), safe="")
     retry_count = int(job.get("retry_count") or 0) + 1
-    retry = retry_count <= 2
+    retry = retry_count <= 2 and not isinstance(exc, ProductGroundingError)
     package = dict(job.get("content_package") or {})
     package["asset_status"] = "PENDING" if retry else "FAILED"
+    if isinstance(exc, ProductGroundingError):
+        package["product_grounding_status"] = "BLOCKED"
+        package["product_grounding_error"] = str(exc)
     _supabase_request(
         "PATCH",
         f"content_jobs?id=eq.{job_id}",
