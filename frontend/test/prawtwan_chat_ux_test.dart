@@ -26,6 +26,13 @@ class FakeChat extends PrawtwanChatService {
 
 class FakeSession extends PollinationsSessionService {
   @override
+  Future<PollinationsSessionState> status() async =>
+      const PollinationsSessionState(connected: true);
+  @override
+  Future<void> startListening({
+    required Future<void> Function(Uri) onCallback,
+  }) async {}
+  @override
   Future<Map<String, String>> authorizationHeaders() async => {
     'Authorization': 'Bearer existing-session',
   };
@@ -61,7 +68,9 @@ void main() {
 
   Future<void> open(WidgetTester tester, {FakeChat? service}) async {
     await tester.pumpWidget(
-      MaterialApp(home: PrawtwanChatPage(service: service)),
+      MaterialApp(
+        home: PrawtwanChatPage(service: service, sessionService: FakeSession()),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -102,7 +111,7 @@ void main() {
     expect(find.byTooltip('Send message'), findsOneWidget);
     expect(await PrawtwanLanguagePreference().read(), 'en');
     await tester.enterText(find.byType(TextField), 'My scene');
-    await tester.tap(find.byType(FilledButton));
+    await tester.tap(find.byKey(const ValueKey('prawtwan-send')));
     await tester.pump();
     expect(find.text('Prawtwan is reading...'), findsOneWidget);
     await tester.tap(find.byType(DropdownButton<String>));
@@ -166,18 +175,21 @@ void main() {
       final service = FakeChat();
       await open(tester, service: service);
       await tester.enterText(find.byType(TextField), 'ฉาก');
-      await tester.tap(find.byType(FilledButton));
+      await tester.tap(find.byKey(const ValueKey('prawtwan-send')));
       await tester.pump();
       service.reply.completeError(error);
       await tester.pumpAndSettle();
       final copy = const PrawtwanCopy('th');
       expect(
-        find.text(
-          error is PollinationsSessionException
-              ? copy.connect
-              : error is PrawtwanChatException
-              ? copy.error(error.message)
-              : copy.unavailable,
+        find.descendant(
+          of: find.byType(SnackBar),
+          matching: find.text(
+            error is PollinationsSessionException
+                ? copy.connect
+                : error is PrawtwanChatException
+                ? copy.error(error.message)
+                : copy.unavailable,
+          ),
         ),
         findsOneWidget,
       );

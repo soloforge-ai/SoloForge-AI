@@ -12,6 +12,7 @@ import 'asset_forge_page.dart';
 import 'content_job_page.dart';
 import 'settings_page.dart';
 import 'prawtwan_chat_page.dart';
+import '../services/prawtwan_oauth_return.dart';
 
 enum QueueFilter { all, actionRequired, processing, completed, backlog }
 
@@ -171,7 +172,18 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadPollinationsConnection();
+    final restored = takePrawtwanReturn();
+    if (restored == null) {
+      _loadPollinationsConnection();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await Navigator.push(context, MaterialPageRoute(
+          builder: (_) => PrawtwanChatPage(restored: restored),
+        ));
+        if (mounted) _loadPollinationsConnection();
+      });
+    }
     _loadJobs();
   }
 
@@ -195,6 +207,8 @@ class _HomePageState extends State<HomePage> {
       if (!kIsWeb) {
         await _pollinationsSession.startListening(
           onCallback: (uri) async {
+            // The foreground page owns one-time handoff exchange.
+            if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
             if (!_pollinationsSession.isPollinationsCallback(uri)) return;
             final state = await _pollinationsSession.handleCallback(uri);
             if (!mounted) return;

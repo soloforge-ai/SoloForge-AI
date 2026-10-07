@@ -1,14 +1,24 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../core/theme/app_theme.dart';
 import '../services/prawtwan_chat_service.dart';
 import '../services/prawtwan_language.dart';
 import '../services/pollinations_session_service.dart';
+import '../services/prawtwan_oauth_return.dart';
 
 class PrawtwanChatPage extends StatefulWidget {
-  const PrawtwanChatPage({super.key, this.service});
+  const PrawtwanChatPage({
+    super.key,
+    this.service,
+    this.sessionService,
+    this.restored,
+  });
+
+  final PollinationsSessionService? sessionService;
+  final Map<String, dynamic>? restored;
 
   final PrawtwanChatService? service;
 
@@ -16,17 +26,152 @@ class PrawtwanChatPage extends StatefulWidget {
   State<PrawtwanChatPage> createState() => _PrawtwanChatPageState();
 }
 
-class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
+class _PrawtwanChatPageState extends State<PrawtwanChatPage>
+    with WidgetsBindingObserver {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late final PrawtwanChatService _service =
       widget.service ?? PrawtwanChatService();
+  late final PollinationsSessionService _session =
+      widget.sessionService ?? PollinationsSessionService();
   final PrawtwanLanguagePreference _preference = PrawtwanLanguagePreference();
   PrawtwanCopy? _copy;
   bool _languageChanged = false;
   Future<void> _pendingSave = Future.value();
   final List<PrawtwanMessage> _messages = [];
   bool _sending = false;
+  bool _connected = false;
+  bool _checkingConnection = true;
+  bool _connecting = false;
+  bool _connectionFailed = false;
+  int _sessionRevision = 0;
+  bool _handlingCallback = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final restored = widget.restored;
+    if (restored != null) {
+      _copy = PrawtwanCopy(restored['language'] as String);
+      _languageChanged = true;
+      _controller.text = restored['draft'] as String;
+      for (final message in restored['messages'] as List) {
+        _messages.add(
+          PrawtwanMessage(
+            role: message['role'] as String,
+            content: message['content'] as String,
+          ),
+        );
+      }
+    }
+    unawaited(_initializeConnection());
+  }
+
+  Future<void> _initializeConnection() async {
+    // A slow app-link lookup must not block detecting an existing session.
+    if (!kIsWeb) unawaited(_listenForCallbacks());
+    await _refreshConnection(webCallback: kIsWeb);
+  }
+
+  Future<void> _listenForCallbacks() async {
+    try {
+      await _session.startListening(onCallback: _handleCallback);
+      if (!mounted) await _session.dispose();
+    } catch (_) {
+      // Resume checks still work if app links are unavailable.
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshConnection());
+    }
+  }
+
+  Future<void> _refreshConnection({bool webCallback = false}) async {
+    if (_handlingCallback) return;
+    final revision = ++_sessionRevision;
+    if (webCallback) _handlingCallback = true;
+    try {
+      final state = webCallback
+          ? await _session.handleWebCallbackIfPresent()
+          : await _session.status();
+      if (!mounted || revision != _sessionRevision) return;
+      setState(() {
+        _connected = state.connected;
+        _checkingConnection = false;
+        _connectionFailed = false;
+      });
+      if (state.connected) clearPrawtwanReturn();
+    } catch (_) {
+      if (!mounted || revision != _sessionRevision) return;
+      setState(() {
+        _checkingConnection = false;
+        _connectionFailed = true;
+      });
+    } finally {
+      if (webCallback) _handlingCallback = false;
+    }
+  }
+
+  Future<void> _handleCallback(Uri uri) async {
+    if (!_session.isPollinationsCallback(uri) || _handlingCallback) return;
+    _handlingCallback = true;
+    final revision = ++_sessionRevision;
+    try {
+      final state = await _session.handleCallback(uri);
+      if (!mounted || revision != _sessionRevision) return;
+      setState(() {
+        _connected = state.connected;
+        _checkingConnection = false;
+        _connecting = false;
+        _connectionFailed = false;
+      });
+      if (state.connected) clearPrawtwanReturn();
+    } catch (_) {
+      if (!mounted || revision != _sessionRevision) return;
+      setState(() {
+        _checkingConnection = false;
+        _connecting = false;
+        _connectionFailed = true;
+      });
+    } finally {
+      _handlingCallback = false;
+    }
+  }
+
+  Future<void> _connect() async {
+    if (_connecting || _handlingCallback) return;
+    setState(() {
+      _connecting = true;
+      _connectionFailed = false;
+    });
+    await _pendingSave;
+    if (!mounted) return;
+    final saved = savePrawtwanReturn({
+      'language': _copy!.code,
+      'draft': _controller.text,
+      'messages': _messages.map((message) => message.toJson()).toList(),
+    });
+    if (!saved) {
+      setState(() => _connecting = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_copy!.restoreError)));
+      return;
+    }
+    try {
+      await _session.connect();
+      if (mounted) await _refreshConnection();
+    } catch (_) {
+      clearPrawtwanReturn();
+      if (mounted) setState(() => _connectionFailed = true);
+    } finally {
+      if (mounted) setState(() => _connecting = false);
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -52,14 +197,17 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
     _pendingSave = _pendingSave.then((_) async {
       final saved = await _preference.write(code);
       if (!saved && mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(_copy!.saveError)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_copy!.saveError)));
       }
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_session.dispose());
     _controller.dispose();
     _scrollController.dispose();
     unawaited(_service.dispose());
@@ -68,7 +216,7 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
 
   Future<void> _send() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _sending) return;
+    if (text.isEmpty || _sending || !_connected) return;
 
     _controller.clear();
     setState(() {
@@ -86,16 +234,22 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
       _scrollToBottom();
     } on PrawtwanChatException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(_copy!.error(error.message))));
+      final message = _copy!.error(error.message);
+      if (message == _copy!.connect) setState(() => _connected = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } on PollinationsSessionException {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(_copy!.connect)));
+      setState(() => _connected = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_copy!.connect)));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(_copy!.unavailable)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_copy!.unavailable)));
     } finally {
       if (mounted) {
         setState(() => _sending = false);
@@ -147,7 +301,7 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
         actions: [
           DropdownButton<String>(
             value: copy.code,
-            onChanged: _selectLanguage,
+            onChanged: _connecting ? null : _selectLanguage,
             items: const [
               DropdownMenuItem(value: 'th', child: Text('ไทย')),
               DropdownMenuItem(value: 'en', child: Text('English')),
@@ -155,7 +309,9 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
           ),
           IconButton(
             tooltip: copy.clear,
-            onPressed: _messages.isEmpty || _sending ? null : _clearChat,
+            onPressed: _messages.isEmpty || _sending || _connecting
+                ? null
+                : _clearChat,
             icon: const Icon(Icons.delete_outline),
           ),
         ],
@@ -163,6 +319,30 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
       body: SafeArea(
         child: Column(
           children: [
+            if (!_connected)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _connectionFailed ? copy.connectionError : copy.connect,
+                    ),
+                    const SizedBox(height: 8),
+                    if (_checkingConnection)
+                      const LinearProgressIndicator()
+                    else
+                      FilledButton.icon(
+                        key: const ValueKey('prawtwan-connect'),
+                        onPressed: _connecting ? null : _connect,
+                        icon: const Icon(Icons.link),
+                        label: Text(
+                          _connecting ? copy.connecting : copy.connectAction,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             Container(
               width: double.infinity,
               margin: const EdgeInsets.fromLTRB(12, 4, 12, 8),
@@ -230,7 +410,7 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
                       controller: _controller,
                       minLines: 1,
                       maxLines: 6,
-                      enabled: !_sending,
+                      enabled: !_sending && !_connecting,
                       textInputAction: TextInputAction.newline,
                       decoration: InputDecoration(
                         hintText: copy.hint,
@@ -248,7 +428,8 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
                     child: Tooltip(
                       message: copy.send,
                       child: FilledButton(
-                        onPressed: _sending ? null : _send,
+                        key: const ValueKey('prawtwan-send'),
+                        onPressed: _sending || !_connected ? null : _send,
                         style: FilledButton.styleFrom(
                           padding: EdgeInsets.zero,
                           shape: RoundedRectangleBorder(

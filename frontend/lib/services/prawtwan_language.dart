@@ -31,8 +31,18 @@ class PrawtwanCopy {
       ? 'พี่พราวไม่พร้อมให้บริการชั่วคราว กรุณาลองใหม่ภายหลัง'
       : 'Prawtwan is temporarily unavailable. Please try again later.';
   String get connect => _thai
-      ? 'กรุณาเชื่อมต่อ Pollinations จากหน้า Home ก่อนคุยกับพี่พราว'
-      : 'Connect Pollinations from Home before chatting with Prawtwan.';
+      ? 'เชื่อมต่อ Pollinations เพื่อเริ่มคุยกับพี่พราว'
+      : 'Connect Pollinations to start chatting with Prawtwan.';
+  String get connectAction =>
+      _thai ? 'เชื่อมต่อ Pollinations' : 'Connect Pollinations';
+  String get connecting =>
+      _thai ? 'กำลังเปิดการเชื่อมต่อ...' : 'Opening connection...';
+  String get connectionError => _thai
+      ? 'เชื่อมต่อ Pollinations ไม่สำเร็จ กรุณาลองอีกครั้ง'
+      : 'Could not connect to Pollinations. Please try again.';
+  String get restoreError => _thai
+      ? 'เก็บบทสนทนาระหว่างเชื่อมต่อไม่ได้ กรุณาเปิดใช้งานพื้นที่เก็บข้อมูลของแท็บแล้วลองอีกครั้ง'
+      : 'Could not preserve this chat during connection. Enable tab storage and try again.';
   String get saveError => _thai
       ? 'บันทึกภาษาไม่ได้ ภาษานี้จะใช้เฉพาะครั้งนี้'
       : 'Could not save your language. It will apply for this visit only.';
