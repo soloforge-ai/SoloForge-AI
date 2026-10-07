@@ -5,13 +5,14 @@ from __future__ import annotations
 import asyncio
 import json
 import secrets
-from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 
 try:
     from backend.idea_flow_webhook import (
         SupabaseIdeaFlowService,
         _required_env,
         _format_mutation_result,
+        _format_job,
         handle_text,
     )
     from backend.sales_inbox import (
@@ -23,11 +24,13 @@ try:
         parse_addlead,
         send_message,
     )
+    from backend.content_jobs_api import _resume_job
 except ImportError:
     from backend.asset_forge.backend.idea_flow_webhook import (
         SupabaseIdeaFlowService,
         _required_env,
         _format_mutation_result,
+        _format_job,
         handle_text,
     )
     from backend.asset_forge.backend.sales_inbox import (
@@ -39,8 +42,58 @@ except ImportError:
         parse_addlead,
         send_message,
     )
+    from backend.asset_forge.backend.content_jobs_api import _resume_job
 
 router = APIRouter(prefix="/telegram/idea-inbox", tags=["idea-inbox", "sales-inbox"])
+
+
+_CONTENT_RESUMABLE_STATUSES = {"APPROVED", "ASSET_QUEUED", "ASSET_READY", "AUDIO_READY"}
+
+
+def content_job_keyboard(job: dict[str, object]) -> dict[str, object] | None:
+    status = str(job.get("status") or "")
+    if status not in _CONTENT_RESUMABLE_STATUSES:
+        return None
+    job_id = str(job.get("id") or "").strip()
+    if not job_id:
+        return None
+    return {
+        "inline_keyboard": [[
+            {"text": "▶️ รันต่อ", "callback_data": f"content:continue:{job_id}"}
+        ]]
+    }
+
+
+def _content_callback(
+    data: str,
+    *,
+    background_tasks: BackgroundTasks,
+) -> tuple[str, dict[str, object] | None, str]:
+    parts = data.split(":")
+    if len(parts) != 3 or parts[0] != "content" or parts[1] != "continue":
+        raise ValueError("Invalid content action")
+
+    job_id = parts[2].strip()
+    service = SupabaseIdeaFlowService()
+    job = service.get_content_job(job_id)
+    status = str(job.get("status") or "")
+
+    if status not in _CONTENT_RESUMABLE_STATUSES:
+        raise ValueError(f"Job รันต่อไม่ได้จากสถานะ {status}")
+
+    package = dict(job.get("content_package") or {})
+    route = str(package.get("pipeline_route") or "").strip().upper()
+    if status != "APPROVED" and route != "VIDEO":
+        raise ValueError("รันต่อรองรับเฉพาะ VIDEO job หลัง routing แล้ว")
+
+    background_tasks.add_task(_resume_job, job_id, status)
+
+    reply = (
+        f"{_format_job(job)}\n\n"
+        "▶️ รับคำสั่งรันต่อแล้ว\n"
+        "การอนุมัติ/Proof รอบถัดไปให้ตรวจใน ChatGPT ตามเดิม"
+    )
+    return reply, None, "เริ่มรันต่อแล้ว"
 
 
 def _sales_message(text: str) -> tuple[str, dict | None] | None:
@@ -95,6 +148,7 @@ def _sales_callback(data: str) -> tuple[str, dict | None, str]:
 @router.post("/webhook")
 async def telegram_webhook(
     request: Request,
+    background_tasks: BackgroundTasks,
     x_telegram_bot_api_secret_token: str | None = Header(default=None),
 ) -> dict[str, bool]:
     try:
@@ -127,10 +181,16 @@ async def telegram_webhook(
         chat_id = (message.get("chat") or {}).get("id")
         if chat_id is None or str(chat_id) != allowed_chat_id or not isinstance(data, str):
             return {"ok": True}
-        if not data.startswith("sales:"):
+        if not (data.startswith("sales:") or data.startswith("content:")):
             return {"ok": True}
         try:
-            reply, keyboard, toast = await asyncio.to_thread(_sales_callback, data)
+            if data.startswith("content:"):
+                reply, keyboard, toast = _content_callback(
+                    data,
+                    background_tasks=background_tasks,
+                )
+            else:
+                reply, keyboard, toast = await asyncio.to_thread(_sales_callback, data)
             await asyncio.to_thread(send_message, token, int(chat_id), reply, keyboard)
             if isinstance(callback_id, str):
                 await asyncio.to_thread(answer_callback, token, callback_id, toast)
@@ -174,6 +234,16 @@ async def telegram_webhook(
                 reply, keyboard = sales
             else:
                 reply = await asyncio.to_thread(handle_text, service, text, actor=actor, update_id=update_id)
+                clean = text.strip()
+                parts = clean.split()
+                cmd = parts[0].split("@")[0].lower() if parts else ""
+                try:
+                    if cmd == "/job" and len(parts) >= 2:
+                        keyboard = content_job_keyboard(service.get_content_job(parts[1]))
+                    elif cmd == "/latest":
+                        keyboard = content_job_keyboard(service.latest_content_job())
+                except Exception:
+                    keyboard = None
             command_succeeded = True
         except Exception as exc:
             print("telegram_command_error", {"exception_type": type(exc).__name__})
