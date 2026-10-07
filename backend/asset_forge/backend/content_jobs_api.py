@@ -14,6 +14,7 @@ from backend.content_asset_generation import process_asset_job
 from backend.audio_generation import process_video_asset_job
 from backend.final_render import process_audio_ready_job
 from backend.publora_publishing import media_urls_for_job
+from backend.content_job_skill_adapter import preview_content_job_skill
 
 from backend.shared_supabase import supabase_request as _supabase_request
 
@@ -249,6 +250,16 @@ def get_content_job(
 ) -> dict[str, object]:
     _require_session(authorization)
     return _get_row(job_id)
+
+
+@router.get("/{job_id}/skill-preview")
+def get_skill_preview(
+    job_id: str,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Dry-run an existing queued job through the Content Skill adapter/runtime."""
+    _require_session(authorization)
+    return preview_content_job_skill(_get_row(job_id))
 
 
 @router.get("/{job_id}/asset-preview")
