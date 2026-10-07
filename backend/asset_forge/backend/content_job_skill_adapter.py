@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.content_skill_runtime import plan_content_job
+from backend.content_skill_runtime import ContentSkillRouter, UNSUPPORTED, plan_content_job
 
 
 _DEFAULT_AUDIENCE_BY_GOAL = {
@@ -110,6 +110,31 @@ class ContentJobSkillInputAdapter:
 def preview_content_job_skill(row: dict[str, Any]) -> dict[str, Any]:
     """Adapt and run one existing content job without changing persistent state."""
     skill_input = ContentJobSkillInputAdapter.adapt(row)
+
+    # A missing goal is genuinely missing routing input. Once a goal exists,
+    # reject unsupported work before asking for skill-specific fields such as
+    # audience/CTA. This avoids asking affiliate/conversion jobs for inputs
+    # required only by SHORT_EDUCATIONAL_V1.
+    if not _clean(skill_input.get("goal")):
+        return {
+            "job_id": skill_input["job_id"],
+            "status": "NEEDS_INPUT",
+            "missing_required": skill_input["missing_required"],
+            "defaults_applied": skill_input["defaults_applied"],
+            "skill_input": skill_input,
+        }
+
+    selected_skill = ContentSkillRouter.select(skill_input)
+    if selected_skill == UNSUPPORTED:
+        result = plan_content_job(skill_input)
+        return {
+            "job_id": skill_input["job_id"],
+            "status": result.get("state") or result.get("status"),
+            "defaults_applied": skill_input["defaults_applied"],
+            "skill_input": skill_input,
+            "skill_result": result,
+        }
+
     if not skill_input["ready_for_skill"]:
         return {
             "job_id": skill_input["job_id"],
