@@ -54,6 +54,10 @@ def content_job_keyboard(job: dict[str, object]) -> dict[str, object] | None:
     status = str(job.get("status") or "")
     if status not in _CONTENT_RESUMABLE_STATUSES:
         return None
+    package = dict(job.get("content_package") or {})
+    route = str(package.get("pipeline_route") or "").strip().upper()
+    if status != "APPROVED" and route != "VIDEO":
+        return None
     job_id = str(job.get("id") or "").strip()
     if not job_id:
         return None
