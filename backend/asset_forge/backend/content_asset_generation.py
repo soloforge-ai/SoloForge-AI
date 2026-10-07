@@ -13,11 +13,17 @@ from typing import Any
 
 from backend.asset_provider import generate_asset
 from backend.branding import stamp_image_bytes
+from backend.product_grounding import (
+    ProductGroundingError,
+    download_grounded_product_image,
+    is_commercial_product_job,
+    validate_product_grounding,
+)
 from backend.shared_supabase import supabase_request as _supabase_request
 
 
 ASSET_BUCKET = "content-assets"
-ASSET_WORKER_VERSION = "content_asset_v0.1"
+ASSET_WORKER_VERSION = "content_asset_v0.2"
 
 
 def _required_env(name: str) -> str:
@@ -103,9 +109,11 @@ def _upload_asset(data: bytes, object_path: str) -> None:
 
 
 def _video_asset_is_publishable(provider_meta: dict[str, object]) -> bool:
+    mode = str(provider_meta.get("mode") or "").strip().lower()
+    provider = str(provider_meta.get("provider") or "").strip().lower()
     return (
-        str(provider_meta.get("mode") or "").strip().lower() == "ai_generated"
-        and str(provider_meta.get("provider") or "").strip().lower() != "local_template"
+        (mode == "ai_generated" and provider != "local_template")
+        or (mode == "product_grounded" and provider == "product_source")
     )
 
 
@@ -131,6 +139,10 @@ def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str
             "brand_position": provider_meta.get("brand_position"),
         }
     )
+    if str(provider_meta.get("mode") or "").strip().lower() == "product_grounded":
+        package["product_grounding_status"] = "VERIFIED"
+        package["product_grounding_source_url"] = provider_meta.get("source_url")
+        package["product_grounding_source_sha256"] = provider_meta.get("source_sha256")
 
     if route == "VIDEO" and not _video_asset_is_publishable(provider_meta):
         package["asset_status"] = "FAILED"
@@ -174,9 +186,12 @@ def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str
 def _fail_asset(job: dict[str, Any], exc: Exception) -> None:
     job_id = urllib.parse.quote(str(job["id"]), safe="")
     retry_count = int(job.get("retry_count") or 0) + 1
-    retry = retry_count <= 2
+    retry = retry_count <= 2 and not isinstance(exc, ProductGroundingError)
     package = dict(job.get("content_package") or {})
     package["asset_status"] = "PENDING" if retry else "FAILED"
+    if isinstance(exc, ProductGroundingError):
+        package["product_grounding_status"] = "BLOCKED"
+        package["product_grounding_error"] = str(exc)
     _supabase_request(
         "PATCH",
         f"content_jobs?id=eq.{job_id}",
@@ -192,18 +207,28 @@ def _fail_asset(job: dict[str, Any], exc: Exception) -> None:
 
 def _process_claimed_asset(job: dict[str, Any]) -> bool:
     try:
-        prompt = str(job.get("visual_prompt") or "").strip()
-        if not prompt:
-            prompt = (
-                "Editorial social media visual, clean premium creator-tech design, "
-                f"topic: {str(job.get('idea') or '')[:400]}"
-            )
         package = dict(job.get("content_package") or {})
-        data, provider_meta = generate_asset(
-            prompt,
-            fallback_title=str(job.get("idea") or "SoloForge")[:240],
-            fallback_subtitle=str(package.get("goal") or "").strip() or None,
-        )
+        if is_commercial_product_job(package):
+            grounding = validate_product_grounding(package)
+            data, provider_meta = download_grounded_product_image(
+                str(grounding["image_urls"][0])
+            )
+            package["product_grounding"] = grounding
+            job["content_package"] = package
+            provider_meta["product_identity_status"] = grounding["identity_status"]
+            provider_meta["product_title"] = grounding["canonical_title"]
+        else:
+            prompt = str(job.get("visual_prompt") or "").strip()
+            if not prompt:
+                prompt = (
+                    "Editorial social media visual, clean premium creator-tech design, "
+                    f"topic: {str(job.get('idea') or '')[:400]}"
+                )
+            data, provider_meta = generate_asset(
+                prompt,
+                fallback_title=str(job.get("idea") or "SoloForge")[:240],
+                fallback_subtitle=str(package.get("goal") or "").strip() or None,
+            )
         data, brand_meta = stamp_image_bytes(data)
         provider_meta = {**provider_meta, **brand_meta}
         object_path = f"{job['id']}/cover.png"

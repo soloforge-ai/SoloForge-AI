@@ -398,3 +398,78 @@ def test_asset_preview_returns_404_when_asset_missing(monkeypatch) -> None:
         assert "generated asset" in str(getattr(exc, "detail", "")).lower()
     else:
         raise AssertionError("missing asset preview must return 404")
+
+
+
+def test_approve_blocks_commercial_job_without_product_grounding(monkeypatch) -> None:
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+    monkeypatch.setattr(
+        content_jobs_api,
+        "_get_row",
+        lambda job_id: {
+            "id": job_id,
+            "status": "READY_FOR_REVIEW",
+            "content_package": {"goal": "conversion", "content_type": "promo_post"},
+        },
+    )
+
+    background_tasks = BackgroundTasks()
+    try:
+        content_jobs_api.approve_content_job(
+            "commercial-job",
+            background_tasks=background_tasks,
+            authorization=None,
+        )
+    except Exception as exc:
+        assert getattr(exc, "status_code", None) == 409
+        assert "product grounding" in str(getattr(exc, "detail", "")).lower()
+    else:
+        raise AssertionError("commercial job without product grounding must be blocked")
+
+    assert len(background_tasks.tasks) == 0
+
+
+def test_update_product_grounding_locks_identity(monkeypatch) -> None:
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+    monkeypatch.setattr(
+        content_jobs_api,
+        "_get_row",
+        lambda job_id: {
+            "id": job_id,
+            "status": "READY_FOR_REVIEW",
+            "content_package": {"goal": "conversion"},
+        },
+    )
+    monkeypatch.setattr(
+        content_jobs_api,
+        "validate_product_grounding",
+        lambda package: {
+            **package["product_grounding"],
+            "identity_status": "LOCKED",
+            "version": "product_grounding_v0.1",
+        },
+    )
+
+    patched = {}
+
+    def fake_patch(job_id, body):
+        patched.update(body)
+        return {"id": job_id, "status": "READY_FOR_REVIEW", **body}
+
+    monkeypatch.setattr(content_jobs_api, "_patch_job", fake_patch)
+
+    result = content_jobs_api.update_product_grounding(
+        "commercial-job",
+        content_jobs_api.ProductGroundingUpdate(
+            canonical_title="Magnetic Cable Clip",
+            image_urls=["https://cdn.example/product.jpg"],
+            source="shopee",
+            product_url="https://shopee.example/item/1",
+        ),
+        authorization=None,
+    )
+
+    grounding = result["content_package"]["product_grounding"]
+    assert grounding["identity_status"] == "LOCKED"
+    assert grounding["canonical_title"] == "Magnetic Cable Clip"
+    assert result["content_package"]["product_grounding_status"] == "READY"

@@ -15,6 +15,11 @@ from backend.audio_generation import process_video_asset_job
 from backend.final_render import process_audio_ready_job
 from backend.publora_publishing import media_urls_for_job
 from backend.content_job_skill_adapter import preview_content_job_skill
+from backend.product_grounding import (
+    ProductGroundingError,
+    is_commercial_product_job,
+    validate_product_grounding,
+)
 
 from backend.shared_supabase import supabase_request as _supabase_request
 
@@ -74,6 +79,16 @@ class ContentDraftUpdate(BaseModel):
     cta: str | None = Field(default=None, max_length=4000)
     visual_prompt: str | None = Field(default=None, max_length=20000)
     motion_prompt: str | None = Field(default=None, max_length=20000)
+
+
+class ProductGroundingUpdate(BaseModel):
+    canonical_title: str = Field(min_length=1, max_length=1000)
+    image_urls: list[str] = Field(min_length=1, max_length=12)
+    source: str = Field(default="manual", min_length=1, max_length=80)
+    shop_name: str | None = Field(default=None, max_length=500)
+    price: str | float | int | None = None
+    product_url: str | None = Field(default=None, max_length=4000)
+    affiliate_url: str | None = Field(default=None, max_length=4000)
 
 
 def _now() -> str:
@@ -284,6 +299,40 @@ def get_asset_preview(
     }
 
 
+@router.patch("/{job_id}/product-grounding")
+def update_product_grounding(
+    job_id: str,
+    request: ProductGroundingUpdate,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Attach and lock verified product identity before commercial asset generation."""
+    _require_session(authorization)
+    current = _get_row(job_id)
+    if current.get("status") not in {"BACKLOG", "READY_FOR_REVIEW"}:
+        raise HTTPException(
+            status_code=409,
+            detail="Product grounding can only be changed before approval",
+        )
+
+    package = dict(current.get("content_package") or {})
+    package["product_grounding"] = request.model_dump(exclude_none=True)
+    try:
+        package["product_grounding"] = validate_product_grounding(package)
+    except ProductGroundingError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    package["product_grounding_status"] = "READY"
+    package.pop("product_grounding_error", None)
+    return _patch_job(
+        job_id,
+        {
+            "content_package": package,
+            "qa_status": "PENDING",
+            "updated_at": _now(),
+        },
+    )
+
+
 @router.patch("/{job_id}/draft")
 def update_content_draft(
     job_id: str,
@@ -351,6 +400,15 @@ def approve_content_job(
         )
 
     package = dict(current.get("content_package") or {})
+    if is_commercial_product_job(package):
+        try:
+            package["product_grounding"] = validate_product_grounding(package)
+        except ProductGroundingError as exc:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Commercial content requires product grounding before approval: {exc}",
+            ) from exc
+
     semantic = package.get("semantic_fidelity")
     if isinstance(semantic, dict):
         semantic_status = str(semantic.get("status") or "").strip().upper()
@@ -371,6 +429,7 @@ def approve_content_job(
             "approved_at": now,
             "updated_at": now,
             "error_message": None,
+            "content_package": package,
         },
     )
     background_tasks.add_task(_continue_approved_job, job_id)
