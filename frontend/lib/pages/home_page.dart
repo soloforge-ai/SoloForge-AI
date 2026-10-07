@@ -405,6 +405,16 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> _openPrawtwan() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PrawtwanChatPage()),
+    );
+    if (mounted) {
+      await _loadPollinationsConnection();
+    }
+  }
+
   Future<void> _openJob(ContentJob job) async {
     await Navigator.push(
       context,
@@ -522,10 +532,7 @@ class _HomePageState extends State<HomePage> {
                 title: const Text('Prawtwan · พี่พราว'),
                 subtitle: const Text('ผู้ช่วยงานเขียนนิยาย · Fiction editor'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PrawtwanChatPage()),
-                ),
+                onTap: _openPrawtwan,
               ),
             ),
             const SizedBox(height: 10),
