@@ -4,9 +4,13 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
 import '../services/prawtwan_chat_service.dart';
+import '../services/prawtwan_language.dart';
+import '../services/pollinations_session_service.dart';
 
 class PrawtwanChatPage extends StatefulWidget {
-  const PrawtwanChatPage({super.key});
+  const PrawtwanChatPage({super.key, this.service});
+
+  final PrawtwanChatService? service;
 
   @override
   State<PrawtwanChatPage> createState() => _PrawtwanChatPageState();
@@ -15,10 +19,44 @@ class PrawtwanChatPage extends StatefulWidget {
 class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final PrawtwanChatService _service = PrawtwanChatService();
+  late final PrawtwanChatService _service =
+      widget.service ?? PrawtwanChatService();
+  final PrawtwanLanguagePreference _preference = PrawtwanLanguagePreference();
+  PrawtwanCopy? _copy;
+  bool _languageChanged = false;
+  Future<void> _pendingSave = Future.value();
   final List<PrawtwanMessage> _messages = [];
-
   bool _sending = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_copy != null) return;
+    _copy = PrawtwanCopy.forLocale(
+      WidgetsBinding.instance.platformDispatcher.locale,
+    );
+    unawaited(_restoreLanguage());
+  }
+
+  Future<void> _restoreLanguage() async {
+    final saved = await _preference.read();
+    if (mounted && !_languageChanged && saved != null) {
+      setState(() => _copy = PrawtwanCopy(saved));
+    }
+  }
+
+  void _selectLanguage(String? code) {
+    if (code == null) return;
+    _languageChanged = true;
+    setState(() => _copy = PrawtwanCopy(code));
+    _pendingSave = _pendingSave.then((_) async {
+      final saved = await _preference.write(code);
+      if (!saved && mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(_copy!.saveError)));
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -48,14 +86,16 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
       _scrollToBottom();
     } on PrawtwanChatException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(_copy!.error(error.message))));
+    } on PollinationsSessionException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(_copy!.connect)));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chat Prawtwan is temporarily unavailable.')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(_copy!.unavailable)));
     } finally {
       if (mounted) {
         setState(() => _sending = false);
@@ -82,15 +122,21 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final copy = _copy!;
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Chat Prawtwan'),
             Text(
-              'PRAWTWAN — Fiction Editor',
-              style: TextStyle(
+              copy.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 17),
+            ),
+            Text(
+              copy.subtitle,
+              style: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
                 color: AshColors.smokeSilver,
@@ -99,8 +145,16 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
           ],
         ),
         actions: [
+          DropdownButton<String>(
+            value: copy.code,
+            onChanged: _selectLanguage,
+            items: const [
+              DropdownMenuItem(value: 'th', child: Text('ไทย')),
+              DropdownMenuItem(value: 'en', child: Text('English')),
+            ],
+          ),
           IconButton(
-            tooltip: 'Clear chat',
+            tooltip: copy.clear,
             onPressed: _messages.isEmpty || _sending ? null : _clearChat,
             icon: const Icon(Icons.delete_outline),
           ),
@@ -120,14 +174,18 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
                   color: AshColors.indigoMist.withValues(alpha: 0.45),
                 ),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.lock_outline, size: 15, color: AshColors.indigoMist),
-                  SizedBox(width: 7),
+                  const Icon(
+                    Icons.lock_outline,
+                    size: 15,
+                    color: AshColors.indigoMist,
+                  ),
+                  const SizedBox(width: 7),
                   Expanded(
                     child: Text(
-                      'Private agent • Session-only chat • Pollen is used only when you send',
-                      style: TextStyle(
+                      copy.privacy,
+                      style: const TextStyle(
                         fontSize: 10,
                         color: AshColors.smokeSilver,
                       ),
@@ -138,16 +196,19 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
             ),
             Expanded(
               child: _messages.isEmpty && !_sending
-                  ? const _EmptyChat()
+                  ? _EmptyChat(copy: copy)
                   : ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
                       itemCount: _messages.length + (_sending ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index == _messages.length) {
-                          return const _ThinkingBubble();
+                          return _ThinkingBubble(copy: copy);
                         }
-                        return _MessageBubble(message: _messages[index]);
+                        return _MessageBubble(
+                          message: _messages[index],
+                          copy: copy,
+                        );
                       },
                     ),
             ),
@@ -171,9 +232,9 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
                       maxLines: 6,
                       enabled: !_sending,
                       textInputAction: TextInputAction.newline,
-                      decoration: const InputDecoration(
-                        hintText: 'พิมพ์ข้อความหรือวางฉากให้พี่พราวอ่าน...',
-                        contentPadding: EdgeInsets.symmetric(
+                      decoration: InputDecoration(
+                        hintText: copy.hint,
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 10,
                         ),
@@ -184,21 +245,26 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
                   SizedBox(
                     width: 46,
                     height: 46,
-                    child: FilledButton(
-                      onPressed: _sending ? null : _send,
-                      style: FilledButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    child: Tooltip(
+                      message: copy.send,
+                      child: FilledButton(
+                        onPressed: _sending ? null : _send,
+                        style: FilledButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
+                        child: _sending
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.arrow_upward_rounded),
                       ),
-                      child: _sending
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.arrow_upward_rounded),
                     ),
                   ),
                 ],
@@ -212,7 +278,8 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
 }
 
 class _EmptyChat extends StatelessWidget {
-  const _EmptyChat();
+  const _EmptyChat({required this.copy});
+  final PrawtwanCopy copy;
 
   @override
   Widget build(BuildContext context) {
@@ -237,19 +304,19 @@ class _EmptyChat extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'พี่พราวพร้อมแล้ว',
-              style: TextStyle(
+            Text(
+              copy.emptyTitle,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: AshColors.boneWhite,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'ลองส่งฉาก บทสนทนา หรือคำถามเกี่ยวกับงานเขียนให้พี่พราวอ่านได้เลย',
+            Text(
+              copy.emptyBody,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
                 height: 1.45,
                 color: AshColors.smokeSilver,
@@ -263,7 +330,8 @@ class _EmptyChat extends StatelessWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message});
+  const _MessageBubble({required this.message, required this.copy});
+  final PrawtwanCopy copy;
 
   final PrawtwanMessage message;
 
@@ -293,7 +361,7 @@ class _MessageBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              isUser ? 'Ai' : 'Prawtwan',
+              isUser ? copy.you : copy.name,
               style: const TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w800,
@@ -317,26 +385,27 @@ class _MessageBubble extends StatelessWidget {
 }
 
 class _ThinkingBubble extends StatelessWidget {
-  const _ThinkingBubble();
+  const _ThinkingBubble({required this.copy});
+  final PrawtwanCopy copy;
 
   @override
   Widget build(BuildContext context) {
-    return const Align(
+    return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
-        padding: EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.only(bottom: 10),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
+            const SizedBox(
               width: 16,
               height: 16,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
-              'พี่พราวกำลังอ่าน...',
-              style: TextStyle(
+              copy.thinking,
+              style: const TextStyle(
                 fontSize: 11,
                 color: AshColors.smokeSilver,
               ),

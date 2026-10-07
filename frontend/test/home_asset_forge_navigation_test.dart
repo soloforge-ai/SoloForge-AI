@@ -13,6 +13,8 @@ void main() {
 
     await tester.pump();
 
+    await tester.ensureVisible(find.text('สร้างสติ๊กเกอร์'));
+    await tester.pump();
     await tester.tap(find.text('สร้างสติ๊กเกอร์'));
     await tester.pumpAndSettle();
 

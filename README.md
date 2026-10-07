@@ -134,6 +134,18 @@ These capabilities exist in code but must not be described as fully production-p
 
 ---
 
+# Prawtwan Chat
+
+Open **Prawtwan · พี่พราว** directly from Home for fiction-writing feedback.
+The chat language selector supports **ไทย** and **English**. First use follows
+the device language (Thai or English fallback); the last selection is stored
+locally. This changes UI copy, not existing messages or the agent's reply language.
+Connect Pollinations from Home before sending. Conversations remain session-only,
+and Pollen is used only when a message is sent. The existing
+`PrawtwanChatPage`, `/v1/prawtwan/chat`, and Pollinations OAuth flow are retained.
+
+---
+
 # ❄️ Frozen / Not Active Roadmap Drivers
 
 Do not expand these unless the owner explicitly re-authorizes them:

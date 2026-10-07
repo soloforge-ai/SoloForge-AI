@@ -11,6 +11,7 @@ import 'analytics_page.dart';
 import 'asset_forge_page.dart';
 import 'content_job_page.dart';
 import 'settings_page.dart';
+import 'prawtwan_chat_page.dart';
 
 enum QueueFilter { all, actionRequired, processing, completed, backlog }
 
@@ -500,6 +501,20 @@ class _HomePageState extends State<HomePage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
           children: [
+            Card(
+              margin: EdgeInsets.zero,
+              child: ListTile(
+                leading: const Icon(Icons.auto_stories_outlined),
+                title: const Text('Prawtwan · พี่พราว'),
+                subtitle: const Text('ผู้ช่วยงานเขียนนิยาย · Fiction editor'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PrawtwanChatPage()),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
             _IdeaComposerCard(
               controller: _ideaController,
               busy: _ideaBusy,
