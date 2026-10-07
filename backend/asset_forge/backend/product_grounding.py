@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import ipaddress
+import os
 import socket
 import urllib.parse
 import urllib.request
@@ -11,6 +13,11 @@ from typing import Any
 
 PRODUCT_GROUNDING_VERSION = "product_grounding_v0.1"
 _MAX_IMAGE_BYTES = 12 * 1024 * 1024
+_DEFAULT_ALLOWED_HOST_SUFFIXES = (
+    ".susercontent.com",
+    ".shopee.co.th",
+    ".shopee.com",
+)
 
 
 class ProductGroundingError(RuntimeError):
@@ -115,6 +122,7 @@ def download_grounded_product_image(
             "mode": "product_grounded",
             "provider_version": PRODUCT_GROUNDING_VERSION,
             "source_url": final_url,
+            "source_sha256": hashlib.sha256(data).hexdigest(),
             "content_type": content_type,
             "attempts": [
                 {
@@ -136,6 +144,8 @@ def _assert_safe_public_https_url(value: str) -> None:
     host = parsed.hostname.strip().lower()
     if host == "localhost" or host.endswith(".local"):
         raise ProductGroundingError("Product image URL must use a public host")
+    if not _host_is_allowed(host):
+        raise ProductGroundingError("Product image host is not allowlisted")
 
     try:
         literal_ip = ipaddress.ip_address(host)
@@ -159,3 +169,26 @@ def _assert_safe_public_https_url(value: str) -> None:
 def _assert_public_ip(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> None:
     if not address.is_global:
         raise ProductGroundingError("Product image URL resolved to a non-public address")
+
+
+
+def _allowed_host_suffixes() -> tuple[str, ...]:
+    configured = os.getenv("PRODUCT_GROUNDING_ALLOWED_HOSTS", "").strip()
+    if not configured:
+        return _DEFAULT_ALLOWED_HOST_SUFFIXES
+    values = []
+    for raw in configured.split(","):
+        value = raw.strip().lower()
+        if not value:
+            continue
+        values.append(value if value.startswith(".") else f".{value}")
+    return tuple(values)
+
+
+def _host_is_allowed(host: str) -> bool:
+    normalized = host.strip().lower().rstrip(".")
+    for suffix in _allowed_host_suffixes():
+        bare = suffix.lstrip(".")
+        if normalized == bare or normalized.endswith(suffix):
+            return True
+    return False
