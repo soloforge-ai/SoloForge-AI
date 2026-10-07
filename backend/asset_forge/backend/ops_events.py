@@ -140,7 +140,10 @@ def normalize_github_event(
     if is_smoke and conclusion in {"success", "failure"}:
         passed = conclusion == "success"
         return OpsEvent(
-            event_key=f"github:workflow_job:{job_id}:production_smoke:{conclusion}",
+            # GitHub may emit duplicate workflow runs for the same push. Use the
+            # logical production-smoke result as the idempotency key so duplicate
+            # runs for the same commit/conclusion enqueue only one notification.
+            event_key=f"github:production_smoke:{sha or 'unknown'}:{conclusion}",
             category="SMK",
             event_type=f"production_smoke.{'passed' if passed else 'failed'}",
             severity="info" if passed else "error",

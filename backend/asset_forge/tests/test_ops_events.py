@@ -89,3 +89,47 @@ def test_pull_request_merged():
     assert event is not None
     assert event.event_type == "pull_request.merged"
     assert event.category == "GIT"
+
+
+
+def test_duplicate_smoke_runs_share_logical_event_key():
+    first = _job_payload(
+        conclusion="success",
+        runner_name="GitHub Actions 1",
+        steps=[{"name": "Wait for production health", "status": "completed"}],
+    )
+    second = _job_payload(
+        conclusion="success",
+        runner_name="GitHub Actions 2",
+        steps=[{"name": "Wait for production health", "status": "completed"}],
+    )
+    second["workflow_job"]["id"] = 78
+    second["workflow_job"]["run_id"] = 89
+
+    event_a = normalize_github_event("workflow_job", "delivery-a", first)
+    event_b = normalize_github_event("workflow_job", "delivery-b", second)
+
+    assert event_a is not None and event_b is not None
+    assert event_a.event_key == event_b.event_key
+    assert event_a.event_key == (
+        "github:production_smoke:"
+        "55467d2d7d03220dba292bfcb22836f8099f7d39:success"
+    )
+
+
+def test_smoke_failure_does_not_dedupe_with_success():
+    passed = normalize_github_event(
+        "workflow_job", "delivery-pass", _job_payload(conclusion="success")
+    )
+    failed = normalize_github_event(
+        "workflow_job",
+        "delivery-fail",
+        _job_payload(
+            conclusion="failure",
+            runner_name="GitHub Actions 42",
+            steps=[{"name": "Wait for production health", "status": "completed"}],
+        ),
+    )
+
+    assert passed is not None and failed is not None
+    assert passed.event_key != failed.event_key
