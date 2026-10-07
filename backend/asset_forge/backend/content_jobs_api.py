@@ -20,6 +20,7 @@ from backend.product_grounding import (
     is_commercial_product_job,
     validate_product_grounding,
 )
+from backend.product_resolver import ProductResolverError, resolve_shopee_product
 
 from backend.shared_supabase import supabase_request as _supabase_request
 
@@ -89,6 +90,10 @@ class ProductGroundingUpdate(BaseModel):
     price: str | float | int | None = None
     product_url: str | None = Field(default=None, max_length=4000)
     affiliate_url: str | None = Field(default=None, max_length=4000)
+
+
+class ProductResolveRequest(BaseModel):
+    url: str = Field(min_length=8, max_length=4000)
 
 
 def _now() -> str:
@@ -297,6 +302,50 @@ def get_asset_preview(
         "asset_status": package.get("asset_status"),
         "pipeline_route": route or None,
     }
+
+
+@router.post("/{job_id}/resolve-product")
+def resolve_product_for_job(
+    job_id: str,
+    request: ProductResolveRequest,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Resolve a Shopee URL and attach validated product grounding to a draft job."""
+    _require_session(authorization)
+    current = _get_row(job_id)
+    if current.get("status") not in {"BACKLOG", "READY_FOR_REVIEW"}:
+        raise HTTPException(
+            status_code=409,
+            detail="Product can only be resolved before approval",
+        )
+
+    try:
+        resolution = resolve_shopee_product(request.url)
+        grounding = validate_product_grounding(
+            {"product_grounding": resolution["grounding"]}
+        )
+    except (ProductResolverError, ProductGroundingError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    package = dict(current.get("content_package") or {})
+    package["product_grounding"] = grounding
+    package["product_grounding_status"] = "READY"
+    package["product_resolution"] = {
+        "resolver_version": resolution["resolver_version"],
+        "provider": resolution["provider"],
+        "input_url": resolution["input_url"],
+        "resolved_url": resolution["resolved_url"],
+    }
+    package.pop("product_grounding_error", None)
+
+    return _patch_job(
+        job_id,
+        {
+            "content_package": package,
+            "qa_status": "PENDING",
+            "updated_at": _now(),
+        },
+    )
 
 
 @router.patch("/{job_id}/product-grounding")

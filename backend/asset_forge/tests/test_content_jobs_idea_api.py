@@ -473,3 +473,100 @@ def test_update_product_grounding_locks_identity(monkeypatch) -> None:
     assert grounding["identity_status"] == "LOCKED"
     assert grounding["canonical_title"] == "Magnetic Cable Clip"
     assert result["content_package"]["product_grounding_status"] == "READY"
+
+
+
+def test_resolve_product_for_job_attaches_validated_grounding(monkeypatch) -> None:
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+    monkeypatch.setattr(
+        content_jobs_api,
+        "_get_row",
+        lambda job_id: {
+            "id": job_id,
+            "status": "READY_FOR_REVIEW",
+            "content_package": {"goal": "conversion", "content_type": "promo_post"},
+        },
+    )
+    monkeypatch.setattr(
+        content_jobs_api,
+        "resolve_shopee_product",
+        lambda url: {
+            "resolver_version": "shopee_product_resolver_v0.1",
+            "provider": "shopee",
+            "input_url": url,
+            "resolved_url": "https://shopee.co.th/product/10/20",
+            "grounding": {
+                "source": "shopee",
+                "canonical_title": "Magnetic Cable Clip",
+                "shop_name": "Example Shop",
+                "price": "191",
+                "product_url": "https://shopee.co.th/product/10/20",
+                "affiliate_url": url,
+                "image_urls": [
+                    "https://down-th.img.susercontent.com/file/product.jpg"
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(
+        content_jobs_api,
+        "validate_product_grounding",
+        lambda package: {
+            **package["product_grounding"],
+            "identity_status": "LOCKED",
+            "version": "product_grounding_v0.1",
+        },
+    )
+
+    patched = {}
+
+    def fake_patch(job_id, body):
+        patched.update(body)
+        return {"id": job_id, "status": "READY_FOR_REVIEW", **body}
+
+    monkeypatch.setattr(content_jobs_api, "_patch_job", fake_patch)
+
+    result = content_jobs_api.resolve_product_for_job(
+        "commercial-job",
+        content_jobs_api.ProductResolveRequest(
+            url="https://s.shopee.co.th/abc123"
+        ),
+        authorization=None,
+    )
+
+    package = result["content_package"]
+    assert package["product_grounding_status"] == "READY"
+    assert package["product_grounding"]["identity_status"] == "LOCKED"
+    assert package["product_grounding"]["canonical_title"] == "Magnetic Cable Clip"
+    assert package["product_resolution"]["provider"] == "shopee"
+    assert package["product_resolution"]["resolved_url"] == (
+        "https://shopee.co.th/product/10/20"
+    )
+    assert result["qa_status"] == "PENDING"
+
+
+def test_resolve_product_for_job_rejects_after_approval(monkeypatch) -> None:
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+    monkeypatch.setattr(
+        content_jobs_api,
+        "_get_row",
+        lambda job_id: {
+            "id": job_id,
+            "status": "APPROVED",
+            "content_package": {"goal": "conversion"},
+        },
+    )
+
+    try:
+        content_jobs_api.resolve_product_for_job(
+            "commercial-job",
+            content_jobs_api.ProductResolveRequest(
+                url="https://s.shopee.co.th/abc123"
+            ),
+            authorization=None,
+        )
+    except Exception as exc:
+        assert getattr(exc, "status_code", None) == 409
+        assert "before approval" in str(getattr(exc, "detail", "")).lower()
+    else:
+        raise AssertionError("approved job product resolution must be rejected")
