@@ -12,6 +12,7 @@ try:
         SupabaseIdeaFlowService,
         _required_env,
         _format_mutation_result,
+        _format_job,
         handle_text,
     )
     from backend.sales_inbox import (
