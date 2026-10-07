@@ -139,6 +139,10 @@ def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str
             "brand_position": provider_meta.get("brand_position"),
         }
     )
+    if str(provider_meta.get("mode") or "").strip().lower() == "product_grounded":
+        package["product_grounding_status"] = "VERIFIED"
+        package["product_grounding_source_url"] = provider_meta.get("source_url")
+        package["product_grounding_source_sha256"] = provider_meta.get("source_sha256")
 
     if route == "VIDEO" and not _video_asset_is_publishable(provider_meta):
         package["asset_status"] = "FAILED"
