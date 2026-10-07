@@ -17,7 +17,7 @@ def test_validate_product_grounding_locks_identity(monkeypatch) -> None:
         product_grounding.socket,
         "getaddrinfo",
         lambda *args, **kwargs: [
-            (2, 1, 6, "", ("203.0.113.10", 443)),
+            (2, 1, 6, "", ("8.8.8.8", 443)),
         ],
     )
     package = {
