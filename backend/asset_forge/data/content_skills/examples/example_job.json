@@ -1,0 +1,19 @@
+{
+  "job_id": "demo_001",
+  "skill_id": "SHORT_EDUCATIONAL_V1",
+  "topic": "ทำไม AI Character เปลี่ยนหน้าทุกฉาก",
+  "audience": "AI creators who generate recurring characters",
+  "goal": "education",
+  "cta": "บันทึกโพสต์นี้ไว้ใช้ตอนทำ Character Lock",
+  "product_id": "NONE",
+  "platform": "short_form",
+  "source_facts": [
+    "SoloForge uses Character Master → Character Lock → Scene → Generate → QA → Reuse.",
+    "Permanent identity should remain stable while scene-specific elements can vary."
+  ],
+  "approved_assets": [
+    "identity_lock.png",
+    "drift_01.png",
+    "consistent_01.png"
+  ]
+}
