@@ -1,27 +1,213 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../core/theme/app_theme.dart';
 import '../services/prawtwan_chat_service.dart';
+import '../services/prawtwan_language.dart';
+import '../services/pollinations_session_service.dart';
+import '../services/prawtwan_oauth_return.dart';
 
 class PrawtwanChatPage extends StatefulWidget {
-  const PrawtwanChatPage({super.key});
+  const PrawtwanChatPage({
+    super.key,
+    this.service,
+    this.sessionService,
+    this.restored,
+  });
+
+  final PollinationsSessionService? sessionService;
+  final Map<String, dynamic>? restored;
+
+  final PrawtwanChatService? service;
 
   @override
   State<PrawtwanChatPage> createState() => _PrawtwanChatPageState();
 }
 
-class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
+class _PrawtwanChatPageState extends State<PrawtwanChatPage>
+    with WidgetsBindingObserver {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final PrawtwanChatService _service = PrawtwanChatService();
+  late final PrawtwanChatService _service =
+      widget.service ?? PrawtwanChatService();
+  late final PollinationsSessionService _session =
+      widget.sessionService ?? PollinationsSessionService();
+  final PrawtwanLanguagePreference _preference = PrawtwanLanguagePreference();
+  PrawtwanCopy? _copy;
+  bool _languageChanged = false;
+  Future<void> _pendingSave = Future.value();
   final List<PrawtwanMessage> _messages = [];
-
   bool _sending = false;
+  bool _connected = false;
+  bool _checkingConnection = true;
+  bool _connecting = false;
+  bool _connectionFailed = false;
+  int _sessionRevision = 0;
+  bool _handlingCallback = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final restored = widget.restored;
+    if (restored != null) {
+      _copy = PrawtwanCopy(restored['language'] as String);
+      _languageChanged = true;
+      _controller.text = restored['draft'] as String;
+      for (final message in restored['messages'] as List) {
+        _messages.add(
+          PrawtwanMessage(
+            role: message['role'] as String,
+            content: message['content'] as String,
+          ),
+        );
+      }
+    }
+    unawaited(_initializeConnection());
+  }
+
+  Future<void> _initializeConnection() async {
+    // A slow app-link lookup must not block detecting an existing session.
+    if (!kIsWeb) unawaited(_listenForCallbacks());
+    await _refreshConnection(webCallback: kIsWeb);
+  }
+
+  Future<void> _listenForCallbacks() async {
+    try {
+      await _session.startListening(onCallback: _handleCallback);
+      if (!mounted) await _session.dispose();
+    } catch (_) {
+      // Resume checks still work if app links are unavailable.
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshConnection());
+    }
+  }
+
+  Future<void> _refreshConnection({bool webCallback = false}) async {
+    if (_handlingCallback) return;
+    final revision = ++_sessionRevision;
+    if (webCallback) _handlingCallback = true;
+    try {
+      final state = webCallback
+          ? await _session.handleWebCallbackIfPresent()
+          : await _session.status();
+      if (!mounted || revision != _sessionRevision) return;
+      setState(() {
+        _connected = state.connected;
+        _checkingConnection = false;
+        _connectionFailed = false;
+      });
+      if (state.connected) clearPrawtwanReturn();
+    } catch (_) {
+      if (!mounted || revision != _sessionRevision) return;
+      setState(() {
+        _checkingConnection = false;
+        _connectionFailed = true;
+      });
+    } finally {
+      if (webCallback) _handlingCallback = false;
+    }
+  }
+
+  Future<void> _handleCallback(Uri uri) async {
+    if (!_session.isPollinationsCallback(uri) || _handlingCallback) return;
+    _handlingCallback = true;
+    final revision = ++_sessionRevision;
+    try {
+      final state = await _session.handleCallback(uri);
+      if (!mounted || revision != _sessionRevision) return;
+      setState(() {
+        _connected = state.connected;
+        _checkingConnection = false;
+        _connecting = false;
+        _connectionFailed = false;
+      });
+      if (state.connected) clearPrawtwanReturn();
+    } catch (_) {
+      if (!mounted || revision != _sessionRevision) return;
+      setState(() {
+        _checkingConnection = false;
+        _connecting = false;
+        _connectionFailed = true;
+      });
+    } finally {
+      _handlingCallback = false;
+    }
+  }
+
+  Future<void> _connect() async {
+    if (_connecting || _handlingCallback) return;
+    setState(() {
+      _connecting = true;
+      _connectionFailed = false;
+    });
+    await _pendingSave;
+    if (!mounted) return;
+    final saved = savePrawtwanReturn({
+      'language': _copy!.code,
+      'draft': _controller.text,
+      'messages': _messages.map((message) => message.toJson()).toList(),
+    });
+    if (!saved) {
+      setState(() => _connecting = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_copy!.restoreError)));
+      return;
+    }
+    try {
+      await _session.connect();
+      if (mounted) await _refreshConnection();
+    } catch (_) {
+      clearPrawtwanReturn();
+      if (mounted) setState(() => _connectionFailed = true);
+    } finally {
+      if (mounted) setState(() => _connecting = false);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_copy != null) return;
+    _copy = PrawtwanCopy.forLocale(
+      WidgetsBinding.instance.platformDispatcher.locale,
+    );
+    unawaited(_restoreLanguage());
+  }
+
+  Future<void> _restoreLanguage() async {
+    final saved = await _preference.read();
+    if (mounted && !_languageChanged && saved != null) {
+      setState(() => _copy = PrawtwanCopy(saved));
+    }
+  }
+
+  void _selectLanguage(String? code) {
+    if (code == null) return;
+    _languageChanged = true;
+    setState(() => _copy = PrawtwanCopy(code));
+    _pendingSave = _pendingSave.then((_) async {
+      final saved = await _preference.write(code);
+      if (!saved && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_copy!.saveError)));
+      }
+    });
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_session.dispose());
     _controller.dispose();
     _scrollController.dispose();
     unawaited(_service.dispose());
@@ -30,7 +216,7 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
 
   Future<void> _send() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _sending) return;
+    if (text.isEmpty || _sending || !_connected) return;
 
     _controller.clear();
     setState(() {
@@ -48,14 +234,22 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
       _scrollToBottom();
     } on PrawtwanChatException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      final message = _copy!.error(error.message);
+      if (message == _copy!.connect) setState(() => _connected = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } on PollinationsSessionException {
+      if (!mounted) return;
+      setState(() => _connected = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_copy!.connect)));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chat Prawtwan is temporarily unavailable.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_copy!.unavailable)));
     } finally {
       if (mounted) {
         setState(() => _sending = false);
@@ -82,15 +276,21 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final copy = _copy!;
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Chat Prawtwan'),
             Text(
-              'PRAWTWAN — Fiction Editor',
-              style: TextStyle(
+              copy.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 17),
+            ),
+            Text(
+              copy.subtitle,
+              style: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
                 color: AshColors.smokeSilver,
@@ -99,9 +299,19 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
           ],
         ),
         actions: [
+          DropdownButton<String>(
+            value: copy.code,
+            onChanged: _connecting ? null : _selectLanguage,
+            items: const [
+              DropdownMenuItem(value: 'th', child: Text('ไทย')),
+              DropdownMenuItem(value: 'en', child: Text('English')),
+            ],
+          ),
           IconButton(
-            tooltip: 'Clear chat',
-            onPressed: _messages.isEmpty || _sending ? null : _clearChat,
+            tooltip: copy.clear,
+            onPressed: _messages.isEmpty || _sending || _connecting
+                ? null
+                : _clearChat,
             icon: const Icon(Icons.delete_outline),
           ),
         ],
@@ -109,6 +319,30 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
       body: SafeArea(
         child: Column(
           children: [
+            if (!_connected)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _connectionFailed ? copy.connectionError : copy.connect,
+                    ),
+                    const SizedBox(height: 8),
+                    if (_checkingConnection)
+                      const LinearProgressIndicator()
+                    else
+                      FilledButton.icon(
+                        key: const ValueKey('prawtwan-connect'),
+                        onPressed: _connecting ? null : _connect,
+                        icon: const Icon(Icons.link),
+                        label: Text(
+                          _connecting ? copy.connecting : copy.connectAction,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             Container(
               width: double.infinity,
               margin: const EdgeInsets.fromLTRB(12, 4, 12, 8),
@@ -120,14 +354,18 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
                   color: AshColors.indigoMist.withValues(alpha: 0.45),
                 ),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.lock_outline, size: 15, color: AshColors.indigoMist),
-                  SizedBox(width: 7),
+                  const Icon(
+                    Icons.lock_outline,
+                    size: 15,
+                    color: AshColors.indigoMist,
+                  ),
+                  const SizedBox(width: 7),
                   Expanded(
                     child: Text(
-                      'Private agent • Session-only chat • Pollen is used only when you send',
-                      style: TextStyle(
+                      copy.privacy,
+                      style: const TextStyle(
                         fontSize: 10,
                         color: AshColors.smokeSilver,
                       ),
@@ -138,16 +376,19 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
             ),
             Expanded(
               child: _messages.isEmpty && !_sending
-                  ? const _EmptyChat()
+                  ? _EmptyChat(copy: copy)
                   : ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
                       itemCount: _messages.length + (_sending ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index == _messages.length) {
-                          return const _ThinkingBubble();
+                          return _ThinkingBubble(copy: copy);
                         }
-                        return _MessageBubble(message: _messages[index]);
+                        return _MessageBubble(
+                          message: _messages[index],
+                          copy: copy,
+                        );
                       },
                     ),
             ),
@@ -169,11 +410,11 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
                       controller: _controller,
                       minLines: 1,
                       maxLines: 6,
-                      enabled: !_sending,
+                      enabled: !_sending && !_connecting,
                       textInputAction: TextInputAction.newline,
-                      decoration: const InputDecoration(
-                        hintText: 'พิมพ์ข้อความหรือวางฉากให้พี่พราวอ่าน...',
-                        contentPadding: EdgeInsets.symmetric(
+                      decoration: InputDecoration(
+                        hintText: copy.hint,
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 10,
                         ),
@@ -184,21 +425,27 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
                   SizedBox(
                     width: 46,
                     height: 46,
-                    child: FilledButton(
-                      onPressed: _sending ? null : _send,
-                      style: FilledButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    child: Tooltip(
+                      message: copy.send,
+                      child: FilledButton(
+                        key: const ValueKey('prawtwan-send'),
+                        onPressed: _sending || !_connected ? null : _send,
+                        style: FilledButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
+                        child: _sending
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.arrow_upward_rounded),
                       ),
-                      child: _sending
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.arrow_upward_rounded),
                     ),
                   ),
                 ],
@@ -212,7 +459,8 @@ class _PrawtwanChatPageState extends State<PrawtwanChatPage> {
 }
 
 class _EmptyChat extends StatelessWidget {
-  const _EmptyChat();
+  const _EmptyChat({required this.copy});
+  final PrawtwanCopy copy;
 
   @override
   Widget build(BuildContext context) {
@@ -237,19 +485,19 @@ class _EmptyChat extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'พี่พราวพร้อมแล้ว',
-              style: TextStyle(
+            Text(
+              copy.emptyTitle,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: AshColors.boneWhite,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'ลองส่งฉาก บทสนทนา หรือคำถามเกี่ยวกับงานเขียนให้พี่พราวอ่านได้เลย',
+            Text(
+              copy.emptyBody,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
                 height: 1.45,
                 color: AshColors.smokeSilver,
@@ -263,7 +511,8 @@ class _EmptyChat extends StatelessWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message});
+  const _MessageBubble({required this.message, required this.copy});
+  final PrawtwanCopy copy;
 
   final PrawtwanMessage message;
 
@@ -293,7 +542,7 @@ class _MessageBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              isUser ? 'Ai' : 'Prawtwan',
+              isUser ? copy.you : copy.name,
               style: const TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w800,
@@ -317,26 +566,27 @@ class _MessageBubble extends StatelessWidget {
 }
 
 class _ThinkingBubble extends StatelessWidget {
-  const _ThinkingBubble();
+  const _ThinkingBubble({required this.copy});
+  final PrawtwanCopy copy;
 
   @override
   Widget build(BuildContext context) {
-    return const Align(
+    return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
-        padding: EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.only(bottom: 10),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
+            const SizedBox(
               width: 16,
               height: 16,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
-              'พี่พราวกำลังอ่าน...',
-              style: TextStyle(
+              copy.thinking,
+              style: const TextStyle(
                 fontSize: 11,
                 color: AshColors.smokeSilver,
               ),

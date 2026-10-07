@@ -18,11 +18,11 @@ class DeveloperPage extends StatelessWidget {
             child: ListTile(
               leading: const Icon(Icons.auto_stories_outlined),
               title: const Text(
-                'Test PRAWTWAN',
+                'Prawtwan · พี่พราว',
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
               subtitle: const Text(
-                'Open the private Pollinations fiction-editor agent and send a live test request.',
+                'Get feedback on scenes, dialogue, and fiction writing.',
                 style: TextStyle(color: AshColors.smokeSilver),
               ),
               trailing: const Icon(Icons.chevron_right_rounded),

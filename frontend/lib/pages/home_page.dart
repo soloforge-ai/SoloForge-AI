@@ -11,6 +11,8 @@ import 'analytics_page.dart';
 import 'asset_forge_page.dart';
 import 'content_job_page.dart';
 import 'settings_page.dart';
+import 'prawtwan_chat_page.dart';
+import '../services/prawtwan_oauth_return.dart';
 
 enum QueueFilter { all, actionRequired, processing, completed, backlog }
 
@@ -170,7 +172,18 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadPollinationsConnection();
+    final restored = takePrawtwanReturn();
+    if (restored == null) {
+      _loadPollinationsConnection();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await Navigator.push(context, MaterialPageRoute(
+          builder: (_) => PrawtwanChatPage(restored: restored),
+        ));
+        if (mounted) _loadPollinationsConnection();
+      });
+    }
     _loadJobs();
   }
 
@@ -194,6 +207,8 @@ class _HomePageState extends State<HomePage> {
       if (!kIsWeb) {
         await _pollinationsSession.startListening(
           onCallback: (uri) async {
+            // The foreground page owns one-time handoff exchange.
+            if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
             if (!_pollinationsSession.isPollinationsCallback(uri)) return;
             final state = await _pollinationsSession.handleCallback(uri);
             if (!mounted) return;
@@ -390,6 +405,16 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> _openPrawtwan() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PrawtwanChatPage()),
+    );
+    if (mounted) {
+      await _loadPollinationsConnection();
+    }
+  }
+
   Future<void> _openJob(ContentJob job) async {
     await Navigator.push(
       context,
@@ -500,6 +525,17 @@ class _HomePageState extends State<HomePage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
           children: [
+            Card(
+              margin: EdgeInsets.zero,
+              child: ListTile(
+                leading: const Icon(Icons.auto_stories_outlined),
+                title: const Text('Prawtwan · พี่พราว'),
+                subtitle: const Text('ผู้ช่วยงานเขียนนิยาย · Fiction editor'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _openPrawtwan,
+              ),
+            ),
+            const SizedBox(height: 10),
             _IdeaComposerCard(
               controller: _ideaController,
               busy: _ideaBusy,
