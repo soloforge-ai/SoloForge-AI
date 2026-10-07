@@ -60,7 +60,7 @@ def test_validate_product_grounding_rejects_private_host(monkeypatch) -> None:
             {
                 "product_grounding": {
                     "canonical_title": "Product",
-                    "image_urls": ["https://internal.example/product.jpg"],
+                    "image_urls": ["https://down-th.img.susercontent.com/product.jpg"],
                 }
             }
         )
