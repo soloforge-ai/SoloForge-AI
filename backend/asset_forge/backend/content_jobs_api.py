@@ -429,6 +429,7 @@ def approve_content_job(
             "approved_at": now,
             "updated_at": now,
             "error_message": None,
+            "content_package": package,
         },
     )
     background_tasks.add_task(_continue_approved_job, job_id)
