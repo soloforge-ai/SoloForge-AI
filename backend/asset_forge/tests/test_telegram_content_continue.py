@@ -42,6 +42,19 @@ def test_content_job_keyboard_only_shows_for_resumable_statuses() -> None:
     assert webhook.content_job_keyboard(_video_job("PUBLISHING")) is None
 
 
+def test_content_job_keyboard_hides_non_video_resume_targets() -> None:
+    job = _video_job("AUDIO_READY")
+    job["content_package"] = {}
+    assert webhook.content_job_keyboard(job) is None
+
+    job["content_package"] = {"pipeline_route": "STATIC"}
+    assert webhook.content_job_keyboard(job) is None
+
+    approved = _video_job("APPROVED")
+    approved["content_package"] = {}
+    assert webhook.content_job_keyboard(approved) is not None
+
+
 def test_continue_callback_schedules_only_the_selected_job(monkeypatch) -> None:
     job = _video_job("AUDIO_READY")
     tasks = _FakeBackgroundTasks()
