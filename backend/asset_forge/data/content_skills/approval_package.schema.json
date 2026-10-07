@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SoloForge Approval Package",
+  "type": "object",
+  "required": [
+    "job_id",
+    "skill_id",
+    "status",
+    "summary",
+    "decision_required",
+    "qa"
+  ],
+  "properties": {
+    "job_id": {
+      "type": "string"
+    },
+    "skill_id": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "READY_FOR_APPROVAL",
+        "NEEDS_REVISION",
+        "BLOCKED"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 600
+    },
+    "decision_required": {
+      "enum": [
+        "APPROVE",
+        "REVISE",
+        "REJECT"
+      ]
+    },
+    "recommended_action": {
+      "type": "string"
+    },
+    "risk": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "qa": {
+      "type": "object",
+      "required": [
+        "result",
+        "failed_rules"
+      ],
+      "properties": {
+        "result": {
+          "enum": [
+            "PASS",
+            "MINOR_FIX",
+            "REGENERATE"
+          ]
+        },
+        "failed_rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://soloforge.ai/schemas/content-skill-v0.1.json",
+  "title": "SoloForge Content Skill",
+  "type": "object",
+  "required": [
+    "skill_id",
+    "version",
+    "status",
+    "intent",
+    "input_contract",
+    "production_rules",
+    "output_contract",
+    "qa_rules",
+    "approval_policy"
+  ],
+  "properties": {
+    "skill_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_]+$"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "DRAFT",
+        "ACTIVE",
+        "DEPRECATED"
+      ]
+    },
+    "intent": {
+      "type": "string"
+    },
+    "input_contract": {
+      "type": "object"
+    },
+    "production_rules": {
+      "type": "object"
+    },
+    "prompt_grammar": {
+      "type": "object"
+    },
+    "output_contract": {
+      "type": "object"
+    },
+    "qa_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "severity",
+          "rule"
+        ]
+      }
+    },
+    "approval_policy": {
+      "type": "object"
+    },
+    "performance_memory": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}
