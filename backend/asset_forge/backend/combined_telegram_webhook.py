@@ -30,6 +30,7 @@ except ImportError:
         SupabaseIdeaFlowService,
         _required_env,
         _format_mutation_result,
+        _format_job,
         handle_text,
     )
     from backend.asset_forge.backend.sales_inbox import (
