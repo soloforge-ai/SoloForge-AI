@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from backend.asset_forge.main import AssetForgeRequest, _grid
+from main import AssetForgeRequest, _grid
 # Import runtime to activate the same prompt/character-reference patches as production.
 from backend.asset_forge import runtime as asset_runtime
 
@@ -19,6 +19,8 @@ def main():
     if not token:
         raise RuntimeError("BLOCKED: POLLINATIONS_QA_TOKEN secret not configured")
     master_bytes = master.read_bytes()
+    if len(master_bytes) < 1000:
+        raise RuntimeError("BLOCKED: CEO master image file too small")
     cases = [
         ("canon", "default", None),
         ("creator", "creator", None),
@@ -46,7 +48,12 @@ def main():
             (root / f"{name}-prompt.txt").write_text(prompt, encoding="utf-8")
             (root / f"{name}-request.json").write_text(request.model_dump_json(indent=2), encoding="utf-8")
             # Direct generation: no app endpoint and absolutely NO local fallback.
-            result = asset_runtime.asset_forge_main._generate_sheet(prompt, master_bytes, token)
+            try:
+                result = asset_runtime.asset_forge_main._generate_sheet(prompt, master_bytes, token)
+            except Exception:
+                record["status"] = "GENERATION_FAILED"
+                report["visual_qa_status"] = "BLOCKED"
+                raise
             from PIL import Image
             import io
             with Image.open(io.BytesIO(result)) as image:
