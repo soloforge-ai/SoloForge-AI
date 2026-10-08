@@ -1,6 +1,9 @@
 name: RUJ CEO Visual QA
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/ruj-ceo-visual-qa.yml'
   workflow_dispatch:
     inputs:
       mode:
@@ -16,7 +19,32 @@ permissions:
   contents: read
 
 jobs:
+  runtime-import-smoke:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pinned PR 155 test implementation
+        uses: actions/checkout@v4
+        with:
+          ref: 4273b2357bc34fbb1874c09d48459847209ca42e
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install runtime dependencies
+        run: python -m pip install -r backend/asset_forge/requirements.txt
+      - name: Verify runtime imports without API calls
+        run: |
+          PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python - <<'PY'
+          from backend.asset_forge import runtime
+          assert runtime.asset_forge_main is not None
+          print("Runtime import smoke test passed; no Pollinations API calls")
+          PY
+
   ceo-visual-qa:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
