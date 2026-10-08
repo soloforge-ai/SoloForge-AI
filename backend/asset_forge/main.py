@@ -80,6 +80,7 @@ class AssetForgeRequest(BaseModel):
     quantity: int = Field(default=12, ge=4, le=24)
     messages: List[str] = Field(default_factory=list, max_length=24)
     wardrobe_variant: Literal["default", "creator", "fitness", "casual", "formal_black"] = "default"
+    campaign_id: str | None = Field(default=None, max_length=120)
 
 
 class AssetForgeResponse(BaseModel):
@@ -169,8 +170,11 @@ NON-NEGOTIABLE CEO IDENTITY RULE:
 """ if request.character.strip().lower() == "ceo" else ""
 
 
+    campaign_locked = request.character.strip().lower() == "ceo" and (request.campaign_id or "").strip().lower() == "manifest_glow_lab"
     wardrobe_instruction = ""
-    if request.character.strip().lower() == "ceo" and request.wardrobe_variant != "default":
+    if campaign_locked:
+        wardrobe_instruction = "MANIFEST GLOW LAB: Keep the canonical white/cream luxury suit, dark shirt and red tie. Ignore contextual wardrobe overrides for this campaign."
+    if request.character.strip().lower() == "ceo" and request.wardrobe_variant != "default" and not campaign_locked:
         outfits = {
             "creator": "Black creator hoodie or practical dark techwear",
             "fitness": "Appropriate sportswear and athletic shoes",

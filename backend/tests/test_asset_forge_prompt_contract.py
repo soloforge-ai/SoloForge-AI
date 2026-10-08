@@ -50,3 +50,16 @@ def test_wardrobe_variant_rejects_unapproved_values() -> None:
     from pydantic import ValidationError
     with pytest.raises(ValidationError):
         AssetForgeRequest(character="CEO", wardrobe_variant="spacesuit")
+
+
+def test_manifest_campaign_keeps_canon_outfit_even_when_creator_requested() -> None:
+    request = AssetForgeRequest(character="CEO", campaign_id="manifest_glow_lab", wardrobe_variant="creator", quantity=4)
+    prompt = _build_prompt(request, columns=2, rows=2, has_reference=True)
+    assert "MANIFEST GLOW LAB: Keep the canonical white/cream luxury suit" in prompt
+    assert "APPROVED CONTEXTUAL WARDROBE OVERRIDE" not in prompt
+
+
+def test_non_manifest_campaign_allows_creator_variant() -> None:
+    request = AssetForgeRequest(character="CEO", campaign_id="other", wardrobe_variant="creator", quantity=4)
+    prompt = _build_prompt(request, columns=2, rows=2, has_reference=True)
+    assert "APPROVED CONTEXTUAL WARDROBE OVERRIDE" in prompt
