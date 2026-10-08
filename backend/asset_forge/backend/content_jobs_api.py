@@ -451,6 +451,40 @@ def upload_product_references(
     )
 
 
+class ProductReferenceReviewRequest(BaseModel):
+    product_identity_confirmed: bool
+    image_usage_rights_confirmed: bool
+
+
+@router.post("/{job_id}/product-references/review")
+def review_product_references(
+    job_id: str,
+    request: ProductReferenceReviewRequest,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Require owner attestation before manual references unlock approval."""
+    _require_session(authorization)
+    current = _get_row(job_id)
+    if current.get("status") not in {"BACKLOG", "READY_FOR_REVIEW"}:
+        raise HTTPException(status_code=409, detail="Job is no longer editable")
+    package = dict(current.get("content_package") or {})
+    if package.get("product_reference_review") != "PENDING":
+        raise HTTPException(status_code=409, detail="No pending reference review")
+    if not (request.product_identity_confirmed and request.image_usage_rights_confirmed):
+        raise HTTPException(status_code=400, detail="Confirm product identity and image usage rights")
+    package["product_reference_review"] = "APPROVED"
+    encoded = urllib.parse.quote(job_id, safe="")
+    rows = _supabase_request(
+        "PATCH",
+        f"content_jobs?id=eq.{encoded}&status=eq.{current['status']}",
+        body={"content_package": package, "qa_status": "PENDING", "updated_at": _now()},
+        prefer="return=representation",
+    ) or []
+    if not rows:
+        raise HTTPException(status_code=409, detail="Job changed during review")
+    return dict(rows[0])
+
+
 @router.patch("/{job_id}/product-grounding")
 def update_product_grounding(
     job_id: str,
@@ -552,6 +586,11 @@ def approve_content_job(
         )
 
     package = dict(current.get("content_package") or {})
+    if package.get("product_reference_review") == "PENDING":
+        raise HTTPException(
+            status_code=409,
+            detail="Manual product references must be reviewed before approval",
+        )
     if is_commercial_product_job(package):
         try:
             package["product_grounding"] = validate_product_grounding(package)
