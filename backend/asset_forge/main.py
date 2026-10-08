@@ -154,6 +154,26 @@ CHARACTER REFERENCE:
 - Use the character name and style direction only.
 """
 
+    no_wings_rule = no_wings_rule.replace(
+            "face, hair, glasses, outfit, and body proportions",
+            "face, hair, glasses, and body proportions",
+        )
+
+    message_block = "\n".join(
+        f"{index + 1}. {message.strip()}"
+        for index, message in enumerate(request.messages)
+        if message.strip()
+    ) or "No specific sticker messages were supplied. Create distinct expressive poses."
+
+    no_wings_rule = """
+NON-NEGOTIABLE CEO IDENTITY RULE:
+- The CEO has NO wings.
+- Never generate angel wings, bird wings, feathers attached to the body, a halo, angelic appendages, or fantasy wings.
+- Do not infer wings from the reference image.
+- If the reference image contains wings, remove them from the generated character while keeping the face, hair, glasses, outfit, and body proportions consistent.
+""" if request.character.strip().lower() == "ceo" else ""
+
+
     wardrobe_instruction = ""
     if request.character.strip().lower() == "ceo" and request.wardrobe_variant != "default":
         outfits = {
@@ -177,25 +197,7 @@ APPROVED CONTEXTUAL WARDROBE OVERRIDE:
             "Only change pose, facial expression, and gesture as needed for the sticker pack.",
             "Only change the approved outfit, pose, facial expression, and gesture as needed for the sticker pack.",
         )
-        no_wings_rule = no_wings_rule.replace(
-            "face, hair, glasses, outfit, and body proportions",
-            "face, hair, glasses, and body proportions",
-        )
-
-    message_block = "\n".join(
-        f"{index + 1}. {message.strip()}"
-        for index, message in enumerate(request.messages)
-        if message.strip()
-    ) or "No specific sticker messages were supplied. Create distinct expressive poses."
-
-    no_wings_rule = """
-NON-NEGOTIABLE CEO IDENTITY RULE:
-- The CEO has NO wings.
-- Never generate angel wings, bird wings, feathers attached to the body, a halo, angelic appendages, or fantasy wings.
-- Do not infer wings from the reference image.
-- If the reference image contains wings, remove them from the generated character while keeping the face, hair, glasses, outfit, and body proportions consistent.
-""" if request.character.strip().lower() == "ceo" else ""
-
+    
     return f"""
 Create a commercial-quality sticker sheet for the character {request.character}.
 Theme: {request.theme}.
