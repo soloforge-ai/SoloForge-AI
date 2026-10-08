@@ -76,6 +76,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
   late final TextEditingController _cta;
   late final TextEditingController _visualPrompt;
   late final TextEditingController _motionPrompt;
+  late final TextEditingController _productUrl;
 
   bool _busy = false;
   bool _editing = false;
@@ -95,6 +96,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
     _cta = TextEditingController(text: _job.cta ?? '');
     _visualPrompt = TextEditingController(text: _job.visualPrompt ?? '');
     _motionPrompt = TextEditingController(text: _job.motionPrompt ?? '');
+    _productUrl = TextEditingController(text: _initialProductUrl(_job));
     _loadFeedback();
     _loadAssetPreview();
   }
@@ -156,7 +158,35 @@ class _ContentJobPageState extends State<ContentJobPage> {
     _cta.dispose();
     _visualPrompt.dispose();
     _motionPrompt.dispose();
+    _productUrl.dispose();
     super.dispose();
+  }
+
+  String _initialProductUrl(ContentJob job) {
+    final grounding = job.contentPackage['product_grounding'];
+    if (grounding is Map) {
+      final affiliate = grounding['affiliate_url']?.toString().trim();
+      if (affiliate != null && affiliate.isNotEmpty) return affiliate;
+      final product = grounding['product_url']?.toString().trim();
+      if (product != null && product.isNotEmpty) return product;
+    }
+
+    final candidates = <String>[
+      job.idea,
+      job.caption ?? '',
+      job.contentPackage['comment_text']?.toString() ?? '',
+    ];
+    final pattern = RegExp(r'https://[^\s]+');
+    for (final candidate in candidates) {
+      for (final match in pattern.allMatches(candidate)) {
+        final value = match.group(0)?.trim();
+        if (value != null &&
+            (value.contains('shopee.co.th') || value.contains('shopee.com'))) {
+          return value;
+        }
+      }
+    }
+    return '';
   }
 
   void _syncControllers(ContentJob job) {
@@ -166,6 +196,9 @@ class _ContentJobPageState extends State<ContentJobPage> {
     _cta.text = job.cta ?? '';
     _visualPrompt.text = job.visualPrompt ?? '';
     _motionPrompt.text = job.motionPrompt ?? '';
+    if (_productUrl.text.trim().isEmpty) {
+      _productUrl.text = _initialProductUrl(job);
+    }
   }
 
   Future<void> _run(Future<ContentJob> Function() action) async {
@@ -205,6 +238,15 @@ class _ContentJobPageState extends State<ContentJobPage> {
       );
 
   Future<void> _approve() => _run(() => _service.approve(_job.id));
+
+  Future<void> _resolveProduct() async {
+    final url = _productUrl.text.trim();
+    if (url.isEmpty) {
+      setState(() => _error = 'Enter a Shopee product URL first.');
+      return;
+    }
+    await _run(() => _service.resolveProduct(_job.id, url: url));
+  }
 
   Future<void> _continuePipeline() =>
       _run(() => _service.continuePipeline(_job.id));
@@ -310,6 +352,8 @@ class _ContentJobPageState extends State<ContentJobPage> {
   ContentQualityReview get _qualityReview =>
       ContentQualityReview.fromJob(_job);
 
+  bool get _canResolveProduct =>
+      const {'BACKLOG', 'READY_FOR_REVIEW'}.contains(_job.status);
   bool get _canApprove =>
       _job.status == 'READY_FOR_REVIEW' && !_qualityReview.blocksApproval;
   bool get _canPublish => _job.status == 'READY_TO_PUBLISH';
@@ -468,6 +512,13 @@ class _ContentJobPageState extends State<ContentJobPage> {
               title: 'Asset Status',
               value: _job.assetStatus,
             ),
+            if (_canResolveProduct || _job.contentPackage['product_grounding'] is Map)
+              _ProductResolverCard(
+                job: _job,
+                controller: _productUrl,
+                busy: _busy,
+                onResolve: _resolveProduct,
+              ),
             if (_job.publoraPostId != null)
               _ReadOnlySection(
                 title: 'Publora Post',
@@ -893,6 +944,96 @@ class _DraftField extends StatelessWidget {
               Text(
                 controller.text.trim().isEmpty ? '—' : controller.text,
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductResolverCard extends StatelessWidget {
+  const _ProductResolverCard({
+    required this.job,
+    required this.controller,
+    required this.busy,
+    required this.onResolve,
+  });
+
+  final ContentJob job;
+  final TextEditingController controller;
+  final bool busy;
+  final VoidCallback onResolve;
+
+  @override
+  Widget build(BuildContext context) {
+    final rawGrounding = job.contentPackage['product_grounding'];
+    final grounding = rawGrounding is Map ? rawGrounding : const {};
+    final rawResolution = job.contentPackage['product_resolution'];
+    final resolution = rawResolution is Map ? rawResolution : const {};
+    final status = job.contentPackage['product_grounding_status']?.toString();
+    final images = grounding['image_urls'];
+    final imageCount = images is List ? images.length : 0;
+    final canResolve = const {'BACKLOG', 'READY_FOR_REVIEW'}.contains(job.status);
+
+    String text(dynamic value) => value?.toString().trim() ?? '';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Product Resolver',
+              style: TextStyle(
+                color: AshColors.mutedRose,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (status != null && status.isNotEmpty)
+              Text('Grounding status: $status'),
+            if (text(grounding['canonical_title']).isNotEmpty)
+              Text('Title: ${text(grounding['canonical_title'])}'),
+            if (text(grounding['shop_name']).isNotEmpty)
+              Text('Shop: ${text(grounding['shop_name'])}'),
+            if (text(grounding['price']).isNotEmpty)
+              Text('Price: ${text(grounding['price'])}'),
+            if (imageCount > 0) Text('Images: $imageCount'),
+            if (text(resolution['provider']).isNotEmpty)
+              Text('Provider: ${text(resolution['provider'])}'),
+            if (text(resolution['resolved_url']).isNotEmpty)
+              SelectableText('Resolved URL: ${text(resolution['resolved_url'])}'),
+            if (grounding.isNotEmpty || resolution.isNotEmpty)
+              const SizedBox(height: 10),
+            TextField(
+              controller: controller,
+              enabled: canResolve && !busy,
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                labelText: 'Shopee product URL',
+                hintText: 'https://s.shopee.co.th/...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            if (canResolve) ...[
+              const SizedBox(height: 10),
+              FilledButton.icon(
+                onPressed: busy ? null : onResolve,
+                icon: const Icon(Icons.travel_explore_outlined),
+                label: const Text('Resolve Product'),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'This only resolves and stores product grounding. It does not approve, continue, or publish the job.',
+                style: TextStyle(
+                  color: AshColors.smokeSilver,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ],
         ),
       ),
