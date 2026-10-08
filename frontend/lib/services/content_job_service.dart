@@ -531,6 +531,24 @@ class ContentJobService {
     return _decodeJob(response);
   }
 
+  Future<ContentJob> resolveProduct(
+    String id, {
+    required String url,
+  }) async {
+    final response = await _client
+        .post(
+          Uri.parse('$_baseUrl/v1/content-jobs/$id/resolve-product'),
+          headers: await _headers(json: true),
+          body: jsonEncode({'url': url}),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Resolve product');
+    }
+    return _decodeJob(response);
+  }
+
   Future<ContentJob> approve(String id) async {
     final response = await _client
         .post(
