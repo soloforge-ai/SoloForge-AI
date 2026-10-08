@@ -91,7 +91,7 @@ def _memory_aware_build_prompt(request, columns: int, rows: int, has_reference: 
         return base_prompt
     # A request-scoped outfit exception never overrides the character's identity DNA.
     variant = getattr(request, "wardrobe_variant", "default")
-    if request.character.strip().lower() == "ceo" and variant != "default":
+    if request.character.strip().lower() == "ceo" and variant != "default" and (getattr(request, "campaign_id", None) or "").strip().lower() != "manifest_glow_lab":
         memory_context += "\n- Default outfit is a fallback, not a wardrobe lock for this approved request variant."
     return f"{base_prompt}\n\n{memory_context}"
 
