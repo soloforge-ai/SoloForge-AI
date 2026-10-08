@@ -12,7 +12,7 @@ import urllib.request
 import uuid
 import zipfile
 from pathlib import Path
-from typing import List
+from typing import List, Literal
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import RedirectResponse
@@ -79,6 +79,7 @@ class AssetForgeRequest(BaseModel):
     style: str = Field(default="Cute 3D Chibi", min_length=1, max_length=120)
     quantity: int = Field(default=12, ge=4, le=24)
     messages: List[str] = Field(default_factory=list, max_length=24)
+    wardrobe_variant: Literal["default", "creator", "fitness", "casual", "formal_black"] = "default"
 
 
 class AssetForgeResponse(BaseModel):
@@ -153,6 +154,34 @@ CHARACTER REFERENCE:
 - Use the character name and style direction only.
 """
 
+    wardrobe_instruction = ""
+    if request.character.strip().lower() == "ceo" and request.wardrobe_variant != "default":
+        outfits = {
+            "creator": "Black creator hoodie or practical dark techwear",
+            "fitness": "Appropriate sportswear and athletic shoes",
+            "casual": "Comfortable everyday casual outfit",
+            "formal_black": "Elegant black formal suit",
+        }
+        selected = outfits[request.wardrobe_variant]
+        wardrobe_instruction = f"""
+APPROVED CONTEXTUAL WARDROBE OVERRIDE:
+- Outfit: {selected}.
+- This is a clothing-only variation. Keep the CEO's exact approved face, eyes, hair, glasses, skin tone, and 3D chibi proportions from the master reference.
+- The white suit is the DEFAULT outfit, not mandatory for this request.
+- Do not alter identity or invent new character features.
+"""
+        reference_instruction = reference_instruction.replace(
+            "skin tone, costume, proportions, and signature accessories",
+            "skin tone, proportions, and identity-defining accessories",
+        ).replace(
+            "Only change pose, facial expression, and gesture as needed for the sticker pack.",
+            "Only change the approved outfit, pose, facial expression, and gesture as needed for the sticker pack.",
+        )
+        no_wings_rule = no_wings_rule.replace(
+            "face, hair, glasses, outfit, and body proportions",
+            "face, hair, glasses, and body proportions",
+        )
+
     message_block = "\n".join(
         f"{index + 1}. {message.strip()}"
         for index, message in enumerate(request.messages)
@@ -175,6 +204,7 @@ Product: {request.product}.
 {reference_instruction}
 {color_instruction}
 {no_wings_rule}
+{wardrobe_instruction}
 
 STICKER MESSAGE INTENT:
 The app will add the exact Thai text later. Do NOT render text, letters, captions, speech bubbles, logos, or watermarks in the artwork.

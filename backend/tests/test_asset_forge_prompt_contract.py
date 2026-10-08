@@ -20,3 +20,33 @@ def test_named_character_without_explicit_color_gets_no_color_override() -> None
     prompt = _build_prompt(request, columns=2, rows=2, has_reference=True)
 
     assert "NON-NEGOTIABLE COLOR OVERRIDE" not in prompt
+
+
+def test_ceo_default_outfit_remains_unchanged() -> None:
+    request = AssetForgeRequest(character="CEO", quantity=4)
+    prompt = _build_prompt(request, columns=2, rows=2, has_reference=True)
+    assert "APPROVED CONTEXTUAL WARDROBE OVERRIDE" not in prompt
+    assert "skin tone, costume, proportions" in prompt
+
+
+def test_ceo_fitness_outfit_preserves_identity_not_suit() -> None:
+    request = AssetForgeRequest(character="CEO", wardrobe_variant="fitness", quantity=4)
+    prompt = _build_prompt(request, columns=2, rows=2, has_reference=True)
+    assert "Appropriate sportswear and athletic shoes" in prompt
+    assert "clothing-only variation" in prompt
+    assert "exact approved face, eyes, hair, glasses" in prompt
+    assert "skin tone, costume, proportions" not in prompt
+    assert "face, hair, glasses, outfit, and body proportions" not in prompt
+
+
+def test_ceo_creator_outfit_does_not_change_other_characters() -> None:
+    request = AssetForgeRequest(character="Cat", wardrobe_variant="creator", quantity=4)
+    prompt = _build_prompt(request, columns=2, rows=2, has_reference=True)
+    assert "APPROVED CONTEXTUAL WARDROBE OVERRIDE" not in prompt
+
+
+def test_wardrobe_variant_rejects_unapproved_values() -> None:
+    import pytest
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError):
+        AssetForgeRequest(character="CEO", wardrobe_variant="spacesuit")
