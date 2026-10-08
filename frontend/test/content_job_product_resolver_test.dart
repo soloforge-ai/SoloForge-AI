@@ -88,6 +88,6 @@ void main() {
       'shopee',
     );
 
-    service.dispose();
+    session.dispose();
   });
 }
