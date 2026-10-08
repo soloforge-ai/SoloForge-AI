@@ -62,6 +62,14 @@ jobs:
       - name: Verify runner syntax without API calls
         if: ${{ inputs.mode == 'generate' }}
         run: python -m py_compile runner-source/.github/scripts/ruj_ceo_visual_qa.py
+      - name: Verify runtime imports without API calls
+        if: ${{ inputs.mode == 'generate' }}
+        run: |
+          PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python - <<'PY'
+          from backend.asset_forge import runtime
+          assert runtime.asset_forge_main is not None
+          print("Runtime import smoke test passed; no Pollinations API calls")
+          PY
       - name: Generate four actual images (cost-incurring, explicitly selected)
         if: ${{ inputs.mode == 'generate' }}
         env:
@@ -71,7 +79,7 @@ jobs:
           POLLINATIONS_IMAGE_HEIGHT: '1024'
         run: |
           cp runner-source/.github/scripts/ruj_ceo_visual_qa.py ./ruj_ceo_visual_qa.py
-          PYTHONPATH="$PWD:$PWD/backend/asset_forge" python ruj_ceo_visual_qa.py
+          PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python ruj_ceo_visual_qa.py
       - name: Upload QA evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
