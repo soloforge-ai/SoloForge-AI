@@ -154,11 +154,6 @@ CHARACTER REFERENCE:
 - Use the character name and style direction only.
 """
 
-    no_wings_rule = no_wings_rule.replace(
-            "face, hair, glasses, outfit, and body proportions",
-            "face, hair, glasses, and body proportions",
-        )
-
     message_block = "\n".join(
         f"{index + 1}. {message.strip()}"
         for index, message in enumerate(request.messages)
@@ -196,6 +191,10 @@ APPROVED CONTEXTUAL WARDROBE OVERRIDE:
         ).replace(
             "Only change pose, facial expression, and gesture as needed for the sticker pack.",
             "Only change the approved outfit, pose, facial expression, and gesture as needed for the sticker pack.",
+        )
+        no_wings_rule = no_wings_rule.replace(
+            "face, hair, glasses, outfit, and body proportions",
+            "face, hair, glasses, and body proportions",
         )
     
     return f"""
