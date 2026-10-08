@@ -58,16 +58,17 @@ class ContentQualityReview {
 }
 
 class ContentJobPage extends StatefulWidget {
-  const ContentJobPage({super.key, required this.job});
+  const ContentJobPage({super.key, required this.job, this.service});
 
   final ContentJob job;
+  final ContentJobService? service;
 
   @override
   State<ContentJobPage> createState() => _ContentJobPageState();
 }
 
 class _ContentJobPageState extends State<ContentJobPage> {
-  final ContentJobService _service = ContentJobService();
+  late final ContentJobService _service;
 
   late ContentJob _job;
   late final TextEditingController _hook;
@@ -81,6 +82,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
   bool _busy = false;
   bool _editing = false;
   String? _error;
+  String? _resolverError;
   ContentFeedback? _feedback;
   ContentAssetPreview? _assetPreview;
   bool _assetPreviewLoading = false;
@@ -89,6 +91,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
   @override
   void initState() {
     super.initState();
+    _service = widget.service ?? ContentJobService();
     _job = widget.job;
     _hook = TextEditingController(text: _job.hook ?? '');
     _script = TextEditingController(text: _job.script ?? '');
@@ -201,10 +204,14 @@ class _ContentJobPageState extends State<ContentJobPage> {
     }
   }
 
-  Future<void> _run(Future<ContentJob> Function() action) async {
+  Future<void> _run(
+    Future<ContentJob> Function() action, {
+    bool resolver = false,
+  }) async {
     setState(() {
       _busy = true;
       _error = null;
+      _resolverError = null;
     });
     try {
       final updated = await action();
@@ -218,7 +225,12 @@ class _ContentJobPageState extends State<ContentJobPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = error.toString().replaceFirst('Exception: ', '');
+        final message = error.toString().replaceFirst('Exception: ', '');
+        if (resolver) {
+          _resolverError = message;
+        } else {
+          _error = message;
+        }
       });
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -242,10 +254,10 @@ class _ContentJobPageState extends State<ContentJobPage> {
   Future<void> _resolveProduct() async {
     final url = _productUrl.text.trim();
     if (url.isEmpty) {
-      setState(() => _error = 'Enter a Shopee product URL first.');
+      setState(() => _resolverError = 'Enter a Shopee product URL first.');
       return;
     }
-    await _run(() => _service.resolveProduct(_job.id, url: url));
+    await _run(() => _service.resolveProduct(_job.id, url: url), resolver: true);
   }
 
   Future<void> _continuePipeline() =>
@@ -518,6 +530,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
                 controller: _productUrl,
                 busy: _busy,
                 onResolve: _resolveProduct,
+                error: _resolverError,
               ),
             if (_job.publoraPostId != null)
               _ReadOnlySection(
@@ -957,12 +970,14 @@ class _ProductResolverCard extends StatelessWidget {
     required this.controller,
     required this.busy,
     required this.onResolve,
+    this.error,
   });
 
   final ContentJob job;
   final TextEditingController controller;
   final bool busy;
   final VoidCallback onResolve;
+  final String? error;
 
   @override
   Widget build(BuildContext context) {
@@ -1025,6 +1040,14 @@ class _ProductResolverCard extends StatelessWidget {
                 icon: const Icon(Icons.travel_explore_outlined),
                 label: const Text('Resolve Product'),
               ),
+              if (error != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  error!,
+                  key: const ValueKey('product-resolver-error'),
+                  style: const TextStyle(color: AshColors.mutedRose),
+                ),
+              ],
               const SizedBox(height: 6),
               const Text(
                 'This only resolves and stores product grounding. It does not approve, continue, or publish the job.',

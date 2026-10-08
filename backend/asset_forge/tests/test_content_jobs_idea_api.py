@@ -570,3 +570,25 @@ def test_resolve_product_for_job_rejects_after_approval(monkeypatch) -> None:
         assert "before approval" in str(getattr(exc, "detail", "")).lower()
     else:
         raise AssertionError("approved job product resolution must be rejected")
+
+
+def test_resolver_failure_does_not_persist_job(monkeypatch):
+    import pytest
+    from fastapi import HTTPException
+    monkeypatch.setattr(content_jobs_api, '_require_session', lambda _: None)
+    monkeypatch.setattr(content_jobs_api, '_get_row', lambda _: {
+        'status': 'READY_FOR_REVIEW', 'content_package': {'goal': 'conversion'},
+    })
+    def fail(_):
+        raise content_jobs_api.ProductResolverError('Shopee product title could not be resolved')
+    def no_write(*args, **kwargs):
+        pytest.fail('Resolver failure must not persist or record an event')
+    monkeypatch.setattr(content_jobs_api, 'resolve_shopee_product', fail)
+    monkeypatch.setattr(content_jobs_api, '_patch_job', no_write)
+    monkeypatch.setattr(content_jobs_api, '_supabase_request', no_write)
+    with pytest.raises(HTTPException) as caught:
+        content_jobs_api.resolve_product_for_job(
+            'controlled-job', content_jobs_api.ProductResolveRequest(
+                url='https://s.shopee.co.th/example'), authorization=None)
+    assert caught.value.status_code == 400
+    assert caught.value.detail == 'Shopee product title could not be resolved'

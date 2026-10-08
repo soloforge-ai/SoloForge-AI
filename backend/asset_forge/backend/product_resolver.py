@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import logging
 import socket
 import urllib.error
 import urllib.parse
@@ -11,6 +12,8 @@ import urllib.request
 from html.parser import HTMLParser
 from typing import Any
 
+
+_logger = logging.getLogger(__name__)
 
 PRODUCT_RESOLVER_VERSION = "shopee_product_resolver_v0.1"
 _MAX_HTML_BYTES = 2 * 1024 * 1024
@@ -26,8 +29,17 @@ class ProductResolverError(RuntimeError):
 
 
 class _ShopeeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def __init__(self, diagnostics: dict[str, Any]) -> None:
+        super().__init__()
+        self.diagnostics = diagnostics
+
     def redirect_request(self, req, fp, code, msg, headers, newurl):
+        self.diagnostics["stage"] = "redirect_validation"
+        self.diagnostics["upstream_http_status"] = code
+        self.diagnostics["redirect_count"] += 1
+        self.diagnostics["redirect_hosts"].append(_diagnostic_host(newurl))
         _assert_safe_shopee_url(newurl)
+        self.diagnostics["stage"] = "http_fetch"
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
@@ -36,6 +48,7 @@ class _ProductMetadataParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.meta: dict[str, str] = {}
         self.json_ld: list[dict[str, Any]] = []
+        self.json_ld_parse_failures = 0
         self._json_ld_depth = 0
         self._json_ld_chunks: list[str] = []
 
@@ -70,6 +83,7 @@ class _ProductMetadataParser(HTMLParser):
         try:
             payload = json.loads(raw)
         except json.JSONDecodeError:
+            self.json_ld_parse_failures += 1
             return
         for item in _flatten_json_ld(payload):
             if isinstance(item, dict):
@@ -82,6 +96,45 @@ class _ProductMetadataParser(HTMLParser):
 
 def resolve_shopee_product(url: str, *, timeout: int = 20) -> dict[str, Any]:
     """Resolve a Shopee URL into the Product Grounding contract shape."""
+    diagnostics: dict[str, Any] = {
+        "resolver_version": PRODUCT_RESOLVER_VERSION,
+        "stage": "input_validation",
+        "upstream_http_status": None,
+        "content_type": None,
+        "response_bytes": None,
+        "redirect_count": 0,
+        "redirect_hosts": [],
+        "final_host": None,
+        "metadata_presence": None,
+        "json_ld_parse_failures": None,
+    }
+    try:
+        return _resolve_shopee_product(url, timeout=timeout, diagnostics=diagnostics)
+    except ProductResolverError:
+        # Only fixed keys and sanitized structural values; never log the exception,
+        # URL, HTML, headers, cookies, or metadata contents.
+        _logger.warning("product_resolver_failure %s", json.dumps(diagnostics))
+        raise
+
+
+def _diagnostic_host(url: str) -> str:
+    host = (urllib.parse.urlparse(url).hostname or "").lower().rstrip(".")
+    # Do not echo arbitrary (potentially identifying) subdomains into logs.
+    if host in {*_ALLOWED_SHOPEE_HOSTS, "www.shopee.co.th", "www.shopee.com"}:
+        return host
+    return "other_host"
+
+
+def _diagnostic_content_type(headers: Any) -> str:
+    value = str(headers.get("Content-Type") or "").split(";", 1)[0].strip().lower()
+    if value in {"text/html", "application/xhtml+xml", "application/json", "text/plain"}:
+        return value
+    return "other" if value else "missing"
+
+
+def _resolve_shopee_product(
+    url: str, *, timeout: int, diagnostics: dict[str, Any]
+) -> dict[str, Any]:
     input_url = str(url or "").strip()
     _assert_safe_shopee_url(input_url)
 
@@ -94,12 +147,18 @@ def resolve_shopee_product(url: str, *, timeout: int = 20) -> dict[str, Any]:
         },
         method="GET",
     )
-    opener = urllib.request.build_opener(_ShopeeRedirectHandler())
+    opener = urllib.request.build_opener(_ShopeeRedirectHandler(diagnostics))
+    diagnostics["stage"] = "http_fetch"
 
     try:
         with opener.open(request, timeout=timeout) as response:
+            diagnostics["upstream_http_status"] = getattr(response, "status", None)
+            diagnostics["content_type"] = _diagnostic_content_type(response.headers)
             final_url = str(response.geturl() or input_url)
+            diagnostics["final_host"] = _diagnostic_host(final_url)
+            diagnostics["stage"] = "final_url_validation"
             _assert_safe_shopee_url(final_url)
+            diagnostics["stage"] = "content_type"
             content_type = (
                 str(response.headers.get("Content-Type") or "")
                 .split(";", 1)[0]
@@ -108,16 +167,21 @@ def resolve_shopee_product(url: str, *, timeout: int = 20) -> dict[str, Any]:
             )
             if content_type and content_type not in {"text/html", "application/xhtml+xml"}:
                 raise ProductResolverError("Shopee product URL did not return an HTML page")
+            diagnostics["stage"] = "body_read"
             data = response.read(_MAX_HTML_BYTES + 1)
+            diagnostics["response_bytes"] = len(data)
     except ProductResolverError:
         raise
     except urllib.error.HTTPError as exc:
+        diagnostics["upstream_http_status"] = exc.code
+        diagnostics["content_type"] = _diagnostic_content_type(exc.headers or {})
         raise ProductResolverError(
             f"Shopee product page returned HTTP {exc.code}"
         ) from exc
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         raise ProductResolverError("Shopee product page could not be reached") from exc
 
+    diagnostics["stage"] = "body_validation"
     if not data:
         raise ProductResolverError("Shopee product page was empty")
     if len(data) > _MAX_HTML_BYTES:
@@ -125,7 +189,17 @@ def resolve_shopee_product(url: str, *, timeout: int = 20) -> dict[str, Any]:
 
     html = data.decode("utf-8", errors="replace")
     parser = _ProductMetadataParser()
+    diagnostics["stage"] = "metadata_parse"
     parser.feed(html)
+    diagnostics["json_ld_parse_failures"] = parser.json_ld_parse_failures
+    diagnostics["metadata_presence"] = {
+        "og_title": bool(parser.meta.get("og:title")),
+        "twitter_title": bool(parser.meta.get("twitter:title")),
+        "json_ld_name": bool(_json_ld_value(parser.json_ld, "name")),
+        "og_image": bool(parser.meta.get("og:image")),
+        "twitter_image": bool(parser.meta.get("twitter:image")),
+        "json_ld_image": bool(_json_ld_images(parser.json_ld)),
+    }
 
     title = _first_nonempty(
         parser.meta.get("og:title"),
@@ -150,8 +224,10 @@ def resolve_shopee_product(url: str, *, timeout: int = 20) -> dict[str, Any]:
         _json_ld_value(parser.json_ld, "brand"),
     )
 
+    diagnostics["stage"] = "title_extraction"
     if not title:
         raise ProductResolverError("Shopee product title could not be resolved")
+    diagnostics["stage"] = "image_extraction"
     if not image_urls:
         raise ProductResolverError("Shopee product image could not be resolved")
 
