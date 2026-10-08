@@ -28,7 +28,7 @@ jobs:
       - name: Get QA runner from workflow branch
         uses: actions/checkout@v4
         with:
-          ref: ci/ruj-ceo-visual-qa-prepare
+          ref: 63e0b523f1c57157259b421f1161c3c37a2622e8
           path: runner-source
           persist-credentials: false
       - name: Prepare four requests (no API access)
@@ -59,6 +59,9 @@ jobs:
       - name: Install image-generation dependencies
         if: ${{ inputs.mode == 'generate' }}
         run: python -m pip install -r backend/asset_forge/requirements.txt
+      - name: Verify runner syntax without API calls
+        if: ${{ inputs.mode == 'generate' }}
+        run: python -m py_compile runner-source/.github/scripts/ruj_ceo_visual_qa.py
       - name: Generate four actual images (cost-incurring, explicitly selected)
         if: ${{ inputs.mode == 'generate' }}
         env:
@@ -68,7 +71,7 @@ jobs:
           POLLINATIONS_IMAGE_HEIGHT: '1024'
         run: |
           cp runner-source/.github/scripts/ruj_ceo_visual_qa.py ./ruj_ceo_visual_qa.py
-          python ruj_ceo_visual_qa.py
+          PYTHONPATH="$PWD:$PWD/backend/asset_forge" python ruj_ceo_visual_qa.py
       - name: Upload QA evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
