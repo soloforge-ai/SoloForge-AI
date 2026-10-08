@@ -1,0 +1,62 @@
+name: RUJ CEO Visual QA Preparation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-ceo-visual-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare test cases without generating images
+        shell: bash
+        run: |
+          mkdir -p visual-qa-artifacts
+          python3 - <<'PY'
+          import json, pathlib, hashlib
+          root = pathlib.Path("visual-qa-artifacts")
+          master = pathlib.Path("frontend/assets/characters/ceo/references/master.png")
+          if not master.is_file():
+              raise SystemExit("BLOCKED: CEO master reference is missing")
+          reference_sha256 = hashlib.sha256(master.read_bytes()).hexdigest()
+          cases = [
+              ("canon", "default", None),
+              ("creator", "creator", None),
+              ("fitness", "fitness", None),
+              ("manifest_glow_lab", "creator", "manifest_glow_lab"),
+          ]
+          records = []
+          for label, variant, campaign in cases:
+              request = {
+                  "character": "CEO",
+                  "product": "Visual QA",
+                  "theme": "Visual identity regression QA",
+                  "style": "Premium 3D Chibi",
+                  "quantity": 4,
+                  "messages": ["Presenting", "Pointing", "Thinking", "Smiling"],
+                  "wardrobe_variant": variant,
+              }
+              if campaign:
+                  request["campaign_id"] = campaign
+              (root / (label + "-request.json")).write_text(
+                  json.dumps(request, indent=2) + "\n", encoding="utf-8"
+              )
+              records.append({"case": label, "status": "BLOCKED_NOT_GENERATED", "request_file": label + "-request.json"})
+          report = {"runner_mode": "PREPARE_ONLY", "pollinations_called": False,
+                    "visual_qa_status": "NOT_RUN", "master_sha256": reference_sha256,
+                    "cases": records}
+          (root / "visual-qa-report.json").write_text(
+              json.dumps(report, indent=2) + "\n", encoding="utf-8"
+          )
+          print("Prepared four CEO image generation test requests. No external API calls.")
+          PY
+      - name: Upload request manifest and report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruj-ceo-visual-qa-prepare
+          path: visual-qa-artifacts/
+          retention-days: 14
