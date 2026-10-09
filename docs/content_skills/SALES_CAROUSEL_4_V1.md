@@ -19,12 +19,18 @@ P1 implementation:
 - `backend/asset_forge/backend/sales_carousel_skill_v1.py` builds a deterministic review-only 4:5 (1080x1350) plan with HERO / FEATURES / USAGE / CTA, reference hashes, and ASH palette.
 - Does not call models, generate images, render typography, or validate commercial rights.
 - Claims and prices need independent human verification; do not promote merely because provided in the input.
+- HERO defaults to the product name only; no unverified product benefit is invented. Returned palettes and per-slide asset lists are independent snapshots, not shared mutable defaults.
 - CEO can appear only with approved canonical master reference when necessary. Product shape and proportions are higher priority than stylistic prompting.
 
 ## Test scope
 `pytest backend/asset_forge/tests/test_carousel_policy_v1.py`
 
-Tests exercise fail-closed behavior, Quest/Paid separation, unverified quotes, budget limit, approval binding, four-slide output, and absent reference. CI and end-to-end checks are pending.
+Tests exercise fail-closed behavior, Quest/Paid separation, unverified quotes, budget limit, binding of every intent field, invalid budgets/counts, four-slide output, absent reference, neutral HERO copy, and independent output snapshots. Live end-to-end generation remains untested and unauthorized.
+
+## Integration boundaries for P2 planning
+The existing Content Skill registry loads `*.skill.json` and its current planner expects short-video scenes. This standalone carousel output is not yet registered or compatible with that scene contract; an explicit carousel adapter/dispatch is required before API integration. Do not route it through the existing audio/video pipeline.
+
+The model catalog is not an executable provider mapping. P2 must verify exact provider IDs, reference-input support, wallet eligibility and trusted aggregate pricing before enabling any call. The current intent does not bind prompts, seeds, dimensions, provider mapping/version or quote expiry; a server-issued immutable execution snapshot must bind all of them before owner approval and a persistent atomic claim.
 
 ## Deliberately untouched
 Production workers, Content Jobs workflow, current Publish/Publora claim logic, OAuth, image provider, existing Skill Router, database schema, all existing content templates. Draft PR only, do not merge/deploy without further approval.

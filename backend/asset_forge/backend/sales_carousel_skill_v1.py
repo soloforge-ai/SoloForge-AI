@@ -5,6 +5,7 @@ Produces a review-only package, never invokes a model or publishing endpoint.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from hashlib import sha256
 import json
 from typing import Any
@@ -48,7 +49,7 @@ def plan_sales_carousel(
     if not cta.strip() or len(cta) > 90:
         raise ValueError("CTA required")
     layouts = [
-        {"role": "HERO", "headline": f"{name} — จัดวางมือถือให้สะดวก", "ceo": "OPTIONAL_CANON_REFERENCE_REQUIRED"},
+        {"role": "HERO", "headline": name, "ceo": "OPTIONAL_CANON_REFERENCE_REQUIRED"},
         {"role": "FEATURES", "headline": "ดูรายละเอียดสินค้า", "ceo": "OMIT"},
         {"role": "USAGE", "headline": "ตัวอย่างการใช้งาน", "ceo": "OMIT"},
         {"role": "CTA", "headline": cta.strip(), "ceo": "OMIT"},
@@ -56,7 +57,7 @@ def plan_sales_carousel(
     for slide in layouts:
         slide.update({
             "canvas": {"width": WIDTH, "height": HEIGHT, "ratio": "4:5"},
-            "source_assets": refs,
+            "source_assets": deepcopy(refs),
             "copy_layer": "NATIVE_THAI_RENDERER",
             "image_generation": "REQUIRES_SEPARATE_APPROVAL",
             "review_status": "NEEDS_REVIEW",
@@ -65,7 +66,7 @@ def plan_sales_carousel(
         "skill_id": SKILL_ID,
         "version": "1.0",
         "product_name": name,
-        "palette": ASH,
+        "palette": dict(ASH),
         "verified_claims_input": claims,
         "claims_verification": "HUMAN_REQUIRED",
         "rights_verification": "HUMAN_REQUIRED",

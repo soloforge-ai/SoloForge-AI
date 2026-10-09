@@ -59,3 +59,54 @@ def test_carousel_is_four_slides_review_only():
 def test_carousel_requires_grounded_reference():
     with pytest.raises(ValueError):
         plan_sales_carousel(product_name="OUKU OK02", reference_assets=[])
+
+
+def test_hero_does_not_invent_product_benefits():
+    plan = plan_sales_carousel(
+        product_name="OUKU OK02",
+        reference_assets=[{"sha256": "a" * 64, "role": "hero"}],
+    )
+    assert plan["slides"][0]["headline"] == "OUKU OK02"
+    assert plan["verified_claims_input"] == []
+
+
+def test_storyboards_and_slides_do_not_share_mutable_assets_or_palette():
+    kwargs = {"product_name": "OUKU OK02", "reference_assets": [{"sha256": "a" * 64, "role": "hero"}]}
+    first = plan_sales_carousel(**kwargs)
+    second = plan_sales_carousel(**kwargs)
+    assert first == second
+    first["palette"]["obsidian"] = "changed"
+    first["slides"][0]["source_assets"][0]["role"] = "detail"
+    assert first["slides"][1]["source_assets"][0]["role"] == "hero"
+    assert kwargs["reference_assets"][0]["role"] == "hero"
+    assert plan_sales_carousel(**kwargs) == second
+
+
+@pytest.mark.parametrize("field,value", [
+    ("job_id", "another-job"), ("model", "openai/gpt-image-1.5"),
+    ("task", "premium_hero"), ("count", 2), ("max_cost_pollen", "0.31"),
+    ("product_reference_sha256", "c" * 64), ("storyboard_sha256", "d" * 64),
+])
+def test_each_intent_field_is_bound_to_approval(field, value):
+    from dataclasses import replace
+    original = intent()
+    changed = replace(original, **{field: value})
+    result = preflight(changed, available_quest_pollen="1", estimated_max_pollen="0.02",
+                       owner_approved_fingerprint=original.fingerprint(),
+                       approval_verified=True, atomic_claim_confirmed=True)
+    assert "VERIFIED_OWNER_APPROVAL_REQUIRED" in result["reasons"]
+    assert result["authorized_requests"] == 0
+
+
+@pytest.mark.parametrize("value", [True, None, "NaN", "Infinity", "-1", "invalid"])
+def test_invalid_budget_fails_closed(value):
+    from dataclasses import replace
+    with pytest.raises(GateError):
+        preflight(replace(intent(), max_cost_pollen=value), available_quest_pollen="1",
+                  estimated_max_pollen="0.02", owner_approved_fingerprint=None)
+
+
+@pytest.mark.parametrize("count", [0, 5, True, 1.5])
+def test_invalid_request_count_fails_closed(count):
+    with pytest.raises(GateError):
+        intent(count=count).validate()
