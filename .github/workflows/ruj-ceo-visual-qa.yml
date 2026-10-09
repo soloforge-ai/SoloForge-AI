@@ -5,16 +5,25 @@ on:
     paths:
       - '.github/workflows/ruj-ceo-visual-qa.yml'
       - '.github/scripts/ruj_ceo_expression_ab.py'
+      - '.github/scripts/ruj_ceo_ab_generate.py'
   workflow_dispatch:
     inputs:
       mode:
-        description: "prepare or generate four real Pollinations images (may incur cost)"
+        description: "prepare offline or generate two real A/B images (may incur cost)"
         required: true
         type: choice
         options:
           - prepare
           - generate
         default: prepare
+      variant:
+        description: "Choose A/B prompt used for creator + fitness generation"
+        required: true
+        type: choice
+        options:
+          - compact_b
+          - baseline_a
+        default: compact_b
 
 permissions:
   contents: read
@@ -109,16 +118,19 @@ jobs:
       - name: Verify composed prompts before any Pollinations calls
         if: ${{ inputs.mode == 'generate' }}
         run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_prompt_preflight.py
-      - name: Generate four actual images (cost-incurring, explicitly selected)
+      - name: Verify A/B baseline hashes before any Pollinations calls
+        if: ${{ inputs.mode == 'generate' }}
+        run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_expression_ab.py
+      - name: Generate only creator and fitness with selected A/B prompt (at most two paid calls)
         if: ${{ inputs.mode == 'generate' }}
         env:
           POLLINATIONS_QA_TOKEN: ${{ secrets.POLLINATIONS_QA_TOKEN }}
+          CEO_AB_VARIANT: ${{ inputs.variant }}
           POLLINATIONS_TIMEOUT_SECONDS: '180'
           POLLINATIONS_IMAGE_WIDTH: '1024'
           POLLINATIONS_IMAGE_HEIGHT: '1024'
         run: |
-          cp runner-source/.github/scripts/ruj_ceo_visual_qa.py ./ruj_ceo_visual_qa.py
-          PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python ruj_ceo_visual_qa.py
+          PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_ab_generate.py
       - name: Upload QA evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
