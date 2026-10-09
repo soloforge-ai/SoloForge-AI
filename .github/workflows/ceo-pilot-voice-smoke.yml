@@ -1,0 +1,53 @@
+name: CEO Pilot 001 Voice Smoke
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ceo-pilot-voice-smoke.yml'
+      - '.github/scripts/ceo_voice_smoke.py'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'prepare (no cost) or generate one Thai TTS sample (may incur cost)'
+        required: true
+        type: choice
+        options:
+          - prepare
+          - generate
+        default: prepare
+
+permissions:
+  contents: read
+
+jobs:
+  voice-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify runner compiles without API access
+        run: python -m py_compile .github/scripts/ceo_voice_smoke.py
+      - name: Prepare only (no API call)
+        if: ${{ github.event_name == 'pull_request' || inputs.mode == 'prepare' }}
+        env:
+          CEO_VOICE_SMOKE_MODE: prepare
+        run: python .github/scripts/ceo_voice_smoke.py
+      - name: Generate one CEO Thai sentence (paid/manual only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'generate' }}
+        env:
+          CEO_VOICE_SMOKE_MODE: generate
+          POLLINATIONS_QA_TOKEN: ${{ secrets.POLLINATIONS_QA_TOKEN }}
+        run: python .github/scripts/ceo_voice_smoke.py
+      - name: Upload evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ceo-voice-smoke-evidence
+          path: voice-smoke-evidence/
+          if-no-files-found: warn
+          retention-days: 7
