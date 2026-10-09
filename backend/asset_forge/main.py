@@ -167,6 +167,16 @@ NON-NEGOTIABLE CEO IDENTITY RULE:
 - If the reference image contains wings, remove them from the generated character while keeping the face, hair, glasses, outfit, and body proportions consistent.
 """ if request.character.strip().lower() == "ceo" else ""
 
+    ceo_expression_lock = """
+NON-NEGOTIABLE CEO FACIAL EXPRESSION LOCK:
+- Default facial expression: calm, composed, straight-faced, mouth closed, and subtly expressive.
+- For any smile, use only a tiny, subtle closed-mouth smile. NEVER show teeth or use an open-mouth smile, wide grin, or exaggerated laughing face.
+- When the CEO feels happy, pleased, affectionate, excited, or likes something, show a small closed-mouth smile with a soft natural pink blush on both cheeks.
+- When shy or bashful, use a gently lowered or sideways gaze, softly rosy cheeks, and a tiny closed-mouth smile.
+- Preserve the approved master face shape, facial proportions, hairstyle, and glasses in every expression.
+- These rules override scene or sticker-message requests for a toothy smile, open mouth, exaggerated grin, or dramatic facial distortion.
+""" if request.character.strip().lower() == "ceo" else ""
+
     return f"""
 Create a commercial-quality sticker sheet for the character {request.character}.
 Theme: {request.theme}.
@@ -175,6 +185,7 @@ Product: {request.product}.
 {reference_instruction}
 {color_instruction}
 {no_wings_rule}
+{ceo_expression_lock}
 
 STICKER MESSAGE INTENT:
 The app will add the exact Thai text later. Do NOT render text, letters, captions, speech bubbles, logos, or watermarks in the artwork.
