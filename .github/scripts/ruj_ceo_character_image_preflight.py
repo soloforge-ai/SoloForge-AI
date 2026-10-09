@@ -45,6 +45,18 @@ def main():
         prompt = make_prompt(source)
         outfit = "Black creator hoodie" if case == "creator" else "Appropriate sportswear"
         assert outfit in prompt
+        if case == "fitness":
+            footwear = (
+                "\nFITNESS FOOTWEAR OVERRIDE:\n"
+                "- Wear unmistakable athletic training sneakers with rubber sports soles and a sporty silhouette.\n"
+                "- Never wear formal leather dress shoes, oxfords, loafers, or business footwear in fitness mode.\n"
+                "- Keep the CEO's face, glasses, hair, proportions, clothing, and expression unchanged.\n"
+            )
+            prompt += footwear
+            assert "athletic training sneakers" in prompt
+            assert "Never wear formal leather dress shoes" in prompt
+        else:
+            assert "FITNESS FOOTWEAR OVERRIDE" not in prompt
         (ROOT / f"{case}-character-image-prompt.txt").write_text(prompt)
         out.append({"case": case, "source_sha256": source_hash,
                     "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest()})
