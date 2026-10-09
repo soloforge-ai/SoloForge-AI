@@ -47,10 +47,10 @@ def main():
         assert outfit in prompt
         if case == "fitness":
             footwear = (
-                "\\nFITNESS FOOTWEAR OVERRIDE:\\n"
-                "- Wear unmistakable athletic training sneakers with rubber sports soles and a sporty silhouette.\\n"
-                "- Never wear formal leather dress shoes, oxfords, loafers, or business footwear in fitness mode.\\n"
-                "- Keep the CEO's face, glasses, hair, proportions, clothing, and expression unchanged.\\n"
+                "\nFITNESS FOOTWEAR OVERRIDE:\n"
+                "- Wear unmistakable athletic training sneakers with rubber sports soles and a sporty silhouette.\n"
+                "- Never wear formal leather dress shoes, oxfords, loafers, or business footwear in fitness mode.\n"
+                "- Keep the CEO's face, glasses, hair, proportions, clothing, and expression unchanged.\n"
             )
             prompt += footwear
             assert "athletic training sneakers" in prompt
