@@ -6,6 +6,8 @@ on:
       - '.github/workflows/ruj-ceo-visual-qa.yml'
       - '.github/scripts/ruj_ceo_expression_ab.py'
       - '.github/scripts/ruj_ceo_ab_generate.py'
+      - '.github/scripts/ruj_ceo_character_image_preflight.py'
+      - '.github/scripts/ruj_ceo_single_image_generate.py'
   workflow_dispatch:
     inputs:
       mode:
@@ -16,6 +18,14 @@ on:
           - prepare
           - generate
         default: prepare
+      output_type:
+        description: "Character image (one CEO) or legacy sticker sheet"
+        required: true
+        type: choice
+        options:
+          - character_image
+          - sticker_sheet
+        default: character_image
       variant:
         description: "Choose A/B prompt used for creator + fitness generation"
         required: true
@@ -61,6 +71,8 @@ jobs:
         run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_prompt_preflight.py
       - name: Verify first-run baseline and compact facial A/B prompts offline
         run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_expression_ab.py
+      - name: Verify single-character prompts offline
+        run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_character_image_preflight.py
 
   ceo-visual-qa:
     if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -96,6 +108,7 @@ jobs:
           python -m pip install -r backend/asset_forge/requirements.txt
           PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_prompt_preflight.py
           PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_expression_ab.py
+          PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_character_image_preflight.py
       - name: Set up Python
         if: ${{ inputs.mode == 'generate' }}
         uses: actions/setup-python@v5
@@ -121,8 +134,19 @@ jobs:
       - name: Verify A/B baseline hashes before any Pollinations calls
         if: ${{ inputs.mode == 'generate' }}
         run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_expression_ab.py
-      - name: Generate only creator and fitness with selected A/B prompt (at most two paid calls)
-        if: ${{ inputs.mode == 'generate' }}
+      - name: Verify single-character prompts before generation
+        if: ${{ inputs.mode == 'generate' && inputs.output_type == 'character_image' }}
+        run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_character_image_preflight.py
+      - name: Generate creator and fitness single-character images (at most two calls)
+        if: ${{ inputs.mode == 'generate' && inputs.output_type == 'character_image' }}
+        env:
+          POLLINATIONS_QA_TOKEN: ${{ secrets.POLLINATIONS_QA_TOKEN }}
+          POLLINATIONS_TIMEOUT_SECONDS: '180'
+          POLLINATIONS_IMAGE_WIDTH: '1024'
+          POLLINATIONS_IMAGE_HEIGHT: '1024'
+        run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_single_image_generate.py
+      - name: Generate legacy sticker comparison (at most two calls)
+        if: ${{ inputs.mode == 'generate' && inputs.output_type == 'sticker_sheet' }}
         env:
           POLLINATIONS_QA_TOKEN: ${{ secrets.POLLINATIONS_QA_TOKEN }}
           CEO_AB_VARIANT: ${{ inputs.variant }}
