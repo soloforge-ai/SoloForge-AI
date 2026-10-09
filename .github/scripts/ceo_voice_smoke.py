@@ -12,7 +12,7 @@ from pathlib import Path
 
 TEXT = "งานเยอะจนไม่รู้จะเริ่มตรงไหน?"
 MODEL = "tts-1"
-VOICE = "onyx"
+VOICE = "echo"  # Younger-sounding candidate; not verified as teenage Thai voice
 URL = "https://gen.pollinations.ai/v1/audio/speech"
 
 
