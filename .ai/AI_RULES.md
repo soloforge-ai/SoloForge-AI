@@ -1,6 +1,6 @@
 # SoloForge AI Rules
 
-Version: v1.0.0
+Version: v1.1.0
 
 ---
 
@@ -96,13 +96,15 @@ Avoid unnecessary abstractions.
 
 ## File Modification
 
-Modify only the requested files.
+Modify only files necessary for the owner's approved task. The previous three-file stop condition is replaced with **scope-based authorization**, not unlimited write access.
 
-If more than three files need modification:
-
-- stop
-- explain why
-- request confirmation
+- Before editing, record allowed paths or path patterns, explicit exclusions, feature objective, risk classification, validation criteria, and permitted Git actions.
+- Small fixes (typically 1–5 files), standard features (typically 5–15 files), and larger cross-module changes are planning guides only, **not** automatic approvals or hard limits.
+- Once the owner approves the defined scope, the agent may modify the necessary number of files **inside that scope** without requesting approval after every three files.
+- If a required path is outside scope, or scope is missing or ambiguous, stop and request owner approval rather than infer authorization.
+- Security, authentication, payments/wallets, migrations, publishing, workers, provider spending, and production changes require explicit task-specific permission and heightened review.
+- Never merge or deploy under an ordinary autonomous coding approval; use a separate explicit owner decision. Prefer least-privilege credentials and do not assume instructions or a zero-approval PR rule provide access control.
+- Preserve working code and prohibit unrelated refactors.
 
 Never rewrite the project unless explicitly requested.
 
