@@ -170,7 +170,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
     final opened = await launchUrl(_pollinationsDashboard, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
       setState(() {
-        errorMessage = 'เปิด Pollinations dashboard ไม่สำเร็จ กรุณาเปิด enter.pollinations.ai ในเบราว์เซอร์';
+        errorMessage = 'Could not open the Pollinations dashboard. Please open enter.pollinations.ai in your browser.';
       });
     }
   }
@@ -197,7 +197,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
     final image = await recorder.endRecording().toImage(outputWidth, outputHeight);
     final data = await image.toByteData(format: ui.ImageByteFormat.png);
     image.dispose();
-    if (data == null) throw Exception('แปลงภาพ PNG ไม่สำเร็จ');
+    if (data == null) throw Exception('Could not convert image to PNG');
     return data.buffer.asUint8List();
   }
 
@@ -208,7 +208,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
     final data = await image.toByteData(format: ui.ImageByteFormat.png);
     image.dispose();
     codec.dispose();
-    if (data == null) throw Exception('แปลงภาพ PNG ไม่สำเร็จ');
+    if (data == null) throw Exception('Could not convert image to PNG');
     return data.buffer.asUint8List();
   }
 
@@ -348,7 +348,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
       await file.writeAsBytes(croppedStickerBytes[index], flush: true);
       await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
     } catch (error) {
-      if (mounted) setState(() => errorMessage = 'บันทึกสติกเกอร์ไม่สำเร็จ: $error');
+      if (mounted) setState(() => errorMessage = 'Could not save sticker: $error');
     } finally {
       if (mounted) setState(() => isSaving = false);
     }
@@ -371,7 +371,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
         ShareParams(files: [XFile(file.path)], title: 'SoloForge 4 Sticker Pack'),
       );
     } catch (error) {
-      if (mounted) setState(() => errorMessage = 'สร้าง ZIP ไม่สำเร็จ: $error');
+      if (mounted) setState(() => errorMessage = 'Could not create ZIP: $error');
     } finally {
       if (mounted) setState(() => isSaving = false);
     }
@@ -760,7 +760,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
                 maxLines: 3,
                 decoration: InputDecoration(
                   labelText: 'Sticker messages (optional)',
-                  hintText: 'เช่น สู้ ๆ นะ, ขอบคุณนะ, รักนะ',
+                  hintText: 'e.g. Keep going!, Thank you!, Love you!',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
@@ -1008,7 +1008,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
                           onPressed: isSaving ? null : _shareCroppedZip,
                           icon: const Icon(Icons.folder_zip),
                           label: Text(
-                            isSaving ? 'กำลังเตรียมไฟล์...' : 'Download fixed pack (.ZIP)',
+                            isSaving ? 'Preparing files...' : 'Download fixed pack (.ZIP)',
                           ),
                         ),
                       ],
