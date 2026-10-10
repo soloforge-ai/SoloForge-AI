@@ -144,7 +144,14 @@ def _assert_safe_public_https_url(value: str) -> None:
     host = parsed.hostname.strip().lower()
     if host == "localhost" or host.endswith(".local"):
         raise ProductGroundingError("Product image URL must use a public host")
-    if not _host_is_allowed(host):
+    configured_storage = urllib.parse.urlparse(os.getenv("SUPABASE_URL", ""))
+    trusted_product_reference = (
+        host == (configured_storage.hostname or "").lower()
+        and parsed.path.startswith(
+            "/storage/v1/object/public/content-assets/product-references/"
+        )
+    )
+    if not (_host_is_allowed(host) or trusted_product_reference):
         raise ProductGroundingError("Product image host is not allowlisted")
 
     try:

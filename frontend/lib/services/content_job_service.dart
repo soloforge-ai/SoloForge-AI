@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -527,6 +528,32 @@ class ContentJobService {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       _throwFor(response, 'Save draft');
+    }
+    return _decodeJob(response);
+  }
+
+  Future<ContentJob> uploadProductReferences(
+    String id, {
+    required String title,
+    required String affiliateUrl,
+    required List<Uint8List> images,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/v1/content-jobs/$id/product-references'),
+      headers: await _headers(json: true),
+      body: jsonEncode({
+        'canonical_title': title,
+        'affiliate_url': affiliateUrl,
+        'images': images.map((bytes) => {
+          'content_type': bytes.length >= 8 &&
+              bytes[0] == 0x89 && bytes[1] == 0x50
+              ? 'image/png' : 'image/jpeg',
+          'data_base64': base64Encode(bytes),
+        }).toList(),
+      }),
+    ).timeout(const Duration(seconds: 120));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Upload product references');
     }
     return _decodeJob(response);
   }

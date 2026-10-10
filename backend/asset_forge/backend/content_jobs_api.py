@@ -1,6 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import base64
+import binascii
+import io
+import os
+import uuid
+import urllib.request
+import urllib.error
+from PIL import Image
 import urllib.parse
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query
@@ -90,6 +98,17 @@ class ProductGroundingUpdate(BaseModel):
     price: str | float | int | None = None
     product_url: str | None = Field(default=None, max_length=4000)
     affiliate_url: str | None = Field(default=None, max_length=4000)
+
+
+class ProductReferenceImage(BaseModel):
+    content_type: str = Field(pattern=r"^image/(png|jpeg)$")
+    data_base64: str = Field(min_length=1, max_length=5_600_000)
+
+
+class ProductReferenceUpload(BaseModel):
+    canonical_title: str = Field(min_length=1, max_length=1000)
+    affiliate_url: str = Field(min_length=8, max_length=4000)
+    images: list[ProductReferenceImage] = Field(min_length=1, max_length=6)
 
 
 class ProductResolveRequest(BaseModel):
@@ -348,6 +367,124 @@ def resolve_product_for_job(
     )
 
 
+
+@router.post("/{job_id}/product-references")
+def upload_product_references(
+    job_id: str,
+    request: ProductReferenceUpload,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Store owner-supplied image references for draft-only product grounding."""
+    _require_session(authorization)
+    current = _get_row(job_id)
+    if current.get("status") not in {"BACKLOG", "READY_FOR_REVIEW"}:
+        raise HTTPException(status_code=409, detail="Product references require an editable draft")
+
+    # Validate every payload before creating storage objects.
+    decoded: list[tuple[bytes, str]] = []
+    for image in request.images:
+        try:
+            payload = base64.b64decode(image.data_base64, validate=True)
+        except (binascii.Error, ValueError) as exc:
+            raise HTTPException(status_code=400, detail="Invalid product reference image encoding") from exc
+        if not payload or len(payload) > 4 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Each product reference must be 1-4 MB")
+        try:
+            with Image.open(io.BytesIO(payload)) as decoded_image:
+                detected = decoded_image.format
+                decoded_image.verify()
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail="Invalid product reference image") from exc
+        extension = {"PNG": "png", "JPEG": "jpg"}.get(detected)
+        if extension is None or (image.content_type == "image/png") != (extension == "png"):
+            raise HTTPException(status_code=400, detail="Image type mismatch")
+        decoded.append((payload, image.content_type))
+
+    base_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
+    secret = os.environ.get("SUPABASE_SECRET_KEY", "")
+    if not base_url or not secret:
+        raise HTTPException(status_code=503, detail="Product image storage is not configured")
+    urls: list[str] = []
+    batch = uuid.uuid4().hex
+    for index, (payload, mime) in enumerate(decoded):
+        extension = "png" if mime == "image/png" else "jpg"
+        object_path = f"product-references/{job_id}/{batch}/{index}.{extension}"
+        encoded = urllib.parse.quote(object_path, safe="/")
+        storage_request = urllib.request.Request(
+            f"{base_url}/storage/v1/object/content-assets/{encoded}",
+            data=payload,
+            headers={
+                "apikey": secret,
+                "Authorization": f"Bearer {secret}",
+                "Content-Type": mime,
+                "x-upsert": "false",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(storage_request, timeout=45) as response:
+                response.read()
+        except (urllib.error.HTTPError, urllib.error.URLError, OSError, TimeoutError) as exc:
+            raise HTTPException(status_code=502, detail="Product reference storage failed") from exc
+        urls.append(f"{base_url}/storage/v1/object/public/content-assets/{encoded}")
+
+    # These URLs are for product grounding only. They are not render approval.
+    package = dict(current.get("content_package") or {})
+    package["product_grounding"] = {
+        "canonical_title": request.canonical_title.strip(),
+        "affiliate_url": request.affiliate_url.strip(),
+        "product_url": request.affiliate_url.strip(),
+        "image_urls": urls,
+        "source": "manual_upload",
+    }
+    try:
+        package["product_grounding"] = validate_product_grounding(package)
+    except ProductGroundingError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    package["product_grounding_status"] = "READY"
+    package["product_reference_review"] = "PENDING"
+    package.pop("product_resolution", None)
+    package.pop("product_grounding_error", None)
+    return _patch_job(
+        job_id,
+        {"content_package": package, "qa_status": "PENDING", "updated_at": _now()},
+    )
+
+
+class ProductReferenceReviewRequest(BaseModel):
+    product_identity_confirmed: bool
+    image_usage_rights_confirmed: bool
+
+
+@router.post("/{job_id}/product-references/review")
+def review_product_references(
+    job_id: str,
+    request: ProductReferenceReviewRequest,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Require owner attestation before manual references unlock approval."""
+    _require_session(authorization)
+    current = _get_row(job_id)
+    if current.get("status") not in {"BACKLOG", "READY_FOR_REVIEW"}:
+        raise HTTPException(status_code=409, detail="Job is no longer editable")
+    package = dict(current.get("content_package") or {})
+    if package.get("product_reference_review") != "PENDING":
+        raise HTTPException(status_code=409, detail="No pending reference review")
+    if not (request.product_identity_confirmed and request.image_usage_rights_confirmed):
+        raise HTTPException(status_code=400, detail="Confirm product identity and image usage rights")
+    package["product_reference_review"] = "APPROVED"
+    encoded = urllib.parse.quote(job_id, safe="")
+    rows = _supabase_request(
+        "PATCH",
+        f"content_jobs?id=eq.{encoded}&status=eq.{current['status']}",
+        body={"content_package": package, "qa_status": "PENDING", "updated_at": _now()},
+        prefer="return=representation",
+    ) or []
+    if not rows:
+        raise HTTPException(status_code=409, detail="Job changed during review")
+    return dict(rows[0])
+
+
 @router.patch("/{job_id}/product-grounding")
 def update_product_grounding(
     job_id: str,
@@ -449,6 +586,11 @@ def approve_content_job(
         )
 
     package = dict(current.get("content_package") or {})
+    if package.get("product_reference_review") == "PENDING":
+        raise HTTPException(
+            status_code=409,
+            detail="Manual product references must be reviewed before approval",
+        )
     if is_commercial_product_job(package):
         try:
             package["product_grounding"] = validate_product_grounding(package)

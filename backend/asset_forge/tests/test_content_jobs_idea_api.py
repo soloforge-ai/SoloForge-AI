@@ -570,3 +570,33 @@ def test_resolve_product_for_job_rejects_after_approval(monkeypatch) -> None:
         assert "before approval" in str(getattr(exc, "detail", "")).lower()
     else:
         raise AssertionError("approved job product resolution must be rejected")
+
+
+def test_manual_product_references_block_approval_until_review(monkeypatch):
+    import pytest
+    from fastapi import BackgroundTasks, HTTPException
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+    monkeypatch.setattr(content_jobs_api, "_get_row", lambda _id: {
+        "id": "draft", "status": "READY_FOR_REVIEW",
+        "content_package": {"goal": "conversion", "product_reference_review": "PENDING"},
+    })
+    with pytest.raises(HTTPException) as caught:
+        content_jobs_api.approve_content_job("draft", BackgroundTasks(), authorization=None)
+    assert caught.value.status_code == 409
+    assert "reviewed" in str(caught.value.detail)
+
+
+def test_manual_reference_review_requires_both_attestations(monkeypatch):
+    import pytest
+    from fastapi import HTTPException
+    monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
+    monkeypatch.setattr(content_jobs_api, "_get_row", lambda _id: {
+        "id": "draft", "status": "READY_FOR_REVIEW",
+        "content_package": {"product_reference_review": "PENDING"},
+    })
+    with pytest.raises(HTTPException) as caught:
+        content_jobs_api.review_product_references("draft",
+            content_jobs_api.ProductReferenceReviewRequest(
+                product_identity_confirmed=True, image_usage_rights_confirmed=False,
+            ), authorization=None)
+    assert caught.value.status_code == 400
