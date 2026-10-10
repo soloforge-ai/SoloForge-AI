@@ -1,6 +1,6 @@
 # SoloForge AI Rules
 
-Version: v1.1.0
+Version: v2.0.0
 
 ---
 
@@ -326,8 +326,8 @@ Never:
 
 Always:
 
-- Read AI_CONTEXT.md first.
-- Follow AI_TASK.md.
+- Follow the startup procedure and instruction precedence in `.ai/PROTOCOL.md`.
+- Use `.ai/AI_TASK.md` as context subordinate to the current sprint; execute only the owner's explicitly requested or approved task.
 - Follow this document.
 - Preserve project consistency.
 - Minimize changes.
