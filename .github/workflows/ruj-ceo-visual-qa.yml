@@ -1,0 +1,165 @@
+name: RUJ CEO Visual QA
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ruj-ceo-visual-qa.yml'
+      - '.github/scripts/ruj_ceo_expression_ab.py'
+      - '.github/scripts/ruj_ceo_ab_generate.py'
+      - '.github/scripts/ruj_ceo_character_image_preflight.py'
+      - '.github/scripts/ruj_ceo_single_image_generate.py'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "prepare offline or generate two real A/B images (may incur cost)"
+        required: true
+        type: choice
+        options:
+          - prepare
+          - generate
+        default: prepare
+      output_type:
+        description: "Character image (one CEO) or legacy sticker sheet"
+        required: true
+        type: choice
+        options:
+          - character_image
+          - sticker_sheet
+        default: character_image
+      variant:
+        description: "Choose A/B prompt used for creator + fitness generation"
+        required: true
+        type: choice
+        options:
+          - compact_b
+          - baseline_a
+        default: compact_b
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-import-smoke:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pinned PR 155 test implementation
+        uses: actions/checkout@v4
+        with:
+          ref: 4273b2357bc34fbb1874c09d48459847209ca42e
+          persist-credentials: false
+      - name: Checkout approved expression lock source
+        uses: actions/checkout@v4
+        with:
+          ref: ca48f5657274870981f5036d9929675b47962fdf
+          path: expression-source
+          persist-credentials: false
+      - name: Checkout QA preflight helper
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: qa-source
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install runtime dependencies
+        run: python -m pip install -r backend/asset_forge/requirements.txt
+      - name: Compose and verify four real prompts without API calls
+        run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_prompt_preflight.py
+      - name: Verify first-run baseline and compact facial A/B prompts offline
+        run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_expression_ab.py
+      - name: Verify single-character prompts offline
+        run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_character_image_preflight.py
+
+  ceo-visual-qa:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout pinned PR 155 test implementation
+        uses: actions/checkout@v4
+        with:
+          ref: 4273b2357bc34fbb1874c09d48459847209ca42e
+          persist-credentials: false
+      - name: Get QA runner from workflow branch
+        uses: actions/checkout@v4
+        with:
+          ref: 63e0b523f1c57157259b421f1161c3c37a2622e8
+          path: runner-source
+          persist-credentials: false
+      - name: Checkout approved expression lock source
+        uses: actions/checkout@v4
+        with:
+          ref: ca48f5657274870981f5036d9929675b47962fdf
+          path: expression-source
+          persist-credentials: false
+      - name: Checkout QA preflight helper
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: qa-source
+          persist-credentials: false
+      - name: Prepare four verified prompts without API access
+        if: ${{ inputs.mode == 'prepare' }}
+        run: |
+          python -m pip install -r backend/asset_forge/requirements.txt
+          PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_prompt_preflight.py
+          PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_expression_ab.py
+          PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_character_image_preflight.py
+      - name: Set up Python
+        if: ${{ inputs.mode == 'generate' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install image-generation dependencies
+        if: ${{ inputs.mode == 'generate' }}
+        run: python -m pip install -r backend/asset_forge/requirements.txt
+      - name: Verify runner syntax without API calls
+        if: ${{ inputs.mode == 'generate' }}
+        run: python -m py_compile runner-source/.github/scripts/ruj_ceo_visual_qa.py
+      - name: Verify runtime imports without API calls
+        if: ${{ inputs.mode == 'generate' }}
+        run: |
+          PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python - <<'PY'
+          from backend.asset_forge import runtime
+          assert runtime.asset_forge_main is not None
+          print("Runtime import smoke test passed; no Pollinations API calls")
+          PY
+      - name: Verify composed prompts before any Pollinations calls
+        if: ${{ inputs.mode == 'generate' }}
+        run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_prompt_preflight.py
+      - name: Verify A/B baseline hashes before any Pollinations calls
+        if: ${{ inputs.mode == 'generate' }}
+        run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_expression_ab.py
+      - name: Verify single-character prompts before generation
+        if: ${{ inputs.mode == 'generate' && inputs.output_type == 'character_image' }}
+        run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_character_image_preflight.py
+      - name: Generate creator and fitness single-character images (at most two calls)
+        if: ${{ inputs.mode == 'generate' && inputs.output_type == 'character_image' }}
+        env:
+          POLLINATIONS_QA_TOKEN: ${{ secrets.POLLINATIONS_QA_TOKEN }}
+          POLLINATIONS_TIMEOUT_SECONDS: '180'
+          POLLINATIONS_IMAGE_WIDTH: '1024'
+          POLLINATIONS_IMAGE_HEIGHT: '1024'
+        run: PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_single_image_generate.py
+      - name: Generate legacy sticker comparison (at most two calls)
+        if: ${{ inputs.mode == 'generate' && inputs.output_type == 'sticker_sheet' }}
+        env:
+          POLLINATIONS_QA_TOKEN: ${{ secrets.POLLINATIONS_QA_TOKEN }}
+          CEO_AB_VARIANT: ${{ inputs.variant }}
+          POLLINATIONS_TIMEOUT_SECONDS: '180'
+          POLLINATIONS_IMAGE_WIDTH: '1024'
+          POLLINATIONS_IMAGE_HEIGHT: '1024'
+        run: |
+          PYTHONPATH="$PWD:$PWD/backend:$PWD/backend/asset_forge" python qa-source/.github/scripts/ruj_ceo_ab_generate.py
+      - name: Upload QA evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruj-ceo-visual-qa-evidence
+          path: visual-qa-artifacts/
+          if-no-files-found: warn
+          retention-days: 14

@@ -60,7 +60,7 @@
     "never_change_face": true,
     "never_remove_glasses": true,
     "never_change_hair": true,
-    "never_change_outfit_colors": false,
+    "never_change_outfit_colors": true,
     "maintain_chibi_proportion": true
   },
   "references": {
@@ -76,15 +76,15 @@
     "icon": "references/icon.png"
   },
   "prompt": {
-    "base": "Official SoloForge AI CEO mascot. Premium 3D chibi male. Large black glasses. Default outfit: white luxury suit, black shirt, red tie. Preserve identical face, hair, glasses, proportions in every image. Outfit may change only when an approved contextual wardrobe variant is requested.",
-    "negative": "different face, different hairstyle, missing glasses, unapproved outfit, beard, mustache, realistic human, anime, low quality, watermark, text, logo"
+    "base": "Official SoloForge AI CEO mascot. Premium 3D chibi male. Large black glasses. Default outfit: white luxury suit, black shirt, red tie. Preserve identical face, hairstyle, black glasses, proportions and calm closed-mouth expressions. Clothing may vary only for an explicitly approved request-scoped wardrobe variant.",
+    "negative": "different face, gender swap, different hairstyle, missing glasses, unapproved outfit, beard, mustache, realistic human, anime, wings, halo, wide open-mouth grin, visible teeth, low quality, watermark, text, logo"
   },
   "wardrobe_policy": {
-    "default_variant": "canon_white",
-    "selection": "contextual_by_request",
+    "default_variant": "default",
+    "selection": "explicit_request_only",
     "identity_must_remain_locked": true,
     "approved_variants": [
-      "canon_white",
+      "default",
       "creator",
       "fitness",
       "casual",
@@ -92,7 +92,7 @@
     ],
     "campaign_overrides": {
       "manifest_glow_lab": {
-        "variant": "canon_white",
+        "variant": "default",
         "lock_outfit_colors": true
       }
     }
