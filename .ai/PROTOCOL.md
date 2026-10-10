@@ -1,6 +1,6 @@
 # SoloForge AI Development Protocol
 
-Version: v1.1.0
+Version: v2.0.0
 
 ---
 
@@ -50,92 +50,38 @@ Final decisions always belong to the project owner.
 
 # Startup Procedure
 
-Before performing any task, follow this sequence.
+Before performing any task:
 
-Step 1
-
-Read
-
-AI_CONTEXT.md
-
-↓
-
-Step 2
-
-Read
-
-AI_RULES.md
-
-↓
-
-Step 3
-
-Read
-
-AI_TASK.md
-
-↓
-
-Step 4
-
-Understand the user's request
-
-↓
-
-Step 5
-
-Identify affected files
-
-↓
-
-Step 6
-
-Implement the smallest possible change
-
-↓
-
-Step 7
-
-Explain the changes
-
+1. Read `.ai/AI_CONTEXT.md` for context.
+2. Read this protocol and `.ai/AI_RULES.md` for authorization and execution rules.
+3. Read `docs/CURRENT_SPRINT.md`, then `.ai/AI_TASK.md`. Read `docs/ROADMAP.md` when sequencing or longer-term direction is relevant.
+4. Apply the Priority Order below; reading order does not determine precedence.
+5. Identify the owner's requested task, affected files, exclusions, validation criteria, and permitted Git actions. Do not select a historical task automatically.
+6. If explicitly authorized to write, implement the smallest change inside the approved scope. Otherwise remain read-only.
+7. Report findings or changes, validation evidence, blockers, and the next safe action.
 ---
 
 # Priority Order
 
-When multiple instructions exist, follow this priority.
+This section defines the authoritative repository instruction precedence:
 
-Highest Priority
+1. Explicit owner instructions and task-specific authorization.
+2. `.ai/PROTOCOL.md`.
+3. `.ai/AI_RULES.md`.
+4. `docs/CURRENT_SPRINT.md`.
+5. `docs/ROADMAP.md`.
+6. `.ai/AI_CONTEXT.md`.
+7. `.ai/AI_TASK.md`.
+8. Other documentation, role prompts, and task records.
+9. Existing source code and scanner-generated observations as evidence.
 
-1. User Request
+The protocol and rules govern authorization and execution. The sprint and roadmap govern current product intent ahead of AI summaries. Other precedence lists must be interpreted consistently with this section.
 
-↓
+All non-conflicting constraints remain applicable. A lower-priority document cannot expand approved scope or authorize Git actions, production access, publishing, worker enablement, or live provider/billable calls. General coding approval does not waive these restrictions; exceptions require explicit authorization for the specific action.
 
-2. PROTOCOL.md
-
-↓
-
-3. AI_RULES.md
-
-↓
-
-4. AI_CONTEXT.md
-
-↓
-
-5. AI_TASK.md
-
-↓
-
-6. Human Documentation
-
-↓
-
-7. Existing Source Code
-
-If conflicts occur, always follow the higher priority.
+Execute only the task explicitly requested or approved by the owner. Historical task records, roadmap milestones, and task-board entries are context, not standing authorization. Treat entries that conflict with the current sprint as superseded; report the discrepancy without executing or rewriting them. If the requested task or authorization remains ambiguous, stay read-only and ask the owner.
 
 Never invent missing rules.
-
 ---
 
 # Development Workflow
