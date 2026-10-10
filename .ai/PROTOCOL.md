@@ -1,6 +1,6 @@
 # SoloForge AI Development Protocol
 
-Version: v1.0.0
+Version: v1.1.0
 
 ---
 
@@ -182,13 +182,17 @@ Avoid formatting-only commits.
 
 Avoid unnecessary refactoring.
 
-If changing more than three files:
+For an owner-approved task, use a **task-scoped change authorization** instead of a fixed three-file limit. Before writing, record the objective, approved paths/globs, exclusions, risk level, test plan, and allowed Git actions. There is no automatic permission to edit all files: only the smallest necessary set inside the approved scope may change. If the task has no explicit write authorization, remain read-only. Stop and ask before touching paths outside scope, changing architecture, accessing production resources, or performing irreversible actions. See `.ai/AI_RULES.md`.
 
-Stop.
+---
 
-Explain why.
+# Autonomous Execution and Recovery Contract
 
-Request confirmation.
+An autonomous task is allowed only when explicitly approved by the owner. Verify the current `main` SHA and repository state before creating a feature branch. Implement only within the approved task scope; never commit to `main`. Draft PR creation is permitted only when included in that task's authorized Git actions. Never merge, deploy, modify production databases, enable workers, or trigger live provider/billable side effects without a separate explicit authorization.
+
+Work in recoverable checkpoints: record base SHA, branch, latest commit SHA (when any), allowed changed paths, completed and pending steps, test commands/results, known blockers, and next safe action. An interrupted task must inspect its actual state before resuming; do not re-run ambiguous external side effects or assume prior steps succeeded.
+
+Before delivery, report PASS / FAIL / BLOCKED per check and distinguish tests run locally, CI results, and tests not run. Include changed paths, risk notes, and Draft PR URL if created. A successful commit is not proof of functional correctness. Require human review for advancing to merge or production.
 
 ---
 
