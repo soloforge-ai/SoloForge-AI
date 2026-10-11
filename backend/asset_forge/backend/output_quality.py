@@ -301,6 +301,8 @@ def process_sheet(
     request: AssetForgeRequestLike,
 ) -> tuple[list[tuple[str, bytes]], bytes]:
     """Split, matte, defringe, and standardize a generated sticker sheet."""
+    if getattr(request, "generation_layout", "sticker_sheet") == "single_character":
+        return process_single_image(source_bytes, request)
     columns, rows = _grid(request.quantity)
     source = Image.open(io.BytesIO(source_bytes)).convert("RGBA")
     cell_width = source.width // columns
@@ -334,3 +336,11 @@ def process_sheet(
         files.append((filename, output.getvalue()))
 
     return files, source_bytes
+
+
+def process_single_image(source_bytes: bytes, request: AssetForgeRequestLike) -> tuple[list[tuple[str, bytes]], bytes]:
+    """Keep the entire native composition, including dimensions and background."""
+    with Image.open(io.BytesIO(source_bytes)) as source:
+        output = io.BytesIO()
+        source.convert("RGBA").save(output, format="PNG", optimize=True)
+    return [("01_ceo_single.png", output.getvalue())], source_bytes
