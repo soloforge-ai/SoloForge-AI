@@ -274,13 +274,32 @@ def test_oauth_transaction_survives_transient_exchange_failure(monkeypatch):
         assert state in router_module._transactions
 
 
-def test_asset_generation_uses_local_fallback_without_pollinations_session(monkeypatch):
+def test_ceo_missing_master_fails_closed_without_pollinations_session(monkeypatch):
     monkeypatch.setattr(asset_forge_main, "_load_character_reference", lambda _: None)
     client = TestClient(asset_forge_app)
     response = client.post(
         "/v1/asset-forge/generate",
         json={
             "character": "CEO",
+            "product": "Sticker",
+            "theme": "Healing & Encouragement",
+            "style": "Cute 3D Chibi",
+            "quantity": 4,
+            "messages": [],
+        },
+    )
+
+    assert response.status_code == 409
+    assert "master reference is missing" in response.json()["detail"]
+
+
+def test_noncanonical_character_uses_local_fallback_without_pollinations_session(monkeypatch):
+    monkeypatch.setattr(asset_forge_main, "_load_character_reference", lambda _: None)
+    client = TestClient(asset_forge_app)
+    response = client.post(
+        "/v1/asset-forge/generate",
+        json={
+            "character": "Cat",
             "product": "Sticker",
             "theme": "Healing & Encouragement",
             "style": "Cute 3D Chibi",

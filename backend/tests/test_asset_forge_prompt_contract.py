@@ -47,3 +47,47 @@ def test_ceo_expression_lock_does_not_change_other_characters() -> None:
     request = AssetForgeRequest(character="Cat", quantity=4)
     prompt = _build_prompt(request, columns=2, rows=2, has_reference=True)
     assert "NON-NEGOTIABLE CEO FACIAL EXPRESSION LOCK" not in prompt
+
+
+def test_ceo_default_wardrobe_preserves_canon_prompt() -> None:
+    request = AssetForgeRequest(character="CEO", quantity=4)
+    prompt = _build_prompt(request, columns=2, rows=2, has_reference=True)
+    assert "APPROVED CONTEXTUAL WARDROBE OVERRIDE" not in prompt
+    assert "skin tone, costume, proportions" in prompt
+    assert "NON-NEGOTIABLE CEO FACIAL EXPRESSION LOCK" in prompt
+
+
+def test_ceo_fitness_wardrobe_preserves_identity_expression_rules() -> None:
+    request = AssetForgeRequest(character="CEO", wardrobe_variant="fitness", quantity=4)
+    prompt = _build_prompt(request, columns=2, rows=2, has_reference=True)
+    assert "Appropriate sportswear and athletic shoes" in prompt
+    assert "skin tone, costume, proportions" not in prompt
+    assert "large black glasses" in prompt
+    assert "NON-NEGOTIABLE CEO FACIAL EXPRESSION LOCK" in prompt
+    assert "NEVER show teeth" in prompt
+
+
+def test_unapproved_wardrobe_is_rejected() -> None:
+    import pytest
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError):
+        AssetForgeRequest(character="CEO", wardrobe_variant="spacesuit")
+
+
+def test_non_ceo_wardrobe_ignored() -> None:
+    request = AssetForgeRequest(character="Cat", wardrobe_variant="creator", quantity=4)
+    prompt = _build_prompt(request, columns=2, rows=2, has_reference=True)
+    assert "APPROVED CONTEXTUAL WARDROBE OVERRIDE" not in prompt
+
+
+def test_manifest_campaign_keeps_canonical_outfit() -> None:
+    request = AssetForgeRequest(character="CEO", wardrobe_variant="creator", campaign_id="manifest_glow_lab", quantity=4)
+    prompt = _build_prompt(request, columns=2, rows=2, has_reference=True)
+    assert "MANIFEST GLOW LAB" in prompt
+    assert "APPROVED CONTEXTUAL WARDROBE OVERRIDE" not in prompt
+
+
+def test_other_campaign_allows_creator_variant() -> None:
+    request = AssetForgeRequest(character="CEO", wardrobe_variant="creator", campaign_id="other", quantity=4)
+    prompt = _build_prompt(request, columns=2, rows=2, has_reference=True)
+    assert "Black creator hoodie" in prompt

@@ -5,6 +5,7 @@ import base64
 import io
 import json
 import math
+import hashlib
 import os
 import urllib.error
 import urllib.parse
@@ -12,12 +13,12 @@ import urllib.request
 import uuid
 import zipfile
 from pathlib import Path
-from typing import List
+from typing import List, Literal
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from PIL import Image, ImageDraw, ImageOps
 
 from backend.pollinations_oauth_router import (
@@ -26,6 +27,7 @@ from backend.pollinations_oauth_router import (
 )
 from backend.soloforge_session import require_soloforge_session, router as soloforge_session_router
 from backend.branding import stamp_image_bytes
+from backend.output_quality import process_single_image
 from backend.combined_telegram_webhook import router as idea_flow_webhook_router
 from backend.content_generation import content_worker_loop
 from backend.content_router import content_router_loop
@@ -71,14 +73,53 @@ _SUPPORTED_CHARACTER_COLORS = frozenset(
     {"blue", "black", "white", "pink", "red", "green", "purple", "yellow"}
 )
 
+CEO_MASTER_SHA256 = "93b23ba19273940bb00aca822565ce2e8fde50ba8c45a3ff55b2423e3db5d598"
+CEO_OUTFITS = {
+    "default": "Canonical white/cream luxury suit, black shirt and red tie",
+    "creator": "Black creator hoodie or practical dark techwear",
+    "fitness": "Appropriate sportswear and athletic shoes",
+    "casual": "Comfortable everyday casual outfit",
+    "formal_black": "Elegant black formal suit",
+}
+
 
 class AssetForgeRequest(BaseModel):
     character: str = Field(default="CEO", min_length=1, max_length=80)
     product: str = Field(default="Sticker", min_length=1, max_length=80)
     theme: str = Field(default="Healing & Encouragement", min_length=1, max_length=120)
     style: str = Field(default="Cute 3D Chibi", min_length=1, max_length=120)
-    quantity: int = Field(default=12, ge=4, le=24)
+    quantity: int = Field(default=12, ge=1, le=24)
     messages: List[str] = Field(default_factory=list, max_length=24)
+    wardrobe_variant: Literal["default", "creator", "fitness", "casual", "formal_black"] = "default"
+    campaign_id: str | None = Field(default=None, max_length=120)
+    generation_layout: Literal["sticker_sheet", "single_character"] = "sticker_sheet"
+    pose_intent: Literal["presenting", "pointing", "thinking", "standing"] | None = None
+    expression: Literal["calm", "subtle_smile", "thoughtful"] | None = None
+    framing: Literal["full_figure", "waist_up"] = "full_figure"
+
+    @model_validator(mode="after")
+    def validate_generation_layout(self):
+        if self.generation_layout == "sticker_sheet":
+            if self.quantity < 4:
+                raise ValueError("Sticker sheets require quantity 4–24")
+            if self.pose_intent is not None or self.expression is not None:
+                raise ValueError("Single pose/expression fields require single_character mode")
+        else:
+            if self.character.strip().lower() != "ceo" or self.quantity != 1:
+                raise ValueError("single_character requires CEO and quantity=1")
+            if self.pose_intent is None or self.expression is None:
+                raise ValueError("Exactly one pose_intent and expression are required")
+            if self.messages:
+                raise ValueError("Single-character mode rejects messages; use pose_intent and expression")
+            compatible = {
+                "presenting": {"calm", "subtle_smile"},
+                "pointing": {"calm", "subtle_smile"},
+                "thinking": {"calm", "thoughtful"},
+                "standing": {"calm", "subtle_smile"},
+            }
+            if self.expression not in compatible[self.pose_intent]:
+                raise ValueError("Expression is incompatible with the selected pose")
+        return self
 
 
 class AssetForgeResponse(BaseModel):
@@ -87,6 +128,8 @@ class AssetForgeResponse(BaseModel):
     zip_base64: str
     source_image_base64: str
     generation_mode: str
+    generation_layout: Literal["sticker_sheet", "single_character"] = "sticker_sheet"
+    output_manifest: dict = Field(default_factory=dict)
 
 
 def _grid(quantity: int) -> tuple[int, int]:
@@ -131,6 +174,8 @@ def _load_character_reference(character: str) -> bytes | None:
 
 
 def _build_prompt(request: AssetForgeRequest, columns: int, rows: int, has_reference: bool) -> str:
+    if request.generation_layout == "single_character":
+        return _build_single_character_prompt(request, has_reference)
     requested_color = _requested_character_color(request.character)
     color_instruction = f"""
 NON-NEGOTIABLE COLOR OVERRIDE:
@@ -167,6 +212,38 @@ NON-NEGOTIABLE CEO IDENTITY RULE:
 - If the reference image contains wings, remove them from the generated character while keeping the face, hair, glasses, outfit, and body proportions consistent.
 """ if request.character.strip().lower() == "ceo" else ""
 
+    campaign_locked = (
+        request.character.strip().lower() == "ceo"
+        and (request.campaign_id or "").strip().lower() == "manifest_glow_lab"
+    )
+    wardrobe_instruction = ""
+    if campaign_locked:
+        wardrobe_instruction = (
+            "MANIFEST GLOW LAB: Keep the canonical white/cream luxury suit, "
+            "dark shirt and red tie. Ignore contextual wardrobe overrides."
+        )
+    elif request.character.strip().lower() == "ceo" and request.wardrobe_variant != "default":
+        approved_outfits = CEO_OUTFITS
+        wardrobe_instruction = f"""
+APPROVED CONTEXTUAL WARDROBE OVERRIDE:
+- Outfit: {approved_outfits[request.wardrobe_variant]}.
+- Clothing-only variation: preserve the approved face, eye appearance, hair, large black glasses, skin tone, and 3D chibi proportions.
+- Default white suit is not mandatory only for this approved variant.
+- Never alter gender presentation, identity, or add wings/halo.
+"""
+        if has_reference:
+            reference_instruction = reference_instruction.replace(
+                "skin tone, costume, proportions, and signature accessories",
+                "skin tone, proportions, and identity-defining accessories",
+            ).replace(
+                "Only change pose, facial expression, and gesture as needed for the sticker pack.",
+                "Only change approved outfit, pose, facial expression, and gesture as needed for the sticker pack.",
+            )
+        no_wings_rule = no_wings_rule.replace(
+            "face, hair, glasses, outfit, and body proportions",
+            "face, hair, glasses, and body proportions",
+        )
+
     ceo_expression_lock = """
 NON-NEGOTIABLE CEO FACIAL EXPRESSION LOCK:
 - Default facial expression: calm, composed, straight-faced, mouth closed, and subtly expressive.
@@ -185,6 +262,7 @@ Product: {request.product}.
 {reference_instruction}
 {color_instruction}
 {no_wings_rule}
+{wardrobe_instruction}
 {ceo_expression_lock}
 
 STICKER MESSAGE INTENT:
@@ -205,6 +283,44 @@ IMPORTANT LAYOUT:
 
 Character direction: {request.character} should look cute, friendly, polished and suitable for a commercial digital sticker pack.
 """.strip()
+
+
+def _build_single_character_prompt(request: AssetForgeRequest, has_reference: bool) -> str:
+    if not has_reference:
+        raise ValueError("Single CEO generation requires the approved master reference")
+    poses = {
+        "presenting": "One presenting gesture with an open hand, holding no object",
+        "pointing": "One pointing gesture with one hand",
+        "thinking": "One thinking pose with one hand gently near the chin",
+        "standing": "One composed standing pose with relaxed arms",
+    }
+    expressions = {
+        "calm": "One calm, composed, closed-mouth expression",
+        "subtle_smile": "One tiny subtle closed-mouth smile with a soft natural pink blush",
+        "thoughtful": "One calm thoughtful expression with a softly lowered gaze and closed mouth",
+    }
+    campaign_locked = (request.campaign_id or "").strip().lower() == "manifest_glow_lab"
+    wardrobe = CEO_OUTFITS["default" if campaign_locked else request.wardrobe_variant]
+    campaign = "MANIFEST GLOW LAB: canonical white suit overrides all wardrobe variants." if campaign_locked else ""
+    framing = (
+        "Full figure from hair to shoes, completely visible, with generous margin around all limbs; no unintended clipping."
+        if request.framing == "full_figure" else
+        "One waist-up portrait; keep the entire head and requested gesture visible with generous margins."
+    )
+    return f"""Create exactly one CEO character in exactly one image.
+Exactly one pose and exactly one expression. One male premium polished 3D chibi mascot only.
+POSE: {poses[request.pose_intent]}
+EXPRESSION: {expressions[request.expression]}
+Preserve the attached approved master face, eyes, warm skin tone, black hairstyle, large black glasses and head/body proportions.
+Glasses are mandatory. No identity replacement, gender swap, beard or mustache.
+Calm closed-mouth facial expression lock: NEVER show teeth, open mouth, exaggerated smile or wide grin.
+WARDROBE: {wardrobe}. Clothing-only variation; retain all identity features.
+{campaign}
+COMPOSITION: {framing} One centered subject, square composition, simple light background.
+Premium studio lighting, clean polished 3D rendering, sharp facial details and commercial-quality finish.
+No duplicate or multiple character instances, grids, panels, collages, character sheets or alternate poses.
+No wings, halo, extra characters, text, letters, logos, watermarks or extra objects.
+The selected pose and expression are the sole intent; do not invent additional actions or emotions.""".strip()
 
 
 def _prepare_reference(reference_bytes: bytes) -> bytes:
@@ -519,6 +635,8 @@ def _remove_simple_background(
 
 
 def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[list[tuple[str, bytes]], bytes]:
+    if request.generation_layout == "single_character":
+        return _process_single_image(source_bytes, request)
     columns, rows = _grid(request.quantity)
     source = Image.open(io.BytesIO(source_bytes)).convert("RGBA")
     cell_width = source.width // columns
@@ -558,13 +676,45 @@ def _process_sheet(source_bytes: bytes, request: AssetForgeRequest) -> tuple[lis
     return files, source_bytes
 
 
+def _process_single_image(source_bytes: bytes, request: AssetForgeRequest) -> tuple[list[tuple[str, bytes]], bytes]:
+    """Preserve the complete provider composition; no grid, matte, branding or resizing."""
+    return process_single_image(source_bytes, request)
+
+
+def _output_manifest(request: AssetForgeRequest, files: list[tuple[str, bytes]], source_bytes: bytes,
+                     reference_bytes: bytes | None, generation_mode: str) -> dict:
+    return {
+        "schema_version": 1,
+        "generation_layout": request.generation_layout,
+        "generation_mode": generation_mode,
+        "character": request.character,
+        "quantity": request.quantity,
+        "pose_intent": request.pose_intent,
+        "expression": request.expression,
+        "framing": request.framing,
+        "wardrobe_variant": request.wardrobe_variant,
+        "effective_wardrobe": "default" if (request.campaign_id or "").strip().lower() == "manifest_glow_lab" and request.character.strip().lower() == "ceo" else request.wardrobe_variant,
+        "campaign_id": request.campaign_id,
+        "reference_sha256": hashlib.sha256(reference_bytes).hexdigest() if reference_bytes else None,
+        "source_sha256": hashlib.sha256(source_bytes).hexdigest(),
+        "raw_source_path": "raw/provider_image.bin" if request.generation_layout == "single_character" else None,
+        "files": [{"path": name, "sha256": hashlib.sha256(data).hexdigest(), "media_type": "image/png"} for name, data in files],
+    }
+
+
+def _pack_name(request: AssetForgeRequest) -> str:
+    suffix = "single" if request.generation_layout == "single_character" else f"{request.quantity}pack"
+    return f"{request.character}_{request.product}_{suffix}".replace(" ", "_")
+
+
 def _zip_files(
     files: list[tuple[str, bytes]],
     request: AssetForgeRequest,
     source_bytes: bytes,
+    manifest: dict | None = None,
 ) -> bytes:
     """Package processed stickers together with the original generated master sheet."""
-    pack_name = f"{request.character}_{request.product}_{request.quantity}pack".replace(" ", "_")
+    pack_name = _pack_name(request)
     output = io.BytesIO()
 
     with Image.open(io.BytesIO(source_bytes)) as source_image:
@@ -573,7 +723,12 @@ def _zip_files(
         master_png = master_output.getvalue()
 
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr(f"{pack_name}/master/original_sheet.png", master_png)
+        source_name = "original_image.png" if request.generation_layout == "single_character" else "original_sheet.png"
+        archive.writestr(f"{pack_name}/master/{source_name}", master_png)
+        if request.generation_layout == "single_character":
+            archive.writestr(f"{pack_name}/raw/provider_image.bin", source_bytes)
+        if manifest is not None:
+            archive.writestr(f"{pack_name}/manifest.json", json.dumps(manifest, ensure_ascii=False))
         for filename, data in files:
             archive.writestr(f"{pack_name}/{filename}", data)
     return output.getvalue()
@@ -627,25 +782,33 @@ def generate_asset_pack(
     authorization: str | None = Header(default=None),
 ) -> AssetForgeResponse:
     access_token = get_pollinations_access_token_from_authorization(authorization)
+    single = request.generation_layout == "single_character"
+    if single and not access_token:
+        raise HTTPException(status_code=401, detail="Connect Pollinations before single-character generation")
 
     try:
         reference_bytes = _load_character_reference(request.character)
-        if _character_key(request.character) == "pearli" and reference_bytes is None:
+        if _character_key(request.character) in {"pearli", "ceo"} and reference_bytes is None:
             raise HTTPException(
                 status_code=409,
-                detail="Pearli master reference is missing from the SoloForge character library.",
+                detail="Approved character master reference is missing from the SoloForge character library.",
             )
 
-        columns, rows = _grid(request.quantity)
+        if single and hashlib.sha256(reference_bytes).hexdigest() != CEO_MASTER_SHA256:
+            raise HTTPException(status_code=409, detail="CEO master reference hash does not match the approved master")
+        columns, rows = (1, 1) if single else _grid(request.quantity)
         prompt = _build_prompt(request, columns, rows, reference_bytes is not None)
 
         generation_mode = "local_fallback"
         if access_token:
             try:
                 source_bytes = _generate_sheet(prompt, reference_bytes, access_token)
-                source_bytes, _ = stamp_image_bytes(source_bytes)
+                if not single:
+                    source_bytes, _ = stamp_image_bytes(source_bytes)
                 generation_mode = "pollinations"
             except HTTPException as exc:
+                if single:
+                    raise HTTPException(status_code=exc.status_code, detail="Single-image provider result failed or is ambiguous. Do not automatically retry.") from exc
                 print(
                     "asset_forge_pollinations_fallback",
                     {
@@ -658,15 +821,18 @@ def generate_asset_pack(
             source_bytes = _generate_local_fallback_sheet(request, reference_bytes)
 
         files, source_bytes = _process_sheet(source_bytes, request)
-        zip_bytes = _zip_files(files, request, source_bytes)
+        manifest = _output_manifest(request, files, source_bytes, reference_bytes, generation_mode)
+        zip_bytes = _zip_files(files, request, source_bytes, manifest)
 
-        pack_name = f"{request.character}_{request.product}_{request.quantity}pack".replace(" ", "_")
+        pack_name = _pack_name(request)
         return AssetForgeResponse(
             asset_pack_name=pack_name,
             files=[name for name, _ in files],
             zip_base64=base64.b64encode(zip_bytes).decode("ascii"),
             source_image_base64=base64.b64encode(source_bytes).decode("ascii"),
             generation_mode=generation_mode,
+            generation_layout=request.generation_layout,
+            output_manifest=manifest,
         )
     except HTTPException:
         raise

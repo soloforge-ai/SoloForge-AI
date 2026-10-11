@@ -13,6 +13,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/asset_forge_character_config.dart';
+import '../models/asset_forge_generation_config.dart';
 import '../services/pollinations_session_service.dart';
 
 class AssetForgePage extends StatefulWidget {
@@ -32,7 +33,28 @@ class _AssetForgePageState extends State<AssetForgePage> {
   String primaryColor = 'Blue';
   String product = 'Sticker';
   String theme = 'Healing & Encouragement';
-  int quantity = 4;
+  String generationLayout = 'sticker_sheet';
+  String poseIntent = 'presenting';
+  String expression = 'calm';
+  String wardrobeVariant = 'default';
+  String campaign = 'none';
+  AssetForgeGenerationConfig get generationConfig => AssetForgeGenerationConfig(
+        layout: generationLayout, pose: poseIntent, expression: expression,
+        wardrobe: wardrobeVariant, campaign: campaign == 'none' ? null : campaign,
+      );
+  bool get singleCharacter => generationConfig.isSingle;
+  int get quantity => generationConfig.quantity;
+
+  void _clearOutput() {
+    generatedFiles = const [];
+    zipBase64 = null;
+    previewBytes = null;
+    quickReviewBytes = const [];
+    cleanedSheetBytes = null;
+    croppedStickerBytes = const [];
+    status = 'Ready';
+    progress = 0;
+  }
 
   bool isGenerating = false;
   bool isSaving = false;
@@ -422,8 +444,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
             'product': product,
             'theme': theme,
             'style': style,
-            'quantity': quantity,
-            'messages': _messages(),
+            ...generationConfig.requestFields(singleCharacter ? const [] : _messages()),
           }),
         )
         .timeout(const Duration(minutes: 5));
@@ -448,6 +469,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
+    generationConfig.validateResponse(body);
     final files = (body['files'] as List<dynamic>? ?? const [])
         .map((value) => value.toString())
         .toList();
@@ -463,24 +485,28 @@ class _AssetForgePageState extends State<AssetForgePage> {
       zipBase64 = body['zip_base64']?.toString();
       previewBytes = sourceBytes;
       final generationMode = body['generation_mode']?.toString();
-      status = generationMode == 'local_fallback'
+      status = singleCharacter ? 'Single CEO Image Ready!' : generationMode == 'local_fallback'
           ? 'Asset Pack Ready! · Local fallback'
           : 'Asset Pack Ready!';
       isGenerating = false;
       showEarnPollenHint = false;
     });
 
-    if (sourceBytes != null) {
+    if (sourceBytes != null && !singleCharacter) {
       await _prepareQuickReview(sourceBytes);
     }
   }
 
   Future<void> generateAssets() async {
     if (isGenerating) return;
+    if (singleCharacter && (!hasBackend || !isPollinationsConnected)) {
+      setState(() => errorMessage = 'Connect Pollinations to generate one real CEO image. No local fallback.');
+      return;
+    }
     setState(() {
       isGenerating = true;
       progress = 0.0;
-      status = hasBackend ? 'Starting one-call 4-pose generation...' : 'Preparing...';
+      status = singleCharacter ? 'Starting one-call single CEO generation...' : hasBackend ? 'Starting one-call 4-pose generation...' : 'Preparing...';
       errorMessage = null;
       generatedFiles = const [];
       zipBase64 = null;
@@ -502,7 +528,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
       setState(() {
         isGenerating = false;
         status = 'Generation timed out';
-        errorMessage = 'เซิร์ฟเวอร์ใช้เวลานานเกินไป ลองใหม่อีกครั้ง';
+        errorMessage = singleCharacter ? 'ผลไม่ชัดเจน อาจมีค่าใช้จ่ายแล้ว ห้าม retry อัตโนมัติ ให้ตรวจ usage ก่อน' : 'เซิร์ฟเวอร์ใช้เวลานานเกินไป ลองใหม่อีกครั้ง';
       });
     } catch (error) {
       if (!mounted) return;
@@ -526,7 +552,8 @@ class _AssetForgePageState extends State<AssetForgePage> {
       final safeCharacter = characterConfig.backendCharacter
           .toLowerCase()
           .replaceAll(RegExp(r'[^a-z0-9]+'), '_');
-      final file = File('${directory.path}/${safeCharacter}_${quantity}pack.zip');
+      final suffix = singleCharacter ? 'single' : '${quantity}pack';
+      final file = File('${directory.path}/${safeCharacter}_$suffix.zip');
       await file.writeAsBytes(bytes, flush: true);
       await SharePlus.instance.share(
         ShareParams(
@@ -547,15 +574,17 @@ class _AssetForgePageState extends State<AssetForgePage> {
     required String value,
     required List<String> items,
     required ValueChanged<String?> onChanged,
+    Map<String, String> labels = const {},
   }) {
     return DropdownButtonFormField<String>(
+      key: ValueKey('$label:$value'),
       initialValue: value,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       items: items
-          .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+          .map((item) => DropdownMenuItem(value: item, child: Text(labels[item] ?? item)))
           .toList(),
       onChanged: builderEnabled ? onChanged : null,
     );
@@ -670,18 +699,18 @@ class _AssetForgePageState extends State<AssetForgePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Card(
+              Card(
                 child: Padding(
-                  padding: EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(18),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'SoloForge Asset Forge Beta',
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                       ),
-                      SizedBox(height: 6),
-                      Text('Generate 4 poses once → Review → Export'),
+                      const SizedBox(height: 6),
+                      Text(singleCharacter ? 'One CEO → One pose → One expression → Review' : 'Generate 4 poses once → Review → Export'),
                     ],
                   ),
                 ),
@@ -712,10 +741,59 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   'Aira',
                 ],
                 onChanged: (value) {
-                  if (value != null) setState(() => characterType = value);
+                  if (value != null) { setState(() {
+                    characterType = value;
+                    if (value != 'CEO') {
+                      generationLayout = 'sticker_sheet';
+                      wardrobeVariant = 'default';
+                      campaign = 'none';
+                    }
+                    _clearOutput();
+                  }); }
                 },
               ),
               const SizedBox(height: 12),
+              if (characterType == 'CEO') ...[
+                _dropdown(
+                  label: 'Generation mode', value: generationLayout,
+                  items: const ['sticker_sheet', 'single_character'],
+                  labels: const {'sticker_sheet': 'Sticker pack', 'single_character': 'Single CEO image'},
+                  onChanged: (value) {
+                    if (value != null) { setState(() {
+                      generationLayout = value;
+                      messageController.clear();
+                      _clearOutput();
+                    }); }
+                  },
+                ),
+                const SizedBox(height: 12),
+                _dropdown(label: 'CEO wardrobe', value: wardrobeVariant,
+                  items: AssetForgeGenerationConfig.wardrobes,
+                  labels: const {'default': 'Canonical white suit', 'creator': 'Creator', 'fitness': 'Fitness', 'casual': 'Casual', 'formal_black': 'Formal black'},
+                  onChanged: (value) { if (value != null) { setState(() { wardrobeVariant = value; _clearOutput(); }); } }),
+                const SizedBox(height: 12),
+                _dropdown(label: 'Campaign', value: campaign,
+                  items: const ['none', 'manifest_glow_lab'],
+                  labels: const {'none': 'No campaign', 'manifest_glow_lab': 'Manifest Glow Lab — white suit'},
+                  onChanged: (value) { if (value != null) { setState(() { campaign = value; _clearOutput(); }); } }),
+                const SizedBox(height: 12),
+              ],
+              if (singleCharacter) ...[
+                _dropdown(label: 'One pose', value: poseIntent,
+                  items: AssetForgeGenerationConfig.poses,
+                  labels: const {'presenting': 'Presenting', 'pointing': 'Pointing', 'thinking': 'Thinking', 'standing': 'Standing'},
+                  onChanged: (value) { if (value != null) { setState(() {
+                    poseIntent = value;
+                    expression = 'calm';
+                    _clearOutput();
+                  }); } }),
+                const SizedBox(height: 12),
+                _dropdown(label: 'One expression', value: expression,
+                  items: AssetForgeGenerationConfig.expressionsFor(poseIntent),
+                  labels: const {'calm': 'Calm, closed mouth', 'subtle_smile': 'Subtle closed-mouth smile', 'thoughtful': 'Thoughtful, closed mouth'},
+                  onChanged: (value) { if (value != null) { setState(() { expression = value; _clearOutput(); }); } }),
+                const SizedBox(height: 12),
+              ],
               _dropdown(
                 label: 'Primary color',
                 value: primaryColor,
@@ -750,11 +828,11 @@ class _AssetForgePageState extends State<AssetForgePage> {
               const SizedBox(height: 12),
               const Text('Style: Cute 3D Chibi', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              const Text('Demo pack: 4 stickers', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(singleCharacter ? 'Single image: 1 CEO character' : 'Demo pack: 4 stickers', style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
-              const Text('Quick Pack uses one AI generation for all four poses.'),
+              Text(singleCharacter ? 'One image-edit call. Review identity before acceptance.' : 'Quick Pack uses one AI generation for all four poses.'),
               const SizedBox(height: 10),
-              TextField(
+              if (!singleCharacter) TextField(
                 controller: messageController,
                 enabled: builderEnabled,
                 maxLines: 3,
@@ -776,11 +854,11 @@ class _AssetForgePageState extends State<AssetForgePage> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 6),
-                      Text('$style • $theme • $quantity stickers'),
+                      Text(singleCharacter ? '$style • $poseIntent • $expression • 1 image' : '$style • $theme • $quantity stickers'),
                       if (hasBackend && !isPollinationsConnected) ...[
                         const SizedBox(height: 8),
-                        const Text(
-                          'Local fallback active — Pollinations is optional for this pack.',
+                        Text(
+                          singleCharacter ? 'Pollinations connection required. No local fallback.' : 'Local fallback active — Pollinations is optional for this pack.',
                         ),
                       ],
                     ],
@@ -829,7 +907,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
                 child: ElevatedButton.icon(
                   onPressed: builderEnabled ? generateAssets : null,
                   icon: Icon(isGenerating ? Icons.hourglass_top : Icons.auto_awesome),
-                  label: Text(isGenerating ? 'Generating...' : 'Generate Asset Pack'),
+                  label: Text(isGenerating ? 'Generating...' : singleCharacter ? 'Generate Single CEO Image' : 'Generate Asset Pack'),
                 ),
               ),
               if (previewBytes != null) ...[
@@ -841,18 +919,18 @@ class _AssetForgePageState extends State<AssetForgePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text(
-                          'Quick Pack Review',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        Text(
+                          singleCharacter ? 'Single CEO Image Review' : 'Quick Pack Review',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
-                          'Four poses from one AI generation. If they look good, export the automatic pack now.',
+                        Text(
+                          singleCharacter ? 'Inspect one complete image against the approved master. No sticker splitting.' : 'Four poses from one AI generation. If they look good, export the automatic pack now.',
                         ),
                         const SizedBox(height: 12),
                         if (isPreparingReview)
                           const LinearProgressIndicator()
-                        else if (quickReviewBytes.length == 4)
+                        else if (!singleCharacter && quickReviewBytes.length == 4)
                           _buildPoseGrid(quickReviewBytes)
                         else
                           ClipRRect(
@@ -878,7 +956,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Card(
+                if (!singleCharacter) Card(
                   key: const Key('manual-fix-card'),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -911,7 +989,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   ),
                 ),
               ],
-              if (cleanedSheetBytes != null) ...[
+              if (!singleCharacter && cleanedSheetBytes != null) ...[
                 const SizedBox(height: 16),
                 Card(
                   child: Padding(
