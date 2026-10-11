@@ -44,6 +44,8 @@ def test_chat_requires_connected_pollinations_session(monkeypatch):
 
 
 def test_chat_calls_fixed_private_agent_and_returns_text(monkeypatch):
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(prawtwan, "require_generation_execution", lambda: None)
     captured: dict[str, object] = {}
 
     monkeypatch.setattr(

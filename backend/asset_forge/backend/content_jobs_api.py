@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from backend.execution_policy import require_generation_execution
+
 from datetime import datetime, timezone
 import urllib.parse
 
@@ -116,6 +118,7 @@ def _get_row(job_id: str) -> dict[str, object]:
 
 
 def _continue_approved_job(job_id: str) -> None:
+    require_generation_execution()
     routed = route_approved_job(job_id)
     if not routed or routed.get("status") != "ASSET_QUEUED":
         return
@@ -128,6 +131,7 @@ def _continue_approved_job(job_id: str) -> None:
 
 
 def _resume_job(job_id: str, status: str) -> None:
+    require_generation_execution()
     if status == "APPROVED":
         _continue_approved_job(job_id)
         return
@@ -176,6 +180,8 @@ def create_from_idea(
     authorization: str | None = Header(default=None),
 ) -> dict[str, object]:
     _require_session(authorization)
+    if request.action == "generate":
+        require_generation_execution()
     try:
         recommendation = find_recommendation(
             request.idea,
@@ -469,6 +475,7 @@ def approve_content_job(
                     "Regenerate the draft and review it again."
                 ),
             )
+    require_generation_execution()
     now = _now()
     approved = _patch_job(
         job_id,
@@ -508,6 +515,7 @@ def continue_content_job(
             detail="Continue is only supported for routed VIDEO jobs",
         )
 
+    require_generation_execution()
     background_tasks.add_task(_resume_job, job_id, status)
     return current
 
@@ -527,6 +535,7 @@ def regenerate_content_job(
             detail=f"Cannot regenerate while status is {status}",
         )
 
+    require_generation_execution()
     package = dict(current.get("content_package") or {})
     for key in _GENERATED_PACKAGE_KEYS:
         package.pop(key, None)

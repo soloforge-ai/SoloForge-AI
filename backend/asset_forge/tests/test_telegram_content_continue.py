@@ -56,6 +56,8 @@ def test_content_job_keyboard_hides_non_video_resume_targets() -> None:
 
 
 def test_continue_callback_schedules_only_the_selected_job(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(webhook, "require_generation_execution", lambda: None)
     job = _video_job("AUDIO_READY")
     tasks = _FakeBackgroundTasks()
 

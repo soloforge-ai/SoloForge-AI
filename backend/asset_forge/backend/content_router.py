@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from backend.execution_policy import generation_execution_authorized
+
 import asyncio
 from datetime import datetime, timezone
 import urllib.parse
@@ -69,6 +71,8 @@ def _route_approved_row(row: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def route_approved_job(job_id: str) -> dict[str, Any] | None:
+    if not generation_execution_authorized():
+        return None
     encoded = urllib.parse.quote(job_id, safe="")
     rows = _supabase_request(
         "GET",
@@ -96,6 +100,8 @@ def _claim_approved(limit: int = 4) -> list[dict[str, Any]]:
 
 
 def process_approved_routes_once() -> int:
+    if not generation_execution_authorized():
+        return 0
     return len(_claim_approved())
 
 

@@ -34,10 +34,10 @@ def test_worker_runtime_registers_all_pipeline_loops() -> None:
     ]
 
 
-def test_embedded_worker_flag_defaults_to_enabled(monkeypatch) -> None:
+def test_embedded_worker_flag_defaults_to_disabled(monkeypatch) -> None:
     module = _load_module("soloforge_asset_forge_main_default", "main.py")
     monkeypatch.delenv("SOLOFORGE_RUN_EMBEDDED_WORKERS", raising=False)
-    assert module._embedded_workers_enabled() is True
+    assert module._embedded_workers_enabled() is False
 
 
 def test_embedded_worker_flag_can_disable_web_pollers(monkeypatch) -> None:

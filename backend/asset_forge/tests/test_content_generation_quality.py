@@ -126,6 +126,8 @@ def test_provider_defaults_use_current_gemini_and_pollinations_models() -> None:
 def test_pollinations_publishable_key_is_not_used_for_server_generation(
     monkeypatch,
 ) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(content_generation, "require_generation_execution", lambda: None)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
@@ -183,6 +185,8 @@ def _provider_payload() -> dict[str, object]:
 
 
 def test_transient_provider_503_retries_then_succeeds(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(content_generation, "require_generation_execution", lambda: None)
     monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
@@ -221,6 +225,8 @@ def test_transient_provider_503_retries_then_succeeds(monkeypatch) -> None:
 
 
 def test_non_transient_provider_404_does_not_retry(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(content_generation, "require_generation_execution", lambda: None)
     monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
@@ -254,6 +260,8 @@ def test_non_transient_provider_404_does_not_retry(monkeypatch) -> None:
 
 
 def test_transient_provider_stops_after_max_attempts(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(content_generation, "require_generation_execution", lambda: None)
     monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
@@ -288,6 +296,8 @@ def test_transient_provider_stops_after_max_attempts(monkeypatch) -> None:
 
 
 def test_provider_fallback_runs_after_transient_retry_exhaustion(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(content_generation, "require_generation_execution", lambda: None)
     monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
     monkeypatch.setenv("GROQ_API_KEY", "test-groq-key")
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)

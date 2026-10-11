@@ -18,6 +18,8 @@ def test_analyze_idea_returns_ranked_options() -> None:
 
 
 def test_create_from_idea_generates_selected_job(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(content_jobs_api, "require_generation_execution", lambda: None)
     calls = []
 
     monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
@@ -100,6 +102,8 @@ def test_create_from_idea_can_save_to_backlog(monkeypatch) -> None:
 
 
 def test_approve_triggers_job_scoped_routing(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(content_jobs_api, "require_generation_execution", lambda: None)
     monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
     calls = []
 
@@ -133,6 +137,8 @@ def test_approve_triggers_job_scoped_routing(monkeypatch) -> None:
 
 
 def test_continue_approved_video_job_runs_job_scoped_pipeline(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(content_jobs_api, "require_generation_execution", lambda: None)
     calls = []
 
     monkeypatch.setattr(
@@ -166,6 +172,8 @@ def test_continue_approved_video_job_runs_job_scoped_pipeline(monkeypatch) -> No
 
 
 def test_continue_approved_video_job_stops_when_asset_fails(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(content_jobs_api, "require_generation_execution", lambda: None)
     calls = []
 
     monkeypatch.setattr(
@@ -195,6 +203,8 @@ def test_continue_approved_video_job_stops_when_asset_fails(monkeypatch) -> None
 
 
 def test_continue_endpoint_resumes_asset_ready_video_job(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(content_jobs_api, "require_generation_execution", lambda: None)
     monkeypatch.setattr(content_jobs_api, "_require_session", lambda _: None)
     monkeypatch.setattr(
         content_jobs_api,
@@ -218,6 +228,8 @@ def test_continue_endpoint_resumes_asset_ready_video_job(monkeypatch) -> None:
 
 
 def test_resume_asset_ready_runs_audio_then_render(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(content_jobs_api, "require_generation_execution", lambda: None)
     calls = []
     monkeypatch.setattr(
         content_jobs_api,

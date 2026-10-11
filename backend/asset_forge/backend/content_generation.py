@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from backend.execution_policy import generation_execution_authorized, require_generation_execution
+
 import asyncio
 from datetime import datetime, timezone
 import json
@@ -256,6 +258,7 @@ def _call_provider(
     idea: str,
     content_package: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], str, str] | None:
+    require_generation_execution()
     for provider, key_env, model_env, default_model, endpoint in PROVIDERS:
         api_key = os.getenv(key_env, "").strip()
         if not api_key:
@@ -509,11 +512,15 @@ def _process_claimed_job(job: dict[str, Any]) -> bool:
 
 
 def process_selected_job(job_id: str) -> bool:
+    if not generation_execution_authorized():
+        return False
     job = _claim_selected_job(job_id)
     return _process_claimed_job(job) if job is not None else False
 
 
 def process_selected_once() -> int:
+    if not generation_execution_authorized():
+        return 0
     return sum(1 for job in _claim_selected() if _process_claimed_job(job))
 
 

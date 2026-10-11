@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from backend.execution_policy import require_generation_execution
+
 from io import BytesIO
 import os
 from pathlib import Path
@@ -23,6 +25,7 @@ def _dimensions() -> tuple[int, int]:
 
 
 def _pollinations_image(prompt: str) -> bytes:
+    require_generation_execution()
     api_key = os.getenv("POLLINATIONS_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("POLLINATIONS_API_KEY is not configured")
@@ -171,6 +174,7 @@ def generate_asset(
     fallback_title: str,
     fallback_subtitle: str | None = None,
 ) -> tuple[bytes, dict[str, object]]:
+    require_generation_execution()
     attempts: list[dict[str, str]] = []
 
     try:
