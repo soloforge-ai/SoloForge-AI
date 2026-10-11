@@ -12,7 +12,7 @@ import urllib.request
 import uuid
 import zipfile
 from pathlib import Path
-from typing import List
+from typing import List, Literal
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import RedirectResponse
@@ -79,6 +79,8 @@ class AssetForgeRequest(BaseModel):
     style: str = Field(default="Cute 3D Chibi", min_length=1, max_length=120)
     quantity: int = Field(default=12, ge=4, le=24)
     messages: List[str] = Field(default_factory=list, max_length=24)
+    wardrobe_variant: Literal["default", "creator", "fitness", "casual", "formal_black"] = "default"
+    campaign_id: str | None = Field(default=None, max_length=120)
 
 
 class AssetForgeResponse(BaseModel):
@@ -167,6 +169,43 @@ NON-NEGOTIABLE CEO IDENTITY RULE:
 - If the reference image contains wings, remove them from the generated character while keeping the face, hair, glasses, outfit, and body proportions consistent.
 """ if request.character.strip().lower() == "ceo" else ""
 
+    campaign_locked = (
+        request.character.strip().lower() == "ceo"
+        and (request.campaign_id or "").strip().lower() == "manifest_glow_lab"
+    )
+    wardrobe_instruction = ""
+    if campaign_locked:
+        wardrobe_instruction = (
+            "MANIFEST GLOW LAB: Keep the canonical white/cream luxury suit, "
+            "dark shirt and red tie. Ignore contextual wardrobe overrides."
+        )
+    elif request.character.strip().lower() == "ceo" and request.wardrobe_variant != "default":
+        approved_outfits = {
+            "creator": "Black creator hoodie or practical dark techwear",
+            "fitness": "Appropriate sportswear and athletic shoes",
+            "casual": "Comfortable everyday casual outfit",
+            "formal_black": "Elegant black formal suit",
+        }
+        wardrobe_instruction = f"""
+APPROVED CONTEXTUAL WARDROBE OVERRIDE:
+- Outfit: {approved_outfits[request.wardrobe_variant]}.
+- Clothing-only variation: preserve the approved face, eye appearance, hair, large black glasses, skin tone, and 3D chibi proportions.
+- Default white suit is not mandatory only for this approved variant.
+- Never alter gender presentation, identity, or add wings/halo.
+"""
+        if has_reference:
+            reference_instruction = reference_instruction.replace(
+                "skin tone, costume, proportions, and signature accessories",
+                "skin tone, proportions, and identity-defining accessories",
+            ).replace(
+                "Only change pose, facial expression, and gesture as needed for the sticker pack.",
+                "Only change approved outfit, pose, facial expression, and gesture as needed for the sticker pack.",
+            )
+        no_wings_rule = no_wings_rule.replace(
+            "face, hair, glasses, outfit, and body proportions",
+            "face, hair, glasses, and body proportions",
+        )
+
     ceo_expression_lock = """
 NON-NEGOTIABLE CEO FACIAL EXPRESSION LOCK:
 - Default facial expression: calm, composed, straight-faced, mouth closed, and subtly expressive.
@@ -185,6 +224,7 @@ Product: {request.product}.
 {reference_instruction}
 {color_instruction}
 {no_wings_rule}
+{wardrobe_instruction}
 {ceo_expression_lock}
 
 STICKER MESSAGE INTENT:
@@ -630,10 +670,10 @@ def generate_asset_pack(
 
     try:
         reference_bytes = _load_character_reference(request.character)
-        if _character_key(request.character) == "pearli" and reference_bytes is None:
+        if _character_key(request.character) in {"pearli", "ceo"} and reference_bytes is None:
             raise HTTPException(
                 status_code=409,
-                detail="Pearli master reference is missing from the SoloForge character library.",
+                detail="Approved character master reference is missing from the SoloForge character library.",
             )
 
         columns, rows = _grid(request.quantity)
