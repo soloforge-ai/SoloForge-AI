@@ -741,7 +741,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   'Aira',
                 ],
                 onChanged: (value) {
-                  if (value != null) setState(() {
+                  if (value != null) { setState(() {
                     characterType = value;
                     if (value != 'CEO') {
                       generationLayout = 'sticker_sheet';
@@ -749,7 +749,7 @@ class _AssetForgePageState extends State<AssetForgePage> {
                       campaign = 'none';
                     }
                     _clearOutput();
-                  });
+                  }); }
                 },
               ),
               const SizedBox(height: 12),
@@ -759,39 +759,39 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   items: const ['sticker_sheet', 'single_character'],
                   labels: const {'sticker_sheet': 'Sticker pack', 'single_character': 'Single CEO image'},
                   onChanged: (value) {
-                    if (value != null) setState(() {
+                    if (value != null) { setState(() {
                       generationLayout = value;
                       messageController.clear();
                       _clearOutput();
-                    });
+                    }); }
                   },
                 ),
                 const SizedBox(height: 12),
                 _dropdown(label: 'CEO wardrobe', value: wardrobeVariant,
                   items: AssetForgeGenerationConfig.wardrobes,
                   labels: const {'default': 'Canonical white suit', 'creator': 'Creator', 'fitness': 'Fitness', 'casual': 'Casual', 'formal_black': 'Formal black'},
-                  onChanged: (value) { if (value != null) setState(() { wardrobeVariant = value; _clearOutput(); }); }),
+                  onChanged: (value) { if (value != null) { setState(() { wardrobeVariant = value; _clearOutput(); }); } }),
                 const SizedBox(height: 12),
                 _dropdown(label: 'Campaign', value: campaign,
                   items: const ['none', 'manifest_glow_lab'],
                   labels: const {'none': 'No campaign', 'manifest_glow_lab': 'Manifest Glow Lab — white suit'},
-                  onChanged: (value) { if (value != null) setState(() { campaign = value; _clearOutput(); }); }),
+                  onChanged: (value) { if (value != null) { setState(() { campaign = value; _clearOutput(); }); } }),
                 const SizedBox(height: 12),
               ],
               if (singleCharacter) ...[
                 _dropdown(label: 'One pose', value: poseIntent,
                   items: AssetForgeGenerationConfig.poses,
                   labels: const {'presenting': 'Presenting', 'pointing': 'Pointing', 'thinking': 'Thinking', 'standing': 'Standing'},
-                  onChanged: (value) { if (value != null) setState(() {
+                  onChanged: (value) { if (value != null) { setState(() {
                     poseIntent = value;
                     expression = 'calm';
                     _clearOutput();
-                  }); }),
+                  }); } }),
                 const SizedBox(height: 12),
                 _dropdown(label: 'One expression', value: expression,
                   items: AssetForgeGenerationConfig.expressionsFor(poseIntent),
                   labels: const {'calm': 'Calm, closed mouth', 'subtle_smile': 'Subtle closed-mouth smile', 'thoughtful': 'Thoughtful, closed mouth'},
-                  onChanged: (value) { if (value != null) setState(() { expression = value; _clearOutput(); }); }),
+                  onChanged: (value) { if (value != null) { setState(() { expression = value; _clearOutput(); }); } }),
                 const SizedBox(height: 12),
               ],
               _dropdown(
