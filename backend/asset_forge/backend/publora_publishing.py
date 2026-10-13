@@ -262,6 +262,7 @@ def publish_now_time() -> datetime:
 
 
 def sync_publishing_once(limit: int = 20) -> int:
+    require_publishing_enabled()
     rows = _supabase_request(
         "GET",
         "content_jobs?status=eq.PUBLISHING&publora_post_id=not.is.null"
