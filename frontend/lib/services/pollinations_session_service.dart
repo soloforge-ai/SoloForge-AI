@@ -29,19 +29,33 @@ class PollinationsSessionService {
     http.Client? client,
     FlutterSecureStorage? storage,
     AppLinks? appLinks,
-  })  : _client = client ?? http.Client(),
-        _storage = storage ?? const FlutterSecureStorage(),
-        _appLinks = appLinks ?? AppLinks();
+  }) : _client = client ?? http.Client(),
+       _storage = storage ?? const FlutterSecureStorage(),
+       _appLinks = appLinks ?? AppLinks();
 
   static const _sessionKey = 'pollinations_session_token';
   static const _returnTo = 'soloforge://oauth/pollinations';
+
+  // Image Generation and Prawtwan use the same storage and OAuth transaction.
+  // These coordinate instances; they never grant execution/spending permission.
+  static Future<void>? _connecting;
+  static final Map<String, Future<PollinationsSessionState>> _exchanges = {};
+  static final Set<String> _completedExchanges = {};
+  static Future<void> _storageUpdates = Future.value();
+
+  Future<void> _updateStorage(Future<void> Function() action) async {
+    final update = _storageUpdates.then((_) => action());
+    _storageUpdates = update.then<void>((_) {}, onError: (Object _) {});
+    await update;
+  }
 
   final http.Client _client;
   final FlutterSecureStorage _storage;
   final AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
 
-  String get _baseUrl => assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
+  String get _baseUrl =>
+      assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
 
   Future<String?> readSessionToken() => _storage.read(key: _sessionKey);
 
@@ -64,7 +78,13 @@ class PollinationsSessionService {
     _client.close();
   }
 
-  Future<void> connect() async {
+  Future<void> connect() {
+    return _connecting ??= _connectOnce().whenComplete(
+      () => _connecting = null,
+    );
+  }
+
+  Future<void> _connectOnce() async {
     final existingSession = await status();
     if (existingSession.connected) {
       return;
@@ -84,9 +104,8 @@ class PollinationsSessionService {
       queryParameters['return_to'] = _returnTo;
     }
 
-    final loginUri = Uri.parse('$_baseUrl/auth/pollinations/login').replace(
-      queryParameters: queryParameters,
-    );
+    final loginUri = Uri.parse('$_baseUrl/auth/pollinations/login')
+        .replace(queryParameters: queryParameters);
 
     final opened = await launchUrl(
       loginUri,
@@ -109,7 +128,9 @@ class PollinationsSessionService {
 
   Future<PollinationsSessionState> handleCallback(Uri uri) async {
     if (!isPollinationsCallback(uri)) {
-      throw const PollinationsSessionException('Unexpected OAuth callback URL.');
+      throw const PollinationsSessionException(
+        'Unexpected OAuth callback URL.',
+      );
     }
 
     final code = uri.queryParameters['code'];
@@ -118,7 +139,7 @@ class PollinationsSessionService {
         'Pollinations authorization did not return a handoff code.',
       );
     }
-    return _exchangeHandoffCode(code);
+    return restoreCallbackCode(code);
   }
 
   Future<PollinationsSessionState> handleWebCallbackIfPresent() async {
@@ -126,20 +147,38 @@ class PollinationsSessionService {
       return status();
     }
 
-    final existing = await readSessionToken();
-    if (existing != null && existing.isNotEmpty) {
-      return status();
-    }
+    return restoreCallbackCode(Uri.base.queryParameters['code']);
+  }
 
-    final code = Uri.base.queryParameters['code'];
-    if (code == null || code.isEmpty) {
+  // Also used by native callbacks. Validate the saved token, not its presence.
+  Future<PollinationsSessionState> restoreCallbackCode(String? code) async {
+    final existing = await status();
+    if (existing.connected || code == null || code.isEmpty) return existing;
+    final key = '$_baseUrl:$code';
+    final exchange = _exchanges[key];
+    if (exchange != null) {
+      // Concurrent listeners share a single exchange. A completed code must
+      // never restore a revoked/expired session from a cached success.
+      await exchange;
       return status();
     }
-    return _exchangeHandoffCode(code);
+    if (_completedExchanges.contains(key)) return existing;
+    final pending = _exchangeHandoffCode(code).whenComplete(() {
+      _exchanges.remove(key);
+      _completedExchanges.add(key);
+      // Bound completed-code retention; never evict an in-flight exchange.
+      if (_completedExchanges.length > 16) {
+        _completedExchanges.remove(_completedExchanges.first);
+      }
+    });
+    _exchanges[key] = pending;
+    return pending;
   }
 
   Future<PollinationsSessionState> _exchangeHandoffCode(String code) async {
-    final exchangeUri = Uri.parse('$_baseUrl/auth/pollinations/mobile/exchange');
+    final exchangeUri = Uri.parse(
+      '$_baseUrl/auth/pollinations/mobile/exchange',
+    );
     final response = await _client.post(
       exchangeUri,
       headers: const {'Content-Type': 'application/json'},
@@ -157,7 +196,9 @@ class PollinationsSessionService {
       );
     }
 
-    await _storage.write(key: _sessionKey, value: sessionToken);
+    await _updateStorage(
+      () => _storage.write(key: _sessionKey, value: sessionToken),
+    );
     return PollinationsSessionState(
       connected: true,
       expiresAt: _asInt(body['expires_at']),
@@ -176,21 +217,33 @@ class PollinationsSessionService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      await _storage.delete(key: _sessionKey);
+      // A transient backend outage is not evidence that OAuth was revoked.
+      if (response.statusCode != 401 && response.statusCode != 403) {
+        throw PollinationsSessionException(_errorMessage(response));
+      }
+      await _invalidateToken(token);
+      if (await readSessionToken() != null) return status();
       return const PollinationsSessionState(connected: false);
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final connected = body['connected'] == true;
     if (!connected) {
-      await _storage.delete(key: _sessionKey);
+      await _invalidateToken(token);
     }
+    if (await readSessionToken() != (connected ? token : null)) return status();
     return PollinationsSessionState(
       connected: connected,
       expiresAt: _asInt(body['expires_at']),
       scope: body['scope']?.toString(),
     );
   }
+
+  Future<void> _invalidateToken(String token) => _updateStorage(() async {
+    if (await readSessionToken() == token) {
+      await _storage.delete(key: _sessionKey);
+    }
+  });
 
   Future<void> disconnect() async {
     final token = await readSessionToken();
@@ -202,7 +255,7 @@ class PollinationsSessionService {
         );
       }
     } finally {
-      await _storage.delete(key: _sessionKey);
+      if (token != null) await _invalidateToken(token);
     }
   }
 

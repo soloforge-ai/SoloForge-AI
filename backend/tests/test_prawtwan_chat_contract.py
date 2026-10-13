@@ -1,4 +1,7 @@
 import json
+
+import pytest
+import backend.asset_forge.backend.pollinations_oauth_router as oauth
 from urllib import request as urllib_request
 
 from fastapi import FastAPI
@@ -117,3 +120,72 @@ def test_chat_rejects_oversized_context(monkeypatch):
     )
 
     assert response.status_code == 422
+
+
+# These use the real session resolver and S1 guard, not the happy-path bypass.
+
+
+@pytest.mark.parametrize("kind,expected", [
+    ("valid", 503), ("expired", 401), ("forged", 401),
+    ("mismatched", 401), ("missing", 401),
+])
+def test_shared_session_never_authorizes_provider_execution(monkeypatch, kind, expected):
+    now = oauth.time.time()
+    session = oauth._OAuthSession("mock-provider-token", now + 600, "profile usage")
+    if kind == "expired":
+        session = oauth._OAuthSession("mock-expired-token", now - 1, "profile usage")
+    # The full suite imports both deployment and repository module aliases.
+    # Seed the real resolver's namespace so this test is collection-order safe.
+    namespace = prawtwan.get_pollinations_access_token_from_authorization.__globals__
+    monkeypatch.setitem(namespace, "_sessions", {"mock-session": session})
+    monkeypatch.setitem(namespace, "_load_persisted_session", lambda _: None)
+    calls = []
+
+    def forbidden(*args, **kwargs):
+        calls.append(True)
+        raise AssertionError("Provider must not execute")
+
+    monkeypatch.setattr(prawtwan.urllib.request, "urlopen", forbidden)
+    headers = {} if kind == "missing" else {
+        "Authorization": "Bearer " + (
+            "mock-session" if kind in {"valid", "expired"} else kind + "-session"
+        )
+    }
+    client = _client()
+    resolved = prawtwan.get_pollinations_access_token_from_authorization(
+        headers.get("Authorization")
+    )
+    assert (resolved is not None) is (kind == "valid")
+    for _ in range(2):
+        response = client.post("/v1/prawtwan/chat", headers=headers,
+                               json={"messages": [{"role": "user", "content": "scene"}]})
+        assert response.status_code == expected
+        assert "mock-provider-token" not in response.text
+    assert calls == []
+
+
+@pytest.mark.parametrize("action", ["publish-now", "schedule"])
+def test_shared_pollinations_session_cannot_authorize_publora(monkeypatch, action):
+    from unittest.mock import Mock
+    from backend import publishing_api, publora_publishing
+
+    namespace = prawtwan.get_pollinations_access_token_from_authorization.__globals__
+    monkeypatch.setitem(namespace, "_sessions", {
+        "shared-oauth": oauth._OAuthSession("mock-only", oauth.time.time() + 600, "profile usage")
+    })
+    assert prawtwan.get_pollinations_access_token_from_authorization("Bearer shared-oauth")
+    database = Mock(side_effect=AssertionError("No publishing DB access"))
+    network = Mock(side_effect=AssertionError("No publishing network access"))
+    monkeypatch.setattr(publishing_api, "_supabase_request", database)
+    monkeypatch.setattr(publora_publishing.urllib.request, "urlopen", network)
+    app = FastAPI()
+    app.include_router(publishing_api.router)
+    payload = {"platform_ids": []}
+    if action == "schedule":
+        payload["scheduled_time"] = "2027-01-01T12:00:00Z"
+    response = TestClient(app).post(f"/v1/publishing/job/{action}",
+                                   headers={"Authorization": "Bearer shared-oauth"},
+                                   json=payload)
+    assert response.status_code == 401
+    database.assert_not_called()
+    network.assert_not_called()

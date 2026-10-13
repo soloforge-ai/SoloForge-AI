@@ -295,6 +295,58 @@ void main() {
     },
   );
 
+  testWidgets(
+    'S1 denial keeps shared session, history, draft language and has no retry',
+    (tester) async {
+      var calls = 0;
+      final session = TestSession(connected: true);
+      final chat = PrawtwanChatService(
+        sessionService: PollinationsSessionService(),
+        client: MockClient((request) async {
+          calls++;
+          expect(request.headers['Authorization'], 'Bearer shared-session');
+          return http.Response(
+            '{"detail":"Generation execution is locked pending verified owner and spending authorization."}',
+            503,
+          );
+        }),
+      );
+      FlutterSecureStorage.setMockInitialValues({
+        'pollinations_session_token': 'shared-session',
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PrawtwanChatPage(
+            sessionService: session,
+            service: chat,
+            restored: {
+              'language': 'th',
+              'draft': 'Unsent scene',
+              'messages': [
+                {'role': 'user', 'content': 'Saved scene'},
+                {'role': 'assistant', 'content': 'Saved feedback'},
+              ],
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('prawtwan-send')));
+      await tester.pumpAndSettle();
+      expect(calls, 1);
+      expect(find.text('Saved scene'), findsOneWidget);
+      expect(find.text('Saved feedback'), findsOneWidget);
+      expect(find.text('Unsent scene'), findsOneWidget);
+      expect(find.text('คุยกับพี่พราว'), findsOneWidget);
+      expect(find.byKey(const ValueKey('prawtwan-connect')), findsNothing);
+      expect(
+        await PollinationsSessionService().readSessionToken(),
+        'shared-session',
+      );
+      expect(find.text(const PrawtwanCopy('th').privacy), findsNWidgets(2));
+    },
+  );
+
   testWidgets('connection failure is localized and can be retried', (
     tester,
   ) async {
