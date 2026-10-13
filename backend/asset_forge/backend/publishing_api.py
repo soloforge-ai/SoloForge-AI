@@ -9,6 +9,7 @@ from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from backend.soloforge_session import require_soloforge_session
+from backend.publishing_policy import require_publishing_enabled
 
 from backend.shared_supabase import supabase_request as _supabase_request
 
@@ -114,6 +115,7 @@ def _submit(
     platform_ids: list[str],
     scheduled_time: datetime,
 ) -> dict[str, object]:
+    require_publishing_enabled()
     job = _get_job(job_id)
     if job.get("status") != "READY_TO_PUBLISH":
         raise HTTPException(
