@@ -16,8 +16,8 @@ class PrawtwanCopy {
   String get send => _thai ? 'ส่งข้อความ' : 'Send message';
   String get you => _thai ? 'คุณ' : 'You';
   String get privacy => _thai
-      ? 'บทสนทนาเฉพาะเซสชันนี้ • ใช้ Pollen เมื่อส่งข้อความเท่านั้น'
-      : 'Session-only chat • Pollen is used only when you send';
+      ? 'Remote chat ยังถูกปิด • OAuth ไม่ใช่สิทธิ์ใช้ Pollen'
+      : 'Remote chat is blocked • OAuth does not authorize Pollen spending';
   String get emptyTitle => _thai ? 'พี่พราวพร้อมแล้ว' : 'Prawtwan is ready';
   String get emptyBody => _thai
       ? 'ส่งฉาก บทสนทนา หรือคำถามเกี่ยวกับงานเขียนให้พี่พราวอ่านได้เลย'
@@ -31,8 +31,8 @@ class PrawtwanCopy {
       ? 'พี่พราวไม่พร้อมให้บริการชั่วคราว กรุณาลองใหม่ภายหลัง'
       : 'Prawtwan is temporarily unavailable. Please try again later.';
   String get connect => _thai
-      ? 'เชื่อมต่อ Pollinations เพื่อเริ่มคุยกับพี่พราว'
-      : 'Connect Pollinations to start chatting with Prawtwan.';
+      ? 'เชื่อมต่อ session Pollinations ร่วมกับ Image Generation ได้ แต่ remote chat ยังถูกปิด'
+      : 'Connect the shared Image Generation / Pollinations session. Remote chat remains blocked.';
   String get connectAction =>
       _thai ? 'เชื่อมต่อ Pollinations' : 'Connect Pollinations';
   String get connecting =>
@@ -48,9 +48,16 @@ class PrawtwanCopy {
       : 'Could not save your language. It will apply for this visit only.';
 
   String error(String message) {
-    if (message.contains('Connect Pollinations') ||
-        message.contains('(401)') ||
-        message.contains('(403)')) {
+    if (message.contains('(503)') ||
+        message.contains('Generation execution is locked')) {
+      return privacy;
+    }
+    if (message.contains('(403)')) {
+      return _thai
+          ? 'ไม่ได้รับอนุญาตให้ส่งข้อความ การเชื่อมต่อ OAuth ไม่ใช่สิทธิ์ใช้เงิน'
+          : 'Chat is not authorized. OAuth connection is not spending permission.';
+    }
+    if (message.contains('Connect Pollinations') || message.contains('(401)')) {
       return connect;
     }
     if (message.contains('too large')) {
