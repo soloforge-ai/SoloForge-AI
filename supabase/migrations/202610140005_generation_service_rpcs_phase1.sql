@@ -20,6 +20,9 @@ begin
  or b.allocation_state <> 'ALLOCATED' or b.allocation_verified_at is null
  or b.owner_session_verified_at is null or b.allocation_ref is null
  then raise exception 'wallet not attested or allocated' using errcode='42501'; end if;
+ if not generation_trust.check_wallet(b.id,p_owner,p_session,b.provider_wallet_fingerprint,
+     b.wallet_category,b.allocation_ref,b.allocated_pollen)
+ then raise exception 'independent provider wallet attestation missing or expired' using errcode='42501'; end if;
  select * into e from public.generation_executions where approval_id=a.id;
  if found then
   if e.execution_key <> p_execution_key then raise exception 'approval already claimed'; end if;
