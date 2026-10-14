@@ -12,6 +12,7 @@ on:
       - 'supabase/migrations/202610140009_generation_explicit_reconciliation_recovery.sql'
       - 'supabase/tests/generation_phase1_baseline.sql'
       - 'tests/p2b1/**'
+      - 'backend/asset_forge/security/provider_evidence_offline.py'
       - 'docs/P2_B1_TRUSTED_PROVIDER_ATTESTATION_CONTRACT.md'
       - '.github/workflows/p2b1-postgres17.yml'
 permissions:
@@ -59,5 +60,7 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140006_generation_state_transitions.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140008_generation_rpc_privilege_boundary.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140009_generation_explicit_reconciliation_recovery.sql
+      - name: Verify offline provider evidence negative security tests
+        run: python -m pytest -q tests/p2b1/test_provider_evidence_offline.py
       - name: Verify native PostgreSQL security, concurrency, settlement
         run: python -m pytest -q tests/p2b1/test_phase1_postgres.py tests/p2b1/test_phase1_concurrency.py tests/p2b1/test_effective_privileges.py
