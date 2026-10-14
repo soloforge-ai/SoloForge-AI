@@ -64,8 +64,8 @@ begin
  select * into e from public.generation_executions where id=p_execution for update;
  if not found or e.owner_user_id is distinct from p_owner or e.pollinations_session_id is distinct from p_session
  then raise exception 'owner or session mismatch' using errcode='42501'; end if;
- if e.state not in ('SUCCEEDED','FAILED_CONFIRMED') then
-  raise exception 'unreconciled provider result; settlement prohibited'; end if;
+ if e.state <> 'CALL_STARTED' then
+  raise exception 'execution not ready for verified settlement'; end if;
  if exists(select 1 from public.generation_requests where execution_id=e.id and state not in ('SUCCEEDED','FAILED_CONFIRMED'))
  then raise exception 'incomplete or ambiguous slide'; end if;
  if p_actual > e.reserved_pollen then raise exception 'actual exceeds reserved'; end if;
@@ -91,7 +91,7 @@ begin
    (execution_id,budget_account_id,owner_user_id,pollinations_session_id,entry_key,entry_kind,amount_pollen,evidence_ref)
   values(e.id,b.id,p_owner,p_session,e.execution_key||':release','RELEASE_AFTER_VERIFICATION',v_released,p_evidence_ref);
  end if;
- update public.generation_executions set observed_pollen=p_actual,settled_at=clock_timestamp(),revision=revision+1
+ update public.generation_executions set state=(case when exists(select 1 from public.generation_requests where execution_id=e.id and state='FAILED_CONFIRMED') then 'FAILED_CONFIRMED' else 'SUCCEEDED' end),observed_pollen=p_actual,settled_at=clock_timestamp(),revision=revision+1
  where id=e.id;
  return true;
 end $$;
