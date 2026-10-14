@@ -18,7 +18,7 @@ from fastapi import APIRouter, Cookie, Header, HTTPException, Query
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
-from backend.pollinations_oauth import (
+from backend.pollinations_grant_validation import (\n    GrantVerificationError,\n    strict_expires_in,\n    verify_provider_token,\n)\nfrom backend.pollinations_oauth import (
     PollinationsOAuthConfig,
     build_authorization_url,
     create_pkce_transaction,
@@ -413,7 +413,7 @@ def pollinations_callback(
     expires_in = int(payload.get("expires_in", 604800))
     session = _OAuthSession(
         access_token=payload["access_token"],
-        expires_at=time.time() + max(60, expires_in),
+        expires_at=time.time() + expires_in,
         scope=str(payload.get("scope", "")),
     )
     with _lock:
