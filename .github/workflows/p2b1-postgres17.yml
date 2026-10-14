@@ -8,6 +8,7 @@ on:
       - 'supabase/migrations/202610140005_generation_service_rpcs_phase1.sql'
       - 'supabase/migrations/202610140006_generation_state_transitions.sql'
       - 'supabase/migrations/202610140007_generation_trusted_wallet_gate.sql'
+      - 'supabase/migrations/202610140008_generation_rpc_privilege_boundary.sql'
       - 'supabase/tests/generation_phase1_baseline.sql'
       - 'tests/p2b1/**'
       - '.github/workflows/p2b1-postgres17.yml'
@@ -54,5 +55,6 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140007_generation_trusted_wallet_gate.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140005_generation_service_rpcs_phase1.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140006_generation_state_transitions.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140008_generation_rpc_privilege_boundary.sql
       - name: Verify native PostgreSQL security, concurrency, settlement
         run: python -m pytest -q tests/p2b1/test_phase1_postgres.py tests/p2b1/test_phase1_concurrency.py
