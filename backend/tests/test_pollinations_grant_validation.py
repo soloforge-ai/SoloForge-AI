@@ -77,3 +77,101 @@ def test_key_budget_above_local_policy():
 
 def test_strict_expiry_valid():
     assert strict_expires_in({"expires_in": 3600}) == 3600
+
+
+def test_model_mismatch_rejected():
+    with pytest.raises(GrantVerificationError):
+        verify_effective_grant(USER, key(), client_id=APP, requested_model="text")
+
+
+def test_missing_app_identity_rejected():
+    with pytest.raises(GrantVerificationError):
+        verify_effective_grant(USER, key(byopApp=None), client_id=APP)
+
+
+def test_http_revoked_denied(monkeypatch):
+    import io
+    import urllib.error
+    from backend import pollinations_grant_validation as validation
+
+    def revoked(*args, **kwargs):
+        raise urllib.error.HTTPError(validation.KEY_INFO_URL, 401, "revoked", {}, io.BytesIO(b"{}"))
+
+    monkeypatch.setattr(validation.urllib.request, "urlopen", revoked)
+    with pytest.raises(GrantVerificationError):
+        validation._get_json(validation.KEY_INFO_URL, "synthetic-token")
+
+
+def test_callback_fail_closed_and_success_without_provider_network(monkeypatch):
+    import time
+    from fastapi import HTTPException
+    from backend import pollinations_oauth_router as router_module
+    from backend.pollinations_oauth import PollinationsOAuthConfig
+
+    config = PollinationsOAuthConfig(client_id=APP, redirect_uri="https://example.invalid/callback")
+    monkeypatch.setattr(router_module.PollinationsOAuthConfig, "from_env", lambda: config)
+    monkeypatch.setattr(router_module, "exchange_authorization_code",
+                        lambda *args, **kwargs: {"access_token": "synthetic-token", "expires_in": 3600})
+    observed = []
+    monkeypatch.setattr(router_module, "verify_provider_token",
+                        lambda token, *, client_id: observed.append((token, client_id)))
+    monkeypatch.setattr(router_module, "_persist_session", lambda *args: None)
+    monkeypatch.setattr(router_module, "_supabase_config", lambda: None)
+    state = "synthetic-state"
+    router_module._transactions[state] = router_module._OAuthTransaction("verifier", time.time())
+    try:
+        response = router_module.pollinations_callback(code="code", state=state, oauth_state=state)
+        assert response.status_code == 302
+        assert observed == [("synthetic-token", APP)]
+    finally:
+        router_module._transactions.pop(state, None)
+        router_module._sessions.clear()
+
+
+def test_callback_missing_expiry_never_persists(monkeypatch):
+    import time
+    from fastapi import HTTPException
+    from backend import pollinations_oauth_router as router_module
+    from backend.pollinations_oauth import PollinationsOAuthConfig
+
+    config = PollinationsOAuthConfig(client_id=APP, redirect_uri="https://example.invalid/callback")
+    monkeypatch.setattr(router_module.PollinationsOAuthConfig, "from_env", lambda: config)
+    monkeypatch.setattr(router_module, "exchange_authorization_code",
+                        lambda *args, **kwargs: {"access_token": "synthetic-token"})
+    monkeypatch.setattr(router_module, "verify_provider_token",
+                        lambda *args, **kwargs: pytest.fail("must not query provider with invalid expiry"))
+    monkeypatch.setattr(router_module, "_persist_session",
+                        lambda *args: pytest.fail("must not persist invalid session"))
+    state = "synthetic-missing-expiry"
+    router_module._transactions[state] = router_module._OAuthTransaction("verifier", time.time())
+    try:
+        with pytest.raises(HTTPException) as exc:
+            router_module.pollinations_callback(code="code", state=state, oauth_state=state)
+        assert exc.value.status_code == 502
+    finally:
+        router_module._transactions.pop(state, None)
+
+
+def test_callback_provider_verification_failure_never_persists(monkeypatch):
+    import time
+    from fastapi import HTTPException
+    from backend import pollinations_oauth_router as router_module
+    from backend.pollinations_oauth import PollinationsOAuthConfig
+
+    config = PollinationsOAuthConfig(client_id=APP, redirect_uri="https://example.invalid/callback")
+    monkeypatch.setattr(router_module.PollinationsOAuthConfig, "from_env", lambda: config)
+    monkeypatch.setattr(router_module, "exchange_authorization_code",
+                        lambda *args, **kwargs: {"access_token": "synthetic-token", "expires_in": 3600})
+    def deny(*args, **kwargs):
+        raise GrantVerificationError("synthetic revoked key")
+    monkeypatch.setattr(router_module, "verify_provider_token", deny)
+    monkeypatch.setattr(router_module, "_persist_session",
+                        lambda *args: pytest.fail("must not persist invalid session"))
+    state = "synthetic-revoked"
+    router_module._transactions[state] = router_module._OAuthTransaction("verifier", time.time())
+    try:
+        with pytest.raises(HTTPException) as exc:
+            router_module.pollinations_callback(code="code", state=state, oauth_state=state)
+        assert exc.value.status_code == 502
+    finally:
+        router_module._transactions.pop(state, None)
