@@ -81,6 +81,20 @@ begin
  if exists(select 1 from public.generation_requests where execution_id=e.id and state not in ('SUCCEEDED','FAILED_CONFIRMED'))
  then raise exception 'incomplete or ambiguous slide'; end if;
  if p_actual > e.reserved_pollen then raise exception 'actual exceeds reserved'; end if;
+ -- A caller cannot settle a different amount than the immutable per-slide
+ -- observations. Provider-origin verification remains a separate release gate.
+ if (select coalesce(sum(observed_pollen),0) from public.generation_requests
+     where execution_id=e.id) is distinct from p_actual
+ then raise exception 'settlement amount does not match observed slide total'; end if;
+ if exists (
+   select 1 from public.generation_requests r
+   where r.execution_id=e.id and not exists (
+     select 1 from public.generation_events ev
+     where ev.execution_id=e.id and ev.request_id=r.id
+       and ev.event_type=r.state
+       and (ev.safe_detail->>'observed_pollen')::numeric=r.observed_pollen
+   )
+ ) then raise exception 'missing matching immutable result evidence'; end if;
  select * into b from public.generation_budget_accounts where id=e.budget_account_id for update;
  if b.owner_user_id <> p_owner or b.pollinations_session_id <> p_session
  then raise exception 'wallet mismatch' using errcode='42501'; end if;
