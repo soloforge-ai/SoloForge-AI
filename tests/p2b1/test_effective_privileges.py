@@ -38,8 +38,11 @@ def test_effective_table_dml_denied(role):
         # Even a single column-level grant can permit a direct UPDATE.
         for table in TABLES:
             columns = conn.execute(
-                """select column_name from information_schema.columns
-                   where table_schema='public' and table_name=%s""", (table,)
+                """select a.attname from pg_attribute a
+                   join pg_class t on t.oid=a.attrelid
+                   join pg_namespace n on n.oid=t.relnamespace
+                   where n.nspname='public' and t.relname=%s
+                     and a.attnum>0 and not a.attisdropped""", (table,)
             ).fetchall()
             for (column,) in columns:
                 assert not conn.execute(
