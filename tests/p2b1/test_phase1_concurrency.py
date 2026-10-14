@@ -155,3 +155,43 @@ def test_ambiguous_provider_result_fences_execution():
             with c.transaction():
                 c.execute("select public.generation_settle_execution(%s,%s,%s,0,'synthetic-uncertain')",
                           (eid,data[0],data[2]))
+
+
+def test_service_role_cannot_mint_trusted_attestation():
+    data=seed()
+    with connect() as c:
+        c.execute("set role service_role")
+        with pytest.raises(psycopg.Error):
+            with c.transaction():
+                c.execute("""update generation_trust.wallet_attestations
+                  set expires_at=now()+interval '10 years'
+                  where budget_account_id=%s""",(data[1],))
+
+
+def test_missing_independent_attestation_blocks_reservation():
+    data=seed()
+    aid=approval(data,2)
+    with connect() as c:
+        c.execute("delete from generation_trust.wallet_attestations where budget_account_id=%s",(data[1],))
+    with pytest.raises(psycopg.Error):
+        reserve(data,aid,uid())
+
+
+def test_expired_independent_attestation_blocks_reservation():
+    data=seed()
+    aid=approval(data,2)
+    with connect() as c:
+        c.execute("""update generation_trust.wallet_attestations
+          set verified_at=now()-interval '2 days',expires_at=now()-interval '1 day'
+          where budget_account_id=%s""",(data[1],))
+    with pytest.raises(psycopg.Error):
+        reserve(data,aid,uid())
+
+
+def test_revoked_independent_attestation_blocks_reservation():
+    data=seed()
+    aid=approval(data,2)
+    with connect() as c:
+        c.execute("update generation_trust.wallet_attestations set revoked_at=now() where budget_account_id=%s",(data[1],))
+    with pytest.raises(psycopg.Error):
+        reserve(data,aid,uid())
