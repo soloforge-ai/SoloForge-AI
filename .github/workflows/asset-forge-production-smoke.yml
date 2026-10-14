@@ -19,8 +19,8 @@ jobs:
     timeout-minutes: 15
     env:
       ASSET_FORGE_BASE_URL: https://soloforge-asset-forge.onrender.com
-      EXPECTED_GIT_COMMIT: ${{ github.event_name == 'push' && github.sha || '' }}
     steps:
+      # Read-only GET checks only; production backend auto-deploy is disabled.
       - name: Wait for production health
         shell: bash
         run: |
@@ -33,7 +33,7 @@ jobs:
             cat /tmp/health.json 2>/dev/null || true
             echo
             if [ "$code" = "200" ]; then
-              if python -c "import json, os; from pathlib import Path; payload=json.loads(Path('/tmp/health.json').read_text()); expected=os.environ.get('EXPECTED_GIT_COMMIT', '').strip(); actual=str(payload.get('git_commit', '')).strip(); assert payload.get('status') == 'ok', payload; assert payload.get('service') == 'asset-forge', payload; assert actual and actual != 'unknown', payload; expected and actual != expected and (_ for _ in ()).throw(AssertionError(f'expected commit {expected}, got {actual}')); print(f'health ok: deployed commit {actual}' + (f' matches expected {expected}' if expected else ''))"; then
+              if python -c "import json; from pathlib import Path; payload=json.loads(Path('/tmp/health.json').read_text()); assert payload.get('status') == 'ok', payload; assert payload.get('service') == 'asset-forge', payload; print('health contract ok')"; then
                 exit 0
               fi
             fi
@@ -63,24 +63,3 @@ jobs:
           echo 'Production OpenAPI contract did not become ready in time.'
           exit 1
 
-      - name: Validate local fallback without spending Pollen
-        shell: bash
-        run: |
-          set -euo pipefail
-          code=$(curl -sS -o /tmp/generate.json -w '%{http_code}' \
-            --connect-timeout 15 --max-time 60 \
-            -H 'Content-Type: application/json' \
-            -d '{"character":"CEO","product":"Sticker","theme":"Healing & Encouragement","style":"Cute 3D Chibi","quantity":4,"messages":[]}' \
-            "$ASSET_FORGE_BASE_URL/v1/asset-forge/generate" || true)
-          echo "generate local-fallback => HTTP $code"
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          payload = json.loads(Path('/tmp/generate.json').read_text())
-          assert payload.get('generation_mode') == 'local_fallback', payload
-          assert len(payload.get('files') or []) == 4, payload
-          assert payload.get('source_image_base64'), payload
-          assert payload.get('zip_base64'), payload
-          print('local fallback ok; no Pollinations session required')
-          PY
-          test "$code" = '200'
