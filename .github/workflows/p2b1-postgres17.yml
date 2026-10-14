@@ -1,6 +1,15 @@
 name: P2-B1 PostgreSQL 17 disposable verification
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261009232734_generation_db_foundation_phase1.sql'
+      - 'supabase/migrations/202610140005_generation_service_rpcs_phase1.sql'
+      - 'supabase/migrations/202610140006_generation_state_transitions.sql'
+      - 'supabase/tests/generation_phase1_baseline.sql'
+      - 'tests/p2b1/**'
+      - '.github/workflows/p2b1-postgres17.yml'
 permissions:
   contents: read
 jobs:
@@ -39,13 +48,9 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261009232734_generation_db_foundation_phase1.sql
       - name: Verify native PostgreSQL Phase 1 security
         run: python -m pytest -q tests/p2b1/test_phase1_postgres.py
-      - name: Fail closed until compatible service-only RPCs and concurrency tests exist
-        shell: bash
+      - name: Apply service-only RPCs
         run: |
-          set -euo pipefail
-          test -f supabase/migrations/202610140005_generation_service_rpcs_phase1.sql || {
-            echo "::error::Compatible Phase 1 RPC migration missing; concurrency/settlement NOT VERIFIED."
-            exit 1
-          }
-          echo "::error::RPC migration and concurrency suite must be wired before this job can pass."
-          exit 1
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140005_generation_service_rpcs_phase1.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140006_generation_state_transitions.sql
+      - name: Verify native PostgreSQL security, concurrency, settlement
+        run: python -m pytest -q tests/p2b1/test_phase1_postgres.py tests/p2b1/test_phase1_concurrency.py
