@@ -241,3 +241,50 @@ def test_service_role_direct_budget_dml_denied():
                   (execution_id,budget_account_id,owner_user_id,pollinations_session_id,
                    event_key,event_type) values(%s,%s,%s,%s,%s,'CLAIMED')""",
                   (uid(),data[1],data[0],data[2],uid()))
+
+
+def test_explicit_reconciliation_resume_never_retries_same_slide():
+    data=seed()
+    eid=reserve(data,approval(data,5),uid())
+    with connect() as c:
+        rows=c.execute("""select id from public.generation_requests where execution_id=%s
+          order by slide_ordinal""",(eid,)).fetchall()
+        first, second=rows[0][0],rows[1][0]
+        c.execute("set role service_role")
+        assert c.execute("select public.generation_mark_call_started(%s,%s,%s)",
+                         (first,data[0],data[2])).fetchone()[0]
+        assert c.execute("""select public.generation_record_verified_result(
+          %s,%s,%s,'UNKNOWN_RECONCILE','uncertain-evidence',0)""",
+          (first,data[0],data[2])).fetchone()[0]
+        with pytest.raises(psycopg.Error):
+            with c.transaction():
+                c.execute("""select public.generation_resume_after_reconciliation(
+                  %s,%s,%s,'uncertain-evidence')""",(eid,data[0],data[2]))
+        assert c.execute("""select public.generation_record_verified_result(
+          %s,%s,%s,'SUCCEEDED','provider-confirmed',1,'test',%s,'v1',%s)""",
+          (first,data[0],data[2],str(first),'c'*64)).fetchone()[0]
+        with pytest.raises(psycopg.Error):
+            with c.transaction():
+                c.execute("""select public.generation_resume_after_reconciliation(
+                  %s,%s,%s,'forged-evidence')""",(eid,data[0],data[2]))
+        assert c.execute("""select public.generation_resume_after_reconciliation(
+          %s,%s,%s,'provider-confirmed')""",(eid,data[0],data[2])).fetchone()[0]
+        assert not c.execute("select public.generation_mark_call_started(%s,%s,%s)",
+                             (first,data[0],data[2])).fetchone()[0]
+        assert c.execute("select public.generation_mark_call_started(%s,%s,%s)",
+                         (second,data[0],data[2])).fetchone()[0]
+        with pytest.raises(psycopg.Error):
+            with c.transaction():
+                c.execute("""select public.generation_resume_after_reconciliation(
+                  %s,%s,%s,'provider-confirmed')""",(eid,data[0],data[2]))
+
+
+def test_reconciliation_rejects_wrong_owner():
+    data=seed()
+    eid=reserve(data,approval(data,3),uid())
+    with connect() as c:
+        c.execute("set role service_role")
+        with pytest.raises(psycopg.Error):
+            with c.transaction():
+                c.execute("""select public.generation_resume_after_reconciliation(
+                  %s,%s,%s,'provider-confirmed')""",(eid,uid(),data[2]))
