@@ -12,6 +12,7 @@ import urllib.request
 from typing import Any
 
 from backend.shared_supabase import supabase_request as _supabase_request
+from backend.publishing_policy import require_publishing_enabled
 
 
 PUBLORA_API_BASE = "https://api.publora.com/api/v1"
@@ -36,6 +37,7 @@ def _publora_request(
     body: dict[str, Any] | None = None,
     idempotency_key: str | None = None,
 ) -> dict[str, Any]:
+    require_publishing_enabled()
     api_key = _required_env("PUBLORA_API_KEY")
     headers = {
         "x-publora-key": api_key,
@@ -260,6 +262,7 @@ def publish_now_time() -> datetime:
 
 
 def sync_publishing_once(limit: int = 20) -> int:
+    require_publishing_enabled()
     rows = _supabase_request(
         "GET",
         "content_jobs?status=eq.PUBLISHING&publora_post_id=not.is.null"

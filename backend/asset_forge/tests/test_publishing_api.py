@@ -17,6 +17,15 @@ SCHEDULED = datetime.now(timezone.utc) + timedelta(days=1)
 PLATFORMS = ["facebook-account"]
 
 
+@pytest.fixture(autouse=True)
+def allow_legacy_publishing_claim_contract_tests(monkeypatch):
+    """Exercise the preserved atomic-claim implementation with mocked side effects.
+
+    Production remains fail-closed; this override exists only inside legacy tests.
+    """
+    monkeypatch.setattr(api, "require_publishing_enabled", lambda: None)
+
+
 @pytest.fixture
 def storage(monkeypatch):
     state = {
