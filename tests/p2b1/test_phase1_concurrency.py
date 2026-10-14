@@ -195,3 +195,33 @@ def test_revoked_independent_attestation_blocks_reservation():
         c.execute("update generation_trust.wallet_attestations set revoked_at=now() where budget_account_id=%s",(data[1],))
     with pytest.raises(psycopg.Error):
         reserve(data,aid,uid())
+
+
+def test_immutable_audit_and_evidence():
+    data=seed()
+    eid=reserve(data,approval(data,4),uid())
+    with connect() as c:
+        events=c.execute("""select event_type,safe_detail from public.generation_events
+          where execution_id=%s order by created_at""",(eid,)).fetchall()
+        assert {x[0] for x in events}>={'CLAIMED','BUDGET_RESERVED'}
+        assert events[0][1]
+        with pytest.raises(psycopg.Error):
+            with c.transaction():
+                c.execute("""update public.generation_events set safe_detail='{}'
+                  where execution_id=%s""",(eid,))
+
+
+def test_attestation_cannot_be_minted_with_service_role():
+    data=seed()
+    with connect() as c:
+        c.execute("set role service_role")
+        with pytest.raises(psycopg.Error):
+            with c.transaction():
+                c.execute("""insert into generation_trust.wallet_attestations
+                  (budget_account_id,owner_user_id,pollinations_session_id,wallet_fingerprint,
+                   wallet_category,authorization_ref,allocation_ref,max_authorized_pollen,
+                   verified_at,expires_at,evidence_sha256)
+                  select id,owner_user_id,pollinations_session_id,provider_wallet_fingerprint,
+                  wallet_category,'forged','forged',1,now(),now()+interval '1 day',%s
+                  from public.generation_budget_accounts where id=%s""",
+                  ('f'*64,data[1]))
