@@ -16,14 +16,14 @@ class ProductionSmokeSafetyTests(unittest.TestCase):
 
     def test_no_post_or_generation_execution(self):
         text = self.workflow
-        self.assertNotRegex(text, r"(?im)\\bcurl\\b[^\\n]*\\s-X\\s*(?:POST|PUT|PATCH|DELETE)\\b")
+        self.assertNotRegex(text, r"(?im)\bcurl\b[^\n]*\s-X\s*(?:POST|PUT|PATCH|DELETE)\b")
         self.assertNotIn("-d '{", text)
         self.assertNotIn("/tmp/generate.json", text)
         self.assertNotIn('"$ASSET_FORGE_BASE_URL/v1/asset-forge/generate"', text)
         self.assertNotIn("local_fallback", text)
 
     def test_only_health_and_openapi_are_requested(self):
-        endpoints = re.findall(r'\\$ASSET_FORGE_BASE_URL(/[^"\\s]*)', self.workflow)
+        endpoints = re.findall(r'\$ASSET_FORGE_BASE_URL(/[^"\s]*)', self.workflow)
         self.assertEqual(sorted(endpoints), ["/health", "/openapi.json"])
         self.assertEqual(self.workflow.count("curl -sS"), 2)
 
