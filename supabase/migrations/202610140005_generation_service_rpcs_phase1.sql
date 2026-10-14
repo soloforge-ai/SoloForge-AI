@@ -64,7 +64,7 @@ begin
  select * into e from public.generation_executions where id=p_execution for update;
  if not found or e.owner_user_id is distinct from p_owner or e.pollinations_session_id is distinct from p_session
  then raise exception 'owner or session mismatch' using errcode='42501'; end if;
- if e.state <> 'CALL_STARTED' then
+ if e.state not in ('CALL_STARTED','UNKNOWN_RECONCILE','SUCCEEDED','FAILED_CONFIRMED') then
   raise exception 'execution not ready for verified settlement'; end if;
  if exists(select 1 from public.generation_requests where execution_id=e.id and state not in ('SUCCEEDED','FAILED_CONFIRMED'))
  then raise exception 'incomplete or ambiguous slide'; end if;
@@ -78,6 +78,7 @@ begin
   if e.observed_pollen is distinct from p_actual then raise exception 'settlement replay conflict'; end if;
   return true;
  end if;
+ if e.state in ('SUCCEEDED','FAILED_CONFIRMED') then raise exception 'terminal state without settlement ledger'; end if;
  if b.reserved_pollen < e.reserved_pollen then raise exception 'reservation drift'; end if;
  update public.generation_budget_accounts
  set reserved_pollen=reserved_pollen-e.reserved_pollen,
