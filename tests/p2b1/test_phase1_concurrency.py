@@ -316,3 +316,26 @@ def test_reconciliation_rejects_skipping_earliest_pending_slide():
         assert states[1][1]=='PENDING' and states[2][1]=='PENDING'
         assert c.execute("select public.generation_mark_call_started(%s,%s,%s)",
                          (second,data[0],data[2])).fetchone()[0]
+
+
+def test_settlement_rejects_unreconciled_amount_even_with_evidence_ref():
+    data=seed()
+    eid=reserve(data,approval(data,6),uid())
+    with connect() as c:
+        rows=c.execute("""select id from public.generation_requests where execution_id=%s
+          order by slide_ordinal""",(eid,)).fetchall()
+        c.execute("set role service_role")
+        for (rid,) in rows:
+            assert c.execute("select public.generation_mark_call_started(%s,%s,%s)",
+                             (rid,data[0],data[2])).fetchone()[0]
+            assert c.execute("""select public.generation_record_verified_result(
+              %s,%s,%s,'SUCCEEDED','synthetic-evidence',1,'test',%s,'v1',%s)""",
+              (rid,data[0],data[2],str(rid),'c'*64)).fetchone()[0]
+        with pytest.raises(psycopg.Error):
+            with c.transaction():
+                c.execute("select public.generation_settle_execution(%s,%s,%s,3,'forged-evidence')",
+                          (eid,data[0],data[2]))
+        assert c.execute("""select count(*) from public.generation_budget_ledger
+          where execution_id=%s and entry_kind='SETTLE'""",(eid,)).fetchone()[0]==0
+        assert c.execute("""select public.generation_settle_execution(
+          %s,%s,%s,4,'synthetic-evidence')""",(eid,data[0],data[2])).fetchone()[0]
