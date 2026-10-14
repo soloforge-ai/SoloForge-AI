@@ -7,7 +7,7 @@ create or replace function public.generation_record_verified_result(
  p_request uuid,p_owner uuid,p_session text,p_outcome text,p_evidence_ref text,
  p_observed numeric,p_bucket text default null,p_object_key text default null,
  p_version text default null,p_sha text default null
-) returns boolean language plpgsql security invoker set search_path='' as $$
+) returns boolean language plpgsql security definer set search_path='' as $$
 declare e public.generation_executions%rowtype; r public.generation_requests%rowtype;
 begin
  if (session_user <> 'service_role' and current_setting('role') <> 'service_role') then raise exception 'service role required' using errcode='42501'; end if;
@@ -59,7 +59,7 @@ end $$;
 
 create or replace function public.generation_settle_execution(
  p_execution uuid,p_owner uuid,p_session text,p_actual numeric,p_evidence_ref text
-) returns boolean language plpgsql security invoker set search_path = '' as $$
+) returns boolean language plpgsql security definer set search_path = '' as $$
 declare e public.generation_executions%rowtype; b public.generation_budget_accounts%rowtype;
  v_settled boolean; v_released numeric;
 begin
