@@ -101,6 +101,12 @@ begin
            and ev.event_type=r.state and ev.safe_detail->>'evidence_ref'=v.evidence_ref)
    )
  ) then raise exception 'trusted settlement evidence missing or expired' using errcode='42501'; end if;
+ if not exists (
+   select 1 from generation_evidence.verified_results v
+   where v.execution_id=e.id and v.owner_user_id=p_owner
+     and v.pollinations_session_id=p_session and v.evidence_ref=p_evidence_ref
+     and v.verified_at<=clock_timestamp() and v.expires_at>clock_timestamp()
+ ) then raise exception 'settlement evidence reference not bound to execution' using errcode='42501'; end if;
  select * into b from public.generation_budget_accounts where id=e.budget_account_id for update;
  if b.owner_user_id <> p_owner or b.pollinations_session_id <> p_session
  then raise exception 'wallet mismatch' using errcode='42501'; end if;
