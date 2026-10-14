@@ -21,6 +21,8 @@ create table generation_evidence.verified_results (
  unique (request_id, evidence_ref),
  unique (provider_request_ref)
 );
+create trigger verified_results_immutable before update or delete on generation_evidence.verified_results
+ for each row execute function generation_internal.guard_immutable('');
 alter table generation_evidence.verified_results enable row level security;
 alter table generation_evidence.verified_results force row level security;
 revoke all on generation_evidence.verified_results from public,anon,authenticated,service_role;
