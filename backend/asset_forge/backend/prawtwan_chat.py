@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from backend.execution_policy import require_generation_execution
+from backend.execution_policy import require_interactive_chat_execution
 
 import json
 import urllib.error
@@ -92,7 +92,7 @@ def chat_with_prawtwan(
             detail="Connect Pollinations before using Chat Prawtwan.",
         )
 
-    require_generation_execution()
+    require_interactive_chat_execution()
     payload = {
         "model": PRAWTWAN_MODEL,
         "messages": [
