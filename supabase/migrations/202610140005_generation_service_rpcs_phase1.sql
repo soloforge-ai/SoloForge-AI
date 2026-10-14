@@ -50,6 +50,14 @@ begin
  insert into public.generation_budget_ledger
   (execution_id,budget_account_id,owner_user_id,pollinations_session_id,entry_key,entry_kind,amount_pollen)
  values(v_id,b.id,p_owner,p_session,p_execution_key||':reserve','RESERVE',a.max_pollen);
+ insert into public.generation_events
+  (execution_id,budget_account_id,owner_user_id,pollinations_session_id,event_key,event_type,safe_detail)
+ values(v_id,b.id,p_owner,p_session,p_execution_key||':claimed','CLAIMED',
+        jsonb_build_object('approval_id',a.id,'snapshot_digest',a.snapshot_digest));
+ insert into public.generation_events
+  (execution_id,budget_account_id,owner_user_id,pollinations_session_id,event_key,event_type,safe_detail)
+ values(v_id,b.id,p_owner,p_session,p_execution_key||':budget-reserved','BUDGET_RESERVED',
+        jsonb_build_object('amount_pollen',a.max_pollen,'allocation_ref',b.allocation_ref));
  update public.generation_approvals set state='CLAIMED',revision=revision+1 where id=a.id;
  return v_id;
 end $$;
@@ -95,6 +103,16 @@ begin
   insert into public.generation_budget_ledger
    (execution_id,budget_account_id,owner_user_id,pollinations_session_id,entry_key,entry_kind,amount_pollen,evidence_ref)
   values(e.id,b.id,p_owner,p_session,e.execution_key||':release','RELEASE_AFTER_VERIFICATION',v_released,p_evidence_ref);
+ end if;
+ insert into public.generation_events
+  (execution_id,budget_account_id,owner_user_id,pollinations_session_id,event_key,event_type,safe_detail)
+ values(e.id,b.id,p_owner,p_session,e.execution_key||':budget-settled','BUDGET_SETTLED',
+        jsonb_build_object('evidence_ref',p_evidence_ref,'actual_pollen',p_actual));
+ if v_released>0 then
+  insert into public.generation_events
+   (execution_id,budget_account_id,owner_user_id,pollinations_session_id,event_key,event_type,safe_detail)
+  values(e.id,b.id,p_owner,p_session,e.execution_key||':budget-released','BUDGET_RELEASED',
+         jsonb_build_object('evidence_ref',p_evidence_ref,'released_pollen',v_released));
  end if;
  update public.generation_executions set state=(case when exists(select 1 from public.generation_requests where execution_id=e.id and state='FAILED_CONFIRMED') then 'FAILED_CONFIRMED' else 'SUCCEEDED' end),observed_pollen=p_actual,settled_at=clock_timestamp(),revision=revision+1
  where id=e.id;
