@@ -56,6 +56,21 @@ begin
  output_object_version=case when p_outcome='SUCCEEDED' then p_version else null end,
  output_sha256=case when p_outcome='SUCCEEDED' then p_sha else null end
  where id=r.id;
+ insert into public.generation_events
+  (execution_id,budget_account_id,owner_user_id,pollinations_session_id,request_id,
+   event_key,event_type,safe_detail)
+ values(e.id,e.budget_account_id,p_owner,p_session,r.id,
+  r.request_key||':result:'||p_outcome,p_outcome,
+  jsonb_build_object('evidence_ref',p_evidence_ref,'observed_pollen',p_observed,
+    'outcome',p_outcome,'output_sha256',case when p_outcome='SUCCEEDED' then p_sha else null end));
+ if r.state='UNKNOWN_RECONCILE' and p_outcome<>'UNKNOWN_RECONCILE' then
+  insert into public.generation_events
+   (execution_id,budget_account_id,owner_user_id,pollinations_session_id,request_id,
+    event_key,event_type,safe_detail)
+  values(e.id,e.budget_account_id,p_owner,p_session,r.id,
+    r.request_key||':reconciled','RECONCILED',
+    jsonb_build_object('evidence_ref',p_evidence_ref,'outcome',p_outcome));
+ end if;
  if p_outcome='UNKNOWN_RECONCILE' then
   update public.generation_executions set state='UNKNOWN_RECONCILE',revision=revision+1 where id=e.id;
  end if;
