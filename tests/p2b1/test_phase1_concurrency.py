@@ -31,6 +31,15 @@ def seed(wallet_amount=10):
            allocation_verified_at,allocated_pollen)
           values(%s,%s,%s,%s,'QUEST',now(),'ALLOCATED','synthetic-allocation',now(),%s)""",
           (account,owner,session,uuid.uuid4().hex*2,wallet_amount))
+        c.execute("""insert into generation_trust.wallet_attestations
+          (budget_account_id,owner_user_id,pollinations_session_id,wallet_fingerprint,
+           wallet_category,authorization_ref,allocation_ref,max_authorized_pollen,
+           verified_at,expires_at,evidence_sha256)
+          select id,owner_user_id,pollinations_session_id,provider_wallet_fingerprint,
+          wallet_category,'synthetic-provider-authority','synthetic-allocation',%s,
+          now(),now()+interval '1 hour',%s
+          from public.generation_budget_accounts where id=%s""",
+          (wallet_amount,'d'*64,account))
     return owner,account,session,job
 
 
