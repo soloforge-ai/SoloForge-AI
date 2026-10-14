@@ -138,8 +138,11 @@ def test_ambiguous_provider_result_fences_execution():
         assert c.execute("""select public.generation_record_verified_result(
           %s,%s,%s,'UNKNOWN_RECONCILE','synthetic-uncertain',0)""",
           (rows[0][0],data[0],data[2])).fetchone()[0]
-        assert not c.execute("select public.generation_mark_call_started(%s,%s,%s)",
-                             (rows[1][0],data[0],data[2])).fetchone()[0]
         with pytest.raises(psycopg.Error):
-            c.execute("select public.generation_settle_execution(%s,%s,%s,0,'synthetic-uncertain')",
-                      (eid,data[0],data[2]))
+            with c.transaction():
+                c.execute("select public.generation_mark_call_started(%s,%s,%s)",
+                          (rows[1][0],data[0],data[2]))
+        with pytest.raises(psycopg.Error):
+            with c.transaction():
+                c.execute("select public.generation_settle_execution(%s,%s,%s,0,'synthetic-uncertain')",
+                          (eid,data[0],data[2]))
