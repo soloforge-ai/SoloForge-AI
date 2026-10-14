@@ -11,6 +11,7 @@ on:
       - 'supabase/migrations/202610140008_generation_rpc_privilege_boundary.sql'
       - 'supabase/migrations/202610140009_generation_explicit_reconciliation_recovery.sql'
       - 'supabase/migrations/202610140010_generation_verified_evidence_registry.sql'
+      - 'supabase/migrations/202610140011_generation_evidence_rpc_enforcement.sql'
       - 'supabase/tests/generation_phase1_baseline.sql'
       - 'tests/p2b1/**'
       - 'backend/asset_forge/security/provider_evidence_offline.py'
@@ -66,3 +67,7 @@ jobs:
         run: python -m pytest -q tests/p2b1/test_provider_evidence_offline.py
       - name: Verify native PostgreSQL security, concurrency, settlement
         run: python -m pytest -q tests/p2b1/test_phase1_postgres.py tests/p2b1/test_phase1_concurrency.py tests/p2b1/test_effective_privileges.py tests/p2b1/test_verified_evidence_registry.py
+      - name: Apply trusted evidence RPC enforcement (no provider calls)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140011_generation_evidence_rpc_enforcement.sql
+      - name: Verify evidence RPC boundary negative cases
+        run: python -m pytest -q tests/p2b1/test_evidence_rpc_enforcement.py
