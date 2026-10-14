@@ -59,10 +59,18 @@ begin
  then raise exception 'matching immutable reconciliation evidence missing'; end if;
  if not exists(select 1 from public.generation_requests where execution_id=e.id and state='PENDING')
  then raise exception 'nothing to resume; settle instead'; end if;
- if exists(select 1 from public.generation_requests r where r.execution_id=e.id
-   and r.state='PENDING' and exists(select 1 from public.generation_requests earlier
-     where earlier.execution_id=e.id and earlier.slide_ordinal<r.slide_ordinal
-     and earlier.state<>'SUCCEEDED'))
+ -- Only the earliest pending slide is eligible to resume. Later pending slides
+ -- must remain pending and must not block recovery of the immediate next slide.
+ if exists(
+   select 1 from public.generation_requests earlier
+   where earlier.execution_id=e.id
+     and earlier.slide_ordinal < (
+       select min(next_slide.slide_ordinal)
+       from public.generation_requests next_slide
+       where next_slide.execution_id=e.id and next_slide.state='PENDING'
+     )
+     and earlier.state <> 'SUCCEEDED'
+ )
  then raise exception 'sequential slide fence failed'; end if;
  update public.generation_executions set state='CALL_STARTED',revision=revision+1 where id=e.id;
  return true;
