@@ -18,7 +18,12 @@ from fastapi import APIRouter, Cookie, Header, HTTPException, Query
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
-from backend.pollinations_grant_validation import (\n    GrantVerificationError,\n    strict_expires_in,\n    verify_provider_token,\n)\nfrom backend.pollinations_oauth import (
+from backend.pollinations_grant_validation import (
+    GrantVerificationError,
+    strict_expires_in,
+    verify_provider_token,
+)
+from backend.pollinations_oauth import (
     PollinationsOAuthConfig,
     build_authorization_url,
     create_pkce_transaction,
@@ -406,11 +411,20 @@ def pollinations_callback(
             detail="Pollinations token exchange failed. Please retry the connection.",
         ) from exc
 
+    try:
+        expires_in = strict_expires_in(payload)
+        # Metadata verification does not grant spending authority.
+        verify_provider_token(payload["access_token"], client_id=config.client_id)
+    except GrantVerificationError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Pollinations identity or grant verification failed.",
+        ) from exc
+
     with _lock:
         _transactions.pop(state, None)
 
     session_id = secrets.token_urlsafe(32)
-    expires_in = int(payload.get("expires_in", 604800))
     session = _OAuthSession(
         access_token=payload["access_token"],
         expires_at=time.time() + expires_in,
