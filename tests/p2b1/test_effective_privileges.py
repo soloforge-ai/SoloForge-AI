@@ -91,4 +91,4 @@ def test_rpc_definer_ownership_is_not_service_role():
         for name, owner, definer, config in rows:
             assert owner not in ("service_role", "anon", "authenticated"), (name, owner)
             assert definer, name
-            assert config is not None and "search_path=" in config, name
+            assert config is not None and any(x.startswith("search_path=") for x in config), name
