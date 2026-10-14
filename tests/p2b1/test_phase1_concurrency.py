@@ -288,3 +288,31 @@ def test_reconciliation_rejects_wrong_owner():
             with c.transaction():
                 c.execute("""select public.generation_resume_after_reconciliation(
                   %s,%s,%s,'provider-confirmed')""",(eid,uid(),data[2]))
+
+
+def test_reconciliation_rejects_skipping_earliest_pending_slide():
+    data=seed()
+    eid=reserve(data,approval(data,5),uid())
+    with connect() as c:
+        rows=c.execute("""select id from public.generation_requests where execution_id=%s
+          order by slide_ordinal""",(eid,)).fetchall()
+        first, second, third=rows[0][0],rows[1][0],rows[2][0]
+        c.execute("set role service_role")
+        assert c.execute("select public.generation_mark_call_started(%s,%s,%s)",
+                         (first,data[0],data[2])).fetchone()[0]
+        assert c.execute("""select public.generation_record_verified_result(
+          %s,%s,%s,'UNKNOWN_RECONCILE','ambiguous-evidence',0)""",
+          (first,data[0],data[2])).fetchone()[0]
+        assert c.execute("""select public.generation_record_verified_result(
+          %s,%s,%s,'SUCCEEDED','confirmed-evidence',1,'test',%s,'v1',%s)""",
+          (first,data[0],data[2],str(first),'c'*64)).fetchone()[0]
+        assert c.execute("""select public.generation_resume_after_reconciliation(
+          %s,%s,%s,'confirmed-evidence')""",(eid,data[0],data[2])).fetchone()[0]
+        # Slide 3 cannot be started while slide 2 remains PENDING.
+        assert not c.execute("select public.generation_mark_call_started(%s,%s,%s)",
+                             (third,data[0],data[2])).fetchone()[0]
+        states=c.execute("""select slide_ordinal,state from public.generation_requests
+          where execution_id=%s order by slide_ordinal""",(eid,)).fetchall()
+        assert states[1][1]=='PENDING' and states[2][1]=='PENDING'
+        assert c.execute("select public.generation_mark_call_started(%s,%s,%s)",
+                         (second,data[0],data[2])).fetchone()[0]
