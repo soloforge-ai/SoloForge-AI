@@ -5,7 +5,7 @@ create or replace function public.generation_mark_call_started(
 ) returns boolean language plpgsql security invoker set search_path='' as $$
 declare e public.generation_executions%rowtype; r public.generation_requests%rowtype;
 begin
- if current_user <> 'service_role' then raise exception 'service role required' using errcode='42501'; end if;
+ if (session_user <> 'service_role' and current_setting('role') <> 'service_role') then raise exception 'service role required' using errcode='42501'; end if;
  select * into r from public.generation_requests where id=p_request;
  if not found then raise exception 'unknown request'; end if;
  select * into e from public.generation_executions where id=r.execution_id for update;
@@ -33,7 +33,7 @@ create or replace function public.generation_record_verified_result(
 ) returns boolean language plpgsql security invoker set search_path='' as $$
 declare e public.generation_executions%rowtype; r public.generation_requests%rowtype;
 begin
- if current_user <> 'service_role' then raise exception 'service role required' using errcode='42501'; end if;
+ if (session_user <> 'service_role' and current_setting('role') <> 'service_role') then raise exception 'service role required' using errcode='42501'; end if;
  if p_outcome not in ('SUCCEEDED','FAILED_CONFIRMED','UNKNOWN_RECONCILE')
  or nullif(btrim(p_evidence_ref),'') is null
  or p_observed is null or p_observed < 0 then raise exception 'invalid result evidence'; end if;
