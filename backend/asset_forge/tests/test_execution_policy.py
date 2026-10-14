@@ -251,3 +251,46 @@ def test_flags_and_credential_presence_cannot_unlock_generation(monkeypatch):
     with pytest.raises(HTTPException) as error:
         policy.require_generation_execution()
     assert error.value.status_code == 503
+
+
+def test_generate_on_create_denied_before_any_database_write_or_dispatch(monkeypatch):
+    """A connected session alone must not create a SELECTED job or queue generation."""
+    monkeypatch.setattr(jobs, "_require_session", lambda _: None)
+    database = Mock(side_effect=AssertionError("No DB operation before spending authorization"))
+    provider = Mock(side_effect=AssertionError("No provider call allowed"))
+    monkeypatch.setattr(jobs, "_supabase_request", database)
+    monkeypatch.setattr(jobs, "process_selected_job", provider)
+    tasks = BackgroundTasks()
+
+    with pytest.raises(HTTPException) as error:
+        jobs.create_from_idea(
+            jobs.IdeaCreateRequest(
+                idea="A valid content idea",
+                recommendation_id="personal_post",
+                action="generate",
+            ),
+            tasks,
+            "Bearer fake-session",
+        )
+
+    assert error.value.status_code == 503
+    assert tasks.tasks == []
+    database.assert_not_called()
+    provider.assert_not_called()
+
+
+def test_generate_on_create_default_action_also_denied_before_dispatch(monkeypatch):
+    """Omitting action defaults to generate and must never bypass S1."""
+    monkeypatch.setattr(jobs, "_require_session", lambda _: None)
+    database = Mock(side_effect=AssertionError("No DB mutation allowed"))
+    monkeypatch.setattr(jobs, "_supabase_request", database)
+    tasks = BackgroundTasks()
+    request = jobs.IdeaCreateRequest(idea="Another valid idea", recommendation_id="personal_post")
+    assert request.action == "generate"
+
+    with pytest.raises(HTTPException) as error:
+        jobs.create_from_idea(request, tasks, "Bearer fake-session")
+
+    assert error.value.status_code == 503
+    assert tasks.tasks == []
+    database.assert_not_called()
