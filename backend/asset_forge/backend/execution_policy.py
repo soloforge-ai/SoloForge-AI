@@ -19,6 +19,19 @@ def generation_execution_authorized() -> bool:
     return False
 
 
+def interactive_chat_execution_authorized() -> bool:
+    """Interactive chat requires its own trusted spending authorization (not implemented in S1)."""
+    return False
+
+
+def require_interactive_chat_execution() -> None:
+    if not interactive_chat_execution_authorized():
+        raise HTTPException(
+            status_code=503,
+            detail="Interactive chat is locked pending verified owner and spending authorization.",
+        )
+
+
 def require_generation_execution() -> None:
     if not generation_execution_authorized():
         raise HTTPException(

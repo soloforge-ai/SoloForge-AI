@@ -1,7 +1,4 @@
 import json
-
-import pytest
-import backend.asset_forge.backend.pollinations_oauth_router as oauth
 from urllib import request as urllib_request
 
 from fastapi import FastAPI
@@ -48,7 +45,7 @@ def test_chat_requires_connected_pollinations_session(monkeypatch):
 
 def test_chat_calls_fixed_private_agent_and_returns_text(monkeypatch):
     # Authorization substituted only for this isolated mocked legacy contract.
-    monkeypatch.setattr(prawtwan, "require_generation_execution", lambda: None)
+    monkeypatch.setattr(prawtwan, "require_interactive_chat_execution", lambda: None)
     captured: dict[str, object] = {}
 
     monkeypatch.setattr(
@@ -120,6 +117,35 @@ def test_chat_rejects_oversized_context(monkeypatch):
     )
 
     assert response.status_code == 422
+
+
+def test_chat_valid_session_is_fail_closed_without_spending_authorization(monkeypatch):
+    from unittest.mock import Mock
+    from backend.asset_forge.backend import execution_policy
+
+    monkeypatch.setattr(prawtwan, "get_pollinations_access_token_from_authorization", lambda _: "fake-token")
+    provider = Mock(side_effect=AssertionError("Provider must not be called"))
+    monkeypatch.setattr(prawtwan.urllib.request, "urlopen", provider)
+    response = _client().post("/v1/prawtwan/chat", headers={"Authorization": "Bearer session-token"}, json={"messages": [{"role": "user", "content": "Hello"}]})
+    assert response.status_code == 503
+    assert "fake-token" not in response.text
+    assert execution_policy.interactive_chat_execution_authorized() is False
+    provider.assert_not_called()
+
+
+def test_chat_and_generation_authorization_are_independently_fail_closed(monkeypatch):
+    from fastapi import HTTPException
+    from backend.asset_forge.backend import execution_policy
+    import pytest
+
+    assert execution_policy.interactive_chat_execution_authorized() is False
+    assert execution_policy.generation_execution_authorized() is False
+    with pytest.raises(HTTPException) as chat_error:
+        execution_policy.require_interactive_chat_execution()
+    with pytest.raises(HTTPException) as image_error:
+        execution_policy.require_generation_execution()
+    assert chat_error.value.status_code == 503
+    assert image_error.value.status_code == 503
 
 
 # These use the real session resolver and S1 guard, not the happy-path bypass.
