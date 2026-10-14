@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from backend.execution_policy import generation_execution_authorized
+
 import asyncio
 from datetime import datetime, timezone
 import json
@@ -457,11 +459,15 @@ def _process_claimed_render(job: dict[str, Any]) -> bool:
 
 
 def process_audio_ready_job(job_id: str) -> bool:
+    if not generation_execution_authorized():
+        return False
     job = _claim_ready_job(job_id)
     return _process_claimed_render(job) if job is not None else False
 
 
 def process_audio_ready_once() -> int:
+    if not generation_execution_authorized():
+        return 0
     try:
         _recover_stale_rendering()
     except Exception as exc:

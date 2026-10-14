@@ -1,6 +1,8 @@
 """SoloForge Telegram Sales Inbox v1."""
 
 from __future__ import annotations
+
+from backend.execution_policy import generation_execution_authorized
 import json
 import os
 import urllib.parse
@@ -65,7 +67,9 @@ def draft_outreach(lead: dict[str, Any]) -> dict[str, str]:
         f"Need: {lead.get('need') or '-'}\n"
         f"Evidence: {lead.get('evidence') or '-'}"
     )
-    for provider, key_env, model_env, default_model, endpoint in PROVIDERS:
+    # Preserve deterministic local outreach, without attempting a paid provider.
+    providers = PROVIDERS if generation_execution_authorized() else ()
+    for provider, key_env, model_env, default_model, endpoint in providers:
         key = os.getenv(key_env, "").strip()
         if not key:
             continue

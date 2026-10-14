@@ -18,6 +18,11 @@ from uuid import uuid4
 import requests
 
 try:
+    from .asset_forge.backend.execution_policy import require_generation_execution
+except ImportError:
+    from asset_forge.backend.execution_policy import require_generation_execution
+
+try:
     from .character_memory import CharacterMemoryService
     from .memory import EventMemoryStore, MemoryEventName
 except ImportError:  # Allows direct execution/import from the backend directory.
@@ -44,6 +49,7 @@ def generate_image(
     payload and a CharacterMemoryService is injected by the caller.
     """
 
+    require_generation_execution()
     generation_id = str(payload.get("generation_id") or f"img-{uuid4().hex}")
     task_id = _optional_string(payload.get("task_id"))
     model = str(payload.get("model", "gpt-image-2"))

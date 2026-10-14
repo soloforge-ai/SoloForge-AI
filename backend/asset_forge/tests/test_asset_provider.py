@@ -4,6 +4,8 @@ from backend.asset_forge.backend import asset_provider
 
 
 def test_generate_asset_uses_local_fallback_when_pollinations_missing(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(asset_provider, "require_generation_execution", lambda: None)
     monkeypatch.delenv("POLLINATIONS_API_KEY", raising=False)
     monkeypatch.setenv("CONTENT_ASSET_WIDTH", "640")
     monkeypatch.setenv("CONTENT_ASSET_HEIGHT", "800")
@@ -26,6 +28,8 @@ def test_generate_asset_uses_local_fallback_when_pollinations_missing(monkeypatc
 
 
 def test_generate_asset_prefers_pollinations_when_available(monkeypatch) -> None:
+    # Authorization substituted only for this isolated mocked legacy contract.
+    monkeypatch.setattr(asset_provider, "require_generation_execution", lambda: None)
     monkeypatch.setattr(
         asset_provider,
         "_pollinations_image",

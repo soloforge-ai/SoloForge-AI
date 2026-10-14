@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from backend.execution_policy import explicitly_enabled, require_generation_execution
+
 import asyncio
 import base64
 import io
@@ -392,6 +394,7 @@ def _generate_sheet(
     access_token: str,
 ) -> bytes:
     """Generate one image sheet through Pollinations using the connected user's token."""
+    require_generation_execution()
     model = os.getenv("POLLINATIONS_IMAGE_EDIT_MODEL", "kontext").strip() or "kontext"
     width = int(os.getenv("POLLINATIONS_IMAGE_WIDTH", "1024"))
     height = int(os.getenv("POLLINATIONS_IMAGE_HEIGHT", "1024"))
@@ -735,8 +738,7 @@ def _zip_files(
 
 
 def _embedded_workers_enabled() -> bool:
-    value = os.getenv("SOLOFORGE_RUN_EMBEDDED_WORKERS", "true").strip().lower()
-    return value not in {"0", "false", "no", "off"}
+    return explicitly_enabled("SOLOFORGE_RUN_EMBEDDED_WORKERS")
 
 
 @app.on_event("startup")
@@ -785,6 +787,8 @@ def generate_asset_pack(
     single = request.generation_layout == "single_character"
     if single and not access_token:
         raise HTTPException(status_code=401, detail="Connect Pollinations before single-character generation")
+    if access_token:
+        require_generation_execution()
 
     try:
         reference_bytes = _load_character_reference(request.character)

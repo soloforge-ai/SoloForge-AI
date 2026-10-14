@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from backend.execution_policy import generation_execution_authorized
+
 import asyncio
 from datetime import datetime, timezone
 import json
@@ -192,6 +194,8 @@ def _process_claimed_audio(job: dict[str, Any]) -> bool:
 
 
 def process_video_asset_job(job_id: str) -> bool:
+    if not generation_execution_authorized():
+        return False
     if not aira_enabled():
         return False
     job = _claim_video_asset(job_id)
@@ -199,6 +203,8 @@ def process_video_asset_job(job_id: str) -> bool:
 
 
 def process_video_assets_once() -> int:
+    if not generation_execution_authorized():
+        return 0
     if not aira_enabled():
         return 0
     return sum(1 for job in _claim_video_assets() if _process_claimed_audio(job))

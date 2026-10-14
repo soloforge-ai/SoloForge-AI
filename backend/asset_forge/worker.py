@@ -7,6 +7,8 @@ and Supabase-backed queue semantics.
 
 from __future__ import annotations
 
+from backend.execution_policy import explicitly_enabled
+
 import asyncio
 import signal
 
@@ -29,6 +31,9 @@ WORKERS = (
 
 
 async def run_background_workers() -> None:
+    if not explicitly_enabled("SOLOFORGE_RUN_DEDICATED_WORKERS"):
+        print("dedicated_content_workers_disabled")
+        return
     stop_event = asyncio.Event()
     loop = asyncio.get_running_loop()
 

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from backend.execution_policy import require_generation_execution
+
 import asyncio
 import json
 import secrets
@@ -90,6 +92,7 @@ def _content_callback(
     if status != "APPROVED" and route != "VIDEO":
         raise ValueError("รันต่อรองรับเฉพาะ VIDEO job หลัง routing แล้ว")
 
+    require_generation_execution()
     background_tasks.add_task(_resume_job, job_id, status)
 
     reply = (
