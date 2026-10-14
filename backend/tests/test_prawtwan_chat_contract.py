@@ -1,6 +1,9 @@
 import json
 from urllib import request as urllib_request
 
+import pytest
+import backend.asset_forge.backend.pollinations_oauth_router as oauth
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
