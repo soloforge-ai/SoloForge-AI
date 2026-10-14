@@ -225,3 +225,19 @@ def test_attestation_cannot_be_minted_with_service_role():
                   wallet_category,'forged','forged',1,now(),now()+interval '1 day',%s
                   from public.generation_budget_accounts where id=%s""",
                   ('f'*64,data[1]))
+
+
+def test_service_role_direct_budget_dml_denied():
+    data=seed()
+    with connect() as c:
+        c.execute("set role service_role")
+        with pytest.raises(psycopg.Error):
+            with c.transaction():
+                c.execute("""update public.generation_budget_accounts
+                  set allocated_pollen=999 where id=%s""",(data[1],))
+        with pytest.raises(psycopg.Error):
+            with c.transaction():
+                c.execute("""insert into public.generation_events
+                  (execution_id,budget_account_id,owner_user_id,pollinations_session_id,
+                   event_key,event_type) values(%s,%s,%s,%s,%s,'CLAIMED')""",
+                  (uid(),data[1],data[0],data[2],uid()))
