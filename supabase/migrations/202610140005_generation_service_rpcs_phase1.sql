@@ -7,7 +7,7 @@ create or replace function public.generation_reserve_execution(
 declare a public.generation_approvals%rowtype; b public.generation_budget_accounts%rowtype;
  e public.generation_executions%rowtype; v_id uuid; v_slide jsonb; i integer;
 begin
- if current_user <> 'service_role' then raise exception 'service role required' using errcode='42501'; end if;
+ if (session_user <> 'service_role' and current_setting('role') <> 'service_role') then raise exception 'service role required' using errcode='42501'; end if;
  if nullif(btrim(p_execution_key),'') is null then raise exception 'empty key'; end if;
  select * into a from public.generation_approvals where id=p_approval for update;
  if not found or a.owner_user_id is distinct from p_owner
@@ -70,7 +70,7 @@ create or replace function public.generation_settle_execution(
 declare e public.generation_executions%rowtype; b public.generation_budget_accounts%rowtype;
  v_settled boolean; v_released numeric;
 begin
- if current_user <> 'service_role' then raise exception 'service role required' using errcode='42501'; end if;
+ if (session_user <> 'service_role' and current_setting('role') <> 'service_role') then raise exception 'service role required' using errcode='42501'; end if;
  if p_actual is null or p_actual < 0 or p_actual >= 'Infinity'::numeric
  or nullif(btrim(p_evidence_ref),'') is null then raise exception 'invalid settlement'; end if;
  select * into e from public.generation_executions where id=p_execution for update;
