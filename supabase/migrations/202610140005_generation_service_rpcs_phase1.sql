@@ -12,7 +12,7 @@ begin
  select * into a from public.generation_approvals where id=p_approval for update;
  if not found or a.owner_user_id is distinct from p_owner
  or a.pollinations_session_id is distinct from p_session
- or a.state <> 'APPROVED' or a.revoked_at is not null
+ or a.state not in ('APPROVED','CLAIMED') or a.revoked_at is not null
  or a.expires_at <= clock_timestamp() or a.quote_expires_at <= clock_timestamp()
  then raise exception 'approval unauthorized or expired' using errcode='42501'; end if;
  select * into b from public.generation_budget_accounts where id=a.budget_account_id for update;
@@ -25,6 +25,7 @@ begin
   if e.execution_key <> p_execution_key then raise exception 'approval already claimed'; end if;
   return e.id;
  end if;
+ if a.state <> 'APPROVED' then raise exception 'approval claimed without matching execution'; end if;
  if exists(select 1 from public.generation_executions where execution_key=p_execution_key)
  then raise exception 'execution key reused'; end if;
  if b.allocated_pollen-b.reserved_pollen-b.spent_pollen < a.max_pollen
