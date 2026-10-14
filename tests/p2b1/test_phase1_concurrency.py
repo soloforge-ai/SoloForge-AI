@@ -105,8 +105,8 @@ def test_settlement_after_four_verified_slides():
             assert c.execute("select public.generation_mark_call_started(%s,%s,%s)",
                              (rid,data[0],data[2])).fetchone()[0]
             assert c.execute("""select public.generation_record_verified_result(
-              %s,%s,%s,'SUCCEEDED','synthetic-evidence',1,'test','key','v1',%s)""",
-              (rid,data[0],data[2],'c'*64)).fetchone()[0]
+              %s,%s,%s,'SUCCEEDED','synthetic-evidence',1,'test',%s,'v1',%s)""",
+              (rid,data[0],data[2],str(rid),'c'*64)).fetchone()[0]
         assert c.execute("select public.generation_settle_execution(%s,%s,%s,4,'synthetic-evidence')",
                          (eid,data[0],data[2])).fetchone()[0]
         assert c.execute("select public.generation_settle_execution(%s,%s,%s,4,'synthetic-evidence')",
