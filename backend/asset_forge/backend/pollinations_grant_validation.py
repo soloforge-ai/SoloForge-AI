@@ -70,9 +70,10 @@ def verify_effective_grant(userinfo: dict, key: dict, *, client_id: str,
         raise GrantVerificationError("Missing provider subject")
     if not isinstance(owner, str) or not owner.strip():
         raise GrantVerificationError("Missing key owner")
-    # Both fields identify the Pollinations user owning this effective secret key.
-    if sub != owner:
-        raise GrantVerificationError("Provider subject does not match secret-key owner")
+    # Both responses are fetched using the SAME OAuth-issued secret credential.
+    # Provider contracts do not establish that userinfo.sub and key.userId
+    # share an identifier namespace. Do not infer wallet ownership from equality
+    # or inequality of these fields. Metadata is NOT spending authorization.
     if key.get("valid") is not True or key.get("type") != "secret":
         raise GrantVerificationError("Invalid BYOP secret key")
     if not isinstance(byop, dict) or byop.get("clientKeyId") != trusted_app_key_id:
