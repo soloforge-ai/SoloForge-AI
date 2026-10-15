@@ -287,12 +287,11 @@ class ContentJobService {
   ContentJobService({
     http.Client? client,
     SoloForgeSessionService? sessionService,
-    String storageOrigin = const String.fromEnvironment(
+    this._storageOrigin = const String.fromEnvironment(
       'SUPABASE_URL',
       defaultValue: 'https://dhazxwfzaccrttckuylw.supabase.co',
     ),
   })  : _client = client ?? http.Client(),
-        _storageOrigin = storageOrigin,
         _sessionService = sessionService ?? SoloForgeSessionService();
 
   final http.Client _client;
