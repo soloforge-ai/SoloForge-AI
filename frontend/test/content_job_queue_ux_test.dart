@@ -118,7 +118,7 @@ void main() {
     );
     expect(
       JobQueuePresentation.actionLabel(job('READY_TO_PUBLISH')),
-      'View export options',
+      'View content',
     );
     expect(
       JobQueuePresentation.actionLabel(job('PUBLISH_FAILED')),
