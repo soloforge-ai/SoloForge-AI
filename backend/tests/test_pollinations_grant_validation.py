@@ -19,6 +19,7 @@ def synthetic_callback_claim(monkeypatch):
         claims.pop(secret)
         return item[1]
     monkeypatch.setattr(claim_store, 'consume', consume)
+    monkeypatch.setenv("SOLOFORGE_SESSION_SECRET", "synthetic-offline-owner-signing-secret-32chars")
     def prepare(state, owner):
         claims[state] = (owner, {'verifier': 'verifier', 'return_to': None})
     return prepare
@@ -182,7 +183,7 @@ def test_callback_fail_closed_and_success_without_provider_network(monkeypatch, 
     state = "synthetic-state"
     synthetic_callback_claim(state, router_module._owner_user_id())
     try:
-        response = router_module.pollinations_callback(code="code", state=state, oauth_state=state)
+        response = router_module.pollinations_callback(code="code", state=state, oauth_state=router_module._signed_state_cookie(state, router_module._owner_user_id()))
         assert response.status_code == 302
         assert observed == [("synthetic-token", APP, INTERNAL_APP_ID)]
     finally:
@@ -208,7 +209,7 @@ def test_callback_missing_expiry_never_persists(monkeypatch, synthetic_callback_
     synthetic_callback_claim(state, router_module._owner_user_id())
     try:
         with pytest.raises(HTTPException) as exc:
-            router_module.pollinations_callback(code="code", state=state, oauth_state=state)
+            router_module.pollinations_callback(code="code", state=state, oauth_state=router_module._signed_state_cookie(state, router_module._owner_user_id()))
         assert exc.value.status_code == 502
     finally:
         router_module._transactions.pop(state, None)
@@ -233,7 +234,7 @@ def test_callback_provider_verification_failure_never_persists(monkeypatch, synt
     synthetic_callback_claim(state, router_module._owner_user_id())
     try:
         with pytest.raises(HTTPException) as exc:
-            router_module.pollinations_callback(code="code", state=state, oauth_state=state)
+            router_module.pollinations_callback(code="code", state=state, oauth_state=router_module._signed_state_cookie(state, router_module._owner_user_id()))
         assert exc.value.status_code == 502
     finally:
         router_module._transactions.pop(state, None)
