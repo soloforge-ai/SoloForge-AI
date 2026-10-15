@@ -117,7 +117,7 @@ class JobQueuePresentation {
 
   static String actionLabel(ContentJob job) {
     if (job.status == 'READY_FOR_REVIEW') return 'Review now';
-    if (job.status == 'READY_TO_PUBLISH') return 'View export options';
+    if (job.status == 'READY_TO_PUBLISH') return 'View content';
     if (isFailure(job)) return 'Needs attention';
     if (groupFor(job) == QueueFilter.processing) return 'Processing';
     if (groupFor(job) == QueueFilter.completed) return 'Completed';
