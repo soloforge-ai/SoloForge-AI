@@ -396,3 +396,50 @@ def test_logout_storage_failure_does_not_claim_revocation(monkeypatch):
     assert "could not be confirmed" in logout.json()["detail"]
     with router_module._lock:
         assert router_module._sessions[session_id] == session
+
+
+def test_shared_store_revocation_invalidates_cached_session_across_workers(monkeypatch):
+    """A second worker must not serve a cached credential after durable logout."""
+    client = _client(monkeypatch)
+    session_id = "synthetic-cross-worker"
+    session = router_module._OAuthSession(
+        access_token="synthetic-access-token",
+        expires_at=router_module.time.time() + 600,
+        scope="profile",
+        owner_user_id=router_module._owner_user_id(),
+        provider_subject="synthetic-subject",
+    )
+    persisted = {session_id: session}
+    monkeypatch.setattr(router_module, "_supabase_config", lambda: ("https://example.invalid", "test-only"))
+    monkeypatch.setattr(router_module, "_load_persisted_session", lambda sid: persisted.get(sid))
+    monkeypatch.setattr(router_module, "_delete_persisted_session", lambda sid: persisted.pop(sid, None))
+    with router_module._lock:
+        router_module._sessions[session_id] = session
+
+    headers = {"Authorization": f"Bearer {session_id}", "X-SoloForge-Authorization": "Bearer test-owner"}
+    assert client.get("/auth/pollinations/status", headers=headers).json()["connected"] is True
+    assert client.post("/auth/pollinations/logout", headers=headers).status_code == 200
+
+    # Simulate stale in-memory state retained by a different process.
+    with router_module._lock:
+        router_module._sessions[session_id] = session
+    assert client.get("/auth/pollinations/status", headers=headers).json()["connected"] is False
+    assert router_module.get_pollinations_access_token(session_id, "Bearer test-owner") is None
+
+
+def test_shared_store_outage_denies_cached_access_token(monkeypatch):
+    session_id = "synthetic-outage"
+    session = router_module._OAuthSession(
+        access_token="synthetic-access-token",
+        expires_at=router_module.time.time() + 600,
+        scope="profile",
+        owner_user_id=router_module._owner_user_id(),
+        provider_subject="synthetic-subject",
+    )
+    monkeypatch.setattr(router_module, "_supabase_config", lambda: ("https://example.invalid", "test-only"))
+    def unavailable(_sid):
+        raise RuntimeError("synthetic storage outage")
+    monkeypatch.setattr(router_module, "_load_persisted_session", unavailable)
+    with router_module._lock:
+        router_module._sessions[session_id] = session
+    assert router_module.get_pollinations_access_token(session_id, "Bearer test-owner") is None
