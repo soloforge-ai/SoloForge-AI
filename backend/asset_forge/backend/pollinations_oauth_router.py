@@ -305,19 +305,23 @@ def _get_session(session_id: str | None) -> _OAuthSession | None:
     if not session_id:
         return None
     _cleanup()
-    with _lock:
-        session = _sessions.get(session_id)
-    if session is not None:
+    # When durable storage is configured, it is authoritative on EVERY read.
+    # Never serve a cached credential after another worker has revoked it.
+    if _supabase_config() is not None:
+        try:
+            session = _load_persisted_session(session_id)
+        except RuntimeError:
+            return None  # Storage outage must not expose a cached token.
+        with _lock:
+            if session is None:
+                _sessions.pop(session_id, None)
+            else:
+                _sessions[session_id] = session
         return session
 
-    try:
-        session = _load_persisted_session(session_id)
-    except RuntimeError:
-        return None
-    if session is not None:
-        with _lock:
-            _sessions[session_id] = session
-    return session
+    # Offline/local-only mode has no shared revocation store.
+    with _lock:
+        return _sessions.get(session_id)
 
 
 def _session_id_from_authorization(authorization: str | None) -> str | None:
