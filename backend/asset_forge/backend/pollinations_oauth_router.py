@@ -559,8 +559,6 @@ def pollinations_logout(
     require_soloforge_session(x_soloforge_authorization)
     resolved_session_id = _session_id_from_authorization(authorization) or session_id
     if resolved_session_id and (session := _get_session(resolved_session_id)) and session.owner_user_id == _owner_user_id():
-        with _lock:
-            _sessions.pop(resolved_session_id, None)
         try:
             _delete_persisted_session(resolved_session_id)
         except RuntimeError as exc:
@@ -570,6 +568,8 @@ def pollinations_logout(
                 status_code=503,
                 detail="Pollinations logout could not be confirmed. Retry logout.",
             ) from exc
+        with _lock:
+            _sessions.pop(resolved_session_id, None)
     response = JSONResponse({"connected": False})
     _clear_session_cookie(response)
     return response
