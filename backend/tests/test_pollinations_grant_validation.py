@@ -217,3 +217,9 @@ def test_callback_provider_verification_failure_never_persists(monkeypatch):
         assert exc.value.status_code == 502
     finally:
         router_module._transactions.pop(state, None)
+
+
+def test_provider_subject_mismatch_denied():
+    with pytest.raises(GrantVerificationError, match="Provider subject"):
+        verify_effective_grant({"sub": "different-provider-user"}, key(),
+                               client_id=APP, trusted_app_key_id=INTERNAL_APP_ID)
