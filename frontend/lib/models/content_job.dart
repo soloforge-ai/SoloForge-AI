@@ -1,3 +1,12 @@
+enum ContentReadinessGroup {
+  readyForExport,
+  textOnly,
+  needsRepair,
+  pendingReconciliation,
+  history,
+  drafts,
+}
+
 class ContentJob {
   const ContentJob({
     required this.id,
@@ -66,6 +75,55 @@ class ContentJob {
       contentPackage['asset_status']?.toString() ?? '-';
   String? get assetStoragePath =>
       contentPackage['asset_storage_path']?.toString();
+  bool get hasCaption => caption?.trim().isNotEmpty ?? false;
+  bool get requiresMedia =>
+      needsVideo || pipelineRoute == 'VIDEO' || pipelineRoute == 'VISUAL';
+  bool get hasReadyMediaMetadata =>
+      assetStatus == 'READY' &&
+      (pipelineRoute == 'VIDEO' || needsVideo
+          ? (videoStoragePath?.trim().isNotEmpty ?? false)
+          : (assetStoragePath?.trim().isNotEmpty ?? false));
+
+  // This is metadata readiness only; a signed preview/download must still succeed.
+  ContentReadinessGroup get readinessGroup {
+    if (status == 'ARCHIVED' || status == 'PUBLISHED') {
+      return ContentReadinessGroup.history;
+    }
+    if (status == 'PUBLISHING' || status == 'PUBLISH_FAILED') {
+      return ContentReadinessGroup.pendingReconciliation;
+    }
+    if (status.endsWith('_FAILED')) return ContentReadinessGroup.needsRepair;
+    if (status != 'READY_TO_PUBLISH') return ContentReadinessGroup.drafts;
+    if (!hasCaption) return ContentReadinessGroup.needsRepair;
+    if (pipelineRoute == 'TEXT' && !needsVideo) {
+      return ContentReadinessGroup.textOnly;
+    }
+    if (requiresMedia && hasReadyMediaMetadata) {
+      return ContentReadinessGroup.readyForExport;
+    }
+    return ContentReadinessGroup.needsRepair;
+  }
+
+  String get readinessReason {
+    switch (readinessGroup) {
+      case ContentReadinessGroup.readyForExport:
+        return 'Media metadata ready; verify preview before export';
+      case ContentReadinessGroup.textOnly:
+        return 'Caption ready for manual copy';
+      case ContentReadinessGroup.needsRepair:
+        if (status.endsWith('_FAILED')) return blocker ?? 'Generation failed';
+        if (!hasCaption) return 'Caption missing';
+        if (!requiresMedia) return 'Unknown media route; review required';
+        return 'Required media is not ready';
+      case ContentReadinessGroup.pendingReconciliation:
+        return 'Publishing outcome requires reconciliation; do not retry';
+      case ContentReadinessGroup.history:
+        return 'Historical job';
+      case ContentReadinessGroup.drafts:
+        return 'Draft or processing; not ready for export';
+    }
+  }
+
   DateTime? get scheduledTime =>
       _asDate(contentPackage['scheduled_time']);
 
