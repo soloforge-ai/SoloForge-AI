@@ -219,7 +219,37 @@ def test_callback_provider_verification_failure_never_persists(monkeypatch):
         router_module._transactions.pop(state, None)
 
 
-def test_provider_subject_mismatch_denied():
-    with pytest.raises(GrantVerificationError, match="Provider subject"):
-        verify_effective_grant({"sub": "different-provider-user"}, key(),
+def test_distinct_provider_identifier_namespaces_are_metadata_only():
+    result = verify_effective_grant({"sub": "oauth-subject"}, key(userId="key-owner-id"),
+                                    client_id=APP, trusted_app_key_id=INTERNAL_APP_ID)
+    assert result["provider_subject"] == "oauth-subject"
+    assert result["key_owner"] == "key-owner-id"
+    assert result["status"] == "METADATA_VERIFIED_SPENDING_BLOCKED"
+
+
+def test_same_oauth_secret_used_for_both_provider_metadata_requests(monkeypatch):
+    from backend import pollinations_grant_validation as validation
+    seen = []
+    def fake_get_json(url, token):
+        seen.append((url, token))
+        return {"sub": "oauth-subject"} if url == validation.USERINFO_URL else key(userId="different-key-namespace")
+    monkeypatch.setattr(validation, "_get_json", fake_get_json)
+    result = validation.verify_provider_token("synthetic-oauth-secret", client_id=APP,
+                                               trusted_app_key_id=INTERNAL_APP_ID)
+    assert seen == [(validation.USERINFO_URL, "synthetic-oauth-secret"),
+                    (validation.KEY_INFO_URL, "synthetic-oauth-secret")]
+    assert result["status"] == "METADATA_VERIFIED_SPENDING_BLOCKED"
+
+
+def test_mismatched_app_remains_denied_across_identifier_namespaces():
+    with pytest.raises(GrantVerificationError, match="Wrong BYOP application"):
+        verify_effective_grant({"sub": "oauth-subject"},
+                               key(userId="different-key-namespace",
+                                   byopApp={"clientKeyId": "untrusted-app"}),
+                               client_id=APP, trusted_app_key_id=INTERNAL_APP_ID)
+
+
+def test_missing_key_owner_still_denied():
+    with pytest.raises(GrantVerificationError, match="Missing key owner"):
+        verify_effective_grant(USER, key(userId=""),
                                client_id=APP, trusted_app_key_id=INTERNAL_APP_ID)
