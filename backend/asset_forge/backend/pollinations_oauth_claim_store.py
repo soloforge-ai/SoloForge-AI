@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from backend.pollinations_oauth_router import _supabase_config, _supabase_request
+from backend import pollinations_oauth_router as oauth_router
 
 
 class ClaimStoreUnavailable(RuntimeError):
@@ -14,10 +14,10 @@ class ClaimStoreUnavailable(RuntimeError):
 
 
 def _rpc(name: str, payload: dict[str, Any]) -> Any:
-    if _supabase_config() is None:
+    if oauth_router._supabase_config() is None:
         raise ClaimStoreUnavailable("Shared OAuth claim store is not configured")
     try:
-        raw = _supabase_request("POST", f"rpc/pollinations_oauth_{name}", body=payload)
+        raw = oauth_router._supabase_request("POST", f"rpc/pollinations_oauth_{name}", body=payload)
         if raw is None:
             raise ClaimStoreUnavailable("Shared OAuth claim store returned no response")
         return json.loads(raw.decode("utf-8"))
