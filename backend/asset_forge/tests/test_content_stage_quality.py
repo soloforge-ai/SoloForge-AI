@@ -1,6 +1,6 @@
 """Offline regression tests: no network, DB, workers, or provider calls."""
 import unittest
-from backend.content_stage_quality import assess_stage, VALID_STAGES
+from backend.asset_forge.backend.content_stage_quality import assess_stage, VALID_STAGES
 
 class StageQualityTests(unittest.TestCase):
     def test_c001_visual_requires_review(self):
