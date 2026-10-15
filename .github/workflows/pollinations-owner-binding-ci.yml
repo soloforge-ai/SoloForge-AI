@@ -103,6 +103,15 @@ jobs:
           end $$;
           insert into public.pollinations_sessions (id, session_id, access_token, owner_user_id, provider_subject)
           values ('00000000-0000-0000-0000-000000000002','owner-bound','synthetic-only','72112ead-d399-4a40-aa51-ee17811cb10d','provider-owner');
+          do $
+          begin
+            begin
+              insert into public.pollinations_sessions (id,session_id,access_token)
+              values ('00000000-0000-0000-0000-000000000004','new-unbound','synthetic-only');
+              raise exception 'New ownerless session was accepted';
+            exception when check_violation then null;
+            end;
+          end $;
           do $$
           begin
             begin
