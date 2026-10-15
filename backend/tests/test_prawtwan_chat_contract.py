@@ -34,7 +34,7 @@ def test_chat_requires_connected_pollinations_session(monkeypatch):
     monkeypatch.setattr(
         prawtwan,
         "get_pollinations_access_token_from_authorization",
-        lambda authorization: None,
+        lambda authorization, owner_authorization=None: None,
     )
 
     response = _client().post(
