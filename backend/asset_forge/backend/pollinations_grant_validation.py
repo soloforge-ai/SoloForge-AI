@@ -53,6 +53,7 @@ def strict_expires_in(payload: dict) -> int:
 
 
 def verify_effective_grant(userinfo: dict, key: dict, *, client_id: str,
+                           trusted_app_key_id: str,
                            requested_model: str | None = None,
                            max_remaining_budget: float | None = None,
                            require_quest_only: bool = False) -> dict:
@@ -60,6 +61,11 @@ def verify_effective_grant(userinfo: dict, key: dict, *, client_id: str,
     sub = userinfo.get("sub")
     owner = key.get("userId")
     byop = key.get("byopApp")
+    # Owner-verified internal publishable-key row ID, not the pk_ OAuth client_id.
+    if (not isinstance(trusted_app_key_id, str) or not trusted_app_key_id
+            or trusted_app_key_id != trusted_app_key_id.strip()
+            or trusted_app_key_id.startswith(("pk_", "sk_"))):
+        raise GrantVerificationError("Missing or invalid trusted BYOP application identity")
     if not isinstance(sub, str) or not sub.strip():
         raise GrantVerificationError("Missing provider subject")
     if not isinstance(owner, str) or not owner.strip():
@@ -68,7 +74,7 @@ def verify_effective_grant(userinfo: dict, key: dict, *, client_id: str,
     # Trusted owner-to-session attestation remains a separate, blocked gate.
     if key.get("valid") is not True or key.get("type") != "secret":
         raise GrantVerificationError("Invalid BYOP secret key")
-    if not isinstance(byop, dict) or byop.get("clientKeyId") != client_id:
+    if not isinstance(byop, dict) or byop.get("clientKeyId") != trusted_app_key_id:
         raise GrantVerificationError("Wrong BYOP application")
     expiry = key.get("expiresIn")
     if type(expiry) not in (int, float) or not math.isfinite(expiry) or expiry <= 0:
@@ -101,9 +107,15 @@ def verify_effective_grant(userinfo: dict, key: dict, *, client_id: str,
             "status": "METADATA_VERIFIED_SPENDING_BLOCKED"}
 
 
-def verify_provider_token(token: str, *, client_id: str) -> dict:
+def verify_provider_token(token: str, *, client_id: str, trusted_app_key_id: str) -> dict:
+    # Validate local trust configuration before any provider metadata request.
+    if (not isinstance(trusted_app_key_id, str) or not trusted_app_key_id
+            or trusted_app_key_id != trusted_app_key_id.strip()
+            or trusted_app_key_id.startswith(("pk_", "sk_"))):
+        raise GrantVerificationError("Missing or invalid trusted BYOP application identity")
     return verify_effective_grant(
         _get_json(USERINFO_URL, token),
         _get_json(KEY_INFO_URL, token),
         client_id=client_id,
+        trusted_app_key_id=trusted_app_key_id,
     )

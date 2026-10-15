@@ -24,6 +24,7 @@ def reset_oauth_state():
 
 def _client(monkeypatch):
     monkeypatch.setenv("POLLINATIONS_CLIENT_ID", "pk_test")
+    monkeypatch.setenv("POLLINATIONS_TRUSTED_APP_KEY_ID", "internal-test-app-id")
     monkeypatch.setenv(
         "POLLINATIONS_REDIRECT_URI",
         "https://example.com/auth/pollinations/callback",
@@ -39,9 +40,10 @@ def _client(monkeypatch):
     )
     # Offline synthetic provider verification for successful OAuth contract paths.
     # Production verifier is unchanged and separately tested for fail-closed errors.
-    def verified_synthetic_grant(token, *, client_id):
+    def verified_synthetic_grant(token, *, client_id, trusted_app_key_id):
         assert token == "sk_test_secret_should_stay_server_side"
         assert client_id == "pk_test"
+        assert trusted_app_key_id == "internal-test-app-id"
         return {"status": "METADATA_VERIFIED_SPENDING_BLOCKED"}
 
     monkeypatch.setattr(router_module, "verify_provider_token", verified_synthetic_grant)

@@ -414,7 +414,12 @@ def pollinations_callback(
     try:
         expires_in = strict_expires_in(payload)
         # Metadata verification does not grant spending authority.
-        verify_provider_token(payload["access_token"], client_id=config.client_id)
+        trusted_app_key_id = os.getenv("POLLINATIONS_TRUSTED_APP_KEY_ID", "")
+        verify_provider_token(
+            payload["access_token"],
+            client_id=config.client_id,
+            trusted_app_key_id=trusted_app_key_id,
+        )
     except GrantVerificationError as exc:
         raise HTTPException(
             status_code=502,
