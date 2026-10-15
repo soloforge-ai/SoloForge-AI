@@ -123,7 +123,7 @@ def test_no_backlog_claim_or_mutation(monkeypatch, module, func, arg, result):
 def test_api_repeated_concurrent_denial_preserves_job(monkeypatch, action, status):
     original = {"id": "j", "status": status, "qa_status": "PENDING", "retry_count": 2,
                 "hook": "existing draft", "content_package": {}}
-    monkeypatch.setattr(jobs, "_require_session", lambda _: None)
+    monkeypatch.setattr(jobs, "_require_session", lambda _, owner_authorization=None: None)
     monkeypatch.setattr(jobs, "_get_row", lambda _: dict(original))
     database = Mock(side_effect=AssertionError("No mutation allowed"))
     provider = Mock()
@@ -187,7 +187,7 @@ def test_direct_boundaries_cannot_bypass(monkeypatch):
     monkeypatch.syspath_prepend(str(ROOT.parents[0]))
     pollinations_image = load_runtime("s1_root_image", "../pollinations_image.py")
     monkeypatch.setattr(pollinations_image, "requests", transport)
-    monkeypatch.setattr(prawtwan_chat, "get_pollinations_access_token_from_authorization", lambda _: "fake-test-only")
+    monkeypatch.setattr(prawtwan_chat, "get_pollinations_access_token_from_authorization", lambda _, owner_authorization=None: "fake-test-only")
     calls = [
         lambda: main._generate_sheet("p", b"reference", "fake-test-only"),
         lambda: content_generation._call_provider("idea"),
@@ -206,7 +206,7 @@ def test_direct_boundaries_cannot_bypass(monkeypatch):
 def test_asset_api_does_not_treat_connected_oauth_as_spending_approval(monkeypatch, layout):
     main = load_runtime("s1_main_api", "main.py")
     provider = Mock()
-    monkeypatch.setattr(main, "get_pollinations_access_token_from_authorization", lambda _: "fake-test-only")
+    monkeypatch.setattr(main, "get_pollinations_access_token_from_authorization", lambda _, owner_authorization=None: "fake-test-only")
     monkeypatch.setattr(main, "_generate_sheet", provider)
     payload = {"quantity": 4} if layout == "sticker_sheet" else {"generation_layout": layout, "quantity": 1, "pose_intent": "presenting", "expression": "calm"}
     client = TestClient(main.app)
@@ -234,8 +234,8 @@ def test_read_only_routes_and_local_sales_template_remain_safe(monkeypatch):
 def test_legacy_offline_sheet_remains_explicitly_local(monkeypatch):
     main = load_runtime("s1_main_offline", "main.py")
     provider = Mock()
-    monkeypatch.setattr(main, "get_pollinations_access_token_from_authorization", lambda _: None)
-    monkeypatch.setattr(main, "_load_character_reference", lambda _: None)
+    monkeypatch.setattr(main, "get_pollinations_access_token_from_authorization", lambda _, owner_authorization=None: None)
+    monkeypatch.setattr(main, "_load_character_reference", lambda _, owner_authorization=None: None)
     monkeypatch.setattr(main, "_generate_sheet", provider)
     response = TestClient(main.app).post("/v1/asset-forge/generate", json={"character": "Cat", "quantity": 4})
     assert response.status_code == 200
@@ -255,7 +255,7 @@ def test_flags_and_credential_presence_cannot_unlock_generation(monkeypatch):
 
 def test_generate_on_create_denied_before_any_database_write_or_dispatch(monkeypatch):
     """A connected session alone must not create a SELECTED job or queue generation."""
-    monkeypatch.setattr(jobs, "_require_session", lambda _: None)
+    monkeypatch.setattr(jobs, "_require_session", lambda _, owner_authorization=None: None)
     database = Mock(side_effect=AssertionError("No DB operation before spending authorization"))
     provider = Mock(side_effect=AssertionError("No provider call allowed"))
     monkeypatch.setattr(jobs, "_supabase_request", database)
@@ -281,7 +281,7 @@ def test_generate_on_create_denied_before_any_database_write_or_dispatch(monkeyp
 
 def test_generate_on_create_default_action_also_denied_before_dispatch(monkeypatch):
     """Omitting action defaults to generate and must never bypass S1."""
-    monkeypatch.setattr(jobs, "_require_session", lambda _: None)
+    monkeypatch.setattr(jobs, "_require_session", lambda _, owner_authorization=None: None)
     database = Mock(side_effect=AssertionError("No DB mutation allowed"))
     monkeypatch.setattr(jobs, "_supabase_request", database)
     tasks = BackgroundTasks()
