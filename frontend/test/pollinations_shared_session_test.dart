@@ -214,14 +214,27 @@ void main() {
       () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, null),
     );
-    final image = testSession();
-    final chat = testSession();
+    var tickets = 0;
+    final oauthClient = MockClient((request) async {
+      if (request.url.path == '/auth/pollinations/login-ticket') {
+        tickets++;
+        expect(request.method, 'POST');
+        expect(request.headers['X-SoloForge-Authorization'],
+            'Bearer synthetic-owner-session');
+        return http.Response('{"ticket":"synthetic-single-use-ticket"}', 200);
+      }
+      expect(request.url.path, '/auth/pollinations/status');
+      return http.Response('{"connected":false}', 200);
+    });
+    final image = testSession(client: oauthClient);
+    final chat = testSession(client: oauthClient);
     final a = image.connect();
     final b = chat.connect();
     await Future<void>.delayed(Duration.zero);
     expect(calls, 1);
     launched.complete(true);
     await Future.wait([a, b]);
+    expect(tickets, 1);
     await image.dispose();
     await chat.dispose();
   });
