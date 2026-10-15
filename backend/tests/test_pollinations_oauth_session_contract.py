@@ -52,6 +52,7 @@ def _client(monkeypatch):
                         lambda sid: persisted_sessions.get(sid))
     monkeypatch.setattr(router_module, "_delete_persisted_session",
                         lambda sid: persisted_sessions.pop(sid, None))
+    monkeypatch.setenv("SOLOFORGE_SESSION_SECRET", "synthetic-offline-owner-signing-secret-32chars")
     monkeypatch.setenv("POLLINATIONS_CLIENT_ID", "pk_test")
     monkeypatch.setenv("POLLINATIONS_TRUSTED_APP_KEY_ID", "internal-test-app-id")
     monkeypatch.setenv(
@@ -477,3 +478,24 @@ def test_shared_store_outage_denies_cached_access_token(monkeypatch):
     with router_module._lock:
         router_module._sessions[session_id] = session
     assert router_module.get_pollinations_access_token(session_id, "Bearer test-owner") is None
+
+
+def test_callback_rejects_unsigned_or_forged_owner_state(monkeypatch):
+    client = _client(monkeypatch)
+    monkeypatch.setattr(router_module, "exchange_authorization_code",
+                        lambda *args, **kwargs: pytest.fail("provider exchange must not occur"))
+    state = _start_mobile_login(client)
+    client.cookies.set(router_module._STATE_COOKIE, state, domain="testserver", path="/")
+    response = client.get("/auth/pollinations/callback", params={"code": "synthetic", "state": state}, follow_redirects=False)
+    assert response.status_code == 400
+    client.cookies.set(router_module._STATE_COOKIE, router_module._signed_state_cookie(state, "other-owner"), domain="testserver", path="/")
+    response = client.get("/auth/pollinations/callback", params={"code": "synthetic", "state": state}, follow_redirects=False)
+    assert response.status_code == 400
+
+
+def test_unconfigured_durable_session_store_rejects_persistence(monkeypatch):
+    _client(monkeypatch)
+    monkeypatch.setattr(router_module, "_supabase_config", lambda: None)
+    session = router_module._OAuthSession("synthetic", router_module.time.time()+600, "profile", router_module._owner_user_id(), "subject")
+    with pytest.raises(RuntimeError, match="not configured"):
+        router_module._persist_session("synthetic-session", session)
