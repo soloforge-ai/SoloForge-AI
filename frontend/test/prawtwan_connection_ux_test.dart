@@ -137,7 +137,20 @@ void main() {
           null,
         ),
       );
-      final session = ListeningSession();
+      var tickets = 0;
+      final session = ListeningSession(
+        client: MockClient((request) async {
+          if (request.url.path == '/auth/pollinations/login-ticket') {
+            tickets++;
+            expect(request.method, 'POST');
+            expect(request.headers['X-SoloForge-Authorization'],
+                'Bearer synthetic-owner');
+            return http.Response('{"ticket":"synthetic-cta-ticket"}', 200);
+          }
+          expect(request.url.path, '/auth/pollinations/status');
+          return http.Response('{"connected":false}', 200);
+        }),
+      );
       await tester.pumpWidget(
         MaterialApp(
           home: PrawtwanChatPage(
@@ -150,11 +163,12 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('prawtwan-connect')));
       await tester.pumpAndSettle();
       expect(launched, hasLength(1));
+      expect(tickets, 1);
       final uri = Uri.parse(launched.single);
       expect(uri.path, '/auth/pollinations/login');
       expect(uri.queryParameters['client'], 'mobile');
       expect(uri.queryParameters['return_to'], 'soloforge://oauth/pollinations');
-      expect(uri.queryParameters['ticket'], isNotEmpty);
+      expect(uri.queryParameters['ticket'], 'synthetic-cta-ticket');
     },
   );
 
