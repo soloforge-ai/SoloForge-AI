@@ -23,6 +23,7 @@ from backend.pollinations_grant_validation import (
     strict_expires_in,
     verify_provider_token,
 )
+from backend.soloforge_session import require_soloforge_session, _owner_user_id
 from backend.pollinations_oauth import (
     PollinationsOAuthConfig,
     build_authorization_url,
@@ -44,6 +45,7 @@ class _OAuthTransaction:
     verifier: str
     created_at: float
     return_to: str | None = None
+    owner_user_id: str = ""
 
 
 @dataclass
@@ -51,12 +53,15 @@ class _OAuthSession:
     access_token: str
     expires_at: float
     scope: str
+    owner_user_id: str
+    provider_subject: str
 
 
 @dataclass
 class _MobileHandoff:
     session_id: str
     created_at: float
+    owner_user_id: str
 
 
 class MobileExchangeRequest(BaseModel):
@@ -73,6 +78,7 @@ _lock = threading.RLock()
 _transactions: dict[str, _OAuthTransaction] = {}
 _sessions: dict[str, _OAuthSession] = {}
 _handoffs: dict[str, _MobileHandoff] = {}
+_login_tickets: dict[str, tuple[str, float]] = {}
 
 
 def _supabase_config() -> tuple[str, str] | None:
@@ -162,6 +168,8 @@ def _persist_session(session_id: str, session: _OAuthSession) -> None:
             "access_token": session.access_token,
             "token_type": "Bearer",
             "scope": session.scope,
+            "owner_user_id": session.owner_user_id,
+            "provider_subject": session.provider_subject,
             "expires_at": expires_at,
             "updated_at": datetime.now(tz=timezone.utc).isoformat(),
         },
@@ -177,7 +185,7 @@ def _load_persisted_session(session_id: str) -> _OAuthSession | None:
     raw = _supabase_request(
         "GET",
         "pollinations_sessions"
-        f"?session_id=eq.{encoded}&select=access_token,expires_at,scope&limit=1",
+        f"?session_id=eq.{encoded}&select=access_token,expires_at,scope,owner_user_id,provider_subject&limit=1",
     )
     if not raw:
         return None
@@ -205,10 +213,16 @@ def _load_persisted_session(session_id: str) -> _OAuthSession | None:
     if not token:
         return None
 
+    owner = row.get("owner_user_id")
+    subject = row.get("provider_subject")
+    if owner != _owner_user_id() or not isinstance(subject, str) or not subject.strip():
+        return None  # Legacy and cross-owner rows fail closed.
     return _OAuthSession(
         access_token=token,
         expires_at=expires_at,
         scope=str(row.get("scope") or ""),
+        owner_user_id=owner,
+        provider_subject=subject,
     )
 
 
@@ -232,6 +246,9 @@ def _cleanup() -> None:
         for session_id, session in list(_sessions.items()):
             if session.expires_at <= now:
                 _sessions.pop(session_id, None)
+        for ticket, (_, issued) in list(_login_tickets.items()):
+            if now - issued > _TRANSACTION_TTL_SECONDS:
+                _login_tickets.pop(ticket, None)
         for code, handoff in list(_handoffs.items()):
             if now - handoff.created_at > _HANDOFF_TTL_SECONDS:
                 _handoffs.pop(code, None)
@@ -335,10 +352,23 @@ def _validate_return_to(return_to: str | None, *, client: str) -> str | None:
     return return_to
 
 
+@router.post("/login-ticket")
+def pollinations_login_ticket(
+    x_soloforge_authorization: str | None = Header(default=None),
+) -> dict[str, str]:
+    require_soloforge_session(x_soloforge_authorization)
+    _cleanup()
+    ticket = secrets.token_urlsafe(32)
+    with _lock:
+        _login_tickets[ticket] = (_owner_user_id(), time.time())
+    return {"ticket": ticket}
+
+
 @router.get("/login")
 def pollinations_login(
     client: str | None = Query(default=None),
     return_to: str | None = Query(default=None),
+    ticket: str | None = Query(default=None),
 ) -> RedirectResponse:
     try:
         config = PollinationsOAuthConfig.from_env()
@@ -357,12 +387,18 @@ def pollinations_login(
             client="web",
         )
 
+    _cleanup()
+    with _lock:
+        claim = _login_tickets.pop(ticket, None) if ticket else None
+    if claim is None or claim[0] != _owner_user_id() or time.time() - claim[1] > _TRANSACTION_TTL_SECONDS:
+        raise HTTPException(status_code=401, detail="Owner-bound OAuth login ticket required")
     verifier, challenge, state = create_pkce_transaction()
     with _lock:
         _transactions[state] = _OAuthTransaction(
             verifier=verifier,
             created_at=time.time(),
             return_to=resolved_return_to,
+            owner_user_id=claim[0],
         )
 
     authorization_url = build_authorization_url(
@@ -394,6 +430,8 @@ def pollinations_callback(
         transaction = _transactions.get(state)
     if transaction is None:
         raise HTTPException(status_code=400, detail="Invalid or expired OAuth state.")
+    if transaction.owner_user_id != _owner_user_id():
+        raise HTTPException(status_code=403, detail="OAuth owner mismatch")
 
     try:
         config = PollinationsOAuthConfig.from_env()
@@ -415,7 +453,7 @@ def pollinations_callback(
         expires_in = strict_expires_in(payload)
         # Metadata verification does not grant spending authority.
         trusted_app_key_id = os.getenv("POLLINATIONS_TRUSTED_APP_KEY_ID", "")
-        verify_provider_token(
+        verified = verify_provider_token(
             payload["access_token"],
             client_id=config.client_id,
             trusted_app_key_id=trusted_app_key_id,
@@ -434,6 +472,8 @@ def pollinations_callback(
         access_token=payload["access_token"],
         expires_at=time.time() + expires_in,
         scope=str(payload.get("scope", "")),
+        owner_user_id=transaction.owner_user_id,
+        provider_subject=verified["provider_subject"],
     )
     with _lock:
         _sessions[session_id] = session
@@ -453,6 +493,7 @@ def pollinations_callback(
             _handoffs[handoff_code] = _MobileHandoff(
                 session_id=session_id,
                 created_at=time.time(),
+                owner_user_id=transaction.owner_user_id,
             )
         separator = "&" if "?" in transaction.return_to else "?"
         target = f"{transaction.return_to}{separator}{urlencode({'code': handoff_code})}"
@@ -467,15 +508,21 @@ def pollinations_callback(
 
 
 @router.post("/mobile/exchange")
-def pollinations_mobile_exchange(payload: MobileExchangeRequest) -> dict[str, object]:
+def pollinations_mobile_exchange(
+    payload: MobileExchangeRequest,
+    x_soloforge_authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    require_soloforge_session(x_soloforge_authorization)
     _cleanup()
     with _lock:
         handoff = _handoffs.pop(payload.code, None)
     if handoff is None:
         raise HTTPException(status_code=400, detail="Invalid or expired mobile handoff code.")
+    if handoff.owner_user_id != _owner_user_id():
+        raise HTTPException(status_code=403, detail="Handoff owner mismatch")
 
     session = _get_session(handoff.session_id)
-    if session is None:
+    if session is None or session.owner_user_id != _owner_user_id():
         raise HTTPException(status_code=401, detail="Pollinations session has expired.")
 
     return {
@@ -489,10 +536,12 @@ def pollinations_mobile_exchange(payload: MobileExchangeRequest) -> dict[str, ob
 def pollinations_status(
     session_id: str | None = Cookie(default=None, alias=_SESSION_COOKIE),
     authorization: str | None = Header(default=None),
+    x_soloforge_authorization: str | None = Header(default=None),
 ) -> dict[str, object]:
+    require_soloforge_session(x_soloforge_authorization)
     bearer_session_id = _session_id_from_authorization(authorization)
     session = _get_session(bearer_session_id or session_id)
-    if session is None:
+    if session is None or session.owner_user_id != _owner_user_id():
         return {"connected": False}
     return {
         "connected": True,
@@ -505,9 +554,11 @@ def pollinations_status(
 def pollinations_logout(
     session_id: str | None = Cookie(default=None, alias=_SESSION_COOKIE),
     authorization: str | None = Header(default=None),
+    x_soloforge_authorization: str | None = Header(default=None),
 ) -> JSONResponse:
+    require_soloforge_session(x_soloforge_authorization)
     resolved_session_id = _session_id_from_authorization(authorization) or session_id
-    if resolved_session_id:
+    if resolved_session_id and (session := _get_session(resolved_session_id)) and session.owner_user_id == _owner_user_id():
         with _lock:
             _sessions.pop(resolved_session_id, None)
         try:
@@ -519,13 +570,15 @@ def pollinations_logout(
     return response
 
 
-def get_pollinations_access_token(session_id: str | None) -> str | None:
+def get_pollinations_access_token(session_id: str | None, owner_authorization: str | None = None) -> str | None:
+    require_soloforge_session(owner_authorization)
     session = _get_session(session_id)
-    return session.access_token if session else None
+    return session.access_token if session and session.owner_user_id == _owner_user_id() else None
 
 
 def get_pollinations_access_token_from_authorization(
     authorization: str | None,
+    owner_authorization: str | None = None,
 ) -> str | None:
     session_id = _session_id_from_authorization(authorization)
-    return get_pollinations_access_token(session_id)
+    return get_pollinations_access_token(session_id, owner_authorization)
