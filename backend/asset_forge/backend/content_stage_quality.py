@@ -28,7 +28,8 @@ def _value(value: Any) -> str:
     return str(value or "").strip().upper()
 
 def assess_stage(job: Mapping[str, Any], stage: str,
-                 *, evidence: Mapping[str, Any] | None = None) -> StageAssessment:
+                 *, evidence: Mapping[str, Any] | None = None,
+                 visual_evidence: Mapping[str, Any] | None = None) -> StageAssessment:
     """Classify legacy metadata. Evidence is caller-supplied and NOT authenticated."""
     if stage not in VALID_STAGES:
         raise ValueError("Unknown stage")
@@ -48,8 +49,33 @@ def assess_stage(job: Mapping[str, Any], stage: str,
             return StageAssessment(stage, semantic, ("SEMANTIC_" + semantic,), "CONTENT")
     if stage in {"VIDEO_RENDER", "AUDIO"} and route != "VIDEO":
         return StageAssessment(stage, "BLOCKED", ("STAGE_NOT_APPLICABLE",), None)
-    if stage == "VIDEO_RENDER" and assess_stage(job, "VISUAL").result != "PASS":
+    # A render decision must include explicit matching upstream visual evidence.
+    if stage == "VIDEO_RENDER" and assess_stage(job, "VISUAL", evidence=visual_evidence).result != "PASS":
         return StageAssessment(stage, "BLOCKED", ("UPSTREAM_VISUAL_NOT_PASSED",), "VISUAL")
+
+    # Known hard failures and absent assets take precedence over caller-supplied evidence.
+    if stage == "GROUNDING":
+        if _value(package.get("product_grounding_status")) in {"BLOCKED", "FAILED", "FAIL"}:
+            return StageAssessment(stage, "FAIL", ("GROUNDING_FAILED",), "GROUNDING")
+        if not _mapping(package.get("product_grounding")) and not package.get("product_grounding_status"):
+            return StageAssessment(stage, "BLOCKED", ("GROUNDING_EVIDENCE_MISSING",), "GROUNDING")
+    if stage == "VISUAL":
+        if _value(_mapping(package.get("asset_quality_gate")).get("result")) in {"FAIL", "FAILED"}:
+            return StageAssessment(stage, "FAIL", ("ASSET_GATE_FAILED",), "VISUAL")
+        if not package.get("asset_storage_path"):
+            return StageAssessment(stage, "BLOCKED", ("VISUAL_ASSET_MISSING",), "VISUAL")
+    if stage == "AUDIO":
+        if _value(job.get("audio_status")) in {"FAILED", "FAIL"}:
+            return StageAssessment(stage, "FAIL", ("AUDIO_FAILED",), "AUDIO")
+        if not job.get("audio_storage_path"):
+            return StageAssessment(stage, "BLOCKED", ("AUDIO_ASSET_MISSING",), "AUDIO")
+    if stage == "VIDEO_RENDER" and _value(_mapping(job.get("render_qa")).get("status")) != "PASS":
+        return StageAssessment(stage, "BLOCKED", ("RENDER_TECHNICAL_QA_MISSING",), "VIDEO_RENDER")
+    if stage == "CONTENT" and not _value(_mapping(package.get("semantic_fidelity")).get("status")):
+        return StageAssessment(stage, "BLOCKED", ("SEMANTIC_EVIDENCE_MISSING",), "CONTENT")
+    # No trusted chain of stage attestations exists in P0-A; never claim final PASS.
+    if stage == "FINAL_QA":
+        return StageAssessment(stage, "BLOCKED", ("TRUSTED_STAGE_CHAIN_MISSING",), "FINAL_QA")
 
     if cert:
         if _value(cert.get("stage")) != stage:
@@ -66,7 +92,12 @@ def assess_stage(job: Mapping[str, Any], stage: str,
             return StageAssessment(stage, "BLOCKED", ("VALIDATOR_VERSION_MISSING",), stage)
         if decision == "PASS" and stage in {"VISUAL", "VIDEO_RENDER", "FINAL_QA"} and not cert.get("reviewer"):
             return StageAssessment(stage, "REVIEW_REQUIRED", ("MANUAL_REVIEW_MISSING",), stage)
-        return StageAssessment(stage, decision, tuple(str(x) for x in cert.get("reason_codes", ())),
+        reasons = cert.get("reason_codes", ())
+        if not isinstance(reasons, (list, tuple)) or any(
+            not isinstance(code, str) or not code.strip() for code in reasons
+        ):
+            return StageAssessment(stage, "BLOCKED", ("INVALID_REASON_CODES",), stage)
+        return StageAssessment(stage, decision, tuple(reasons),
                                stage if decision != "PASS" else None)
 
     if stage == "CONTENT":
