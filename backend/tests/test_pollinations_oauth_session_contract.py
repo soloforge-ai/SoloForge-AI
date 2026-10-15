@@ -367,3 +367,32 @@ def test_cross_user_handoff_and_session_denied(monkeypatch):
     session = exchanged.json()["session_token"]
     denied_status = client.get("/auth/pollinations/status", headers={"Authorization": f"Bearer {session}", "X-SoloForge-Authorization": "Bearer other-user"})
     assert denied_status.status_code != 200
+
+
+def test_logout_storage_failure_does_not_claim_revocation(monkeypatch):
+    client = _client(monkeypatch)
+    session_id = "synthetic-revocation-session"
+    session = router_module._OAuthSession(
+        access_token="synthetic-provider-token",
+        expires_at=router_module.time.time() + 600,
+        scope="profile usage",
+        owner_user_id=router_module._owner_user_id(),
+        provider_subject="provider-owner",
+    )
+    with router_module._lock:
+        router_module._sessions[session_id] = session
+
+    def unavailable(_session_id):
+        assert _session_id == session_id
+        raise RuntimeError("synthetic storage outage")
+
+    monkeypatch.setattr(router_module, "_delete_persisted_session", unavailable)
+    headers = {
+        "Authorization": f"Bearer {session_id}",
+        "X-SoloForge-Authorization": "Bearer test-owner",
+    }
+    logout = client.post("/auth/pollinations/logout", headers=headers)
+    assert logout.status_code == 503
+    assert "could not be confirmed" in logout.json()["detail"]
+    with router_module._lock:
+        assert router_module._sessions[session_id] == session
