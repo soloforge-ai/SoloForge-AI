@@ -245,13 +245,17 @@ class _ContentJobPageState extends State<ContentJobPage> {
     if (caption.isEmpty) return;
     try {
       await Clipboard.setData(ClipboardData(text: caption));
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Caption copied')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Caption copied')),
+        );
+      }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not copy caption')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not copy caption')),
+        );
+      }
     }
   }
 
@@ -269,9 +273,11 @@ class _ContentJobPageState extends State<ContentJobPage> {
         fileNameOverrides: ['soloforge-${_job.id}.${png ? 'png' : 'jpg'}'],
       ));
     } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Image export unavailable: $error'),
-      ));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Image export unavailable: $error'),
+        ));
+      }
     } finally {
       if (mounted) setState(() => _exportingImage = false);
     }
