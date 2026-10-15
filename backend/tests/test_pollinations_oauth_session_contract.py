@@ -485,16 +485,17 @@ def test_callback_rejects_unsigned_or_forged_owner_state(monkeypatch):
     monkeypatch.setattr(router_module, "exchange_authorization_code",
                         lambda *args, **kwargs: pytest.fail("provider exchange must not occur"))
     state = _start_mobile_login(client)
-    client.cookies.set(router_module._STATE_COOKIE, state, domain="testserver", path="/")
+    client.cookies.clear()
+    client.cookies.set(router_module._STATE_COOKIE, state, path="/")
     response = client.get("/auth/pollinations/callback", params={"code": "synthetic", "state": state}, follow_redirects=False)
     assert response.status_code == 400
-    client.cookies.set(router_module._STATE_COOKIE, router_module._signed_state_cookie(state, "other-owner"), domain="testserver", path="/")
+    client.cookies.clear()
+    client.cookies.set(router_module._STATE_COOKIE, router_module._signed_state_cookie(state, "other-owner"), path="/")
     response = client.get("/auth/pollinations/callback", params={"code": "synthetic", "state": state}, follow_redirects=False)
     assert response.status_code == 400
 
 
 def test_unconfigured_durable_session_store_rejects_persistence(monkeypatch):
-    _client(monkeypatch)
     monkeypatch.setattr(router_module, "_supabase_config", lambda: None)
     session = router_module._OAuthSession("synthetic", router_module.time.time()+600, "profile", router_module._owner_user_id(), "subject")
     with pytest.raises(RuntimeError, match="not configured"):
