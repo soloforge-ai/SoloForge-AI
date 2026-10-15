@@ -370,7 +370,9 @@ class _HomePageState extends State<HomePage> {
 
     var jobs = _allJobs.where((job) {
       if (_integrityFilter != IntegrityFilter.all &&
-          job.readinessGroup.name != _integrityFilter.name) return false;
+          job.readinessGroup.name != _integrityFilter.name) {
+        return false;
+      }
       if (!JobQueuePresentation.matchesSearch(job, keyword)) {
         return false;
       }
