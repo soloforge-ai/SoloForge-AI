@@ -1,6 +1,8 @@
 from urllib.parse import parse_qs, urlparse
 
 import pytest
+import threading
+from backend import pollinations_oauth_claim_store as claim_store
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
@@ -25,6 +27,22 @@ def reset_oauth_state():
 
 
 def _client(monkeypatch):
+    # Shared synthetic claim service for offline route contracts.
+    claims = {}
+    claim_lock = threading.Lock()
+    def issue(kind, secret, owner, data, ttl):
+        with claim_lock:
+            assert (kind, secret) not in claims
+            claims[(kind, secret)] = (owner, dict(data))
+    def consume(kind, secret, owner):
+        with claim_lock:
+            value = claims.get((kind, secret))
+            if value is None or value[0] != owner:
+                return None
+            claims.pop((kind, secret))
+            return dict(value[1])
+    monkeypatch.setattr(claim_store, "issue", issue)
+    monkeypatch.setattr(claim_store, "consume", consume)
     monkeypatch.setenv("POLLINATIONS_CLIENT_ID", "pk_test")
     monkeypatch.setenv("POLLINATIONS_TRUSTED_APP_KEY_ID", "internal-test-app-id")
     monkeypatch.setenv(
@@ -281,7 +299,7 @@ def test_status_restores_persisted_session_after_backend_restart(monkeypatch):
         assert router_module._sessions["persisted-session"] == persisted
 
 
-def test_oauth_transaction_survives_transient_exchange_failure(monkeypatch):
+def test_oauth_transaction_consumed_on_ambiguous_exchange_failure(monkeypatch):
     client = _client(monkeypatch)
 
     def fail_exchange(*args, **kwargs):
@@ -298,8 +316,9 @@ def test_oauth_transaction_survives_transient_exchange_failure(monkeypatch):
 
     assert response.status_code == 502
     assert "Please retry the connection" in response.text
-    with router_module._lock:
-        assert state in router_module._transactions
+    replay = client.get("/auth/pollinations/callback",
+                        params={"code": "oauth-code", "state": state}, follow_redirects=False)
+    assert replay.status_code == 400
 
 
 def test_ceo_missing_master_fails_closed_without_pollinations_session(monkeypatch):
