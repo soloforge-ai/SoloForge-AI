@@ -120,8 +120,12 @@ class ContentJob {
         if (status.endsWith('_FAILED')) {
           return blocker ?? 'Generation failed';
         }
-        if (!hasCaption) return 'Caption missing';
-        if (!requiresMedia) return 'Unknown media route; review required';
+        if (!hasCaption) {
+          return 'Caption missing';
+        }
+        if (!requiresMedia) {
+          return 'Unknown media route; review required';
+        }
         return 'Required media is not ready';
       case ContentReadinessGroup.pendingReconciliation:
         return 'Publishing outcome requires reconciliation; do not retry';
