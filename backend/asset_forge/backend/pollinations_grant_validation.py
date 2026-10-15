@@ -70,8 +70,9 @@ def verify_effective_grant(userinfo: dict, key: dict, *, client_id: str,
         raise GrantVerificationError("Missing provider subject")
     if not isinstance(owner, str) or not owner.strip():
         raise GrantVerificationError("Missing key owner")
-    # Do not infer equality between distinct provider identifier namespaces.
-    # Trusted owner-to-session attestation remains a separate, blocked gate.
+    # Both fields identify the Pollinations user owning this effective secret key.
+    if sub != owner:
+        raise GrantVerificationError("Provider subject does not match secret-key owner")
     if key.get("valid") is not True or key.get("type") != "secret":
         raise GrantVerificationError("Invalid BYOP secret key")
     if not isinstance(byop, dict) or byop.get("clientKeyId") != trusted_app_key_id:
