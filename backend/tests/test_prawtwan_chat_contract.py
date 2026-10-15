@@ -54,7 +54,7 @@ def test_chat_calls_fixed_private_agent_and_returns_text(monkeypatch):
     monkeypatch.setattr(
         prawtwan,
         "get_pollinations_access_token_from_authorization",
-        lambda authorization: "pollinations-access-token" if authorization == "Bearer session-token" else None,
+        lambda authorization, owner_authorization=None: "pollinations-access-token" if authorization == "Bearer session-token" else None,
     )
 
     def fake_urlopen(request: urllib_request.Request, timeout: int):
@@ -104,7 +104,7 @@ def test_chat_rejects_oversized_context(monkeypatch):
     monkeypatch.setattr(
         prawtwan,
         "get_pollinations_access_token_from_authorization",
-        lambda authorization: "unused",
+        lambda authorization, owner_authorization=None: "unused",
     )
 
     response = _client().post(
@@ -126,7 +126,7 @@ def test_chat_valid_session_is_fail_closed_without_spending_authorization(monkey
     from unittest.mock import Mock
     from backend.asset_forge.backend import execution_policy
 
-    monkeypatch.setattr(prawtwan, "get_pollinations_access_token_from_authorization", lambda _: "fake-token")
+    monkeypatch.setattr(prawtwan, "get_pollinations_access_token_from_authorization", lambda _, owner_authorization=None: "fake-token")
     provider = Mock(side_effect=AssertionError("Provider must not be called"))
     monkeypatch.setattr(prawtwan.urllib.request, "urlopen", provider)
     response = _client().post("/v1/prawtwan/chat", headers={"Authorization": "Bearer session-token"}, json={"messages": [{"role": "user", "content": "Hello"}]})
@@ -167,7 +167,7 @@ def test_shared_session_never_authorizes_provider_execution(monkeypatch, kind, e
     # Seed the real resolver's namespace so this test is collection-order safe.
     namespace = prawtwan.get_pollinations_access_token_from_authorization.__globals__
     monkeypatch.setitem(namespace, "_sessions", {"mock-session": session})
-    monkeypatch.setitem(namespace, "_load_persisted_session", lambda _: None)
+    monkeypatch.setitem(namespace, "_load_persisted_session", lambda _, owner_authorization=None: None)
     calls = []
 
     def forbidden(*args, **kwargs):
