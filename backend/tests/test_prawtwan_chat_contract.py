@@ -160,13 +160,14 @@ def test_chat_and_generation_authorization_are_independently_fail_closed(monkeyp
 ])
 def test_shared_session_never_authorizes_provider_execution(monkeypatch, kind, expected):
     now = oauth.time.time()
-    session = oauth._OAuthSession("mock-provider-token", now + 600, "profile usage")
+    session = oauth._OAuthSession("mock-provider-token", now + 600, "profile usage", oauth._owner_user_id(), "provider-owner")
     if kind == "expired":
-        session = oauth._OAuthSession("mock-expired-token", now - 1, "profile usage")
+        session = oauth._OAuthSession("mock-expired-token", now - 1, "profile usage", oauth._owner_user_id(), "provider-owner")
     # The full suite imports both deployment and repository module aliases.
     # Seed the real resolver's namespace so this test is collection-order safe.
     namespace = prawtwan.get_pollinations_access_token_from_authorization.__globals__
     monkeypatch.setitem(namespace, "_sessions", {"mock-session": session})
+    monkeypatch.setitem(namespace, "require_soloforge_session", lambda header: None if header == "Bearer test-owner" else (_ for _ in ()).throw(__import__("fastapi").HTTPException(status_code=401)))
     monkeypatch.setitem(namespace, "_load_persisted_session", lambda _, owner_authorization=None: None)
     calls = []
 
@@ -181,8 +182,10 @@ def test_shared_session_never_authorizes_provider_execution(monkeypatch, kind, e
         )
     }
     client = _client()
+    if kind != "missing":
+        headers["X-SoloForge-Authorization"] = "Bearer test-owner"
     resolved = prawtwan.get_pollinations_access_token_from_authorization(
-        headers.get("Authorization")
+        headers.get("Authorization"), headers.get("X-SoloForge-Authorization")
     )
     assert (resolved is not None) is (kind == "valid")
     for _ in range(2):
@@ -199,10 +202,11 @@ def test_shared_pollinations_session_cannot_authorize_publora(monkeypatch, actio
     from backend import publishing_api, publora_publishing
 
     namespace = prawtwan.get_pollinations_access_token_from_authorization.__globals__
+    monkeypatch.setitem(namespace, "require_soloforge_session", lambda header: None if header == "Bearer test-owner" else (_ for _ in ()).throw(__import__("fastapi").HTTPException(status_code=401)))
     monkeypatch.setitem(namespace, "_sessions", {
-        "shared-oauth": oauth._OAuthSession("mock-only", oauth.time.time() + 600, "profile usage")
+        "shared-oauth": oauth._OAuthSession("mock-only", oauth.time.time() + 600, "profile usage", oauth._owner_user_id(), "provider-owner")
     })
-    assert prawtwan.get_pollinations_access_token_from_authorization("Bearer shared-oauth")
+    assert prawtwan.get_pollinations_access_token_from_authorization("Bearer shared-oauth", "Bearer test-owner")
     database = Mock(side_effect=AssertionError("No publishing DB access"))
     network = Mock(side_effect=AssertionError("No publishing network access"))
     monkeypatch.setattr(publishing_api, "_supabase_request", database)
