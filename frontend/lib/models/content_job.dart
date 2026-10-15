@@ -92,9 +92,15 @@ class ContentJob {
     if (status == 'PUBLISHING' || status == 'PUBLISH_FAILED') {
       return ContentReadinessGroup.pendingReconciliation;
     }
-    if (status.endsWith('_FAILED')) return ContentReadinessGroup.needsRepair;
-    if (status != 'READY_TO_PUBLISH') return ContentReadinessGroup.drafts;
-    if (!hasCaption) return ContentReadinessGroup.needsRepair;
+    if (status.endsWith('_FAILED')) {
+      return ContentReadinessGroup.needsRepair;
+    }
+    if (status != 'READY_TO_PUBLISH') {
+      return ContentReadinessGroup.drafts;
+    }
+    if (!hasCaption) {
+      return ContentReadinessGroup.needsRepair;
+    }
     if (pipelineRoute == 'TEXT' && !needsVideo) {
       return ContentReadinessGroup.textOnly;
     }
@@ -111,7 +117,9 @@ class ContentJob {
       case ContentReadinessGroup.textOnly:
         return 'Caption ready for manual copy';
       case ContentReadinessGroup.needsRepair:
-        if (status.endsWith('_FAILED')) return blocker ?? 'Generation failed';
+        if (status.endsWith('_FAILED')) {
+          return blocker ?? 'Generation failed';
+        }
         if (!hasCaption) return 'Caption missing';
         if (!requiresMedia) return 'Unknown media route; review required';
         return 'Required media is not ready';
