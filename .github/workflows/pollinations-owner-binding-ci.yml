@@ -112,7 +112,7 @@ jobs:
             exception when check_violation then null;
             end;
           end $;
-          do $$
+          do $
           begin
             begin
               insert into public.pollinations_sessions (id,session_id,access_token,owner_user_id)
