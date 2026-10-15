@@ -563,8 +563,13 @@ def pollinations_logout(
             _sessions.pop(resolved_session_id, None)
         try:
             _delete_persisted_session(resolved_session_id)
-        except RuntimeError:
-            pass
+        except RuntimeError as exc:
+            # The persisted credential could be reloaded by another worker.
+            # Do not acknowledge revocation until durable deletion succeeds.
+            raise HTTPException(
+                status_code=503,
+                detail="Pollinations logout could not be confirmed. Retry logout.",
+            ) from exc
     response = JSONResponse({"connected": False})
     _clear_session_cookie(response)
     return response
