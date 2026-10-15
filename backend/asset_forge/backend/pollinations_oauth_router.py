@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import hmac
 import os
 import secrets
 import threading
@@ -23,7 +25,7 @@ from backend.pollinations_grant_validation import (
     strict_expires_in,
     verify_provider_token,
 )
-from backend.soloforge_session import require_soloforge_session, _owner_user_id
+from backend.soloforge_session import require_soloforge_session, _owner_user_id, _secret
 from backend.pollinations_oauth import (
     PollinationsOAuthConfig,
     build_authorization_url,
@@ -157,7 +159,7 @@ def _supabase_request(
 
 def _persist_session(session_id: str, session: _OAuthSession) -> None:
     if _supabase_config() is None:
-        return
+        raise RuntimeError('Durable Pollinations session store is not configured')
 
     expires_at = datetime.fromtimestamp(session.expires_at, tz=timezone.utc).isoformat()
     _supabase_request(
@@ -258,10 +260,31 @@ def _cookie_secure() -> bool:
     return os.getenv("POLLINATIONS_SESSION_COOKIE_SECURE", "true").strip().lower() == "true"
 
 
-def _set_state_cookie(response: RedirectResponse, state: str) -> None:
+def _signed_state_cookie(state: str, owner: str) -> str:
+    message = f'{state}.{owner}'
+    signature = hmac.new(_secret(), message.encode('utf-8'), hashlib.sha256).hexdigest()
+    return f'{message}.{signature}'
+
+
+def _verify_state_cookie(cookie: str | None, state: str) -> str | None:
+    if not cookie:
+        return None
+    try:
+        stored_state, owner, signature = cookie.rsplit('.', 2)
+        if not secrets.compare_digest(stored_state, state):
+            return None
+        expected = hmac.new(_secret(), f'{stored_state}.{owner}'.encode('utf-8'), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            return None
+        return owner if owner == _owner_user_id() else None
+    except (RuntimeError, ValueError):
+        return None
+
+
+def _set_state_cookie(response: RedirectResponse, state: str, owner: str) -> None:
     response.set_cookie(
         key=_STATE_COOKIE,
-        value=state,
+        value=_signed_state_cookie(state, owner),
         path="/",
         secure=_cookie_secure(),
         httponly=True,
@@ -417,7 +440,7 @@ def pollinations_login(
         state=state,
     )
     response = RedirectResponse(url=authorization_url, status_code=302)
-    _set_state_cookie(response, state)
+    _set_state_cookie(response, state, _owner_user_id())
     return response
 
 
@@ -433,21 +456,22 @@ def pollinations_callback(
         raise HTTPException(status_code=400, detail="Pollinations authorization was denied or failed.")
     if not code or not state:
         raise HTTPException(status_code=400, detail="Missing OAuth callback parameters.")
-    if not oauth_state or not secrets.compare_digest(state, oauth_state):
+    verified_owner = _verify_state_cookie(oauth_state, state)
+    if not verified_owner:
         raise HTTPException(status_code=400, detail="OAuth state does not match this browser session.")
 
     # Consume BEFORE contacting the provider. Ambiguous provider outcomes cannot
     # be retried with the same authorization code or state.
     from backend.pollinations_oauth_claim_store import consume, issue, ClaimStoreUnavailable
     try:
-        claim = consume("pkce_state", state, _owner_user_id())
+        claim = consume("pkce_state", state, verified_owner)
     except ClaimStoreUnavailable as exc:
         raise HTTPException(status_code=503, detail="OAuth claim store unavailable") from exc
     if claim is None or not isinstance(claim.get("verifier"), str):
         raise HTTPException(status_code=400, detail="Invalid or expired OAuth state.")
     transaction = _OAuthTransaction(verifier=claim["verifier"], created_at=time.time(),
                                     return_to=claim.get("return_to"),
-                                    owner_user_id=_owner_user_id())
+                                    owner_user_id=verified_owner)
 
     try:
         config = PollinationsOAuthConfig.from_env()
