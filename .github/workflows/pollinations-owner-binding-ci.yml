@@ -1,0 +1,133 @@
+name: Pollinations Owner Binding Offline CI
+
+on:
+  push:
+    branches:
+      - fix/pollinations-owner-binding
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'supabase/migrations/20261015131500_pollinations_session_owner_binding.sql'
+      - '.github/workflows/pollinations-owner-binding-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pollinations-owner-binding-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-security:
+    runs-on: ubuntu-latest
+    env:
+      SOLOFORGE_RUN_EMBEDDED_WORKERS: 'false'
+      SOLOFORGE_ENABLE_GENERATION: 'false'
+      SOLOFORGE_ENABLE_PUBLISHING: 'false'
+      POLLINATIONS_TRUSTED_APP_KEY_ID: internal-test-app-id
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install offline test dependencies
+        run: |
+          python -m pip install -r backend/asset_forge/requirements.txt pytest httpx
+      - name: Compile changed backend
+        run: |
+          python -m compileall -q backend/asset_forge/backend backend/asset_forge/main.py backend/tests
+      - name: Run offline security and regression tests
+        run: |
+          PYTHONPATH=backend/asset_forge:. python -m pytest -q \
+            backend/tests/test_pollinations_oauth_session_contract.py \
+            backend/tests/test_pollinations_grant_validation.py \
+            backend/tests/test_prawtwan_chat_contract.py \
+            backend/asset_forge/tests/test_execution_policy.py \
+            backend/asset_forge/tests/test_mvp_publishing_disabled.py
+
+  migration-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_USER: postgres
+          POSTGRES_DB: owner_binding_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d owner_binding_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: test-only
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGDATABASE: owner_binding_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create disposable production-shaped baseline
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          create schema auth;
+          create table auth.users (id uuid primary key);
+          insert into auth.users values ('72112ead-d399-4a40-aa51-ee17811cb10d');
+          create table public.pollinations_sessions (
+            id uuid primary key,
+            session_id text unique,
+            access_token text,
+            refresh_token text,
+            token_type text default 'Bearer',
+            scope text,
+            expires_at timestamptz,
+            created_at timestamptz default now(),
+            updated_at timestamptz default now()
+          );
+          insert into public.pollinations_sessions (id, session_id, access_token)
+          values ('00000000-0000-0000-0000-000000000001','legacy','synthetic-only');
+          SQL
+      - name: Apply additive migration offline
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261015131500_pollinations_session_owner_binding.sql
+      - name: Verify legacy rows stay unbound and new owner row works
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          do $$
+          begin
+            if (select count(*) from public.pollinations_sessions where session_id='legacy' and owner_user_id is null and provider_subject is null) <> 1 then
+              raise exception 'Legacy session unexpectedly rebound';
+            end if;
+          end $$;
+          insert into public.pollinations_sessions (id, session_id, access_token, owner_user_id, provider_subject)
+          values ('00000000-0000-0000-0000-000000000002','owner-bound','synthetic-only','72112ead-d399-4a40-aa51-ee17811cb10d','provider-owner');
+          do $$
+          begin
+            begin
+              insert into public.pollinations_sessions (id,session_id,access_token,owner_user_id)
+              values ('00000000-0000-0000-0000-000000000003','partial','synthetic-only','72112ead-d399-4a40-aa51-ee17811cb10d');
+              raise exception 'Partial owner binding was accepted';
+            exception when check_violation then null;
+            end;
+          end $$;
+          SQL
+
+  flutter-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Resolve dependencies
+        working-directory: frontend
+        run: flutter pub get
+      - name: Static analysis for owner OAuth client
+        working-directory: frontend
+        run: flutter analyze lib/services/pollinations_session_service.dart
+      - name: Offline Flutter tests
+        working-directory: frontend
+        run: flutter test
