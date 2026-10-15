@@ -16,7 +16,7 @@ alter table public.pollinations_sessions
 comment on column public.pollinations_sessions.owner_user_id is
   'Verified SoloForge application owner from authenticated OAuth transaction; never client-supplied';
 comment on column public.pollinations_sessions.provider_subject is
-  'Verified Pollinations subject matching effective key userId';
+  'Pollinations OAuth userinfo.sub verified with the OAuth-issued credential; not proof of key.userId equality, wallet ownership, or spending authorization';
 
 -- Existing legacy rows remain untouched, but new inserts must be owner-bound.
 -- The trigger complements the compatibility CHECK constraint without backfilling.
