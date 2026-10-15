@@ -22,7 +22,8 @@ class StageQualityTests(unittest.TestCase):
         self.assertEqual(assess_stage({"content_package": {}}, "FINAL_QA").result, "BLOCKED")
 
     def test_stale_revision(self):
-        job = {"current_input_sha256": "new", "current_output_sha256": "asset"}
+        job = {"current_input_sha256": "new", "current_output_sha256": "asset",
+               "content_package": {"asset_storage_path": "a.png"}}
         cert = {"stage": "VISUAL", "result": "PASS", "input_sha256": "old",
                 "output_sha256": "asset", "validator_version": "v1", "reviewer": "owner"}
         self.assertEqual(assess_stage(job, "VISUAL", evidence=cert).result, "STALE")
