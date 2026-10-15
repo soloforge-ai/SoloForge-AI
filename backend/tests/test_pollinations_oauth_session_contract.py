@@ -231,6 +231,7 @@ def test_bearer_session_status_and_logout(monkeypatch):
     exchange = client.post(
         "/auth/pollinations/mobile/exchange",
         json={"code": handoff_code},
+        headers={"X-SoloForge-Authorization": "Bearer test-owner"},
     )
     session_token = exchange.json()["session_token"]
     headers = {"Authorization": f"Bearer {session_token}", "X-SoloForge-Authorization": "Bearer test-owner"}
