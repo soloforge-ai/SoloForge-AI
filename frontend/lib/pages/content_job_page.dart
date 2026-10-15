@@ -101,12 +101,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
     _loadAssetPreview();
   }
 
-  bool get _hasPreviewableAsset =>
-      _job.assetStatus == 'READY' &&
-      ((_job.pipelineRoute == 'VIDEO' &&
-              (_job.videoStoragePath?.trim().isNotEmpty ?? false)) ||
-          (_job.pipelineRoute != 'VIDEO' &&
-              (_job.assetStoragePath?.trim().isNotEmpty ?? false)));
+  bool get _hasPreviewableAsset => _job.hasReadyMediaMetadata;
 
   Future<void> _loadAssetPreview() async {
     if (!_hasPreviewableAsset) {
@@ -414,6 +409,15 @@ class _ContentJobPageState extends State<ContentJobPage> {
                   _Chip(label: 'Publish ${_job.publishStatus}'),
               ],
             ),
+            if (_job.status == 'READY_TO_PUBLISH' ||
+                _job.readinessGroup == ContentReadinessGroup.pendingReconciliation ||
+                _job.readinessGroup == ContentReadinessGroup.needsRepair) ...[
+              const SizedBox(height: 12),
+              Card(child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(_job.readinessReason),
+              )),
+            ],
             if (_job.blocker != null) ...[
               const SizedBox(height: 12),
               Card(
