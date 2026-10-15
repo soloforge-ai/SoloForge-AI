@@ -16,12 +16,12 @@ def reset_oauth_state():
         router_module._sessions.clear()
         router_module._handoffs.clear()
         router_module._login_tickets.clear()
-        router_module._login_tickets.clear()
     yield
     with router_module._lock:
         router_module._transactions.clear()
         router_module._sessions.clear()
         router_module._handoffs.clear()
+        router_module._login_tickets.clear()
 
 
 def _client(monkeypatch):
@@ -140,6 +140,7 @@ def test_web_callback_returns_one_time_handoff_to_app(monkeypatch):
         params={
             "client": "web",
             "return_to": "https://soloforge-ai-web.onrender.com/",
+            "ticket": _login_ticket(client),
         },
         follow_redirects=False,
     )
@@ -205,6 +206,7 @@ def test_mobile_handoff_exchange_is_one_time_and_uses_json_body(monkeypatch):
     replay = client.post(
         "/auth/pollinations/mobile/exchange",
         json={"code": handoff_code},
+        headers={"X-SoloForge-Authorization": "Bearer test-owner"},
     )
     assert replay.status_code == 400
     assert "Invalid or expired mobile handoff code" in replay.text
