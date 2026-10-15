@@ -1,7 +1,7 @@
 from urllib.parse import parse_qs, urlparse
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 import backend.pollinations_oauth_router as router_module
@@ -49,7 +49,7 @@ def _client(monkeypatch):
         return {"status": "METADATA_VERIFIED_SPENDING_BLOCKED", "provider_subject": "provider-owner"}
 
     monkeypatch.setattr(router_module, "verify_provider_token", verified_synthetic_grant)
-    monkeypatch.setattr(router_module, "require_soloforge_session", lambda header: (_ for _ in ()).throw(AssertionError("owner required")) if header != "Bearer test-owner" else None)
+    monkeypatch.setattr(router_module, "require_soloforge_session", lambda header: (_ for _ in ()).throw(HTTPException(status_code=401, detail="owner required")) if header != "Bearer test-owner" else None)
     app = FastAPI()
     app.include_router(router_module.router)
     return TestClient(app, base_url="https://testserver")
