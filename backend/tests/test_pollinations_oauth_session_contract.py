@@ -408,6 +408,10 @@ def test_logout_storage_failure_does_not_claim_revocation(monkeypatch):
         owner_user_id=router_module._owner_user_id(),
         provider_subject="provider-owner",
     )
+    # Durable session must exist so logout actually attempts shared revocation.
+    # A cached-only session is intentionally ignored by the fail-closed reader.
+    monkeypatch.setattr(router_module, "_load_persisted_session",
+                        lambda sid: session if sid == session_id else None)
     with router_module._lock:
         router_module._sessions[session_id] = session
 
