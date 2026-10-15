@@ -28,13 +28,15 @@ class StageQualityTests(unittest.TestCase):
         self.assertEqual(assess_stage(job, "VISUAL", evidence=cert).result, "STALE")
 
     def test_advisory_evidence_pass(self):
-        job = {"current_input_sha256": "a", "current_output_sha256": "b"}
+        job = {"current_input_sha256": "a", "current_output_sha256": "b",
+               "content_package": {"asset_storage_path": "a.png"}}
         cert = {"stage": "VISUAL", "result": "PASS", "input_sha256": "a",
                 "output_sha256": "b", "validator_version": "v1", "reviewer": "owner"}
         self.assertEqual(assess_stage(job, "VISUAL", evidence=cert).result, "PASS")
 
     def test_unreviewed_visual_requires_review(self):
-        job = {"current_input_sha256": "a", "current_output_sha256": "b"}
+        job = {"current_input_sha256": "a", "current_output_sha256": "b",
+               "content_package": {"asset_storage_path": "a.png"}}
         cert = {"stage": "VISUAL", "result": "PASS", "input_sha256": "a",
                 "output_sha256": "b", "validator_version": "v1"}
         self.assertEqual(assess_stage(job, "VISUAL", evidence=cert).result, "REVIEW_REQUIRED")
@@ -81,6 +83,82 @@ class StageQualityTests(unittest.TestCase):
         job = {"current_input_sha256": "a", "current_output_sha256": "b"}
         self.assertEqual(assess_stage(job, "VISUAL",
                          evidence={"stage": "VISUAL", "result": "PASS"}).result, "BLOCKED")
+
+
+    def _cert(self, stage):
+        return {"stage": stage, "result": "PASS", "input_sha256": "a",
+                "output_sha256": "b", "validator_version": "v1", "reviewer": "owner"}
+
+    def _job(self, **fields):
+        return {"current_input_sha256": "a", "current_output_sha256": "b", **fields}
+
+    def test_grounding_failure_cannot_be_overridden(self):
+        job = self._job(content_package={"product_grounding_status": "FAILED"})
+        self.assertEqual(assess_stage(job, "GROUNDING", evidence=self._cert("GROUNDING")).result, "FAIL")
+
+    def test_grounding_missing_cannot_be_overridden(self):
+        self.assertEqual(assess_stage(self._job(), "GROUNDING",
+                         evidence=self._cert("GROUNDING")).result, "BLOCKED")
+
+    def test_visual_gate_failure_cannot_be_overridden(self):
+        job = self._job(content_package={"asset_storage_path": "a.png",
+                                        "asset_quality_gate": {"result": "FAIL"}})
+        self.assertEqual(assess_stage(job, "VISUAL", evidence=self._cert("VISUAL")).result, "FAIL")
+
+    def test_visual_missing_asset_cannot_be_overridden(self):
+        self.assertEqual(assess_stage(self._job(), "VISUAL",
+                         evidence=self._cert("VISUAL")).result, "BLOCKED")
+
+    def test_audio_failure_cannot_be_overridden(self):
+        job = self._job(content_package={"pipeline_route": "VIDEO"},
+                        audio_status="FAILED", audio_storage_path="audio.mp3")
+        self.assertEqual(assess_stage(job, "AUDIO", evidence=self._cert("AUDIO")).result, "FAIL")
+
+    def test_audio_missing_asset_cannot_be_overridden(self):
+        job = self._job(content_package={"pipeline_route": "VIDEO"})
+        self.assertEqual(assess_stage(job, "AUDIO", evidence=self._cert("AUDIO")).result, "BLOCKED")
+
+    def test_render_missing_technical_qa_cannot_be_overridden(self):
+        job = self._job(content_package={"pipeline_route": "VIDEO", "asset_storage_path": "a.png"})
+        self.assertEqual(assess_stage(job, "VIDEO_RENDER", evidence=self._cert("VIDEO_RENDER"),
+                         visual_evidence=self._cert("VISUAL")).result, "BLOCKED")
+
+    def test_final_qa_certificate_cannot_claim_pass(self):
+        self.assertEqual(assess_stage(self._job(), "FINAL_QA",
+                         evidence=self._cert("FINAL_QA")).result, "BLOCKED")
+
+    def test_content_missing_semantic_cannot_be_overridden(self):
+        self.assertEqual(assess_stage(self._job(), "CONTENT",
+                         evidence=self._cert("CONTENT")).result, "BLOCKED")
+
+    def test_render_accepts_valid_upstream_visual_evidence(self):
+        job = self._job(content_package={"pipeline_route": "VIDEO", "asset_storage_path": "a.png"},
+                        render_qa={"status": "PASS"})
+        result = assess_stage(job, "VIDEO_RENDER", evidence=self._cert("VIDEO_RENDER"),
+                              visual_evidence=self._cert("VISUAL"))
+        self.assertEqual(result.result, "PASS")
+
+    def test_render_rejects_stale_visual_evidence(self):
+        job = self._job(content_package={"pipeline_route": "VIDEO", "asset_storage_path": "a.png"},
+                        render_qa={"status": "PASS"})
+        stale = {**self._cert("VISUAL"), "input_sha256": "old"}
+        self.assertEqual(assess_stage(job, "VIDEO_RENDER", evidence=self._cert("VIDEO_RENDER"),
+                         visual_evidence=stale).return_stage, "VISUAL")
+
+    def test_reason_codes_none_fails_closed(self):
+        job = self._job(content_package={"asset_storage_path": "a.png"})
+        cert = {**self._cert("VISUAL"), "reason_codes": None}
+        self.assertEqual(assess_stage(job, "VISUAL", evidence=cert).result, "BLOCKED")
+
+    def test_reason_codes_string_fails_closed(self):
+        job = self._job(content_package={"asset_storage_path": "a.png"})
+        cert = {**self._cert("VISUAL"), "reason_codes": "ERROR"}
+        self.assertEqual(assess_stage(job, "VISUAL", evidence=cert).result, "BLOCKED")
+
+    def test_reason_codes_list_passes(self):
+        job = self._job(content_package={"asset_storage_path": "a.png"})
+        cert = {**self._cert("VISUAL"), "reason_codes": ["OK"]}
+        self.assertEqual(assess_stage(job, "VISUAL", evidence=cert).reason_codes, ("OK",))
 
 if __name__ == "__main__":
     unittest.main()
