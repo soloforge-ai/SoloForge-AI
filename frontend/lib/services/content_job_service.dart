@@ -287,10 +287,16 @@ class ContentJobService {
   ContentJobService({
     http.Client? client,
     SoloForgeSessionService? sessionService,
+    String storageOrigin = const String.fromEnvironment(
+      'SUPABASE_URL',
+      defaultValue: 'https://dhazxwfzaccrttckuylw.supabase.co',
+    ),
   })  : _client = client ?? http.Client(),
+        _storageOrigin = storageOrigin,
         _sessionService = sessionService ?? SoloForgeSessionService();
 
   final http.Client _client;
+  final String _storageOrigin;
   final SoloForgeSessionService _sessionService;
 
   String get _baseUrl =>
@@ -495,9 +501,20 @@ class ContentJobService {
       throw const FormatException('Only image assets can be exported.');
     }
     final uri = Uri.tryParse(preview.url);
-    if (uri == null || uri.scheme != 'https' || uri.userInfo.isNotEmpty ||
-        uri.host.isEmpty ||
-        !uri.path.contains('/storage/v1/object/sign/content-assets/')) {
+    final trusted = Uri.tryParse(_storageOrigin.trim());
+    const signedPrefix = '/storage/v1/object/sign/content-assets/';
+    if (uri == null || trusted == null ||
+        uri.scheme != 'https' || trusted.scheme != 'https' ||
+        uri.userInfo.isNotEmpty || trusted.userInfo.isNotEmpty ||
+        uri.host.isEmpty || trusted.host.isEmpty ||
+        uri.origin != trusted.origin ||
+        trusted.path != '' && trusted.path != '/' ||
+        uri.pathSegments.contains('..') ||
+        !uri.path.startsWith(signedPrefix) ||
+        uri.path.length <= signedPrefix.length ||
+        !uri.queryParameters.containsKey('token') ||
+        uri.queryParameters['token']!.isEmpty ||
+        uri.fragment.isNotEmpty) {
       throw const FormatException('Invalid signed image URL.');
     }
     final response = await _client.get(uri).timeout(const Duration(seconds: 30));
