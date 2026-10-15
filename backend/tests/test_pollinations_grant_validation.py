@@ -3,6 +3,26 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
+from backend import pollinations_oauth_claim_store as claim_store
+
+
+@pytest.fixture
+def synthetic_callback_claim(monkeypatch):
+    """Install a single-use, owner-bound synthetic shared claim for callback tests."""
+    claims = {}
+    def consume(kind, secret, owner):
+        if kind != 'pkce_state':
+            return None
+        item = claims.get(secret)
+        if item is None or item[0] != owner:
+            return None
+        claims.pop(secret)
+        return item[1]
+    monkeypatch.setattr(claim_store, 'consume', consume)
+    def prepare(state, owner):
+        claims[state] = (owner, {'verifier': 'verifier', 'return_to': None})
+    return prepare
+
 
 @pytest.mark.parametrize("trusted", [None, "", "pk_wrong", "sk_wrong", " other "])
 def test_invalid_trusted_id_denied_before_provider_network(monkeypatch, trusted):
@@ -143,7 +163,7 @@ def test_http_revoked_denied(monkeypatch):
         validation._get_json(validation.KEY_INFO_URL, "synthetic-token")
 
 
-def test_callback_fail_closed_and_success_without_provider_network(monkeypatch):
+def test_callback_fail_closed_and_success_without_provider_network(monkeypatch, synthetic_callback_claim):
     import time
     from fastapi import HTTPException
     from backend import pollinations_oauth_router as router_module
@@ -160,7 +180,7 @@ def test_callback_fail_closed_and_success_without_provider_network(monkeypatch):
     monkeypatch.setattr(router_module, "_persist_session", lambda *args: None)
     monkeypatch.setattr(router_module, "_supabase_config", lambda: None)
     state = "synthetic-state"
-    router_module._transactions[state] = router_module._OAuthTransaction("verifier", time.time(), owner_user_id=router_module._owner_user_id())
+    synthetic_callback_claim(state, router_module._owner_user_id())
     try:
         response = router_module.pollinations_callback(code="code", state=state, oauth_state=state)
         assert response.status_code == 302
@@ -170,7 +190,7 @@ def test_callback_fail_closed_and_success_without_provider_network(monkeypatch):
         router_module._sessions.clear()
 
 
-def test_callback_missing_expiry_never_persists(monkeypatch):
+def test_callback_missing_expiry_never_persists(monkeypatch, synthetic_callback_claim):
     import time
     from fastapi import HTTPException
     from backend import pollinations_oauth_router as router_module
@@ -185,7 +205,7 @@ def test_callback_missing_expiry_never_persists(monkeypatch):
     monkeypatch.setattr(router_module, "_persist_session",
                         lambda *args: pytest.fail("must not persist invalid session"))
     state = "synthetic-missing-expiry"
-    router_module._transactions[state] = router_module._OAuthTransaction("verifier", time.time(), owner_user_id=router_module._owner_user_id())
+    synthetic_callback_claim(state, router_module._owner_user_id())
     try:
         with pytest.raises(HTTPException) as exc:
             router_module.pollinations_callback(code="code", state=state, oauth_state=state)
@@ -194,7 +214,7 @@ def test_callback_missing_expiry_never_persists(monkeypatch):
         router_module._transactions.pop(state, None)
 
 
-def test_callback_provider_verification_failure_never_persists(monkeypatch):
+def test_callback_provider_verification_failure_never_persists(monkeypatch, synthetic_callback_claim):
     import time
     from fastapi import HTTPException
     from backend import pollinations_oauth_router as router_module
@@ -210,7 +230,7 @@ def test_callback_provider_verification_failure_never_persists(monkeypatch):
     monkeypatch.setattr(router_module, "_persist_session",
                         lambda *args: pytest.fail("must not persist invalid session"))
     state = "synthetic-revoked"
-    router_module._transactions[state] = router_module._OAuthTransaction("verifier", time.time(), owner_user_id=router_module._owner_user_id())
+    synthetic_callback_claim(state, router_module._owner_user_id())
     try:
         with pytest.raises(HTTPException) as exc:
             router_module.pollinations_callback(code="code", state=state, oauth_state=state)
