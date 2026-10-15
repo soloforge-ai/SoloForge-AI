@@ -571,6 +571,8 @@ def pollinations_logout(
 
 
 def get_pollinations_access_token(session_id: str | None, owner_authorization: str | None = None) -> str | None:
+    if not session_id:
+        return None  # Preserve local-only generation without provider credentials.
     require_soloforge_session(owner_authorization)
     session = _get_session(session_id)
     return session.access_token if session and session.owner_user_id == _owner_user_id() else None
