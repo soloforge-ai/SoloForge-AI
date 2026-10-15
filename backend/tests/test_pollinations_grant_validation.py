@@ -156,11 +156,11 @@ def test_callback_fail_closed_and_success_without_provider_network(monkeypatch):
     observed = []
     monkeypatch.setenv("POLLINATIONS_TRUSTED_APP_KEY_ID", INTERNAL_APP_ID)
     monkeypatch.setattr(router_module, "verify_provider_token",
-                        lambda token, *, client_id, trusted_app_key_id: observed.append((token, client_id, trusted_app_key_id)))
+                        lambda token, *, client_id, trusted_app_key_id: (observed.append((token, client_id, trusted_app_key_id)) or {"provider_subject": "provider-owner"}))
     monkeypatch.setattr(router_module, "_persist_session", lambda *args: None)
     monkeypatch.setattr(router_module, "_supabase_config", lambda: None)
     state = "synthetic-state"
-    router_module._transactions[state] = router_module._OAuthTransaction("verifier", time.time())
+    router_module._transactions[state] = router_module._OAuthTransaction("verifier", time.time(), owner_user_id=router_module._owner_user_id())
     try:
         response = router_module.pollinations_callback(code="code", state=state, oauth_state=state)
         assert response.status_code == 302
@@ -185,7 +185,7 @@ def test_callback_missing_expiry_never_persists(monkeypatch):
     monkeypatch.setattr(router_module, "_persist_session",
                         lambda *args: pytest.fail("must not persist invalid session"))
     state = "synthetic-missing-expiry"
-    router_module._transactions[state] = router_module._OAuthTransaction("verifier", time.time())
+    router_module._transactions[state] = router_module._OAuthTransaction("verifier", time.time(), owner_user_id=router_module._owner_user_id())
     try:
         with pytest.raises(HTTPException) as exc:
             router_module.pollinations_callback(code="code", state=state, oauth_state=state)
@@ -210,7 +210,7 @@ def test_callback_provider_verification_failure_never_persists(monkeypatch):
     monkeypatch.setattr(router_module, "_persist_session",
                         lambda *args: pytest.fail("must not persist invalid session"))
     state = "synthetic-revoked"
-    router_module._transactions[state] = router_module._OAuthTransaction("verifier", time.time())
+    router_module._transactions[state] = router_module._OAuthTransaction("verifier", time.time(), owner_user_id=router_module._owner_user_id())
     try:
         with pytest.raises(HTTPException) as exc:
             router_module.pollinations_callback(code="code", state=state, oauth_state=state)
