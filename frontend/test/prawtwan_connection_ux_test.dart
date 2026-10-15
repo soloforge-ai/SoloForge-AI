@@ -6,13 +6,19 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/pages/prawtwan_chat_page.dart';
 import 'package:frontend/services/pollinations_session_service.dart';
+import 'package:frontend/services/soloforge_session_service.dart';
 import 'package:frontend/services/prawtwan_chat_service.dart';
 import 'package:frontend/services/prawtwan_language.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
+SoloForgeSessionService syntheticOwner() => SoloForgeSessionService(
+  client: MockClient((_) async => http.Response('{"session_token":"synthetic-owner"}', 200)),
+  currentIdentity: () => (userId: 'test-owner', accessToken: 'synthetic-github-token'),
+);
+
 class TestSession extends PollinationsSessionService {
-  TestSession({this.connected = false});
+  TestSession({this.connected = false}) : super(ownerSessions: syntheticOwner());
   bool connected;
   bool failConnect = false;
   int connections = 0;
@@ -146,10 +152,9 @@ void main() {
       expect(launched, hasLength(1));
       final uri = Uri.parse(launched.single);
       expect(uri.path, '/auth/pollinations/login');
-      expect(uri.queryParameters, {
-        'client': 'mobile',
-        'return_to': 'soloforge://oauth/pollinations',
-      });
+      expect(uri.queryParameters['client'], 'mobile');
+      expect(uri.queryParameters['return_to'], 'soloforge://oauth/pollinations');
+      expect(uri.queryParameters['ticket'], isNotEmpty);
     },
   );
 
@@ -301,7 +306,7 @@ void main() {
       var calls = 0;
       final session = TestSession(connected: true);
       final chat = PrawtwanChatService(
-        sessionService: PollinationsSessionService(),
+        sessionService: PollinationsSessionService(ownerSessions: syntheticOwner()),
         client: MockClient((request) async {
           calls++;
           expect(request.headers['Authorization'], 'Bearer shared-session');
@@ -340,7 +345,7 @@ void main() {
       expect(find.text('คุยกับพี่พราว'), findsOneWidget);
       expect(find.byKey(const ValueKey('prawtwan-connect')), findsNothing);
       expect(
-        await PollinationsSessionService().readSessionToken(),
+        await PollinationsSessionService(ownerSessions: syntheticOwner()).readSessionToken(),
         'shared-session',
       );
       expect(find.text(const PrawtwanCopy('th').privacy), findsNWidgets(2));
@@ -379,7 +384,7 @@ void main() {
         }),
       );
       final chat = PrawtwanChatService(
-        sessionService: PollinationsSessionService(),
+        sessionService: PollinationsSessionService(ownerSessions: syntheticOwner()),
         client: MockClient((request) async {
           expect(request.url.path, '/v1/prawtwan/chat');
           expect(request.headers['Authorization'], 'Bearer session');
@@ -406,7 +411,7 @@ void main() {
 }
 
 class ListeningSession extends PollinationsSessionService {
-  ListeningSession({super.client});
+  ListeningSession({super.client}) : super(ownerSessions: syntheticOwner());
   Future<void> Function(Uri)? callback;
   @override
   Future<void> startListening({
