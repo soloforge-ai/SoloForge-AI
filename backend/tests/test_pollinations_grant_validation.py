@@ -27,7 +27,7 @@ from backend.pollinations_grant_validation import (
 
 APP = "pk_synthetic-app"
 INTERNAL_APP_ID = "synthetic-internal-app-id"
-USER = {"sub": "provider-sub"}
+USER = {"sub": "provider-owner"}
 FUTURE = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
 
 
