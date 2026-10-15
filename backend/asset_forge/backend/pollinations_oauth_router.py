@@ -363,8 +363,11 @@ def pollinations_login_ticket(
     require_soloforge_session(x_soloforge_authorization)
     _cleanup()
     ticket = secrets.token_urlsafe(32)
-    with _lock:
-        _login_tickets[ticket] = (_owner_user_id(), time.time())
+    from backend.pollinations_oauth_claim_store import issue, ClaimStoreUnavailable
+    try:
+        issue("login_ticket", ticket, _owner_user_id(), {}, _TRANSACTION_TTL_SECONDS)
+    except ClaimStoreUnavailable as exc:
+        raise HTTPException(status_code=503, detail="OAuth claim store unavailable") from exc
     return {"ticket": ticket}
 
 
@@ -392,18 +395,21 @@ def pollinations_login(
         )
 
     _cleanup()
-    with _lock:
-        claim = _login_tickets.pop(ticket, None) if ticket else None
-    if claim is None or claim[0] != _owner_user_id() or time.time() - claim[1] > _TRANSACTION_TTL_SECONDS:
+    from backend.pollinations_oauth_claim_store import consume, issue, ClaimStoreUnavailable
+    if not ticket:
+        raise HTTPException(status_code=401, detail="Owner-bound OAuth login ticket required")
+    try:
+        claim = consume("login_ticket", ticket, _owner_user_id())
+    except ClaimStoreUnavailable as exc:
+        raise HTTPException(status_code=503, detail="OAuth claim store unavailable") from exc
+    if claim is None:
         raise HTTPException(status_code=401, detail="Owner-bound OAuth login ticket required")
     verifier, challenge, state = create_pkce_transaction()
-    with _lock:
-        _transactions[state] = _OAuthTransaction(
-            verifier=verifier,
-            created_at=time.time(),
-            return_to=resolved_return_to,
-            owner_user_id=claim[0],
-        )
+    try:
+        issue("pkce_state", state, _owner_user_id(),
+              {"verifier": verifier, "return_to": resolved_return_to}, _TRANSACTION_TTL_SECONDS)
+    except ClaimStoreUnavailable as exc:
+        raise HTTPException(status_code=503, detail="OAuth claim store unavailable") from exc
 
     authorization_url = build_authorization_url(
         config,
@@ -430,12 +436,18 @@ def pollinations_callback(
     if not oauth_state or not secrets.compare_digest(state, oauth_state):
         raise HTTPException(status_code=400, detail="OAuth state does not match this browser session.")
 
-    with _lock:
-        transaction = _transactions.get(state)
-    if transaction is None:
+    # Consume BEFORE contacting the provider. Ambiguous provider outcomes cannot
+    # be retried with the same authorization code or state.
+    from backend.pollinations_oauth_claim_store import consume, issue, ClaimStoreUnavailable
+    try:
+        claim = consume("pkce_state", state, _owner_user_id())
+    except ClaimStoreUnavailable as exc:
+        raise HTTPException(status_code=503, detail="OAuth claim store unavailable") from exc
+    if claim is None or not isinstance(claim.get("verifier"), str):
         raise HTTPException(status_code=400, detail="Invalid or expired OAuth state.")
-    if transaction.owner_user_id != _owner_user_id():
-        raise HTTPException(status_code=403, detail="OAuth owner mismatch")
+    transaction = _OAuthTransaction(verifier=claim["verifier"], created_at=time.time(),
+                                    return_to=claim.get("return_to"),
+                                    owner_user_id=_owner_user_id())
 
     try:
         config = PollinationsOAuthConfig.from_env()
@@ -445,9 +457,7 @@ def pollinations_callback(
             code_verifier=transaction.verifier,
         )
     except (RuntimeError, ValueError) as exc:
-        # Keep the transaction alive until its normal TTL expires. A transient
-        # provider failure must not consume the OAuth state and turn a retry
-        # into a misleading "Invalid or expired OAuth state" error.
+        # The state was consumed before exchange. Never retry ambiguous provider outcomes.
         raise HTTPException(
             status_code=502,
             detail="Pollinations token exchange failed. Please retry the connection.",
@@ -468,9 +478,6 @@ def pollinations_callback(
             detail="Pollinations identity or grant verification failed.",
         ) from exc
 
-    with _lock:
-        _transactions.pop(state, None)
-
     session_id = secrets.token_urlsafe(32)
     session = _OAuthSession(
         access_token=payload["access_token"],
@@ -479,26 +486,25 @@ def pollinations_callback(
         owner_user_id=transaction.owner_user_id,
         provider_subject=verified["provider_subject"],
     )
-    with _lock:
-        _sessions[session_id] = session
     try:
         _persist_session(session_id, session)
     except RuntimeError as exc:
-        with _lock:
-            _sessions.pop(session_id, None)
         raise HTTPException(
             status_code=503,
-            detail="Could not persist Pollinations session. Please try again.",
+            detail="Could not persist Pollinations session. Reconnect with a new OAuth flow.",
         ) from exc
 
     if transaction.return_to:
         handoff_code = secrets.token_urlsafe(32)
-        with _lock:
-            _handoffs[handoff_code] = _MobileHandoff(
-                session_id=session_id,
-                created_at=time.time(),
-                owner_user_id=transaction.owner_user_id,
-            )
+        try:
+            issue("mobile_handoff", handoff_code, transaction.owner_user_id,
+                  {"session_id": session_id}, _HANDOFF_TTL_SECONDS)
+        except ClaimStoreUnavailable as exc:
+            try:
+                _delete_persisted_session(session_id)
+            except RuntimeError:
+                pass  # Do not expose the session credential on failed handoff.
+            raise HTTPException(status_code=503, detail="OAuth handoff store unavailable") from exc
         separator = "&" if "?" in transaction.return_to else "?"
         target = f"{transaction.return_to}{separator}{urlencode({'code': handoff_code})}"
         response = RedirectResponse(url=target, status_code=302)
@@ -518,19 +524,20 @@ def pollinations_mobile_exchange(
 ) -> dict[str, object]:
     require_soloforge_session(x_soloforge_authorization)
     _cleanup()
-    with _lock:
-        handoff = _handoffs.pop(payload.code, None)
-    if handoff is None:
+    from backend.pollinations_oauth_claim_store import consume, ClaimStoreUnavailable
+    try:
+        handoff = consume("mobile_handoff", payload.code, _owner_user_id())
+    except ClaimStoreUnavailable as exc:
+        raise HTTPException(status_code=503, detail="OAuth claim store unavailable") from exc
+    if handoff is None or not isinstance(handoff.get("session_id"), str):
         raise HTTPException(status_code=400, detail="Invalid or expired mobile handoff code.")
-    if handoff.owner_user_id != _owner_user_id():
-        raise HTTPException(status_code=403, detail="Handoff owner mismatch")
 
-    session = _get_session(handoff.session_id)
+    session = _get_session(handoff["session_id"])
     if session is None or session.owner_user_id != _owner_user_id():
         raise HTTPException(status_code=401, detail="Pollinations session has expired.")
 
     return {
-        "session_token": handoff.session_id,
+        "session_token": handoff["session_id"],
         "expires_at": int(session.expires_at),
         "scope": session.scope,
     }
