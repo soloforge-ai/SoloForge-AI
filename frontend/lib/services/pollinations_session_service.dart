@@ -31,7 +31,9 @@ class PollinationsSessionService {
     http.Client? client,
     FlutterSecureStorage? storage,
     AppLinks? appLinks,
-  }) : _client = client ?? http.Client(),
+    SoloForgeSessionService? ownerSessions,
+  }) : _ownerSessions = ownerSessions ?? SoloForgeSessionService(),
+       _client = client ?? http.Client(),
        _storage = storage ?? const FlutterSecureStorage(),
        _appLinks = appLinks ?? AppLinks();
 
@@ -51,7 +53,7 @@ class PollinationsSessionService {
     await update;
   }
 
-  final SoloForgeSessionService _ownerSessions = SoloForgeSessionService();
+  final SoloForgeSessionService _ownerSessions;
   final http.Client _client;
   final FlutterSecureStorage _storage;
   final AppLinks _appLinks;
