@@ -1,0 +1,67 @@
+name: Pollinations Shared OAuth Offline CI
+on:
+  push:
+    branches: [feat/pollinations-shared-oauth-transactions]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: shared-oauth-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  oauth-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r backend/asset_forge/requirements.txt pytest httpx
+      - run: python -m compileall -q backend/asset_forge/backend backend/tests
+      - run: PYTHONPATH=backend/asset_forge:. python -m pytest -q backend/tests/test_pollinations_oauth_session_contract.py backend/tests/test_pollinations_grant_validation.py backend/asset_forge/tests/test_execution_policy.py
+  postgres-claims:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_USER: postgres
+          POSTGRES_DB: shared_oauth_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d shared_oauth_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: test-only
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGDATABASE: shared_oauth_test
+      SOLOFORGE_TEST_POSTGRES_DSN: postgresql://postgres:test-only@localhost:5432/shared_oauth_test
+      SOLOFORGE_TEST_OWNER_UUID: 72112ead-d399-4a40-aa51-ee17811cb10d
+      SOLOFORGE_TEST_OTHER_UUID: 72112ead-d399-4a40-aa51-ee17811cb10e
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create disposable auth baseline
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          create schema auth;
+          create role service_role;
+          create role anon;
+          create role authenticated;
+          create function auth.role() returns text language sql stable as $$
+            select nullif(current_setting('request.jwt.claim.role', true),'')
+          $$;
+          create table auth.users(id uuid primary key);
+          insert into auth.users values
+            ('72112ead-d399-4a40-aa51-ee17811cb10d'),
+            ('72112ead-d399-4a40-aa51-ee17811cb10e');
+          SQL
+      - name: Apply transaction migration to disposable DB
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261015170000_pollinations_oauth_transaction_store.sql
+      - run: python -m pip install pytest 'psycopg[binary]'
+      - name: Multi-connection PostgreSQL security tests
+        run: PYTHONPATH=. python -m pytest -q backend/tests/test_pollinations_oauth_claims_postgres.py
