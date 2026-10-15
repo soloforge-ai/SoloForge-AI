@@ -251,6 +251,7 @@ def test_bearer_session_status_and_logout(monkeypatch):
 
 def test_status_restores_persisted_session_after_backend_restart(monkeypatch):
     client = _client(monkeypatch)
+    monkeypatch.setattr(router_module, "_supabase_config", lambda: ("https://example.invalid", "test-only"))
     persisted = router_module._OAuthSession(
         access_token="sk_persisted_secret",
         expires_at=router_module.time.time() + 600,
@@ -428,6 +429,7 @@ def test_shared_store_revocation_invalidates_cached_session_across_workers(monke
 
 
 def test_shared_store_outage_denies_cached_access_token(monkeypatch):
+    _client(monkeypatch)  # Install synthetic owner-session verifier.
     session_id = "synthetic-outage"
     session = router_module._OAuthSession(
         access_token="synthetic-access-token",
