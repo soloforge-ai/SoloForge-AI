@@ -43,6 +43,15 @@ def _client(monkeypatch):
             return dict(value[1])
     monkeypatch.setattr(claim_store, "issue", issue)
     monkeypatch.setattr(claim_store, "consume", consume)
+    # Synthetic shared session persistence: independent of process-local cache.
+    persisted_sessions = {}
+    monkeypatch.setattr(router_module, "_supabase_config", lambda: ("https://example.invalid", "test-only"))
+    monkeypatch.setattr(router_module, "_persist_session",
+                        lambda sid, session: persisted_sessions.__setitem__(sid, session))
+    monkeypatch.setattr(router_module, "_load_persisted_session",
+                        lambda sid: persisted_sessions.get(sid))
+    monkeypatch.setattr(router_module, "_delete_persisted_session",
+                        lambda sid: persisted_sessions.pop(sid, None))
     monkeypatch.setenv("POLLINATIONS_CLIENT_ID", "pk_test")
     monkeypatch.setenv("POLLINATIONS_TRUSTED_APP_KEY_ID", "internal-test-app-id")
     monkeypatch.setenv(
