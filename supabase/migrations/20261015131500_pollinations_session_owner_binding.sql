@@ -17,3 +17,21 @@ comment on column public.pollinations_sessions.owner_user_id is
   'Verified SoloForge application owner from authenticated OAuth transaction; never client-supplied';
 comment on column public.pollinations_sessions.provider_subject is
   'Verified Pollinations subject matching effective key userId';
+
+-- Existing legacy rows remain untouched, but new inserts must be owner-bound.
+-- The trigger complements the compatibility CHECK constraint without backfilling.
+create or replace function public.reject_unbound_pollinations_session_insert()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  if new.owner_user_id is null or new.provider_subject is null
+     or length(btrim(new.provider_subject)) = 0 then
+    raise check_violation using message = 'New Pollinations sessions require owner and provider subject';
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.reject_unbound_pollinations_session_insert() from public;
+create trigger pollinations_sessions_require_owner_on_insert
+before insert on public.pollinations_sessions
+for each row execute function public.reject_unbound_pollinations_session_insert();
