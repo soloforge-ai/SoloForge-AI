@@ -5,6 +5,7 @@ on:
     paths:
       - 'supabase/migrations/202610160001_qa_trusted_evidence_preparation.sql'
       - 'backend/asset_forge/tests/test_trusted_qa_postgres.py'
+      - 'supabase/migrations/202610160002_qa_atomic_chain_claim_preparation.sql'
       - '.github/workflows/trusted-qa-postgres.yml'
   workflow_dispatch:
 jobs:
