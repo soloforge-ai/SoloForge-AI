@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from backend.asset_forge.backend.trusted_qa_evidence import verify_evidence
+from backend.asset_forge.backend.trusted_qa_evidence import SHA256, _valid, verify_evidence
 
 GRAPHS = {
     "IMAGE": {
@@ -41,6 +41,8 @@ def verify_revision_chain(
     fields, each including its verified_upstream_evidence_ids.
     trusted_revision: server-derived mapping of stage -> revision_id.
     evidence: list of envelopes forming an exact single route graph.
+    Dependency IDs are canonical ordered lists matching each stage's GRAPHS
+    tuple, in both evidence and trusted snapshot; reordering is BLOCKED.
     """
     if route not in GRAPHS or not isinstance(evidence, (tuple, list)):
         return "BLOCKED"
@@ -51,7 +53,9 @@ def verify_revision_chain(
         return "BLOCKED"
     by_stage, by_id = {}, {}
     for item in evidence:
-        if not isinstance(item, Mapping):
+        # Reject malformed envelopes before evaluating freshness; invalid
+        # hashes must never be classified as legitimate stale revisions.
+        if not _valid(item):
             return "BLOCKED"
         stage, eid = item.get("stage"), item.get("evidence_id")
         if not isinstance(stage, str) or stage not in graph:
@@ -74,6 +78,9 @@ def verify_revision_chain(
             isinstance(snapshot.get(k), str) for k in BOUND_FIELDS
         ):
             return "BLOCKED"
+        if any(not SHA256.fullmatch(snapshot[k]) for k in
+               ("input_sha256", "output_sha256")):
+            return "BLOCKED"
         if snapshot["stage"] != stage or snapshot["job_id"] != item["job_id"]:
             return "BLOCKED"
         if not isinstance(trusted_revision.get(stage), str):
@@ -83,6 +90,8 @@ def verify_revision_chain(
         if any(item.get(k) != snapshot[k] for k in
                ("revision_id", "input_sha256", "output_sha256", "artifact_ref")):
             stale = True
+        # The route graph defines canonical dependency order. Both envelope
+        # and trusted snapshot must use that exact order.
         expected_ids = [by_stage[s]["evidence_id"] for s in deps]
         if (item.get("dependency_evidence_ids") != expected_ids
                 or snapshot.get("verified_upstream_evidence_ids") != expected_ids):
@@ -108,10 +117,6 @@ def verify_revision_chain(
             root_snapshot = dict(snapshot, required_stages=[],
                                  verified_upstream_evidence_ids=[])
             if verify_evidence(item, trusted_snapshot=root_snapshot) != "PASS":
-                return "BLOCKED"
-        else:
-            from backend.asset_forge.backend.trusted_qa_evidence import _valid
-            if not _valid(item):
                 return "BLOCKED"
         if any(item[k] != snapshot[k] for k in BOUND_FIELDS):
             return "BLOCKED"

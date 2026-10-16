@@ -99,7 +99,24 @@ class ChainTests(unittest.TestCase):
         self.assertEqual(check(e, s, r), "BLOCKED")
     def test_invalid_hash(self):
         e, s, r = fixture(); e[1]["input_sha256"] = "bad"
-        self.assertEqual(check(e, s, r), "STALE")
+        self.assertEqual(check(e, s, r), "BLOCKED")
+    def test_invalid_output_hash(self):
+        e, s, r = fixture(); e[1]["output_sha256"] = "invalid"
+        self.assertEqual(check(e, s, r), "BLOCKED")
+    def test_invalid_trusted_snapshot_hash(self):
+        e, s, r = fixture(); s[e[1]["evidence_id"]]["input_sha256"] = "bad"
+        self.assertEqual(check(e, s, r), "BLOCKED")
+    def test_invalid_trusted_snapshot_output_hash(self):
+        e, s, r = fixture(); s[e[1]["evidence_id"]]["output_sha256"] = "bad"
+        self.assertEqual(check(e, s, r), "BLOCKED")
+    def test_dependency_order_is_canonical(self):
+        e, s, r = fixture()
+        e[2]["dependency_evidence_ids"].reverse()
+        self.assertEqual(check(e, s, r), "BLOCKED")
+    def test_snapshot_dependency_order_is_canonical(self):
+        e, s, r = fixture()
+        s[e[2]["evidence_id"]]["verified_upstream_evidence_ids"].reverse()
+        self.assertEqual(check(e, s, r), "BLOCKED")
     def test_invalid_timestamp(self):
         e, s, r = fixture(); e[1]["reviewed_at"] = "bad"
         self.assertEqual(check(e, s, r), "BLOCKED")
