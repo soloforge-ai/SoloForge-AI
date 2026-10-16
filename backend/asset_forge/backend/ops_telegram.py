@@ -10,6 +10,7 @@ import urllib.request
 from typing import Any
 
 from backend.ops_events import OpsEvent, format_telegram_message
+from backend.ci_progress import confirmed_progress
 from backend.shared_supabase import supabase_request
 
 
@@ -95,6 +96,11 @@ def deliver_notification(event: OpsEvent, notification_id: int) -> bool:
     token = _required_env("TELEGRAM_BOT_TOKEN")
     chat_id = _required_env("TELEGRAM_ALLOWED_CHAT_ID")
     message = format_telegram_message(event, notification_id)
+    # Best-effort enrichment only for successful CI jobs. Failures and smoke
+    # alerts retain their original immediate delivery path.
+    progress = confirmed_progress(event)
+    if progress is not None:
+        message += f"\nProgress: {progress[0]}/{progress[1]} (workflow run)"
     try:
         _send_telegram(token, chat_id, message)
     except Exception as exc:
