@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 
 import '../core/theme/app_theme.dart';
 import '../models/content_job.dart';
@@ -754,12 +755,13 @@ class _AssetPreviewCard extends StatelessWidget {
                 ),
               ),
             )
-          else if (preview != null)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(14, 8, 14, 14),
-              child: Text(
-                'Video asset is ready. Video playback preview is not included in this image-preview task.',
-                style: TextStyle(color: AshColors.smokeSilver),
+          else if (preview?.mediaType == 'video')
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+              child: _NetworkVideoPreview(
+                key: ValueKey(preview!.url),
+                url: preview!.url,
+                onRetry: onRetry,
               ),
             ),
           if (preview != null)
@@ -778,6 +780,168 @@ class _AssetPreviewCard extends StatelessWidget {
     );
   }
 }
+
+class _NetworkVideoPreview extends StatefulWidget {
+  const _NetworkVideoPreview({
+    super.key,
+    required this.url,
+    required this.onRetry,
+  });
+
+  final String url;
+  final VoidCallback onRetry;
+
+  @override
+  State<_NetworkVideoPreview> createState() => _NetworkVideoPreviewState();
+}
+
+class _NetworkVideoPreviewState extends State<_NetworkVideoPreview> {
+  late final VideoPlayerController _controller;
+  Future<void>? _initializeFuture;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _controller.addListener(_onVideoChanged);
+    _initializeFuture = _controller.initialize().then((_) {
+      if (!mounted) return;
+      _controller.setLooping(false);
+      setState(() {});
+    }).catchError((Object error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString().replaceFirst('PlatformException', 'Playback error');
+      });
+    });
+  }
+
+  void _onVideoChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onVideoChanged);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  String _formatDuration(Duration value) {
+    final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = value.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  Future<void> _togglePlayback() async {
+    if (!_controller.value.isInitialized) return;
+    if (_controller.value.isPlaying) {
+      await _controller.pause();
+    } else {
+      if (_controller.value.position >= _controller.value.duration) {
+        await _controller.seekTo(Duration.zero);
+      }
+      await _controller.play();
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Video preview could not be played: $_error',
+            style: const TextStyle(color: AshColors.smokeSilver),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Refresh Preview to request a new signed video URL.',
+            style: TextStyle(
+              color: AshColors.smokeSilver,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: widget.onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Refresh Preview'),
+          ),
+        ],
+      );
+    }
+
+    return FutureBuilder<void>(
+      future: _initializeFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done ||
+            !_controller.value.isInitialized) {
+          return const SizedBox(
+            height: 260,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final aspectRatio = _controller.value.aspectRatio > 0
+            ? _controller.value.aspectRatio
+            : 9 / 16;
+
+        return Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: AspectRatio(
+                aspectRatio: aspectRatio,
+                child: VideoPlayer(_controller),
+              ),
+            ),
+            const SizedBox(height: 8),
+            VideoProgressIndicator(
+              _controller,
+              allowScrubbing: true,
+              padding: const EdgeInsets.symmetric(vertical: 4),
+            ),
+            Row(
+              children: [
+                IconButton(
+                  tooltip: _controller.value.isPlaying ? 'Pause' : 'Play',
+                  onPressed: _togglePlayback,
+                  icon: Icon(
+                    _controller.value.isPlaying
+                        ? Icons.pause_circle_filled
+                        : Icons.play_circle_fill,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    '${_formatDuration(_controller.value.position)} / ${_formatDuration(_controller.value.duration)}',
+                    style: const TextStyle(
+                      color: AshColors.smokeSilver,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Restart',
+                  onPressed: () async {
+                    await _controller.seekTo(Duration.zero);
+                    if (mounted) setState(() {});
+                  },
+                  icon: const Icon(Icons.replay),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 
 class _ContentQualityReviewCard extends StatelessWidget {
   const _ContentQualityReviewCard({
