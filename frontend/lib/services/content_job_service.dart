@@ -287,16 +287,15 @@ class ContentJobService {
   ContentJobService({
     http.Client? client,
     SoloForgeSessionService? sessionService,
-    String storageOrigin = const String.fromEnvironment(
+    this.storageOrigin = const String.fromEnvironment(
       'SUPABASE_URL',
       defaultValue: 'https://dhazxwfzaccrttckuylw.supabase.co',
     ),
   })  : _client = client ?? http.Client(),
-        _sessionService = sessionService ?? SoloForgeSessionService(),
-        _storageOrigin = storageOrigin;
+        _sessionService = sessionService ?? SoloForgeSessionService();
 
   final http.Client _client;
-  final String _storageOrigin;
+  final String storageOrigin;
   final SoloForgeSessionService _sessionService;
 
   String get _baseUrl =>
@@ -501,7 +500,7 @@ class ContentJobService {
       throw const FormatException('Only image assets can be exported.');
     }
     final uri = Uri.tryParse(preview.url);
-    final trusted = Uri.tryParse(_storageOrigin.trim());
+    final trusted = Uri.tryParse(storageOrigin.trim());
     const signedPrefix = '/storage/v1/object/sign/content-assets/';
     if (uri == null || trusted == null ||
         uri.scheme != 'https' || trusted.scheme != 'https' ||
