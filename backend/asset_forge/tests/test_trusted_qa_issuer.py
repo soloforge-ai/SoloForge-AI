@@ -10,7 +10,7 @@ from backend.asset_forge.tests.test_offline_qa_issuance import fixture, NOW, KEY
 class Authority:
     def __init__(self, route="IMAGE"):
         self.x=fixture(route)
-        self.artifacts={"in:"+eid: b"input:"+eid for eid in self.x["trusted_snapshots"]}
+        self.artifacts={"in:"+eid: ("input:"+eid).encode() for eid in self.x["trusted_snapshots"]}
         for eid, data in self.x["trusted_artifacts"].items():
             self.artifacts["immutable:"+self.x["trusted_snapshots"][eid]["stage"]]=data
         self.ctx=None
