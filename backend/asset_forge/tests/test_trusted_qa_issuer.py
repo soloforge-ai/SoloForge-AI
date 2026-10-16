@@ -89,7 +89,8 @@ class SecurityTests(unittest.TestCase):
                          trusted_key_records=self.a.records,evaluated_at=NOW),"BLOCKED")
     def test_key_unknown(self):
         self.a.records={}
-        self.test_key_revoked_result()
+        self.assertEqual(verify_with_lifecycle(attestation=self.a.x["attestations"][0],
+                         trusted_key_records=self.a.records,evaluated_at=NOW),"BLOCKED")
     def test_chain_valid(self):
         # Fixture input hash intentionally differs from actual input bytes.
         # A production chain must reject such a mismatch.
