@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -286,10 +287,16 @@ class ContentJobService {
   ContentJobService({
     http.Client? client,
     SoloForgeSessionService? sessionService,
+    String storageOrigin = const String.fromEnvironment(
+      'SUPABASE_URL',
+      defaultValue: 'https://dhazxwfzaccrttckuylw.supabase.co',
+    ),
   })  : _client = client ?? http.Client(),
-        _sessionService = sessionService ?? SoloForgeSessionService();
+        _sessionService = sessionService ?? SoloForgeSessionService(),
+        _storageOrigin = storageOrigin;
 
   final http.Client _client;
+  final String _storageOrigin;
   final SoloForgeSessionService _sessionService;
 
   String get _baseUrl =>
@@ -485,6 +492,49 @@ class ContentJobService {
       throw Exception('Asset preview did not return a media URL.');
     }
     return preview;
+  }
+
+  /// Download an existing, short-lived signed storage asset only.
+  /// No provider execution, publishing, or application credentials are involved.
+  Future<Uint8List> downloadReadyImage(ContentAssetPreview preview) async {
+    if (preview.mediaType != 'image') {
+      throw const FormatException('Only image assets can be exported.');
+    }
+    final uri = Uri.tryParse(preview.url);
+    final trusted = Uri.tryParse(_storageOrigin.trim());
+    const signedPrefix = '/storage/v1/object/sign/content-assets/';
+    if (uri == null || trusted == null ||
+        uri.scheme != 'https' || trusted.scheme != 'https' ||
+        uri.userInfo.isNotEmpty || trusted.userInfo.isNotEmpty ||
+        uri.host.isEmpty || trusted.host.isEmpty ||
+        uri.origin != trusted.origin ||
+        trusted.path != '' && trusted.path != '/' ||
+        uri.pathSegments.contains('..') ||
+        !uri.path.startsWith(signedPrefix) ||
+        uri.path.length <= signedPrefix.length ||
+        !uri.queryParameters.containsKey('token') ||
+        uri.queryParameters['token']!.isEmpty ||
+        uri.fragment.isNotEmpty) {
+      throw const FormatException('Invalid signed image URL.');
+    }
+    final response = await _client.get(uri).timeout(const Duration(seconds: 30));
+    if (response.statusCode != 200) {
+      throw Exception('Image download failed (HTTP ${response.statusCode}). Refresh the preview and retry.');
+    }
+    final bytes = response.bodyBytes;
+    const maxBytes = 20 * 1024 * 1024;
+    if (bytes.isEmpty || bytes.length > maxBytes) {
+      throw const FormatException('Image is empty or exceeds the 20 MB export limit.');
+    }
+    final mime = (response.headers['content-type'] ?? '').split(';').first.trim().toLowerCase();
+    final png = bytes.length >= 8 && bytes[0] == 0x89 && bytes[1] == 0x50 &&
+        bytes[2] == 0x4e && bytes[3] == 0x47 && bytes[4] == 0x0d &&
+        bytes[5] == 0x0a && bytes[6] == 0x1a && bytes[7] == 0x0a;
+    final jpeg = bytes.length >= 3 && bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff;
+    if (!((mime == 'image/png' && png) || (mime == 'image/jpeg' && jpeg))) {
+      throw const FormatException('Storage did not return a valid PNG or JPEG image.');
+    }
+    return bytes;
   }
 
   Future<ContentJob> getJob(String id) async {
