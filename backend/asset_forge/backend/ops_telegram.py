@@ -98,9 +98,14 @@ def deliver_notification(event: OpsEvent, notification_id: int) -> bool:
     message = format_telegram_message(event, notification_id)
     # Best-effort enrichment only for successful CI jobs. Failures and smoke
     # alerts retain their original immediate delivery path.
-    progress = confirmed_progress(event)
-    if progress is not None:
-        message += f"\nProgress: {progress[0]}/{progress[1]} (workflow run)"
+    if event.category == "CI" and event.event_type == "ci.passed":
+        try:
+            progress = confirmed_progress(event)
+            if progress is not None:
+                message += f"\nProgress: {progress[0]}/{progress[1]} (workflow run)"
+        except Exception:
+            # Optional metadata must never block the durable notification.
+            pass
     try:
         _send_telegram(token, chat_id, message)
     except Exception as exc:
