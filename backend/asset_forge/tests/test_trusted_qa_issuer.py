@@ -84,6 +84,7 @@ class SecurityTests(unittest.TestCase):
         self.a.records["test-k1"]["not_after"]=NOW
         self.test_key_revoked_result()
     def test_key_revoked_result(self):
+        self.a.records["test-k1"]["status"]="REVOKED"
         self.assertEqual(verify_with_lifecycle(attestation=self.a.x["attestations"][0],
                          trusted_key_records=self.a.records,evaluated_at=NOW),"BLOCKED")
     def test_key_unknown(self):
