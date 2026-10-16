@@ -120,11 +120,25 @@ def recommend_formats(idea: str) -> dict[str, Any]:
         text,
         "ไหม", "หรือเปล่า", "คิดว่า", "เคยไหม", "ใคร", "แบบไหน",
     )
-    sales_signal = _has_any(
+    # Distinguish a purchase/payment explanation from an actual sales pitch.
+    # A link or the word "ซื้อ" alone does not establish promotional intent.
+    promotional_signal = _has_any(
         text,
-        "ขาย", "สินค้า", "affiliate", "คอมมิชชั่น", "โปรโมชั่น",
-        "โปรโมท", "โปรโมต", "promotion", "promo", "ราคา", "ซื้อ", "ebook",
-        "e-book", "หนังสือ", "ลิงก์", "link", "http://", "https://",
+        "ขาย", "affiliate", "คอมมิชชั่น", "โปรโมชั่น", "โปรโมท",
+        "โปรโมต", "promotion", "promo", "สั่งซื้อ", "ลดราคา",
+    )
+    informational_payment_signal = _has_any(
+        text,
+        "ชำระเงิน", "จ่ายทีหลัง", "ผ่อนชำระ", "วิธีจ่าย",
+        "วิธีชำระ", "เงื่อนไข", "ตามสิทธิ์",
+    )
+    sales_signal = promotional_signal or (
+        not informational_payment_signal
+        and _has_any(text, "สินค้า", "ราคา", "ซื้อ", "ebook", "e-book", "หนังสือ")
+        and _has_any(text, "ลิงก์", "link", "http://", "https://")
+    )
+    educational_signal = educational_signal or (
+        informational_payment_signal and not promotional_signal
     )
 
     scores = {

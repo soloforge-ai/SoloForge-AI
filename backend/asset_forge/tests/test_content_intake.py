@@ -77,3 +77,33 @@ def test_find_recommendation_rejects_unknown_format() -> None:
         assert "Unknown recommendation format" in str(exc)
     else:
         raise AssertionError("unknown format should fail")
+
+
+def test_payment_explainer_with_shopee_link_prefers_carousel() -> None:
+    idea = (
+        "ทางการชำระเงินบน Shopee ที่ผู้ใช้งานสามารถเลือกซื้อก่อน "
+        "จ่ายทีหลัง หรือผ่อนชำระได้ตามสิทธิ์และเงื่อนไขที่แต่ละคนได้รับ "
+        "https://u.shopee.co.th/SPonKpB"
+    )
+    result = content_intake.recommend_formats(idea)
+
+    assert result["recommended_format"] == "carousel"
+    assert result["options"][0]["goal"] == "education"
+    assert all(option["id"] != "promo_post" for option in result["options"])
+
+
+def test_explicit_promotion_remains_sales_with_payment_terms() -> None:
+    result = content_intake.recommend_formats(
+        "โปรโมตสินค้า ซื้อก่อนจ่ายทีหลัง พร้อมลิงก์สั่งซื้อ https://example.com/item"
+    )
+
+    assert result["recommended_format"] == "promo_post"
+    assert result["options"][0]["goal"] == "conversion"
+
+
+def test_payment_explainer_without_link_prefers_carousel() -> None:
+    result = content_intake.recommend_formats(
+        "อธิบายเงื่อนไขการผ่อนชำระและสิทธิ์ซื้อก่อนจ่ายทีหลัง"
+    )
+
+    assert result["recommended_format"] == "carousel"
