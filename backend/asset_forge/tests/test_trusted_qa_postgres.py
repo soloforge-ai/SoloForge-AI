@@ -23,6 +23,7 @@ def schema():
         conn.execute("GRANT service_role, authenticated, anon TO postgres")
         conn.execute(MIGRATION.read_text())
         conn.execute((MIGRATION.parent / '202610160002_qa_atomic_chain_claim_preparation.sql').read_text())
+        conn.execute((MIGRATION.parent / '202610160003_qa_verification_receipt_preparation.sql').read_text())
         conn.execute("GRANT USAGE ON SCHEMA public TO service_role, authenticated, anon")
     yield
 
@@ -190,3 +191,9 @@ def test_chain_service_role_cannot_invoke():
         with pytest.raises(psycopg.errors.InsufficientPrivilege):
             conn.execute("SELECT public.qa_claim_verified_chain(%s,'chain-job','chain-rev','IMAGE',%s)",
                          (str(uuid.uuid4()),[eid for _,eid in ids]))
+
+# Receipt cases share this module's disposable schema fixture.
+from backend.asset_forge.tests.qa_receipt_cases import (
+ test_receipt_parallel_single_winner, test_receipt_digest_mismatch_does_not_consume,
+ test_receipt_expired_and_revoked_blocked, test_receipt_role_denied,
+)
