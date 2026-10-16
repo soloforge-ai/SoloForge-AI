@@ -879,7 +879,7 @@ class _IdeaComposerCard extends StatelessWidget {
               minLines: 2,
               maxLines: 5,
               decoration: InputDecoration(
-                hintText: 'เช่น ทำ AI Character 5 รูป แต่หน้ากลายเป็นคนละคน',
+                hintText: 'e.g. Create 5 AI character images while keeping the same identity',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -889,7 +889,7 @@ class _IdeaComposerCard extends StatelessWidget {
             FilledButton.icon(
               onPressed: busy ? null : onAnalyze,
               icon: const Icon(Icons.auto_awesome),
-              label: Text(busy ? 'กำลังวิเคราะห์...' : 'Analyze Idea'),
+              label: Text(busy ? 'Analyzing...' : 'Analyze Idea'),
             ),
             if (busy) ...[
               const SizedBox(height: 8),
@@ -911,7 +911,7 @@ class _IdeaComposerCard extends StatelessWidget {
               if (analysis!.minibossDecision == 'ARCHIVED') ...[
                 const SizedBox(height: 4),
                 const Text(
-                  'คะแนนนี้ใช้จัดลำดับไอเดียเท่านั้น คุณยังเลือกสร้างคอนเทนต์นี้ได้',
+                  'This score only prioritizes ideas. You can still create this content.',
                   style: TextStyle(
                     color: AshColors.smokeSilver,
                     fontSize: 12,
@@ -932,7 +932,7 @@ class _IdeaComposerCard extends StatelessWidget {
                   tilePadding: EdgeInsets.zero,
                   childrenPadding: EdgeInsets.zero,
                   title: Text(
-                    'ดูตัวเลือกอื่น (${alternatives.length})',
+                    'View other options (${alternatives.length})',
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       color: AshColors.smokeSilver,

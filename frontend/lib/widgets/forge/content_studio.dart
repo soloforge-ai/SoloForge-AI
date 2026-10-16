@@ -87,7 +87,7 @@ class ContentStudio extends StatelessWidget {
 
             ContentField(
               label: "Hook",
-              hint: "AI จะสร้าง Hook ที่นี่",
+              hint: "AI will generate the Hook here",
               controller: hookController,
             ),
 
@@ -95,7 +95,7 @@ class ContentStudio extends StatelessWidget {
 
             ContentField(
               label: "Caption",
-              hint: "AI จะสร้าง Caption ที่นี่",
+              hint: "AI will generate the Caption here",
               controller: captionController,
               maxLines: 5,
             ),
@@ -112,7 +112,7 @@ class ContentStudio extends StatelessWidget {
 
             ContentField(
               label: "CTA",
-              hint: "กดลิงก์เพื่อดูสินค้า",
+              hint: "Open the link to view the product",
               controller: ctaController,
             ),
 
