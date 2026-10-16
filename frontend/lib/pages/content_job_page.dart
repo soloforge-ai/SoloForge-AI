@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:typed_data';
 
 import '../core/theme/app_theme.dart';
 import '../models/content_job.dart';
@@ -77,6 +79,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
   late final TextEditingController _visualPrompt;
   late final TextEditingController _motionPrompt;
   late final TextEditingController _productUrl;
+  late final TextEditingController _productTitle;
 
   bool _busy = false;
   bool _editing = false;
@@ -97,6 +100,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
     _visualPrompt = TextEditingController(text: _job.visualPrompt ?? '');
     _motionPrompt = TextEditingController(text: _job.motionPrompt ?? '');
     _productUrl = TextEditingController(text: _initialProductUrl(_job));
+    _productTitle = TextEditingController(text: (_job.contentPackage['product_grounding'] is Map ? (_job.contentPackage['product_grounding'] as Map)['canonical_title'] : null)?.toString() ?? '');
     _loadFeedback();
     _loadAssetPreview();
   }
@@ -159,6 +163,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
     _visualPrompt.dispose();
     _motionPrompt.dispose();
     _productUrl.dispose();
+    _productTitle.dispose();
     super.dispose();
   }
 
@@ -246,6 +251,45 @@ class _ContentJobPageState extends State<ContentJobPage> {
       return;
     }
     await _run(() => _service.resolveProduct(_job.id, url: url));
+  }
+
+  Future<void> _uploadProductReferences() async {
+    final title = _productTitle.text.trim();
+    final url = _productUrl.text.trim();
+    if (title.isEmpty || url.isEmpty) {
+      setState(() => _error = 'Enter product title and Shopee URL first.');
+      return;
+    }
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png'],
+        allowMultiple: true,
+        withData: true,
+      );
+      if (picked == null || !mounted) return;
+      if (picked.files.isEmpty || picked.files.length > 6) {
+        setState(() => _error = 'Choose 1 to 6 product reference images.');
+        return;
+      }
+      final bytes = <Uint8List>[];
+      for (final file in picked.files) {
+        if (file.bytes == null || file.bytes!.isEmpty || file.bytes!.length > 4 * 1024 * 1024) {
+          setState(() => _error = 'Each image must be 1-4 MB.');
+          return;
+        }
+        bytes.add(file.bytes!);
+      }
+      await _run(() => _service.uploadProductReferences(
+        _job.id,
+        title: title,
+        affiliateUrl: url,
+        images: bytes,
+      ));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error.toString().replaceFirst('Exception: ', ''));
+    }
   }
 
   Future<void> _continuePipeline() =>
@@ -516,8 +560,10 @@ class _ContentJobPageState extends State<ContentJobPage> {
               _ProductResolverCard(
                 job: _job,
                 controller: _productUrl,
+                titleController: _productTitle,
                 busy: _busy,
                 onResolve: _resolveProduct,
+                onUpload: _uploadProductReferences,
               ),
             if (_job.publoraPostId != null)
               _ReadOnlySection(
@@ -955,14 +1001,18 @@ class _ProductResolverCard extends StatelessWidget {
   const _ProductResolverCard({
     required this.job,
     required this.controller,
+    required this.titleController,
     required this.busy,
     required this.onResolve,
+    required this.onUpload,
   });
 
   final ContentJob job;
   final TextEditingController controller;
+  final TextEditingController titleController;
   final bool busy;
   final VoidCallback onResolve;
+  final VoidCallback onUpload;
 
   @override
   Widget build(BuildContext context) {
@@ -1020,6 +1070,10 @@ class _ProductResolverCard extends StatelessWidget {
             ),
             if (canResolve) ...[
               const SizedBox(height: 10),
+              TextField(controller: titleController, enabled: !busy, decoration: const InputDecoration(labelText: 'Verified product title', border: OutlineInputBorder())),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(onPressed: busy ? null : onUpload, icon: const Icon(Icons.add_photo_alternate_outlined), label: const Text('Upload Product References (1-6)')),
+              const Text('Manual images require source/rights review. Upload does not approve or publish.', style: TextStyle(fontSize: 12)),
               FilledButton.icon(
                 onPressed: busy ? null : onResolve,
                 icon: const Icon(Icons.travel_explore_outlined),

@@ -107,3 +107,20 @@ def test_allowed_hosts_can_be_extended_by_env(monkeypatch) -> None:
     )
 
     assert result["identity_status"] == "LOCKED"
+
+
+def test_own_storage_product_reference_requires_exact_public_path(monkeypatch):
+    from backend.product_grounding import _assert_safe_public_https_url, ProductGroundingError
+    monkeypatch.setenv("SUPABASE_URL", "https://myproject.supabase.co")
+    monkeypatch.setattr(
+        "backend.product_grounding.socket.getaddrinfo",
+        lambda *_args, **_kwargs: [(None, None, None, None, ("8.8.8.8", 443))],
+    )
+    _assert_safe_public_https_url(
+        "https://myproject.supabase.co/storage/v1/object/public/content-assets/product-references/job/a.png"
+    )
+    import pytest
+    with pytest.raises(ProductGroundingError):
+        _assert_safe_public_https_url(
+            "https://myproject.supabase.co/storage/v1/object/public/other-bucket/secret.png"
+        )
