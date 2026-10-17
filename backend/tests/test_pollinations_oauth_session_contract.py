@@ -1,7 +1,7 @@
 from urllib.parse import parse_qs, urlparse
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 import backend.pollinations_oauth_router as router_module
@@ -15,15 +15,18 @@ def reset_oauth_state():
         router_module._transactions.clear()
         router_module._sessions.clear()
         router_module._handoffs.clear()
+        router_module._login_tickets.clear()
     yield
     with router_module._lock:
         router_module._transactions.clear()
         router_module._sessions.clear()
         router_module._handoffs.clear()
+        router_module._login_tickets.clear()
 
 
 def _client(monkeypatch):
     monkeypatch.setenv("POLLINATIONS_CLIENT_ID", "pk_test")
+    monkeypatch.setenv("POLLINATIONS_TRUSTED_APP_KEY_ID", "internal-test-app-id")
     monkeypatch.setenv(
         "POLLINATIONS_REDIRECT_URI",
         "https://example.com/auth/pollinations/callback",
@@ -37,6 +40,16 @@ def _client(monkeypatch):
         "POLLINATIONS_WEB_RETURN_TO",
         "https://soloforge-ai-web.onrender.com/",
     )
+    # Offline synthetic provider verification for successful OAuth contract paths.
+    # Production verifier is unchanged and separately tested for fail-closed errors.
+    def verified_synthetic_grant(token, *, client_id, trusted_app_key_id):
+        assert token == "sk_test_secret_should_stay_server_side"
+        assert client_id == "pk_test"
+        assert trusted_app_key_id == "internal-test-app-id"
+        return {"status": "METADATA_VERIFIED_SPENDING_BLOCKED", "provider_subject": "provider-owner"}
+
+    monkeypatch.setattr(router_module, "verify_provider_token", verified_synthetic_grant)
+    monkeypatch.setattr(router_module, "require_soloforge_session", lambda header: (_ for _ in ()).throw(HTTPException(status_code=401, detail="owner required")) if header != "Bearer test-owner" else None)
     app = FastAPI()
     app.include_router(router_module.router)
     return TestClient(app, base_url="https://testserver")
@@ -51,12 +64,19 @@ def _fake_exchange(*args, **kwargs):
     }
 
 
+def _login_ticket(client):
+    response = client.post("/auth/pollinations/login-ticket", headers={"X-SoloForge-Authorization": "Bearer test-owner"})
+    assert response.status_code == 200
+    return response.json()["ticket"]
+
+
 def _start_mobile_login(client):
     login = client.get(
         "/auth/pollinations/login",
         params={
             "client": "mobile",
             "return_to": "soloforge://oauth/pollinations",
+            "ticket": _login_ticket(client),
         },
         follow_redirects=False,
     )
@@ -68,7 +88,7 @@ def _start_mobile_login(client):
 
 def test_login_uses_pkce_and_sets_state_cookie(monkeypatch):
     client = _client(monkeypatch)
-    response = client.get("/auth/pollinations/login", follow_redirects=False)
+    response = client.get("/auth/pollinations/login", params={"ticket": _login_ticket(client)}, follow_redirects=False)
 
     assert response.status_code == 302
     query = parse_qs(urlparse(response.headers["location"]).query)
@@ -84,7 +104,7 @@ def test_mobile_return_url_is_allowlisted(monkeypatch):
     client = _client(monkeypatch)
     response = client.get(
         "/auth/pollinations/login",
-        params={"client": "mobile", "return_to": "evilapp://steal"},
+        params={"client": "mobile", "return_to": "evilapp://steal", "ticket": _login_ticket(client)},
         follow_redirects=False,
     )
     assert response.status_code == 400
@@ -97,6 +117,7 @@ def test_web_return_url_is_allowlisted(monkeypatch):
         params={
             "client": "web",
             "return_to": "https://soloforge-ai-web.onrender.com/",
+            "ticket": _login_ticket(client),
         },
         follow_redirects=False,
     )
@@ -104,7 +125,7 @@ def test_web_return_url_is_allowlisted(monkeypatch):
 
     invalid = client.get(
         "/auth/pollinations/login",
-        params={"client": "web", "return_to": "https://evil.example/"},
+        params={"client": "web", "return_to": "https://evil.example/", "ticket": _login_ticket(client)},
         follow_redirects=False,
     )
     assert invalid.status_code == 400
@@ -119,6 +140,7 @@ def test_web_callback_returns_one_time_handoff_to_app(monkeypatch):
         params={
             "client": "web",
             "return_to": "https://soloforge-ai-web.onrender.com/",
+            "ticket": _login_ticket(client),
         },
         follow_redirects=False,
     )
@@ -143,7 +165,7 @@ def test_web_callback_returns_one_time_handoff_to_app(monkeypatch):
 def test_callback_rejects_state_from_another_browser(monkeypatch):
     client_a = _client(monkeypatch)
     client_b = _client(monkeypatch)
-    login = client_a.get("/auth/pollinations/login", follow_redirects=False)
+    login = client_a.get("/auth/pollinations/login", params={"ticket": _login_ticket(client_a)}, follow_redirects=False)
     state = parse_qs(urlparse(login.headers["location"]).query)["state"][0]
 
     response = client_b.get(
@@ -172,6 +194,7 @@ def test_mobile_handoff_exchange_is_one_time_and_uses_json_body(monkeypatch):
     exchange = client.post(
         "/auth/pollinations/mobile/exchange",
         json={"code": handoff_code},
+        headers={"X-SoloForge-Authorization": "Bearer test-owner"},
     )
     assert exchange.status_code == 200
     body = exchange.json()
@@ -183,6 +206,7 @@ def test_mobile_handoff_exchange_is_one_time_and_uses_json_body(monkeypatch):
     replay = client.post(
         "/auth/pollinations/mobile/exchange",
         json={"code": handoff_code},
+        headers={"X-SoloForge-Authorization": "Bearer test-owner"},
     )
     assert replay.status_code == 400
     assert "Invalid or expired mobile handoff code" in replay.text
@@ -207,9 +231,10 @@ def test_bearer_session_status_and_logout(monkeypatch):
     exchange = client.post(
         "/auth/pollinations/mobile/exchange",
         json={"code": handoff_code},
+        headers={"X-SoloForge-Authorization": "Bearer test-owner"},
     )
     session_token = exchange.json()["session_token"]
-    headers = {"Authorization": f"Bearer {session_token}"}
+    headers = {"Authorization": f"Bearer {session_token}", "X-SoloForge-Authorization": "Bearer test-owner"}
 
     status = client.get("/auth/pollinations/status", headers=headers)
     assert status.status_code == 200
@@ -226,10 +251,13 @@ def test_bearer_session_status_and_logout(monkeypatch):
 
 def test_status_restores_persisted_session_after_backend_restart(monkeypatch):
     client = _client(monkeypatch)
+    monkeypatch.setattr(router_module, "_supabase_config", lambda: ("https://example.invalid", "test-only"))
     persisted = router_module._OAuthSession(
         access_token="sk_persisted_secret",
         expires_at=router_module.time.time() + 600,
         scope="profile usage",
+        owner_user_id=router_module._owner_user_id(),
+        provider_subject="provider-owner",
     )
     monkeypatch.setattr(
         router_module,
@@ -242,7 +270,7 @@ def test_status_restores_persisted_session_after_backend_restart(monkeypatch):
 
     response = client.get(
         "/auth/pollinations/status",
-        headers={"Authorization": "Bearer persisted-session"},
+        headers={"Authorization": "Bearer persisted-session", "X-SoloForge-Authorization": "Bearer test-owner"},
     )
 
     assert response.status_code == 200
@@ -314,3 +342,106 @@ def test_noncanonical_character_uses_local_fallback_without_pollinations_session
     assert len(body["files"]) == 4
     assert body["source_image_base64"]
     assert body["zip_base64"]
+
+
+def test_owner_ticket_is_required_and_single_use(monkeypatch):
+    client = _client(monkeypatch)
+    denied = client.get("/auth/pollinations/login", follow_redirects=False)
+    assert denied.status_code == 401
+    ticket = _login_ticket(client)
+    ok = client.get("/auth/pollinations/login", params={"ticket": ticket}, follow_redirects=False)
+    assert ok.status_code == 302
+    replay = client.get("/auth/pollinations/login", params={"ticket": ticket}, follow_redirects=False)
+    assert replay.status_code == 401
+
+
+def test_cross_user_handoff_and_session_denied(monkeypatch):
+    client = _client(monkeypatch)
+    monkeypatch.setattr(router_module, "exchange_authorization_code", _fake_exchange)
+    state = _start_mobile_login(client)
+    callback = client.get("/auth/pollinations/callback", params={"code": "oauth-code", "state": state}, follow_redirects=False)
+    code = parse_qs(urlparse(callback.headers["location"]).query)["code"][0]
+    denied = client.post("/auth/pollinations/mobile/exchange", json={"code": code}, headers={"X-SoloForge-Authorization": "Bearer other-user"})
+    assert denied.status_code != 200
+    exchanged = client.post("/auth/pollinations/mobile/exchange", json={"code": code}, headers={"X-SoloForge-Authorization": "Bearer test-owner"})
+    assert exchanged.status_code == 200
+    session = exchanged.json()["session_token"]
+    denied_status = client.get("/auth/pollinations/status", headers={"Authorization": f"Bearer {session}", "X-SoloForge-Authorization": "Bearer other-user"})
+    assert denied_status.status_code != 200
+
+
+def test_logout_storage_failure_does_not_claim_revocation(monkeypatch):
+    client = _client(monkeypatch)
+    session_id = "synthetic-revocation-session"
+    session = router_module._OAuthSession(
+        access_token="synthetic-provider-token",
+        expires_at=router_module.time.time() + 600,
+        scope="profile usage",
+        owner_user_id=router_module._owner_user_id(),
+        provider_subject="provider-owner",
+    )
+    with router_module._lock:
+        router_module._sessions[session_id] = session
+
+    def unavailable(_session_id):
+        assert _session_id == session_id
+        raise RuntimeError("synthetic storage outage")
+
+    monkeypatch.setattr(router_module, "_delete_persisted_session", unavailable)
+    headers = {
+        "Authorization": f"Bearer {session_id}",
+        "X-SoloForge-Authorization": "Bearer test-owner",
+    }
+    logout = client.post("/auth/pollinations/logout", headers=headers)
+    assert logout.status_code == 503
+    assert "could not be confirmed" in logout.json()["detail"]
+    with router_module._lock:
+        assert router_module._sessions[session_id] == session
+
+
+def test_shared_store_revocation_invalidates_cached_session_across_workers(monkeypatch):
+    """A second worker must not serve a cached credential after durable logout."""
+    client = _client(monkeypatch)
+    session_id = "synthetic-cross-worker"
+    session = router_module._OAuthSession(
+        access_token="synthetic-access-token",
+        expires_at=router_module.time.time() + 600,
+        scope="profile",
+        owner_user_id=router_module._owner_user_id(),
+        provider_subject="synthetic-subject",
+    )
+    persisted = {session_id: session}
+    monkeypatch.setattr(router_module, "_supabase_config", lambda: ("https://example.invalid", "test-only"))
+    monkeypatch.setattr(router_module, "_load_persisted_session", lambda sid: persisted.get(sid))
+    monkeypatch.setattr(router_module, "_delete_persisted_session", lambda sid: persisted.pop(sid, None))
+    with router_module._lock:
+        router_module._sessions[session_id] = session
+
+    headers = {"Authorization": f"Bearer {session_id}", "X-SoloForge-Authorization": "Bearer test-owner"}
+    assert client.get("/auth/pollinations/status", headers=headers).json()["connected"] is True
+    assert client.post("/auth/pollinations/logout", headers=headers).status_code == 200
+
+    # Simulate stale in-memory state retained by a different process.
+    with router_module._lock:
+        router_module._sessions[session_id] = session
+    assert client.get("/auth/pollinations/status", headers=headers).json()["connected"] is False
+    assert router_module.get_pollinations_access_token(session_id, "Bearer test-owner") is None
+
+
+def test_shared_store_outage_denies_cached_access_token(monkeypatch):
+    _client(monkeypatch)  # Install synthetic owner-session verifier.
+    session_id = "synthetic-outage"
+    session = router_module._OAuthSession(
+        access_token="synthetic-access-token",
+        expires_at=router_module.time.time() + 600,
+        scope="profile",
+        owner_user_id=router_module._owner_user_id(),
+        provider_subject="synthetic-subject",
+    )
+    monkeypatch.setattr(router_module, "_supabase_config", lambda: ("https://example.invalid", "test-only"))
+    def unavailable(_sid):
+        raise RuntimeError("synthetic storage outage")
+    monkeypatch.setattr(router_module, "_load_persisted_session", unavailable)
+    with router_module._lock:
+        router_module._sessions[session_id] = session
+    assert router_module.get_pollinations_access_token(session_id, "Bearer test-owner") is None
