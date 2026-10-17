@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../core/theme/app_theme.dart';
 import '../models/content_job.dart';
@@ -83,6 +85,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
   String? _error;
   ContentFeedback? _feedback;
   ContentAssetPreview? _assetPreview;
+  bool _exportingImage = false;
   bool _assetPreviewLoading = false;
   String? _assetPreviewError;
 
@@ -236,6 +239,49 @@ class _ContentJobPageState extends State<ContentJobPage> {
           motionPrompt: _motionPrompt.text.trim(),
         ),
       );
+
+  Future<void> _copyCaption() async {
+    final caption = _caption.text.trim();
+    if (caption.isEmpty) return;
+    try {
+      await Clipboard.setData(ClipboardData(text: caption));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Caption copied')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not copy caption')),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportImage() async {
+    final preview = _assetPreview;
+    if (preview == null || preview.mediaType != 'image' || _exportingImage) return;
+    setState(() => _exportingImage = true);
+    try {
+      final bytes = await _service.downloadReadyImage(preview);
+      final png = bytes[0] == 0x89;
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile.fromData(bytes,
+          mimeType: png ? 'image/png' : 'image/jpeg',
+          name: 'soloforge-${_job.id}.${png ? 'png' : 'jpg'}')],
+        fileNameOverrides: ['soloforge-${_job.id}.${png ? 'png' : 'jpg'}'],
+      ));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Image export unavailable: $error'),
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _exportingImage = false);
+    }
+  }
 
   Future<void> _approve() => _run(() => _service.approve(_job.id));
 
@@ -457,6 +503,20 @@ class _ContentJobPageState extends State<ContentJobPage> {
                 onRetry: _loadAssetPreview,
               ),
             ],
+            if (_caption.text.trim().isNotEmpty)
+              OutlinedButton.icon(
+                key: const Key('copy-caption'),
+                onPressed: _copyCaption,
+                icon: const Icon(Icons.copy),
+                label: const Text('Copy Caption'),
+              ),
+            if (_assetPreview?.mediaType == 'image' && _hasPreviewableAsset)
+              OutlinedButton.icon(
+                key: const Key('export-ready-image'),
+                onPressed: _exportingImage ? null : _exportImage,
+                icon: const Icon(Icons.download_outlined),
+                label: Text(_exportingImage ? 'Preparing image...' : 'Save / Share Image'),
+              ),
             const SizedBox(height: 16),
             _ContentQualityReviewCard(
               idea: _job.idea,
