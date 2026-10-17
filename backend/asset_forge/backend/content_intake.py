@@ -125,14 +125,18 @@ def recommend_formats(idea: str) -> dict[str, Any]:
     promotional_signal = _has_any(
         text,
         "ขาย", "affiliate", "คอมมิชชั่น", "โปรโมชั่น", "โปรโมท",
-        "โปรโมต", "promotion", "promo", "สั่งซื้อ", "ลดราคา",
+        "โปรโมต", "promotion", "promo", "ลดราคา",
+    )
+    # An order-instruction explainer is not a call to purchase.
+    purchase_cta_signal = _has_any(
+        text, "กดสั่งซื้อ", "สั่งซื้อเลย", "สั่งซื้อทันที", "คลิกสั่งซื้อ",
     )
     informational_payment_signal = _has_any(
         text,
         "ชำระเงิน", "จ่ายทีหลัง", "ผ่อนชำระ", "วิธีจ่าย",
         "วิธีชำระ", "เงื่อนไข", "ตามสิทธิ์",
     )
-    sales_signal = promotional_signal or (
+    sales_signal = promotional_signal or purchase_cta_signal or (
         not informational_payment_signal
         and _has_any(text, "สินค้า", "ราคา", "ซื้อ", "ebook", "e-book", "หนังสือ")
         and _has_any(text, "ลิงก์", "link", "http://", "https://")
