@@ -569,8 +569,8 @@ def _zip_files(
 
 
 def _embedded_workers_enabled() -> bool:
-    value = os.getenv("SOLOFORGE_RUN_EMBEDDED_WORKERS", "true").strip().lower()
-    return value not in {"0", "false", "no", "off"}
+    value = os.getenv("SOLOFORGE_RUN_EMBEDDED_WORKERS", "false").strip().lower()
+    return value in {"1", "true", "yes", "on"}
 
 
 @app.on_event("startup")
