@@ -17,6 +17,8 @@ def connect(role="service_role"):
     c.execute("SET statement_timeout = '10000ms'")
     c.execute("SET lock_timeout = '5000ms'")
     c.execute("SELECT set_config('request.jwt.claim.role', %s, false)", (role,))
+    if role in ('anon', 'authenticated'):
+        c.execute('SET ROLE ' + role)
     return c
 
 
