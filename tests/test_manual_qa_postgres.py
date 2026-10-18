@@ -1,5 +1,6 @@
 """Disposable PostgreSQL integration tests for PR #192. No network/provider calls."""
 import concurrent.futures
+from decimal import Decimal
 import os
 import threading
 import uuid
@@ -65,7 +66,7 @@ def test_idempotency_and_conflict(allocation):
         assert c.execute(
             "SELECT reserved_budget FROM public.manual_qa_allocations WHERE id=%s",
             (allocation,),
-        ).fetchone()[0] == 0.6
+        ).fetchone()[0] == Decimal('0.6')
 
 
 def test_concurrent_distinct_keys_budget(allocation):
@@ -126,7 +127,7 @@ def test_successful_settlement(allocation):
         assert c.execute(
             "SELECT reserved_budget,consumed_budget FROM public.manual_qa_allocations WHERE id=%s",
             (allocation,),
-        ).fetchone() == (0, 0.2)
+        ).fetchone() == (Decimal('0'), Decimal('0.2'))
 
 
 def test_invalid_model_and_expired_allocation(allocation):
