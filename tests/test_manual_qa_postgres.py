@@ -3,6 +3,7 @@ import concurrent.futures
 from decimal import Decimal
 import os
 import threading
+import time
 import uuid
 
 import psycopg
@@ -195,3 +196,105 @@ def test_lock_order_concurrency(allocation):
     finally:
         a.close()
         b.close()
+
+
+def test_settle_waits_for_allocation_before_locking_request(allocation):
+    """Deterministically prove allocation -> request ordering under contention."""
+    with connect() as setup:
+        req = claim(setup, allocation, cost="0.2")[0]
+    locker, settler, observer = connect(), connect(), connect()
+    try:
+        locker.autocommit = False
+        locker.execute(
+            "SELECT id FROM public.manual_qa_allocations WHERE id=%s FOR UPDATE",
+            (allocation,),
+        )
+        settler.execute("SET application_name = 'manual_qa_lock_order_settler'")
+        started = threading.Event()
+        def settle_in_parallel():
+            started.set()
+            return settler.execute(
+                "SELECT public.manual_qa_settle(%s,'SUCCEEDED',0.1)", (req,)
+            ).fetchone()[0]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(settle_in_parallel)
+            assert started.wait(timeout=5)
+            deadline = time.monotonic() + 5
+            waiting = False
+            while time.monotonic() < deadline:
+                waiting = observer.execute(
+                    """SELECT EXISTS (
+                      SELECT 1 FROM pg_stat_activity
+                      WHERE application_name='manual_qa_lock_order_settler'
+                        AND wait_event_type='Lock'
+                    )"""
+                ).fetchone()[0]
+                if waiting:
+                    break
+                time.sleep(0.025)
+            assert waiting, "settlement did not block on held allocation"
+            observer.autocommit = False
+            try:
+                # A settle RPC must not hold this request lock while waiting
+                # for the allocation lock; old request-first code fails NOWAIT.
+                observer.execute(
+                    "SELECT id FROM public.manual_qa_requests WHERE id=%s FOR UPDATE NOWAIT",
+                    (req,),
+                )
+            finally:
+                observer.rollback()
+            locker.commit()
+            assert future.result(timeout=10) == "SUCCEEDED"
+    finally:
+        locker.rollback()
+        locker.close()
+        settler.close()
+        observer.close()
+
+
+def test_cross_allocation_same_key_race_fails_closed(allocation):
+    with connect() as admin:
+        other = admin.execute(
+            """INSERT INTO public.manual_qa_allocations
+            (owner_id,wallet_binding_ref,provider_model,authorized_budget,expires_at)
+            VALUES (%s,'wallet-test-only',%s,1,now()+interval '1 hour')
+            RETURNING id""", (str(uuid.uuid4()), MODEL)
+        ).fetchone()[0]
+    barrier = threading.Barrier(2)
+    key = uuid.uuid4().hex
+    def run(alloc):
+        with connect() as c:
+            barrier.wait(timeout=5)
+            try:
+                return (alloc, claim(c, alloc, key)[1])
+            except psycopg.Error:
+                return (alloc, False)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(run, (allocation, other)))
+    assert sum(bool(result[1]) for result in results) == 1
+    with connect() as c:
+        rows = c.execute(
+            """SELECT id,reserved_budget FROM public.manual_qa_allocations
+            WHERE id=ANY(%s)""", ([allocation, other],)
+        ).fetchall()
+        assert sorted(row[1] for row in rows) == [Decimal("0"), Decimal("0.6")]
+        assert c.execute(
+            "SELECT count(*) FROM public.manual_qa_requests WHERE idempotency_key=%s",
+            (key,),
+        ).fetchone()[0] == 1
+
+
+def test_service_role_privileges_without_superuser(allocation):
+    with connect() as c:
+        c.execute("SET ROLE service_role")
+        assert c.execute("SELECT current_user").fetchone()[0] == "service_role"
+        with pytest.raises(psycopg.Error):
+            c.execute(
+                "UPDATE public.manual_qa_allocations SET revoked_at=now() WHERE id=%s",
+                (allocation,),
+            )
+        result = claim(c, allocation, cost="0.2")
+        assert result[1] is True
+        assert c.execute(
+            "SELECT public.manual_qa_settle(%s,'SUCCEEDED',0.1)", (result[0],)
+        ).fetchone()[0] == "SUCCEEDED"
