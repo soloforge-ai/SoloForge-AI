@@ -86,12 +86,23 @@ create or replace function public.manual_qa_settle(
 language plpgsql security definer set search_path = ''
 as $$
 declare r public.manual_qa_requests%rowtype;
+        target_allocation_id uuid;
 begin
  if auth.role() is distinct from 'service_role' then
    raise exception 'service role required' using errcode='42501';
  end if;
- select * into r from public.manual_qa_requests where id=p_request_id for update;
+ -- Match claim's allocation -> request lock order. The request's allocation
+ -- reference is immutable to clients and to both RPCs.
+ select allocation_id into target_allocation_id
+ from public.manual_qa_requests where id=p_request_id;
  if not found then raise exception 'request unavailable'; end if;
+ perform 1 from public.manual_qa_allocations
+ where id=target_allocation_id for update;
+ if not found then raise exception 'allocation unavailable'; end if;
+ select * into r from public.manual_qa_requests where id=p_request_id for update;
+ if not found or r.allocation_id is distinct from target_allocation_id then
+   raise exception 'request changed during settlement';
+ end if;
  if r.status <> 'CALL_STARTED' then
    raise exception 'already finalized; reconciliation required';
  end if;
