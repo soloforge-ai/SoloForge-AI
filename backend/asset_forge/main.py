@@ -30,14 +30,12 @@ from backend.pollinations_oauth_router import (
 from backend.soloforge_session import require_soloforge_session, router as soloforge_session_router
 from backend.branding import stamp_image_bytes
 from backend.output_quality import process_single_image
-from backend.combined_telegram_webhook import router as idea_flow_webhook_router
 from backend.content_generation import content_worker_loop
 from backend.content_router import content_router_loop
 from backend.content_asset_generation import content_asset_worker_loop
 from backend.audio_generation import audio_worker_loop
 from backend.final_render import create_signed_video_url, final_render_worker_loop
 from backend.prawtwan_chat import router as prawtwan_chat_router
-from backend.telegram_miniapp import router as telegram_miniapp_router
 from backend.content_jobs_api import router as content_jobs_router
 from backend.analytics_api import router as analytics_router
 from backend.publishing_api import router as publishing_router
@@ -57,9 +55,7 @@ app.add_middleware(
 
 app.include_router(pollinations_oauth_router)
 app.include_router(soloforge_session_router)
-app.include_router(idea_flow_webhook_router)
 app.include_router(prawtwan_chat_router)
-app.include_router(telegram_miniapp_router)
 app.include_router(content_jobs_router)
 app.include_router(analytics_router)
 app.include_router(publishing_router)
