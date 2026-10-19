@@ -107,3 +107,26 @@ def test_payment_explainer_without_link_prefers_carousel() -> None:
     )
 
     assert result["recommended_format"] == "carousel"
+
+
+def test_shopee_ordering_instructions_are_educational() -> None:
+    result = content_intake.recommend_formats(
+        "อธิบายขั้นตอนสั่งซื้อสินค้าบน Shopee ตั้งแต่เลือกสินค้า ใส่ที่อยู่ จนถึงชำระเงิน"
+    )
+    assert result["recommended_format"] == "carousel"
+    assert result["options"][0]["goal"] == "education"
+    assert all(option["id"] != "promo_post" for option in result["options"])
+
+
+def test_explicit_order_cta_stays_promotional() -> None:
+    result = content_intake.recommend_formats("กดสั่งซื้อสินค้าตอนนี้ https://example.com/item")
+    assert result["recommended_format"] == "promo_post"
+    assert result["options"][0]["goal"] == "conversion"
+
+
+def test_discount_order_cta_stays_promotional() -> None:
+    result = content_intake.recommend_formats(
+        "โปรโมชั่นลดราคาสินค้า กดลิงก์สั่งซื้อเลย https://example.com/item"
+    )
+    assert result["recommended_format"] == "promo_post"
+    assert result["options"][0]["goal"] == "conversion"
