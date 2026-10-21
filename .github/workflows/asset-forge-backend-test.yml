@@ -64,3 +64,70 @@ jobs:
             backend/tests \
             tools/scanner/tests \
             backend/asset_forge/test_character_memory_bridge.py
+
+  # Explicit manual invocation only. Never run automatically on PR/push.
+  s1-offline-verification:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    env:
+      SOLOFORGE_RUN_EMBEDDED_WORKERS: 'false'
+      SOLOFORGE_RUN_DEDICATED_WORKERS: 'false'
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build disposable Python 3.12 test image (network permitted for dependency installation only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build --pull --tag soloforge-s1-offline:${GITHUB_SHA} -f - . <<'DOCKERFILE'
+          FROM python:3.12-slim
+          WORKDIR /workspace
+          ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+          COPY backend/asset_forge/requirements.txt /tmp/asset-forge-requirements.txt
+          RUN python -m pip install --no-cache-dir -r /tmp/asset-forge-requirements.txt pytest httpx
+          COPY . /workspace
+          DOCKERFILE
+
+      - name: Fail-closed isolated S1 verification (no network, no secrets)
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            --read-only --tmpfs /tmp:rw,nosuid,nodev,size=64m \
+            --env SOLOFORGE_RUN_EMBEDDED_WORKERS=false \
+            --env SOLOFORGE_RUN_DEDICATED_WORKERS=false \
+            --env HOME=/tmp \
+            --workdir /workspace \
+            soloforge-s1-offline:${GITHUB_SHA} \
+            /bin/sh -ec '
+              python - <<"PY"
+          import socket
+          # An isolated container must have no non-loopback IPv4/IPv6 routes.
+          for route_file in ("/proc/net/route", "/proc/net/ipv6_route"):
+              with open(route_file, encoding="ascii") as routes:
+                  lines = routes.read().splitlines()
+              if route_file.endswith("/route"):
+                  routes_to_check = lines[1:]
+                  assert all(line.split()[0] == "lo" for line in routes_to_check), routes_to_check
+              else:
+                  assert all(line.split()[-1] == "lo" for line in lines), lines
+          for family, address in ((socket.AF_INET, ("1.1.1.1", 443)),
+                                  (socket.AF_INET6, ("2606:4700:4700::1111", 443))):
+              try:
+                  with socket.socket(family, socket.SOCK_STREAM) as sock:
+                      sock.settimeout(2)
+                      sock.connect(address)
+              except OSError:
+                  continue
+              raise SystemExit("FAIL: outbound network reachable")
+          print("PASS: container network isolation preflight")
+          PY
+              PYTHONPATH=backend/asset_forge:. python -m pytest -q \
+                backend/asset_forge/tests/test_execution_policy.py
+            '
