@@ -102,7 +102,7 @@ jobs:
             --read-only --tmpfs /tmp:rw,nosuid,nodev,size=64m
             --env SOLOFORGE_RUN_EMBEDDED_WORKERS=false
             --env SOLOFORGE_RUN_DEDICATED_WORKERS=false
-            --env HOME=/tmp --workdir /workspace)
+            --env HOME=/tmp --env PYTHONPATH=backend/asset_forge:. --workdir /workspace)
           image="soloforge-s1-offline:${GITHUB_SHA}"
           # Verify isolation inside the exact container configuration used by pytest.
           docker run "${isolation[@]}" "$image" python -c '
