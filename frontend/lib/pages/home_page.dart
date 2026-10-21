@@ -16,6 +16,8 @@ import '../services/prawtwan_oauth_return.dart';
 
 enum QueueFilter { all, actionRequired, processing, completed, backlog }
 
+enum IntegrityFilter { all, readyForExport, textOnly, needsRepair, pendingReconciliation, history, drafts }
+
 class JobQueuePresentation {
   static bool matchesSearch(ContentJob job, String query) {
     final terms = query
@@ -115,7 +117,7 @@ class JobQueuePresentation {
 
   static String actionLabel(ContentJob job) {
     if (job.status == 'READY_FOR_REVIEW') return 'Review now';
-    if (job.status == 'READY_TO_PUBLISH') return 'Publish now';
+    if (job.status == 'READY_TO_PUBLISH') return 'View content';
     if (isFailure(job)) return 'Needs attention';
     if (groupFor(job) == QueueFilter.processing) return 'Processing';
     if (groupFor(job) == QueueFilter.completed) return 'Completed';
@@ -158,6 +160,7 @@ class _HomePageState extends State<HomePage> {
   List<ContentJob> _allJobs = const [];
   List<ContentJob> _jobs = const [];
   QueueFilter _filter = QueueFilter.all;
+  IntegrityFilter _integrityFilter = IntegrityFilter.all;
   String _keyword = '';
   bool _loading = true;
   bool _ideaBusy = false;
@@ -366,6 +369,10 @@ class _HomePageState extends State<HomePage> {
     final keyword = _keyword.trim().toLowerCase();
 
     var jobs = _allJobs.where((job) {
+      if (_integrityFilter != IntegrityFilter.all &&
+          job.readinessGroup.name != _integrityFilter.name) {
+        return false;
+      }
       if (!JobQueuePresentation.matchesSearch(job, keyword)) {
         return false;
       }
@@ -454,6 +461,23 @@ class _HomePageState extends State<HomePage> {
     return _allJobs
         .where((job) => JobQueuePresentation.groupFor(job) == filter)
         .length;
+  }
+
+  int _integrityCount(IntegrityFilter filter) =>
+      filter == IntegrityFilter.all
+          ? _allJobs.length
+          : _allJobs.where((job) => job.readinessGroup.name == filter.name).length;
+
+  String _integrityLabel(IntegrityFilter filter) {
+    switch (filter) {
+      case IntegrityFilter.all: return 'All readiness';
+      case IntegrityFilter.readyForExport: return 'Ready for Export';
+      case IntegrityFilter.textOnly: return 'Text Only';
+      case IntegrityFilter.needsRepair: return 'Needs Repair';
+      case IntegrityFilter.pendingReconciliation: return 'Reconciliation';
+      case IntegrityFilter.history: return 'History';
+      case IntegrityFilter.drafts: return 'Drafts / Processing';
+    }
   }
 
   String _filterLabel(QueueFilter filter) {
@@ -620,6 +644,26 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
             ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 38,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: IntegrityFilter.values.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 6),
+                itemBuilder: (context, index) {
+                  final filter = IntegrityFilter.values[index];
+                  return ChoiceChip(
+                    selected: _integrityFilter == filter,
+                    label: Text('${_integrityLabel(filter)} (${_integrityCount(filter)})'),
+                    onSelected: (_) {
+                      _integrityFilter = filter;
+                      _applyFilters();
+                    },
+                  );
+                },
+              ),
+            ),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -660,13 +704,14 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     children: [
                       const Text('No content jobs match this view.'),
-                      if (_keyword.trim().isNotEmpty || _filter != QueueFilter.all) ...[
+                      if (_keyword.trim().isNotEmpty || _filter != QueueFilter.all || _integrityFilter != IntegrityFilter.all) ...[
                         const SizedBox(height: 10),
                         OutlinedButton.icon(
                           onPressed: () {
                             _searchController.clear();
                             _keyword = '';
                             _filter = QueueFilter.all;
+                            _integrityFilter = IntegrityFilter.all;
                             _applyFilters();
                           },
                           icon: const Icon(Icons.filter_alt_off_outlined),
@@ -1166,6 +1211,10 @@ class _ContentJobCard extends StatelessWidget {
                   color: AshColors.smokeSilver,
                   fontSize: 12,
                 ),
+              ),
+              const SizedBox(height: 6),
+              Text(job.readinessReason,
+                style: const TextStyle(color: AshColors.smokeSilver, fontSize: 12),
               ),
               const SizedBox(height: 9),
               Row(

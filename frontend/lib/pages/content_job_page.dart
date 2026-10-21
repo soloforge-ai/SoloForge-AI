@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../core/theme/app_theme.dart';
 import '../models/content_job.dart';
@@ -83,6 +86,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
   String? _error;
   ContentFeedback? _feedback;
   ContentAssetPreview? _assetPreview;
+  bool _exportingImage = false;
   bool _assetPreviewLoading = false;
   String? _assetPreviewError;
 
@@ -101,12 +105,7 @@ class _ContentJobPageState extends State<ContentJobPage> {
     _loadAssetPreview();
   }
 
-  bool get _hasPreviewableAsset =>
-      _job.assetStatus == 'READY' &&
-      ((_job.pipelineRoute == 'VIDEO' &&
-              (_job.videoStoragePath?.trim().isNotEmpty ?? false)) ||
-          (_job.pipelineRoute != 'VIDEO' &&
-              (_job.assetStoragePath?.trim().isNotEmpty ?? false)));
+  bool get _hasPreviewableAsset => _job.hasReadyMediaMetadata;
 
   Future<void> _loadAssetPreview() async {
     if (!_hasPreviewableAsset) {
@@ -236,6 +235,67 @@ class _ContentJobPageState extends State<ContentJobPage> {
           motionPrompt: _motionPrompt.text.trim(),
         ),
       );
+
+  Future<void> _copyCaption() async {
+    final caption = _caption.text.trim();
+    if (caption.isEmpty) return;
+    try {
+      await Clipboard.setData(ClipboardData(text: caption));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Caption copied')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not copy caption')),
+        );
+      }
+    }
+  }
+
+  static const MethodChannel _galleryChannel = MethodChannel('soloforge.ai/gallery');
+
+  Future<void> _handleImageExport({required bool saveToGallery}) async {
+    final preview = _assetPreview;
+    if (preview == null || preview.mediaType != 'image' || _exportingImage) return;
+    setState(() => _exportingImage = true);
+    try {
+      final Uint8List bytes = await _service.downloadReadyImage(preview);
+      final png = bytes[0] == 0x89;
+      final fileName = 'soloforge-${_job.id}.${png ? 'png' : 'jpg'}';
+      final mimeType = png ? 'image/png' : 'image/jpeg';
+      if (saveToGallery) {
+        if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+          throw UnsupportedError('Direct Gallery save is supported on Android only.');
+        }
+        await _galleryChannel.invokeMethod<bool>('saveImage', {
+          'bytes': bytes,
+          'fileName': fileName,
+          'mimeType': mimeType,
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image saved to Gallery')),
+          );
+        }
+      } else {
+        await SharePlus.instance.share(ShareParams(
+          files: [XFile.fromData(bytes, mimeType: mimeType, name: fileName)],
+          fileNameOverrides: [fileName],
+        ));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Image export unavailable: $error'),
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _exportingImage = false);
+    }
+  }
 
   Future<void> _approve() => _run(() => _service.approve(_job.id));
 
@@ -414,6 +474,15 @@ class _ContentJobPageState extends State<ContentJobPage> {
                   _Chip(label: 'Publish ${_job.publishStatus}'),
               ],
             ),
+            if (_job.status == 'READY_TO_PUBLISH' ||
+                _job.readinessGroup == ContentReadinessGroup.pendingReconciliation ||
+                _job.readinessGroup == ContentReadinessGroup.needsRepair) ...[
+              const SizedBox(height: 12),
+              Card(child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(_job.readinessReason),
+              )),
+            ],
             if (_job.blocker != null) ...[
               const SizedBox(height: 12),
               Card(
@@ -455,6 +524,27 @@ class _ContentJobPageState extends State<ContentJobPage> {
                 loading: _assetPreviewLoading,
                 error: _assetPreviewError,
                 onRetry: _loadAssetPreview,
+              ),
+            ],
+            if (_caption.text.trim().isNotEmpty)
+              OutlinedButton.icon(
+                key: const Key('copy-caption'),
+                onPressed: _copyCaption,
+                icon: const Icon(Icons.copy),
+                label: const Text('Copy Caption'),
+              ),
+            if (_assetPreview?.mediaType == 'image' && _hasPreviewableAsset) ...[
+              OutlinedButton.icon(
+                key: const Key('save-ready-image'),
+                onPressed: _exportingImage ? null : () => _handleImageExport(saveToGallery: true),
+                icon: const Icon(Icons.download_outlined),
+                label: Text(_exportingImage ? 'Preparing image...' : 'Save Image'),
+              ),
+              OutlinedButton.icon(
+                key: const Key('share-ready-image'),
+                onPressed: _exportingImage ? null : () => _handleImageExport(saveToGallery: false),
+                icon: const Icon(Icons.share_outlined),
+                label: const Text('Share Image'),
               ),
             ],
             const SizedBox(height: 16),
