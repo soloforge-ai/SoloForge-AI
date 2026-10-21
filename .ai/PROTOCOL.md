@@ -238,6 +238,12 @@ Never sacrifice maintainability for short-term convenience.
 
 ---
 
+## Development Authorization and Checkpoint Recovery
+
+Owner-approved source edits, local file operations, and offline/mock tests may proceed within the exact approved paths, exclusions, and behavior without provider spending authorization. Such authorization does not unlock execution, publishing, or production. Do not request repeat approval for the same unfinished action unless scope, material risk, or a separately restricted operation changes; approval never extends to subsequent actions.
+
+Before resuming interrupted work, verify the latest relevant checkpoint against the current Git SHA, changed paths, test evidence, and environment. Reuse verified completed work when unchanged; do not repeat it without a documented reason. Report what changed, why, the observed verification result, remaining blockers, and the next exact action. Keep local, CI, and production evidence distinct.
+
 # Protocol Lifecycle
 
 Protocol Version
