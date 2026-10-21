@@ -286,6 +286,12 @@ Documentation should always remain synchronized with the codebase.
 
 ---
 
+## Approval Continuity and Actionable Blockers
+
+Within an explicitly owner-approved development scope, edit the smallest necessary set of permitted files and run offline/mock validation without asking for provider wallet or spending authorization. Do not request approval again for the same unfinished authorized action unless scope or material risk changes. Commit, push, PR creation, merge, deploy, production mutation, destructive operations, worker enablement, external publishing, and live/billable provider calls still require explicit action-specific authorization.
+
+When work is BLOCKED, identify the exact failed operation and supporting evidence; classify whether the cause is permissions, connector/workspace selection, environment, missing source, or safety control; distinguish verified facts from assumptions; and propose the smallest feasible recovery action. Check the latest verified checkpoint and prior attempts first. Do not repackage an already failed recovery path as a new action without new evidence.
+
 # Definition of Done
 
 A task is considered complete only when:
