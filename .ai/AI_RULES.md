@@ -98,7 +98,7 @@ Avoid unnecessary abstractions.
 
 Modify only files necessary for the owner's approved task. The previous three-file stop condition is replaced with **scope-based authorization**, not unlimited write access.
 
-- Before editing, record allowed paths or path patterns, explicit exclusions, feature objective, risk classification, validation criteria, and permitted Git actions.
+- Before editing, record allowed paths or path patterns, explicit exclusions, feature objective, risk classification, validation criteria, and any restricted Git actions beyond routine task-scoped commits.
 - Small fixes (typically 1–5 files), standard features (typically 5–15 files), and larger cross-module changes are planning guides only, **not** automatic approvals or hard limits.
 - Once the owner approves the defined scope, the agent may modify the necessary number of files **inside that scope** without requesting approval after every three files.
 - If a required path is outside scope, or scope is missing or ambiguous, stop and request owner approval rather than infer authorization.
@@ -176,7 +176,7 @@ Documentation should be updated only when project behavior changes.
 
 # Git Rules
 
-Use Conventional Commits.
+Use Conventional Commits. For an owner-approved repository edit, the normal workflow includes verifying the diff and committing approved changes on a separate development branch without a second approval. Do not commit directly to `main`; do not infer permission to push, open a PR, merge, or deploy. Explicit no-commit instructions take precedence.
 
 Examples
 
@@ -285,6 +285,12 @@ Avoid editing unrelated documents.
 Documentation should always remain synchronized with the codebase.
 
 ---
+
+## Approval Continuity and Actionable Blockers
+
+Within an explicitly owner-approved development scope, edit the smallest necessary set of permitted files and run offline/mock validation without asking for provider wallet or spending authorization. Do not request approval again for the same unfinished authorized action unless scope or material risk changes. Push, PR creation, merge, deploy, production mutation, destructive operations, worker enablement, external publishing, and live/billable provider calls still require explicit action-specific authorization.
+
+When work is BLOCKED, identify the exact failed operation and supporting evidence; classify whether the cause is permissions, connector/workspace selection, environment, missing source, or safety control; distinguish verified facts from assumptions; and propose the smallest feasible recovery action. Check the latest verified checkpoint and prior attempts first. Do not repackage an already failed recovery path as a new action without new evidence.
 
 # Definition of Done
 
