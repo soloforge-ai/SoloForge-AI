@@ -56,7 +56,7 @@ Before performing any task:
 2. Read this protocol and `.ai/AI_RULES.md` for authorization and execution rules.
 3. Read `docs/CURRENT_SPRINT.md`, then `.ai/AI_TASK.md`. Read `docs/ROADMAP.md` when sequencing or longer-term direction is relevant.
 4. Apply the Priority Order below; reading order does not determine precedence.
-5. Identify the owner's requested task, affected files, exclusions, validation criteria, and permitted Git actions. Do not select a historical task automatically.
+5. Identify the owner's requested task, affected files, exclusions, validation criteria, and permitted Git actions beyond routine task-scoped commits. Do not select a historical task automatically.
 6. If explicitly authorized to write, implement the smallest change inside the approved scope. Otherwise remain read-only.
 7. Report findings or changes, validation evidence, blockers, and the next safe action.
 ---
@@ -77,7 +77,7 @@ This section defines the authoritative repository instruction precedence:
 
 The protocol and rules govern authorization and execution. The sprint and roadmap govern current product intent ahead of AI summaries. Other precedence lists must be interpreted consistently with this section.
 
-All non-conflicting constraints remain applicable. A lower-priority document cannot expand approved scope or authorize Git actions, production access, publishing, worker enablement, or live provider/billable calls. General coding approval does not waive these restrictions; exceptions require explicit authorization for the specific action.
+All non-conflicting constraints remain applicable. A lower-priority document cannot expand approved scope or authorize restricted Git actions, production access, publishing, worker enablement, or live provider/billable calls. General coding approval does not waive these restrictions; exceptions require explicit authorization for the specific action.
 
 Execute only the task explicitly requested or approved by the owner. Historical task records, roadmap milestones, and task-board entries are context, not standing authorization. Treat entries that conflict with the current sprint as superseded; report the discrepancy without executing or rewriting them. If the requested task or authorization remains ambiguous, stay read-only and ask the owner.
 
@@ -128,13 +128,13 @@ Avoid formatting-only commits.
 
 Avoid unnecessary refactoring.
 
-For an owner-approved task, use a **task-scoped change authorization** instead of a fixed three-file limit. Before writing, record the objective, approved paths/globs, exclusions, risk level, test plan, and allowed Git actions. There is no automatic permission to edit all files: only the smallest necessary set inside the approved scope may change. If the task has no explicit write authorization, remain read-only. Stop and ask before touching paths outside scope, changing architecture, accessing production resources, or performing irreversible actions. See `.ai/AI_RULES.md`.
+For an owner-approved task, use a **task-scoped change authorization** instead of a fixed three-file limit. Before writing, record the objective, approved paths/globs, exclusions, risk level, test plan, and any restricted Git actions. Routine commits on a separate development branch are included in approved file-edit work, after verifying the diff; no repeated commit approval is required. Push and PR creation require explicit approval. There is no automatic permission to edit all files: only the smallest necessary set inside the approved scope may change. If the task has no explicit write authorization, remain read-only. Stop and ask before touching paths outside scope, changing architecture, accessing production resources, or performing irreversible actions. See `.ai/AI_RULES.md`.
 
 ---
 
 # Autonomous Execution and Recovery Contract
 
-An autonomous task is allowed only when explicitly approved by the owner. Verify the current `main` SHA and repository state before creating a feature branch. Implement only within the approved task scope; never commit to `main`. Draft PR creation is permitted only when included in that task's authorized Git actions. Never merge, deploy, modify production databases, enable workers, or trigger live provider/billable side effects without a separate explicit authorization.
+An autonomous task is allowed only when explicitly approved by the owner. Verify the current `main` SHA and repository state before creating a feature branch. Implement only within the approved task scope; routine commits on a separate branch are part of that approved development task and need no second approval. Never commit to `main`. Draft PR creation is permitted only when included in that task's authorized Git actions. Never merge, deploy, modify production databases, enable workers, or trigger live provider/billable side effects without a separate explicit authorization.
 
 Work in recoverable checkpoints: record base SHA, branch, latest commit SHA (when any), allowed changed paths, completed and pending steps, test commands/results, known blockers, and next safe action. An interrupted task must inspect its actual state before resuming; do not re-run ambiguous external side effects or assume prior steps succeeded.
 
@@ -239,6 +239,8 @@ Never sacrifice maintainability for short-term convenience.
 ---
 
 ## Development Authorization and Checkpoint Recovery
+
+Approval to edit repository files includes checking the resulting diff and recording those authorized changes as conventional commits on a separate development branch. Do not ask for a second approval solely to commit the same approved changes. This does not authorize push, PR creation, merge, deploy, or any other separately restricted action. If the owner explicitly prohibits commits for a task, that restriction prevails.
 
 Owner-approved source edits, local file operations, and offline/mock tests may proceed within the exact approved paths, exclusions, and behavior without provider spending authorization. Such authorization does not unlock execution, publishing, or production. Do not request repeat approval for the same unfinished action unless scope, material risk, or a separately restricted operation changes; approval never extends to subsequent actions.
 
