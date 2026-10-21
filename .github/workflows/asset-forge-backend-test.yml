@@ -30,6 +30,7 @@ on:
 
 jobs:
   backend-test:
+    if: ${{ github.event_name != 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -64,3 +65,64 @@ jobs:
             backend/tests \
             tools/scanner/tests \
             backend/asset_forge/test_character_memory_bridge.py
+
+  # Explicit manual invocation only. Never run automatically on PR/push.
+  s1-offline-verification:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    env:
+      SOLOFORGE_RUN_EMBEDDED_WORKERS: 'false'
+      SOLOFORGE_RUN_DEDICATED_WORKERS: 'false'
+    steps:
+      - name: Checkout exact triggering revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build disposable Python 3.12 test image (network permitted for dependency installation only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build --pull --tag soloforge-s1-offline:${GITHUB_SHA} -f - . <<'DOCKERFILE'
+          FROM python:3.12-slim
+          WORKDIR /workspace
+          ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+          COPY backend/asset_forge/requirements.txt /tmp/asset-forge-requirements.txt
+          RUN python -m pip install --no-cache-dir -r /tmp/asset-forge-requirements.txt pytest httpx
+          COPY . /workspace
+          DOCKERFILE
+
+      - name: Fail-closed isolated S1 verification (no network, no secrets)
+        shell: bash
+        run: |
+          set -euo pipefail
+          isolation=(--rm --network none --cap-drop ALL --security-opt no-new-privileges
+            --read-only --tmpfs /tmp:rw,nosuid,nodev,size=64m
+            --env SOLOFORGE_RUN_EMBEDDED_WORKERS=false
+            --env SOLOFORGE_RUN_DEDICATED_WORKERS=false
+            --env HOME=/tmp --env PYTHONPATH=backend/asset_forge:. --workdir /workspace)
+          image="soloforge-s1-offline:${GITHUB_SHA}"
+          # Verify isolation inside the exact container configuration used by pytest.
+          docker run "${isolation[@]}" "$image" python -c '
+          import socket
+          from pathlib import Path
+          ipv4 = Path("/proc/net/route").read_text().splitlines()[1:]
+          ipv6 = Path("/proc/net/ipv6_route").read_text().splitlines()
+          assert all(line.split()[0] == "lo" for line in ipv4), ipv4
+          assert all(line.split()[-1] == "lo" for line in ipv6), ipv6
+          for family, address in ((socket.AF_INET, ("1.1.1.1", 443)),
+                                  (socket.AF_INET6, ("2606:4700:4700::1111", 443))):
+              try:
+                  with socket.socket(family, socket.SOCK_STREAM) as sock:
+                      sock.settimeout(2)
+                      sock.connect(address)
+              except OSError:
+                  continue
+              raise SystemExit("FAIL: outbound network reachable")
+          print("PASS: container network isolation preflight")
+          '
+          docker run "${isolation[@]}" "$image" \
+            python -m pytest -q backend/asset_forge/tests/test_execution_policy.py

@@ -78,3 +78,17 @@ Review and approve the intentional 503 behavior before rollout. Do not turn flag
 on, reconnect accounts, retry queued work or deploy as part of this PR. Live
 execution remains NO-GO pending the separately reviewed identity, budget, claim,
 reconciliation and provider integration work. S1 does not authorize merge/deploy.
+
+
+## Verified offline integration checkpoint — 2026-10-21
+
+- Verification branch: `test/s1-offline-verification-20261021`.
+- Verified branch commit: `7155723d34956ad86f6a08317de2c5b16f7201e9` (pre-documentation change).
+- Compared main commit: `a2fd5fcbbf1a1cf5dcd43b60db4a104a6027ce22`.
+- GitHub Actions run: https://github.com/soloforge-ai/SoloForge-AI/actions/runs/39551691493
+- CI result: `s1-offline-verification` SUCCESS; `48 passed, 44 warnings` in the S1 execution-policy test suite. The separate `backend-test` job was skipped for the manual dispatch.
+- Isolation: Docker test execution used `--network none`, `--cap-drop ALL`, `--security-opt no-new-privileges`, and a read-only filesystem; container network-isolation preflight passed. Dependencies were installed during image build, before isolated test execution.
+- Source comparison at the recorded commits: S1 application controls and tests were unchanged between the branch and `main`. The branch-only change was `.github/workflows/asset-forge-backend-test.yml` (62 additions).
+- Evidence scope: offline CI tests with mocks/fakes, not production E2E proof. No live provider spending, publishing, worker enablement, or production authorization is established by this checkpoint.
+- Remaining review: integrate the offline-verification workflow into `main` through a separately authorized PR/review process. Do not merge, deploy, enable workers, or call live/billable providers without action-specific owner approval.
+- Evidence reuse: recheck only if the relevant source, workflow, runtime assumptions, or verification baseline changes materially; do not rerun identical checks without a documented reason.
