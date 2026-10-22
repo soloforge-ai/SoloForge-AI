@@ -94,7 +94,7 @@ def test_single_processing_preserves_edges_dimensions_and_pixels():
 def setup_client(monkeypatch):
     # Mock processing contract only; production remains execution-locked.
     monkeypatch.setattr(main, "require_generation_execution", lambda: None)
-    monkeypatch.setattr(main, "get_pollinations_access_token_from_authorization", lambda _: "test-only-token")
+    monkeypatch.setattr(main, "get_pollinations_access_token_from_authorization", lambda _token, _owner_auth: "test-only-token")
     monkeypatch.setattr(main, "_load_character_reference", lambda _: MASTER.read_bytes())
     monkeypatch.setattr(main, "_generate_local_fallback_sheet", lambda *a: pytest.fail("Single must not fallback"))
     monkeypatch.setattr(main, "stamp_image_bytes", lambda *a: pytest.fail("Single must not add logos"))
@@ -149,5 +149,5 @@ def test_missing_session_and_bad_master_fail_before_adapter(monkeypatch):
     monkeypatch.setattr(main, "_generate_sheet", lambda *a: pytest.fail("Provider must not be called"))
     monkeypatch.setattr(main, "_load_character_reference", lambda _: b"bad master")
     assert client.post("/v1/asset-forge/generate", json=payload()).status_code == 409
-    monkeypatch.setattr(main, "get_pollinations_access_token_from_authorization", lambda _: None)
+    monkeypatch.setattr(main, "get_pollinations_access_token_from_authorization", lambda _token, _owner_auth: None)
     assert client.post("/v1/asset-forge/generate", json=payload()).status_code == 401

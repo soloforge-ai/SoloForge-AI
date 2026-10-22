@@ -187,7 +187,7 @@ def test_direct_boundaries_cannot_bypass(monkeypatch):
     monkeypatch.syspath_prepend(str(ROOT.parents[0]))
     pollinations_image = load_runtime("s1_root_image", "../pollinations_image.py")
     monkeypatch.setattr(pollinations_image, "requests", transport)
-    monkeypatch.setattr(prawtwan_chat, "get_pollinations_access_token_from_authorization", lambda _: "fake-test-only")
+    monkeypatch.setattr(prawtwan_chat, "get_pollinations_access_token_from_authorization", lambda _token, _owner_auth: "fake-test-only")
     calls = [
         lambda: main._generate_sheet("p", b"reference", "fake-test-only"),
         lambda: content_generation._call_provider("idea"),
@@ -206,7 +206,7 @@ def test_direct_boundaries_cannot_bypass(monkeypatch):
 def test_asset_api_does_not_treat_connected_oauth_as_spending_approval(monkeypatch, layout):
     main = load_runtime("s1_main_api", "main.py")
     provider = Mock()
-    monkeypatch.setattr(main, "get_pollinations_access_token_from_authorization", lambda _: "fake-test-only")
+    monkeypatch.setattr(main, "get_pollinations_access_token_from_authorization", lambda _token, _owner_auth: "fake-test-only")
     monkeypatch.setattr(main, "_generate_sheet", provider)
     payload = {"quantity": 4} if layout == "sticker_sheet" else {"generation_layout": layout, "quantity": 1, "pose_intent": "presenting", "expression": "calm"}
     client = TestClient(main.app)
@@ -234,7 +234,7 @@ def test_read_only_routes_and_local_sales_template_remain_safe(monkeypatch):
 def test_legacy_offline_sheet_remains_explicitly_local(monkeypatch):
     main = load_runtime("s1_main_offline", "main.py")
     provider = Mock()
-    monkeypatch.setattr(main, "get_pollinations_access_token_from_authorization", lambda _: None)
+    monkeypatch.setattr(main, "get_pollinations_access_token_from_authorization", lambda _token, _owner_auth: None)
     monkeypatch.setattr(main, "_load_character_reference", lambda _: None)
     monkeypatch.setattr(main, "_generate_sheet", provider)
     response = TestClient(main.app).post("/v1/asset-forge/generate", json={"character": "Cat", "quantity": 4})
