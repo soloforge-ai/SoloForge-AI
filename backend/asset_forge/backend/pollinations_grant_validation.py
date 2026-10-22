@@ -34,6 +34,7 @@ def verify_provider_token(token, *, client_id, trusted_app_key_id):
     key = _read("https://gen.pollinations.ai/account/key", token)
     sub, owner, byop = userinfo.get("sub"), key.get("userId"), key.get("byopApp")
     if (not isinstance(sub, str) or not sub.strip() or not isinstance(owner, str) or not owner.strip()
+        or sub != owner
         or key.get("valid") is not True or key.get("type") != "secret"
         or not isinstance(byop, dict) or byop.get("clientKeyId") != trusted_app_key_id):
         raise GrantVerificationError("Provider identity or app mismatch")
