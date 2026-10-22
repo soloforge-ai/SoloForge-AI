@@ -18,6 +18,8 @@ from fastapi import APIRouter, Cookie, Header, HTTPException, Query
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
+from backend.soloforge_session import require_soloforge_session, _owner_user_id
+from backend.owner_provider_binding import (VerifiedIdentity, CredentialMetadata, establish_binding, rotate_credential, BindingRejected)
 from backend.pollinations_oauth import (
     PollinationsOAuthConfig,
     build_authorization_url,
@@ -39,6 +41,7 @@ class _OAuthTransaction:
     verifier: str
     created_at: float
     return_to: str | None = None
+    owner_user_id: str = ""
 
 
 @dataclass
@@ -46,12 +49,15 @@ class _OAuthSession:
     access_token: str
     expires_at: float
     scope: str
+    owner_user_id: str = ""
+    provider_subject: str = ""
 
 
 @dataclass
 class _MobileHandoff:
     session_id: str
     created_at: float
+    owner_user_id: str = ""
 
 
 class MobileExchangeRequest(BaseModel):
@@ -68,6 +74,16 @@ _lock = threading.RLock()
 _transactions: dict[str, _OAuthTransaction] = {}
 _sessions: dict[str, _OAuthSession] = {}
 _handoffs: dict[str, _MobileHandoff] = {}
+_login_tickets: dict[str, tuple[str, float]] = {}
+
+
+def _verified_grant(token: str) -> dict:
+    """Provider metadata verifier: no wallet or spending authorization."""
+    from backend.pollinations_grant_validation import verify_provider_token
+    trusted = os.getenv("POLLINATIONS_TRUSTED_APP_KEY_ID", "").strip()
+    client_id = os.getenv("POLLINATIONS_CLIENT_ID", "").strip()
+    return verify_provider_token(token, client_id=client_id, trusted_app_key_id=trusted)
+
 
 
 def _supabase_config() -> tuple[str, str] | None:
@@ -157,6 +173,8 @@ def _persist_session(session_id: str, session: _OAuthSession) -> None:
             "access_token": session.access_token,
             "token_type": "Bearer",
             "scope": session.scope,
+            "owner_user_id": session.owner_user_id,
+            "provider_subject": session.provider_subject,
             "expires_at": expires_at,
             "updated_at": datetime.now(tz=timezone.utc).isoformat(),
         },
@@ -172,7 +190,7 @@ def _load_persisted_session(session_id: str) -> _OAuthSession | None:
     raw = _supabase_request(
         "GET",
         "pollinations_sessions"
-        f"?session_id=eq.{encoded}&select=access_token,expires_at,scope&limit=1",
+        f"?session_id=eq.{encoded}&select=access_token,expires_at,scope,owner_user_id,provider_subject&limit=1",
     )
     if not raw:
         return None
@@ -200,10 +218,14 @@ def _load_persisted_session(session_id: str) -> _OAuthSession | None:
     if not token:
         return None
 
+    if not row.get("owner_user_id") or not row.get("provider_subject"):
+        return None
     return _OAuthSession(
         access_token=token,
         expires_at=expires_at,
         scope=str(row.get("scope") or ""),
+        owner_user_id=str(row["owner_user_id"]),
+        provider_subject=str(row["provider_subject"]),
     )
 
 
@@ -227,6 +249,9 @@ def _cleanup() -> None:
         for session_id, session in list(_sessions.items()):
             if session.expires_at <= now:
                 _sessions.pop(session_id, None)
+        for ticket, (_, created) in list(_login_tickets.items()):
+            if now - created > _TRANSACTION_TTL_SECONDS:
+                _login_tickets.pop(ticket, None)
         for code, handoff in list(_handoffs.items()):
             if now - handoff.created_at > _HANDOFF_TTL_SECONDS:
                 _handoffs.pop(code, None)
@@ -330,10 +355,20 @@ def _validate_return_to(return_to: str | None, *, client: str) -> str | None:
     return return_to
 
 
+@router.post("/login-ticket")
+def create_login_ticket(authorization: str | None = Header(default=None)) -> dict[str, str]:
+    require_soloforge_session(authorization)
+    ticket = secrets.token_urlsafe(32)
+    with _lock:
+        _login_tickets[ticket] = (_owner_user_id(), time.time())
+    return {"login_ticket": ticket}
+
+
 @router.get("/login")
 def pollinations_login(
     client: str | None = Query(default=None),
     return_to: str | None = Query(default=None),
+    login_ticket: str | None = Query(default=None),
 ) -> RedirectResponse:
     try:
         config = PollinationsOAuthConfig.from_env()
@@ -352,12 +387,18 @@ def pollinations_login(
             client="web",
         )
 
+    _cleanup()
+    with _lock:
+        ticket_data = _login_tickets.pop(login_ticket, None) if login_ticket else None
+    if not ticket_data or time.time() - ticket_data[1] > _TRANSACTION_TTL_SECONDS:
+        raise HTTPException(status_code=401, detail="Verified owner login ticket required")
     verifier, challenge, state = create_pkce_transaction()
     with _lock:
         _transactions[state] = _OAuthTransaction(
             verifier=verifier,
             created_at=time.time(),
             return_to=resolved_return_to,
+            owner_user_id=ticket_data[0],
         )
 
     authorization_url = build_authorization_url(
@@ -406,6 +447,44 @@ def pollinations_callback(
             detail="Pollinations token exchange failed. Please retry the connection.",
         ) from exc
 
+    try:
+        grant = _verified_grant(payload["access_token"])
+        if not transaction.owner_user_id or not grant.get("provider_subject") or not grant.get("key_owner"):
+            raise ValueError("Missing verified identity")
+    except Exception as exc:
+        raise HTTPException(status_code=403, detail="Provider owner verification failed") from exc
+
+    # Atomic binding and key-rotation recording must complete BEFORE issuing a
+    # provider session. Never silently fall back to memory or a server sk_ key.
+    # SQLite is deliberately limited to explicit local offline testing.
+    local_db = os.getenv("SOLOFORGE_OFFLINE_BINDING_SQLITE", "")
+    offline = os.getenv("SOLOFORGE_OFFLINE_FAKE_PROVIDER") == "1"
+    try:
+        from datetime import datetime as _datetime
+        expires_at = grant.get("key_expires_at")
+        if type(expires_at) is not int or not isinstance(grant.get("key_id"), str):
+            raise BindingRejected("Missing verified key expiry or identifier")
+        identity = VerifiedIdentity(transaction.owner_user_id, str(grant["key_owner"]),
+                                    str(grant["internal_app_key_id"]))
+        credential = CredentialMetadata(str(grant["key_id"]), str(grant["key_owner"]),
+                                        str(grant["internal_app_key_id"]), True, expires_at)
+        if offline and local_db:
+            from backend.owner_binding_sqlite import LocalAtomicBindingStore
+            store = LocalAtomicBindingStore(local_db)
+        elif not offline and os.getenv("SOLOFORGE_TRUSTED_BINDING_POSTGRES_ENABLED") == "1":
+            from backend.owner_binding_postgres import PostgresAtomicBindingStore
+            import psycopg
+            dsn = os.getenv("SOLOFORGE_TRUSTED_BINDING_POSTGRES_DSN", "")
+            if not dsn:
+                raise BindingRejected("Trusted PostgreSQL DSN missing")
+            store = PostgresAtomicBindingStore(lambda: psycopg.connect(dsn, connect_timeout=5))
+        else:
+            raise BindingRejected("Trusted persistent owner binding unavailable")
+        store.verify_and_record(identity, credential,
+                                authenticated_owner_id=transaction.owner_user_id)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Persistent owner binding verification failed") from exc
+
     with _lock:
         _transactions.pop(state, None)
 
@@ -415,6 +494,8 @@ def pollinations_callback(
         access_token=payload["access_token"],
         expires_at=time.time() + max(60, expires_in),
         scope=str(payload.get("scope", "")),
+        owner_user_id=transaction.owner_user_id,
+        provider_subject=str(grant["provider_subject"]),
     )
     with _lock:
         _sessions[session_id] = session
@@ -434,6 +515,7 @@ def pollinations_callback(
             _handoffs[handoff_code] = _MobileHandoff(
                 session_id=session_id,
                 created_at=time.time(),
+                owner_user_id=transaction.owner_user_id,
             )
         separator = "&" if "?" in transaction.return_to else "?"
         target = f"{transaction.return_to}{separator}{urlencode({'code': handoff_code})}"
@@ -448,7 +530,8 @@ def pollinations_callback(
 
 
 @router.post("/mobile/exchange")
-def pollinations_mobile_exchange(payload: MobileExchangeRequest) -> dict[str, object]:
+def pollinations_mobile_exchange(payload: MobileExchangeRequest, x_soloforge_authorization: str | None = Header(default=None)) -> dict[str, object]:
+    require_soloforge_session(x_soloforge_authorization)
     _cleanup()
     with _lock:
         handoff = _handoffs.pop(payload.code, None)
@@ -456,8 +539,8 @@ def pollinations_mobile_exchange(payload: MobileExchangeRequest) -> dict[str, ob
         raise HTTPException(status_code=400, detail="Invalid or expired mobile handoff code.")
 
     session = _get_session(handoff.session_id)
-    if session is None:
-        raise HTTPException(status_code=401, detail="Pollinations session has expired.")
+    if session is None or session.owner_user_id != _owner_user_id() or handoff.owner_user_id != _owner_user_id():
+        raise HTTPException(status_code=401, detail="Pollinations owner session mismatch")
 
     return {
         "session_token": handoff.session_id,
@@ -470,10 +553,12 @@ def pollinations_mobile_exchange(payload: MobileExchangeRequest) -> dict[str, ob
 def pollinations_status(
     session_id: str | None = Cookie(default=None, alias=_SESSION_COOKIE),
     authorization: str | None = Header(default=None),
+    x_soloforge_authorization: str | None = Header(default=None),
 ) -> dict[str, object]:
+    require_soloforge_session(x_soloforge_authorization)
     bearer_session_id = _session_id_from_authorization(authorization)
     session = _get_session(bearer_session_id or session_id)
-    if session is None:
+    if session is None or session.owner_user_id != _owner_user_id() or not session.provider_subject:
         return {"connected": False}
     return {
         "connected": True,
@@ -486,9 +571,11 @@ def pollinations_status(
 def pollinations_logout(
     session_id: str | None = Cookie(default=None, alias=_SESSION_COOKIE),
     authorization: str | None = Header(default=None),
+    x_soloforge_authorization: str | None = Header(default=None),
 ) -> JSONResponse:
+    require_soloforge_session(x_soloforge_authorization)
     resolved_session_id = _session_id_from_authorization(authorization) or session_id
-    if resolved_session_id:
+    if resolved_session_id and (session := _get_session(resolved_session_id)) and session.owner_user_id == _owner_user_id():
         with _lock:
             _sessions.pop(resolved_session_id, None)
         try:
@@ -500,13 +587,15 @@ def pollinations_logout(
     return response
 
 
-def get_pollinations_access_token(session_id: str | None) -> str | None:
+def get_pollinations_access_token(session_id: str | None, owner_authorization: str | None = None) -> str | None:
+    require_soloforge_session(owner_authorization)
     session = _get_session(session_id)
-    return session.access_token if session else None
+    return session.access_token if session and session.owner_user_id == _owner_user_id() and session.provider_subject else None
 
 
 def get_pollinations_access_token_from_authorization(
     authorization: str | None,
+    owner_authorization: str | None = None,
 ) -> str | None:
     session_id = _session_id_from_authorization(authorization)
-    return get_pollinations_access_token(session_id)
+    return get_pollinations_access_token(session_id, owner_authorization)
