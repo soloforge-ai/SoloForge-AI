@@ -71,7 +71,8 @@ This section defines the authoritative repository instruction precedence:
 4. `docs/CURRENT_SPRINT.md`.
 5. `docs/ROADMAP.md`.
 6. `.ai/AI_CONTEXT.md`.
-7. Other documentation, role prompts, and task records.8. Existing source code and scanner-generated observations as evidence.
+7. Other documentation, role prompts, and task records.
+8. Existing source code and scanner-generated observations as evidence.
 The protocol and rules govern authorization and execution. The sprint and roadmap govern current product intent ahead of AI summaries. Other precedence lists must be interpreted consistently with this section.
 
 All non-conflicting constraints remain applicable. A lower-priority document cannot expand approved scope or authorize restricted Git actions, production access, publishing, worker enablement, or live provider/billable calls. General coding approval does not waive these restrictions; exceptions require explicit authorization for the specific action.
