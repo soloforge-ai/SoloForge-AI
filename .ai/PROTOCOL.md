@@ -54,7 +54,7 @@ Before performing any task:
 
 1. Read `.ai/AI_CONTEXT.md` for context.
 2. Read this protocol and `.ai/AI_RULES.md` for authorization and execution rules.
-3. Read `docs/CURRENT_SPRINT.md`, then `.ai/AI_TASK.md`. Read `docs/ROADMAP.md` when sequencing or longer-term direction is relevant.
+3. Read `docs/CURRENT_SPRINT.md`. Read `docs/ROADMAP.md` when sequencing or longer-term direction is relevant.
 4. Apply the Priority Order below; reading order does not determine precedence.
 5. Identify the owner's requested task, affected files, exclusions, validation criteria, and permitted Git actions beyond routine task-scoped commits. Do not select a historical task automatically.
 6. If explicitly authorized to write, implement the smallest change inside the approved scope. Otherwise remain read-only.
@@ -71,10 +71,7 @@ This section defines the authoritative repository instruction precedence:
 4. `docs/CURRENT_SPRINT.md`.
 5. `docs/ROADMAP.md`.
 6. `.ai/AI_CONTEXT.md`.
-7. `.ai/AI_TASK.md`.
-8. Other documentation, role prompts, and task records.
-9. Existing source code and scanner-generated observations as evidence.
-
+7. Other documentation, role prompts, and task records.8. Existing source code and scanner-generated observations as evidence.
 The protocol and rules govern authorization and execution. The sprint and roadmap govern current product intent ahead of AI summaries. Other precedence lists must be interpreted consistently with this section.
 
 All non-conflicting constraints remain applicable. A lower-priority document cannot expand approved scope or authorize restricted Git actions, production access, publishing, worker enablement, or live provider/billable calls. General coding approval does not waive these restrictions; exceptions require explicit authorization for the specific action.

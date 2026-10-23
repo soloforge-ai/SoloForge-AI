@@ -12,7 +12,7 @@ Read Before
 
 AI_RULES.md
 
-AI_TASK.md
+docs/CURRENT_SPRINT.md
 
 PROTOCOL.md
 
@@ -400,9 +400,9 @@ AI working context:
 
 `.ai/AI_CONTEXT.md`
 
-AI task board:
+Current development state:
 
-`.ai/AI_TASK.md`
+`docs/CURRENT_SPRINT.md`
 
 Observed implementation:
 
@@ -414,9 +414,7 @@ Authority order:
 2. `docs/CURRENT_SPRINT.md`
 3. `docs/ROADMAP.md`
 4. `.ai/AI_CONTEXT.md`
-5. `.ai/AI_TASK.md`
-6. scanner-generated observations
-
+5. scanner-generated observations
 Project Scanner must not overwrite human product intent.
 
 ---
