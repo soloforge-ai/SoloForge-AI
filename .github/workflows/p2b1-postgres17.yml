@@ -1,0 +1,73 @@
+name: P2-B1 PostgreSQL 17 disposable verification
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261009232734_generation_db_foundation_phase1.sql'
+      - 'supabase/migrations/202610140005_generation_service_rpcs_phase1.sql'
+      - 'supabase/migrations/202610140006_generation_state_transitions.sql'
+      - 'supabase/migrations/202610140007_generation_trusted_wallet_gate.sql'
+      - 'supabase/migrations/202610140008_generation_rpc_privilege_boundary.sql'
+      - 'supabase/migrations/202610140009_generation_explicit_reconciliation_recovery.sql'
+      - 'supabase/migrations/202610140010_generation_verified_evidence_registry.sql'
+      - 'supabase/migrations/202610140011_generation_evidence_rpc_enforcement.sql'
+      - 'supabase/tests/generation_phase1_baseline.sql'
+      - 'tests/p2b1/**'
+      - 'backend/asset_forge/security/provider_evidence_offline.py'
+      - 'docs/P2_B1_TRUSTED_PROVIDER_ATTESTATION_CONTRACT.md'
+      - '.github/workflows/p2b1-postgres17.yml'
+permissions:
+  contents: read
+jobs:
+  postgres-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test-only-postgres
+          POSTGRES_DB: p2b1_disposable
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d p2b1_disposable"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      PGPASSWORD: test-only-postgres
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGDATABASE: p2b1_disposable
+      P2B1_TEST_DSN: postgresql://postgres:test-only-postgres@localhost:5432/p2b1_disposable
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check pytest 'psycopg[binary]'
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Bootstrap isolated synthetic prerequisites
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/generation_phase1_baseline.sql
+      - name: Apply recovered Phase 1 migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261009232734_generation_db_foundation_phase1.sql
+      - name: Verify native PostgreSQL Phase 1 security
+        run: python -m pytest -q tests/p2b1/test_phase1_postgres.py
+      - name: Apply service-only RPCs
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140007_generation_trusted_wallet_gate.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140005_generation_service_rpcs_phase1.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140006_generation_state_transitions.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140008_generation_rpc_privilege_boundary.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140009_generation_explicit_reconciliation_recovery.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140010_generation_verified_evidence_registry.sql
+      - name: Verify offline provider evidence negative security tests
+        run: python -m pytest -q tests/p2b1/test_provider_evidence_offline.py
+      - name: Verify native PostgreSQL security, concurrency, settlement
+        run: python -m pytest -q tests/p2b1/test_phase1_postgres.py tests/p2b1/test_phase1_concurrency.py tests/p2b1/test_effective_privileges.py tests/p2b1/test_verified_evidence_registry.py
+      - name: Apply trusted evidence RPC enforcement (no provider calls)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/202610140011_generation_evidence_rpc_enforcement.sql
+      - name: Verify evidence RPC boundary negative cases
+        run: python -m pytest -q tests/p2b1/test_evidence_rpc_enforcement.py
