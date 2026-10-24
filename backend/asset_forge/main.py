@@ -778,8 +778,9 @@ def download_final_content_video(
 def generate_asset_pack(
     request: AssetForgeRequest,
     authorization: str | None = Header(default=None),
+    x_soloforge_authorization: str | None = Header(default=None),
 ) -> AssetForgeResponse:
-    access_token = get_pollinations_access_token_from_authorization(authorization)
+    access_token = get_pollinations_access_token_from_authorization(authorization, x_soloforge_authorization)
     single = request.generation_layout == "single_character"
     if single and not access_token:
         raise HTTPException(status_code=401, detail="Connect Pollinations before single-character generation")

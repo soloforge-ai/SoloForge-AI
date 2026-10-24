@@ -7,6 +7,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
+import 'soloforge_session_service.dart';
+
 const String assetForgeApiUrl = String.fromEnvironment(
   'ASSET_FORGE_API_URL',
   defaultValue: 'https://soloforge-asset-forge.onrender.com',
@@ -29,7 +31,9 @@ class PollinationsSessionService {
     http.Client? client,
     FlutterSecureStorage? storage,
     AppLinks? appLinks,
-  }) : _client = client ?? http.Client(),
+    SoloForgeSessionService? ownerSessions,
+  }) : _ownerSessions = ownerSessions ?? SoloForgeSessionService(),
+       _client = client ?? http.Client(),
        _storage = storage ?? const FlutterSecureStorage(),
        _appLinks = appLinks ?? AppLinks();
 
@@ -49,6 +53,7 @@ class PollinationsSessionService {
     await update;
   }
 
+  final SoloForgeSessionService _ownerSessions;
   final http.Client _client;
   final FlutterSecureStorage _storage;
   final AppLinks _appLinks;
@@ -76,6 +81,7 @@ class PollinationsSessionService {
   Future<void> dispose() async {
     await _linkSubscription?.cancel();
     _client.close();
+    _ownerSessions.dispose();
   }
 
   Future<void> connect() {
@@ -104,6 +110,19 @@ class PollinationsSessionService {
       queryParameters['return_to'] = _returnTo;
     }
 
+    final ownerHeaders = await _ownerSessions.authorizationHeaders();
+    final ticketResponse = await _client.post(
+      Uri.parse('$_baseUrl/auth/pollinations/login-ticket'),
+      headers: {'X-SoloForge-Authorization': ownerHeaders['Authorization']!},
+    );
+    if (ticketResponse.statusCode != 200) {
+      throw const PollinationsSessionException('SoloForge owner login required.');
+    }
+    final ticket = (jsonDecode(ticketResponse.body) as Map<String, dynamic>)['ticket'];
+    if (ticket is! String || ticket.isEmpty) {
+      throw const PollinationsSessionException('Invalid OAuth login ticket.');
+    }
+    queryParameters['ticket'] = ticket;
     final loginUri = Uri.parse('$_baseUrl/auth/pollinations/login')
         .replace(queryParameters: queryParameters);
 
@@ -181,7 +200,10 @@ class PollinationsSessionService {
     );
     final response = await _client.post(
       exchangeUri,
-      headers: const {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'X-SoloForge-Authorization': (await _ownerSessions.authorizationHeaders())['Authorization']!,
+      },
       body: jsonEncode({'code': code}),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -214,7 +236,10 @@ class PollinationsSessionService {
 
     final response = await _client.get(
       Uri.parse('$_baseUrl/auth/pollinations/status'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {
+        'Authorization': 'Bearer $token',
+        'X-SoloForge-Authorization': (await _ownerSessions.authorizationHeaders())['Authorization']!,
+      },
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       // A transient backend outage is not evidence that OAuth was revoked.
@@ -251,7 +276,10 @@ class PollinationsSessionService {
       if (token != null && token.isNotEmpty) {
         await _client.post(
           Uri.parse('$_baseUrl/auth/pollinations/logout'),
-          headers: {'Authorization': 'Bearer $token'},
+          headers: {
+            'Authorization': 'Bearer $token',
+            'X-SoloForge-Authorization': (await _ownerSessions.authorizationHeaders())['Authorization']!,
+          },
         );
       }
     } finally {
@@ -266,7 +294,10 @@ class PollinationsSessionService {
         'Connect Pollinations before generating assets.',
       );
     }
-    return {'Authorization': 'Bearer $token'};
+    return {
+      'Authorization': 'Bearer $token',
+      'X-SoloForge-Authorization': (await _ownerSessions.authorizationHeaders())['Authorization']!,
+    };
   }
 
   Future<Map<String, String>> optionalAuthorizationHeaders() async {
@@ -274,7 +305,10 @@ class PollinationsSessionService {
     if (token == null || token.isEmpty) {
       return const <String, String>{};
     }
-    return {'Authorization': 'Bearer $token'};
+    return {
+      'Authorization': 'Bearer $token',
+      'X-SoloForge-Authorization': (await _ownerSessions.authorizationHeaders())['Authorization']!,
+    };
   }
 
   int? _asInt(Object? value) {

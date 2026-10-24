@@ -4,9 +4,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/services/pollinations_session_service.dart';
+import 'package:frontend/services/soloforge_session_service.dart';
 import 'package:frontend/services/prawtwan_language.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+
+PollinationsSessionService testSession({http.Client? client}) {
+  final owner = SoloForgeSessionService(
+    client: MockClient((request) async =>
+        http.Response('{"session_token":"synthetic-owner-session"}', 200)),
+    currentIdentity: () => (userId: 'test-owner', accessToken: 'synthetic-github-token'),
+  );
+  return PollinationsSessionService(client: client, ownerSessions: owner);
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +29,7 @@ void main() {
       () async {
         FlutterSecureStorage.setMockInitialValues({key: token});
         var exchanges = 0;
-        final session = PollinationsSessionService(
+        final session = testSession(
           client: MockClient((request) async {
             if (request.url.path.endsWith('/status')) {
               return http.Response(
@@ -57,8 +67,8 @@ void main() {
         calls++;
         return reply.future;
       });
-      final image = PollinationsSessionService(client: client());
-      final chat = PollinationsSessionService(client: client());
+      final image = testSession(client: client());
+      final chat = testSession(client: client());
       final a = image.restoreCallbackCode('shared-code');
       final b = chat.restoreCallbackCode('shared-code');
       await Future<void>.delayed(Duration.zero);
@@ -86,14 +96,14 @@ void main() {
   test('stale status cannot delete a callback replacement token', () async {
     FlutterSecureStorage.setMockInitialValues({key: 'old'});
     final stale = Completer<http.Response>();
-    final image = PollinationsSessionService(
+    final image = testSession(
       client: MockClient(
         (request) => request.headers['Authorization'] == 'Bearer old'
             ? stale.future
             : Future.value(http.Response('{"connected":true}', 200)),
       ),
     );
-    final chat = PollinationsSessionService(
+    final chat = testSession(
       client: MockClient((request) async {
         if (request.url.path.endsWith('/status')) {
           return http.Response(
@@ -118,7 +128,7 @@ void main() {
     'transient status failure preserves token and prevents login launch',
     () async {
       FlutterSecureStorage.setMockInitialValues({key: 'existing'});
-      final session = PollinationsSessionService(
+      final session = testSession(
         client: MockClient((_) async => http.Response('{}', 503)),
       );
       await expectLater(
@@ -132,7 +142,7 @@ void main() {
 
   test('failed handoff is not automatically retried by another page', () async {
     var calls = 0;
-    final session = PollinationsSessionService(
+    final session = testSession(
       client: MockClient((_) async {
         calls++;
         return http.Response('{"detail":"Ambiguous exchange"}', 502);
@@ -152,7 +162,7 @@ void main() {
 
   test('forged handoff response never installs a session', () async {
     var calls = 0;
-    final session = PollinationsSessionService(
+    final session = testSession(
       client: MockClient((request) async {
         calls++;
         expect(request.url.path, '/auth/pollinations/mobile/exchange');
@@ -175,7 +185,7 @@ void main() {
 
   test('wrong callback URL cannot exchange a code', () async {
     var calls = 0;
-    final session = PollinationsSessionService(
+    final session = testSession(
       client: MockClient((_) async {
         calls++;
         return http.Response('{}', 200);
@@ -204,21 +214,34 @@ void main() {
       () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, null),
     );
-    final image = PollinationsSessionService();
-    final chat = PollinationsSessionService();
+    var tickets = 0;
+    final oauthClient = MockClient((request) async {
+      if (request.url.path == '/auth/pollinations/login-ticket') {
+        tickets++;
+        expect(request.method, 'POST');
+        expect(request.headers['X-SoloForge-Authorization'],
+            'Bearer synthetic-owner-session');
+        return http.Response('{"ticket":"synthetic-single-use-ticket"}', 200);
+      }
+      expect(request.url.path, '/auth/pollinations/status');
+      return http.Response('{"connected":false}', 200);
+    });
+    final image = testSession(client: oauthClient);
+    final chat = testSession(client: oauthClient);
     final a = image.connect();
     final b = chat.connect();
     await Future<void>.delayed(Duration.zero);
     expect(calls, 1);
     launched.complete(true);
     await Future.wait([a, b]);
+    expect(tickets, 1);
     await image.dispose();
     await chat.dispose();
   });
 
   test('valid shared session never opens login', () async {
     FlutterSecureStorage.setMockInitialValues({key: 'valid'});
-    final session = PollinationsSessionService(
+    final session = testSession(
       client: MockClient((request) async {
         expect(request.url.path, '/auth/pollinations/status');
         return http.Response('{"connected":true}', 200);
