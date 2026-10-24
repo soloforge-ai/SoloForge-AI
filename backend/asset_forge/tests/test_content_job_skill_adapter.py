@@ -55,7 +55,6 @@ def test_conversion_job_is_not_forced_into_educational_skill() -> None:
         "cta": "พิกัดอยู่ในคอมเมนต์",
         "content_package": {
             "goal": "conversion",
-            "audience": "คนทำงานหน้าคอม",
             "format": "short_video_demo",
         },
     }
@@ -65,6 +64,7 @@ def test_conversion_job_is_not_forced_into_educational_skill() -> None:
     assert preview["status"] == "DRAFT"
     assert preview["skill_result"]["skill_id"] == "UNSUPPORTED"
     assert preview["skill_result"]["status"] == "UNSUPPORTED"
+    assert "audience" in preview["skill_input"]["missing_required"]
 
 
 def test_adapter_reports_missing_input_instead_of_inventing_unknown_goal() -> None:
