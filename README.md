@@ -335,9 +335,7 @@ Current project intent must be read in this order:
 2. `docs/CURRENT_SPRINT.md`
 3. `docs/ROADMAP.md`
 4. `.ai/AI_CONTEXT.md`
-5. `.ai/AI_TASK.md`
-6. Project Scanner output
-
+5. Project Scanner output
 Project Scanner describes observed implementation. It must not replace human-approved product intent.
 
 ---
@@ -349,9 +347,7 @@ AI assistants should read:
 1. `.ai/PROTOCOL.md`
 2. `.ai/AI_CONTEXT.md`
 3. `.ai/AI_RULES.md`
-4. `.ai/AI_TASK.md`
-5. `docs/CURRENT_SPRINT.md`
-
+4. `docs/CURRENT_SPRINT.md`
 The active instruction for this cycle is:
 
 > Do not add unrelated features. Fix only what is required to establish the real Content Factory E2E path.

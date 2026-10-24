@@ -333,7 +333,7 @@ Never:
 Always:
 
 - Follow the startup procedure and instruction precedence in `.ai/PROTOCOL.md`.
-- Use `.ai/AI_TASK.md` as context subordinate to the current sprint; execute only the owner's explicitly requested or approved task.
+- Use `docs/CURRENT_SPRINT.md` for current development intent; execute only the owner's explicitly requested or approved task.
 - Follow this document.
 - Preserve project consistency.
 - Minimize changes.

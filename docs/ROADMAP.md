@@ -290,9 +290,7 @@ Priority order for current project intent:
 2. `docs/CURRENT_SPRINT.md`
 3. `docs/ROADMAP.md`
 4. `.ai/AI_CONTEXT.md`
-5. `.ai/AI_TASK.md`
-6. Project Scanner output
-
+5. Project Scanner output
 Generated scanner output must never replace human-approved product direction.
 
 ---
