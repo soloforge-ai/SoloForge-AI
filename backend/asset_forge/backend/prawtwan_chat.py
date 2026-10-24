@@ -82,10 +82,11 @@ def _extract_text(payload: object) -> str:
 def chat_with_prawtwan(
     request: PrawtwanChatRequest,
     authorization: str | None = Header(default=None),
+    x_soloforge_authorization: str | None = Header(default=None),
 ) -> PrawtwanChatResponse:
     """Send session-only conversation context to the private Prawtwan agent."""
 
-    access_token = get_pollinations_access_token_from_authorization(authorization)
+    access_token = get_pollinations_access_token_from_authorization(authorization, x_soloforge_authorization)
     if not access_token:
         raise HTTPException(
             status_code=401,
