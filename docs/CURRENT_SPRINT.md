@@ -6,19 +6,36 @@
 
 ## Active Initiative
 
-**SoloForge State Reset**
+**Owner Identity V2 — P0 (owner-directed priority, 2026-10-24)**
 
 ## Current Implementation
 
-**Content Factory E2E Proof Preparation**
+**Owner Identity V2: New Owner Registry and Authentication — not yet implemented**
 
 ## Status
 
-In Progress
+**Approved direction / Implementation pending**. This document records the owner's active priority; it does not assert that a database, login flow, migration, or production deployment already exists.
 
 ## Source-of-Truth Date
 
-2026-10-01
+2026-10-24
+
+## Owner Identity V2 — Current Scope
+
+- Establish a new canonical Owner Registry seeded from the owner-provided Supabase owner UUID and primary email. Avoid embedding personal identifiers in this project-wide planning document; obtain actual values from approved owner-controlled configuration when implementing.
+- Design new Owner Authentication rather than reusing the failing legacy login flow. Retain legacy components only until a verified migration/cutover, without treating them as the new identity authority.
+- Record Supabase, Render, and Pollinations as separate provider accounts with provider-specific IDs, registration email, and evidence-based verification status. A shared email is a candidate matching attribute, not proof of cross-provider ownership.
+- Do not require unrelated provider tables or sessions to share the same primary key. Link records only when a valid, verified relationship exists; otherwise keep their identifiers and verification separate.
+- After implementation and verification, adapt dependent components to use Owner Identity V2 as their single source of truth. Do not switch production integrations or remove old authentication as part of this documentation change.
+- Focus on owner records, identity verification, account relationships, and login integration. Wallet, budget, spending authorization, and provider execution are **out of scope for this initiative**; existing runtime safety controls remain unchanged.
+
+## Current Gate
+
+Inspect the repository and database for the minimal affected identity, authentication, and integration surfaces; then implement and verify the new system under separately scoped development authorization. No database migration, production change, or login replacement has been performed by this priority update.
+
+## Previous Initiative — Paused
+
+**SoloForge State Reset / Content Factory E2E Proof Preparation** is paused by the owner's newer priority decision. The historical sequence, rationale, and evidence below are retained for traceability and are not instructions to execute while Owner Identity V2 is active.
 
 ---
 
