@@ -1,13 +1,6 @@
 name: Build SoloForge Android APK
 
 on:
-  push:
-    branches:
-      - main
-      - feature/asset-forge-mvp
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/flutter-android-apk.yml'
   workflow_dispatch:
 
 jobs:
@@ -16,30 +9,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.0'
           channel: stable
           cache: true
-
       - name: Get dependencies
         working-directory: frontend
         run: flutter pub get
-
       - name: Regenerate launcher icons
         working-directory: frontend
         run: dart run flutter_launcher_icons
-
       - name: Analyze Dart code
         working-directory: frontend
         run: flutter analyze
-
       - name: Build release APK
         working-directory: frontend
         run: flutter build apk --release --dart-define=ASSET_FORGE_API_URL=https://soloforge-asset-forge.onrender.com
-
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
