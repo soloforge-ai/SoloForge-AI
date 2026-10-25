@@ -71,6 +71,23 @@ class SoloForgeSessionService {
     return {'Authorization': 'Bearer ${body['session_token']}'};
   }
 
+  /// Complete the V2 sign-in check without retaining an owner bearer.
+  /// A GitHub OAuth success alone never grants access to the app.
+  Future<bool> verifyOwnerV2() async {
+    final identity = _currentIdentity();
+    if (identity == null) return false;
+    final headers = await authorizationHeaders();
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/auth/soloforge/status'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 15));
+    if (_currentIdentity()?.userId != identity.userId) return false;
+    if (response.statusCode != 200) return false;
+    final body = jsonDecode(response.body);
+    return body is Map && body['authenticated'] == true &&
+        body['session_type'] == 'owner_v2';
+  }
+
   /// Remove any v1/v2 tokens left by older APKs; no new app token is stored.
   Future<void> clear() async {
     await _storage.delete(key: _legacySessionKey);
