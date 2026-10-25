@@ -1,7 +1,16 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+String ownerOAuthRedirectTo({required bool isWeb, required Uri currentUri}) {
+  if (!isWeb) return 'soloforge://oauth/supabase';
+  if (currentUri.scheme != 'https' && currentUri.scheme != 'http') {
+    throw ArgumentError('Web OAuth requires an HTTP(S) origin');
+  }
+  return currentUri.origin;
+}
 
 /// Identity-only UAT. Never exchanges an anonymous or unverified user for an
 /// owner-capable SoloForge backend session.
@@ -44,7 +53,7 @@ class _OwnerOAuthUatPageState extends State<OwnerOAuthUatPage> {
     try {
       final launched = await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.github,
-        redirectTo: 'soloforge://oauth/supabase',
+        redirectTo: ownerOAuthRedirectTo(isWeb: kIsWeb, currentUri: Uri.base),
         authScreenLaunchMode: LaunchMode.externalApplication,
       );
       if (mounted) {
