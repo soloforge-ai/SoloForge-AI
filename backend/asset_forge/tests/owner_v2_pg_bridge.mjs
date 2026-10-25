@@ -8,7 +8,9 @@ globalThis.fetch = () => { throw new Error('Network forbidden in offline tests')
 const { PGlite } = await import(pathToFileURL(process.env.OWNER_V2_TEST_PGLITE).href);
 const db = new PGlite();
 await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
-await db.exec(fs.readFileSync(process.argv[2], 'utf8'));
+for (const migration of process.argv.slice(2)) {
+  await db.exec(fs.readFileSync(migration, 'utf8'));
+}
 console.log(JSON.stringify({ready: true}));
 for await (const line of readline.createInterface({input: process.stdin})) {
   const {sql, params = [], role = 'postgres'} = JSON.parse(line);
