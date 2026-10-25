@@ -10,7 +10,7 @@ class OwnerV2LoginPage extends StatefulWidget {
 }
 
 class _OwnerV2LoginPageState extends State<OwnerV2LoginPage> {
-  final _email = TextEditingController(text: 'photonzz@hotmail.com');
+  final _email = TextEditingController();
   final _code = TextEditingController();
   OwnerV2Challenge? _challenge;
   bool _busy = false;
