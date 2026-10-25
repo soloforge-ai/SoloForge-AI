@@ -1,297 +1,37 @@
 # SoloForge AI Development Protocol
 
-Version: v2.0.0
+Version: v3.0.0
 
----
+## Purpose
+SoloForge AI is a single-owner product under active development. Optimize for completing useful, verified product work with minimal overhead. The owner makes product, architecture, priority and risk decisions; AI agents execute within explicitly authorized scope.
 
-# Purpose
+## Source of truth
+1. Explicit current owner instruction and task authorization.
+2. This protocol and `.ai/AI_RULES.md` for execution standards.
+3. `docs/CURRENT_SPRINT.md` — the **only current-work status and priority source**.
+4. `docs/ROADMAP.md` — longer-term direction, not automatic execution authorization.
+5. Source code and tests — evidence of implementation, not permission.
 
-This protocol defines the standard operating procedure for every AI assistant working on the SoloForge AI project.
+`.ai/AI_CONTEXT.md` is retired. Do not read it as required startup context, update it, or recreate a replacement status document. Historical task boards, checkpoints, PRs and generated scanner outputs are evidence only, never standing authorization.
 
-Its purpose is to ensure that every AI model follows the same workflow, engineering standards, and development process.
+## Build-to-completion workflow
+For an owner-approved task: inspect only relevant implementation and tests; reuse or repair existing components where practical; implement the end-to-end change; run proportionate offline tests; fix failures inside the approved scope; report the delivered outcome and genuine blockers. Do not insert repeated approval gates for ordinary decisions inside the same authorized action. Do not create process documents by default.
 
-This protocol is AI-agnostic and is designed to work with ChatGPT, Claude, Gemini, Codex, GitHub Copilot, Cursor, and future AI systems.
+Scope is defined primarily by the approved **objective and affected behavior**, not an arbitrary file-count ceiling. Agents may edit the files necessary to complete that objective, including related tests and documentation, while avoiding unrelated changes. Refactoring or replacing legacy architecture is permitted when necessary for the owner-approved outcome; explain meaningful tradeoffs. Stop for material scope expansion, irreversible consequences or newly discovered critical security risk.
 
----
+## Git and release authorization
+Work on a development branch, never commit directly to main. A Git operation is allowed only if explicitly authorized for the current task. When the owner authorizes a complete delivery sequence (edit, commit, push, PR and/or merge), carry out the authorized sequence without requesting redundant approvals, subject to successful verification and applicable repository protections. Do not infer authorization for omitted steps. A task-specific prohibition overrides general workflow language. Never bypass required GitHub checks or branch protections.
 
-# Scope
+Production deployments, production data changes, destructive operations, external publishing, worker enablement and live/billable provider calls require explicit action-specific authorization and applicable budget/security controls. A backup does not by itself authorize irreversible actions. Do not deploy merely because a PR was merged.
 
-This protocol applies to all development activities, including:
+## Security and verification
+Protect credentials and personal data. Preserve owner authorization, spending controls, idempotency and fail-closed behavior on sensitive paths. Use offline mocks/fakes for tests when feasible. Do not retry ambiguous external side effects. Distinguish local test evidence, CI and production proof. Do not claim success without verification.
 
-- Software development
-- Flutter development
-- Backend development
-- Python tools
-- Documentation
-- Project architecture
-- Refactoring
-- Bug fixing
-- Code review
+## Communication
+Lead with outcome. Keep reports concise: changed behavior/files, verification performed and results, remaining risks or blockers. Use PASS/FAIL/BLOCKED tables for requested audits rather than routine development updates. No new approval matrix or duplicated status documentation.
 
----
+## Recovery
+Use Git and the owner's backups for recovery. On interrupted work verify the actual branch and commit before resuming; reuse verified completed work instead of restarting. Owner decisions override stale checkpoints.
 
-# AI Role
-
-Every AI assistant acts as:
-
-- Senior Software Engineer
-- Flutter Developer
-- Software Architect
-- Technical Writer
-- Engineering Assistant
-
-The AI assists the project owner.
-
-The AI never replaces the project owner.
-
-Final decisions always belong to the project owner.
-
----
-
-# Startup Procedure
-
-Before performing any task:
-
-1. Read `.ai/AI_CONTEXT.md` for context.
-2. Read this protocol and `.ai/AI_RULES.md` for authorization and execution rules.
-3. Read `docs/CURRENT_SPRINT.md`. Read `docs/ROADMAP.md` when sequencing or longer-term direction is relevant.
-4. Apply the Priority Order below; reading order does not determine precedence.
-5. Identify the owner's requested task, affected files, exclusions, validation criteria, and permitted Git actions beyond routine task-scoped commits. Do not select a historical task automatically.
-6. If explicitly authorized to write, implement the smallest change inside the approved scope. Otherwise remain read-only.
-7. Report findings or changes, validation evidence, blockers, and the next safe action.
----
-
-# Priority Order
-
-This section defines the authoritative repository instruction precedence:
-
-1. Explicit owner instructions and task-specific authorization.
-2. `.ai/PROTOCOL.md`.
-3. `.ai/AI_RULES.md`.
-4. `docs/CURRENT_SPRINT.md`.
-5. `docs/ROADMAP.md`.
-6. `.ai/AI_CONTEXT.md`.
-7. Other documentation, role prompts, and task records.
-8. Existing source code and scanner-generated observations as evidence.
-The protocol and rules govern authorization and execution. The sprint and roadmap govern current product intent ahead of AI summaries. Other precedence lists must be interpreted consistently with this section.
-
-All non-conflicting constraints remain applicable. A lower-priority document cannot expand approved scope or authorize restricted Git actions, production access, publishing, worker enablement, or live provider/billable calls. General coding approval does not waive these restrictions; exceptions require explicit authorization for the specific action.
-
-Execute only the task explicitly requested or approved by the owner. Historical task records, roadmap milestones, and task-board entries are context, not standing authorization. Treat entries that conflict with the current sprint as superseded; report the discrepancy without executing or rewriting them. If the requested task or authorization remains ambiguous, stay read-only and ask the owner.
-
-Never invent missing rules.
----
-
-# Development Workflow
-
-Every task should follow this workflow.
-
-Understand
-
-↓
-
-Plan
-
-↓
-
-Analyze affected files
-
-↓
-
-Implement
-
-↓
-
-Review
-
-↓
-
-Document
-
-↓
-
-Complete
-
-Do not skip planning for large changes.
-
----
-
-# File Modification Policy
-
-Modify only the files required.
-
-Avoid unrelated changes.
-
-Avoid formatting-only commits.
-
-Avoid unnecessary refactoring.
-
-For an owner-approved task, use a **task-scoped change authorization** instead of a fixed three-file limit. Before writing, record the objective, approved paths/globs, exclusions, risk level, test plan, and any restricted Git actions. Routine commits on a separate development branch are included in approved file-edit work, after verifying the diff; no repeated commit approval is required. Push and PR creation require explicit approval. There is no automatic permission to edit all files: only the smallest necessary set inside the approved scope may change. If the task has no explicit write authorization, remain read-only. Stop and ask before touching paths outside scope, changing architecture, accessing production resources, or performing irreversible actions. See `.ai/AI_RULES.md`.
-
----
-
-# Autonomous Execution and Recovery Contract
-
-An autonomous task is allowed only when explicitly approved by the owner. Verify the current `main` SHA and repository state before creating a feature branch. Implement only within the approved task scope; routine commits on a separate branch are part of that approved development task and need no second approval. Never commit to `main`. Draft PR creation is permitted only when included in that task's authorized Git actions. Never merge, deploy, modify production databases, enable workers, or trigger live provider/billable side effects without a separate explicit authorization.
-
-Work in recoverable checkpoints: record base SHA, branch, latest commit SHA (when any), allowed changed paths, completed and pending steps, test commands/results, known blockers, and next safe action. An interrupted task must inspect its actual state before resuming; do not re-run ambiguous external side effects or assume prior steps succeeded.
-
-Before delivery, report PASS / FAIL / BLOCKED per check and distinguish tests run locally, CI results, and tests not run. Include changed paths, risk notes, and Draft PR URL if created. A successful commit is not proof of functional correctness. Require human review for advancing to merge or production.
-
----
-
-# Documentation Policy
-
-Human documentation:
-
-/docs
-
-AI documentation:
-
-/.ai
-
-Generated documentation:
-
-Only modify generated documents through approved tools.
-
-Do not duplicate information.
-
----
-
-# Communication Standard
-
-Responses should be:
-
-- concise
-- technically accurate
-- well structured
-- easy to review
-
-When returning code:
-
-1. List modified files.
-
-2. Explain changes.
-
-3. Explain why.
-
-4. Return complete implementations.
-
----
-
-# Decision Making
-
-When multiple valid solutions exist:
-
-Prefer
-
-- simplicity
-- maintainability
-- scalability
-- consistency
-
-Avoid unnecessary complexity.
-
----
-
-# Error Policy
-
-Never hide errors.
-
-Never ignore warnings.
-
-If assumptions are required:
-
-State them clearly.
-
-If project information is missing:
-
-Ask first.
-
----
-
-# Engineering Philosophy
-
-Prioritize
-
-Correctness
-
-↓
-
-Consistency
-
-↓
-
-Maintainability
-
-↓
-
-Scalability
-
-↓
-
-Performance
-
-Never sacrifice maintainability for short-term convenience.
-
----
-
-## Development Authorization and Checkpoint Recovery
-
-Approval to edit repository files includes checking the resulting diff and recording those authorized changes as conventional commits on a separate development branch. Do not ask for a second approval solely to commit the same approved changes. This does not authorize push, PR creation, merge, deploy, or any other separately restricted action. If the owner explicitly prohibits commits for a task, that restriction prevails.
-
-Owner-approved source edits, local file operations, and offline/mock tests may proceed within the exact approved paths, exclusions, and behavior without provider spending authorization. Such authorization does not unlock execution, publishing, or production. Do not request repeat approval for the same unfinished action unless scope, material risk, or a separately restricted operation changes; approval never extends to subsequent actions.
-
-Before resuming interrupted work, verify the latest relevant checkpoint against the current Git SHA, changed paths, test evidence, and environment. Reuse verified completed work when unchanged; do not repeat it without a documented reason. Report what changed, why, the observed verification result, remaining blockers, and the next exact action. Keep local, CI, and production evidence distinct.
-
-# Protocol Lifecycle
-
-Protocol Version
-
-Semantic Versioning
-
-Major
-
-Breaking workflow changes
-
-Minor
-
-New protocol features
-
-Patch
-
-Clarifications and corrections
-
-Protocol changes should be documented.
-
----
-
-# Completion Checklist
-
-Before considering a task complete:
-
-□ Requested task completed
-
-□ Existing behavior preserved
-
-□ No unnecessary modifications
-
-□ Documentation updated if required
-
-□ Code explained
-
-□ Architecture preserved
-
-□ Rules followed
-
----
-
-# Future Compatibility
-
-This protocol is intentionally independent of any specific AI model.
-
-Future AI systems should be able to adopt this protocol without modification.
-
----
-
-# End of Protocol
+## Completion
+A task is complete when the requested behavior is implemented and adequately verified, not merely when a patch or PR exists.
