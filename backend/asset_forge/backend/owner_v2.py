@@ -131,6 +131,21 @@ class OwnerV2:
         identity = self._identity(row)
         return {**identity, "session_token": session, "token_type": "Bearer", "expires_in": 3600}
 
+    def github_session(self, supabase_user_id: str) -> dict:
+        """Issue V2 bearer only for a verified Supabase owner account."""
+        require_enabled()
+        try:
+            user_id = str(UUID(supabase_user_id))
+        except (TypeError, ValueError, AttributeError):
+            raise Unauthorized("Invalid owner identity") from None
+        session = "sf_owner_v2_" + secrets.token_urlsafe(32)
+        row = self.call("github_session", {
+            "p_supabase_user_id": user_id,
+            "p_session_hash": digest(session),
+        })
+        identity = self._identity(row)
+        return {**identity, "session_token": session, "token_type": "Bearer", "expires_in": 3600}
+
     @staticmethod
     def _identity(row: object) -> dict:
         if row is None:
