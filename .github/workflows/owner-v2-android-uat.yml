@@ -1,0 +1,45 @@
+name: Owner V2 Android UAT APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - release/owner-v2-from-production-20261025
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/owner-v2-android-uat.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  android-uat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.41.2'
+          cache: true
+      - name: Flutter version
+        run: flutter --version
+      - name: Install dependencies
+        working-directory: frontend
+        run: flutter pub get
+      - name: Static analysis
+        working-directory: frontend
+        run: flutter analyze --no-fatal-infos
+      - name: Build debug APK for owner sign-in UAT
+        working-directory: frontend
+        run: flutter build apk --debug --dart-define=SOLOFORGE_OWNER_OAUTH_UAT=true
+      - name: Upload Android UAT APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: soloforge-owner-v2-android-uat
+          path: frontend/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
