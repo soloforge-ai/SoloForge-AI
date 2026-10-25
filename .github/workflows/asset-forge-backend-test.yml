@@ -46,6 +46,18 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r backend/asset_forge/requirements.txt pytest httpx
 
+      - name: Set up Node for Owner V2 SQL tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pinned Owner V2 SQL test dependency
+        run: |
+          npm install --prefix "$RUNNER_TEMP/owner-v2-sql-test" --no-audit --no-fund --ignore-scripts @electric-sql/pglite@0.3.14
+          pglite_module="$(realpath "$RUNNER_TEMP/owner-v2-sql-test/node_modules/@electric-sql/pglite/dist/index.js")"
+          test -f "$pglite_module"
+          echo "OWNER_V2_TEST_PGLITE=$pglite_module" >> "$GITHUB_ENV"
+
       - name: Compile backend Python
         run: |
           python -m compileall -q backend/asset_forge/main.py

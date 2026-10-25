@@ -10,11 +10,11 @@
 
 ## Current Implementation
 
-**Owner Identity V2: New Owner Registry and Authentication — not yet implemented**
+**Owner Identity V2: isolated Owner Registry and passwordless backend — implemented; offline verified; activation pending**
 
 ## Status
 
-**Approved direction / Implementation pending**. This document records the owner's active priority; it does not assert that a database, login flow, migration, or production deployment already exists.
+The local implementation provides an additive migration, administrator-only bootstrap, independent email-code authentication, opaque V2 sessions and offline security tests. V2 defaults OFF. No production migration, owner seed, SMTP delivery, frontend login cutover or deployment has been performed. See `docs/OWNER_IDENTITY_V2.md` for the backend contract and verification limits.
 
 ## Source-of-Truth Date
 
@@ -31,7 +31,7 @@
 
 ## Current Gate
 
-Inspect the repository and database for the minimal affected identity, authentication, and integration surfaces; then implement and verify the new system under separately scoped development authorization. No database migration, production change, or login replacement has been performed by this priority update.
+Review the isolated backend patch and offline evidence. Before activation, separately authorize staging verification of database collisions/permissions, PostgREST RPC integration, native multi-connection contention and SMTP delivery. Canonical owner seed confirmation and frontend/API cutover remain pending; no production change or login replacement is authorized by this status update.
 
 ## Previous Initiative — Paused
 
