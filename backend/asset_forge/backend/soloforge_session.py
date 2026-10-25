@@ -111,8 +111,26 @@ def bearer_token(authorization: str | None) -> str | None:
 
 
 def require_soloforge_session(authorization: str | None) -> None:
-    if not validate_session_token(bearer_token(authorization)):
-        raise HTTPException(status_code=401, detail="SoloForge session required")
+    # V2 is the sole application identity authority when enabled.
+    # The legacy branch is retained only for deployments where V2 is OFF;
+    # it is never a fallback after V2 authentication fails.
+    from .owner_v2 import OwnerV2, Unauthorized, Unavailable, require_enabled
+
+    try:
+        require_enabled()
+    except Unavailable:
+        if os.getenv("OWNER_V2_AUTH_ENABLED", "").strip().lower() == "true":
+            raise HTTPException(status_code=503, detail="Owner V2 unavailable") from None
+        if not validate_session_token(bearer_token(authorization)):
+            raise HTTPException(status_code=401, detail="SoloForge session required")
+        return
+
+    try:
+        OwnerV2().authenticate(authorization)
+    except Unauthorized:
+        raise HTTPException(status_code=401, detail="Owner V2 session required") from None
+    except Unavailable:
+        raise HTTPException(status_code=503, detail="Owner V2 unavailable") from None
 
 
 def _supabase_owner_id(authorization: str | None) -> str | None:
@@ -161,6 +179,17 @@ def bootstrap_first_party_session(
     owner_id = _supabase_owner_id(authorization)
     if not owner_id:
         raise HTTPException(status_code=403, detail="SoloForge owner authorization required")
+    if os.getenv("OWNER_V2_AUTH_ENABLED", "").strip().lower() == "true":
+        from .owner_v2 import OwnerV2, Unauthorized, Unavailable
+        try:
+            result = OwnerV2().github_session(owner_id)
+        except Unauthorized:
+            raise HTTPException(status_code=403, detail="Verified V2 owner binding required") from None
+        except Unavailable:
+            raise HTTPException(status_code=503, detail="Owner V2 unavailable") from None
+        return {"session_token": result["session_token"], "expires_in": result["expires_in"],
+                "expires_at": int(time.time()) + result["expires_in"],
+                "session_type": "owner_v2", "identity_provider": "supabase_github"}
     session = issue_session(owner_id)
     return {
         "session_token": session.session_id,
@@ -186,6 +215,17 @@ def refresh_soloforge_session(
     owner_id = _supabase_owner_id(authorization)
     if not owner_id:
         raise HTTPException(status_code=403, detail="SoloForge owner authorization required")
+    if os.getenv("OWNER_V2_AUTH_ENABLED", "").strip().lower() == "true":
+        from .owner_v2 import OwnerV2, Unauthorized, Unavailable
+        try:
+            result = OwnerV2().github_session(owner_id)
+        except Unauthorized:
+            raise HTTPException(status_code=403, detail="Verified V2 owner binding required") from None
+        except Unavailable:
+            raise HTTPException(status_code=503, detail="Owner V2 unavailable") from None
+        return {"session_token": result["session_token"], "expires_in": result["expires_in"],
+                "expires_at": int(time.time()) + result["expires_in"],
+                "session_type": "owner_v2", "identity_provider": "supabase_github"}
     session = issue_session(owner_id)
     return {
         "session_token": session.session_id,
@@ -198,6 +238,15 @@ def refresh_soloforge_session(
 def soloforge_session_status(
     authorization: str | None = Header(default=None),
 ) -> dict[str, object]:
+    if os.getenv("OWNER_V2_AUTH_ENABLED", "").strip().lower() == "true":
+        from .owner_v2 import OwnerV2, Unauthorized, Unavailable
+        try:
+            identity = OwnerV2().authenticate(authorization)
+        except Unauthorized:
+            return {"authenticated": False, "session_type": "owner_v2"}
+        except Unavailable:
+            raise HTTPException(status_code=503, detail="Owner V2 unavailable") from None
+        return {"authenticated": bool(identity["authenticated"]), "session_type": "owner_v2"}
     return {
         "authenticated": validate_session_token(bearer_token(authorization)),
         "session_type": "soloforge",
