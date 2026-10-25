@@ -1,3 +1,12 @@
+> **Document Status: UNUSE**
+> **Decision:** Retired as a source for current project status and work priorities. Retained for historical reference only; do not use for current planning or execution authorization.
+> **Decision Date:** 2026-10-25
+> **Reason:** Avoid duplicate or conflicting project status sources.
+> **Current Status Reference:** `docs/CURRENT_SPRINT.md` (sole source of truth for current-work status).
+> **Retention:** Preserve original historical content below unchanged.
+
+---
+
 # Reading Time
 
 Estimated Reading Time
