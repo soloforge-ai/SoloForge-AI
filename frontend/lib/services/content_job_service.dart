@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import '../models/content_job.dart';
 import 'pollinations_session_service.dart';
 import 'soloforge_session_service.dart';
-import 'owner_v2_session_service.dart';
 
 class IdeaRecommendation {
   const IdeaRecommendation({
@@ -293,19 +292,17 @@ class ContentJobService {
       defaultValue: 'https://dhazxwfzaccrttckuylw.supabase.co',
     ),
   })  : _client = client ?? http.Client(),
-        _sessionService = sessionService;
+        _sessionService = sessionService ?? SoloForgeSessionService();
 
   final http.Client _client;
   final String storageOrigin;
-  final SoloForgeSessionService? _sessionService;
+  final SoloForgeSessionService _sessionService;
 
   String get _baseUrl =>
       assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
 
   Future<Map<String, String>> _headers({bool json = false}) async {
-    final headers = _sessionService != null
-        ? await _sessionService.authorizationHeaders()
-        : await OwnerV2SessionService.shared.authorizationHeaders();
+    final headers = await _sessionService.authorizationHeaders();
     if (json) {
       headers['Content-Type'] = 'application/json';
     }
