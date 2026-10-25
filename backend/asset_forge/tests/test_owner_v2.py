@@ -531,3 +531,27 @@ def test_v2_validation_handler_preserves_unrelated_routes():
     assert isinstance(result.json()["detail"], list)
     assert result.json()["detail"][0]["loc"] == ["body", "email"]
     assert "cache-control" not in result.headers
+
+
+
+def test_github_bridge_requires_verified_supabase_binding(setup):
+    db, mail, service, client = setup
+    supabase_id = "22222222-2222-4222-8222-222222222222"
+    db.query("update public.soloforge_owner_accounts set provider_account_id=$1 where provider='supabase'", [supabase_id])
+    with pytest.raises(auth.Unauthorized):
+        service.github_session(supabase_id)
+    assert db.query("select * from public.owner_v2_sessions") == []
+    db.query("""update public.soloforge_owner_accounts
+                set verification_status='verified', verified_at=clock_timestamp(),
+                    verification_evidence='offline independently verified owner'
+                where provider='supabase'""")
+    with pytest.raises(auth.Unauthorized):
+        service.github_session("33333333-3333-4333-8333-333333333333")
+    result = service.github_session(supabase_id)
+    assert result["session_token"].startswith("sf_owner_v2_")
+    assert service.authenticate("Bearer " + result["session_token"])["owner_id"] == OWNER
+    db.query("update public.soloforge_owners set status='disabled'")
+    with pytest.raises(auth.Unauthorized):
+        service.github_session(supabase_id)
+    with pytest.raises(auth.Unauthorized):
+        service.authenticate("Bearer " + result["session_token"])
