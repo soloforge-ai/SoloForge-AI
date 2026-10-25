@@ -25,6 +25,7 @@ from backend.pollinations_oauth_router import (
     router as pollinations_oauth_router,
 )
 from backend.soloforge_session import require_soloforge_session, router as soloforge_session_router
+from backend.owner_v2_router import router as owner_v2_router
 from backend.branding import stamp_image_bytes
 from backend.combined_telegram_webhook import router as idea_flow_webhook_router
 from backend.content_generation import content_worker_loop
@@ -53,6 +54,7 @@ app.add_middleware(
 
 app.include_router(pollinations_oauth_router)
 app.include_router(soloforge_session_router)
+app.include_router(owner_v2_router)
 app.include_router(idea_flow_webhook_router)
 app.include_router(prawtwan_chat_router)
 app.include_router(telegram_miniapp_router)
