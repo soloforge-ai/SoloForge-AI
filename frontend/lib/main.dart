@@ -1,14 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme/app_theme.dart';
 import 'pages/home_page.dart';
-import 'pages/owner_v2_login_page.dart';
-import 'services/owner_v2_session_service.dart';
+import 'pages/owner_oauth_uat_page.dart';
+import 'services/soloforge_session_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Other app features still depend on the Supabase client for data access.
-  // This does not authenticate the owner or authorize API calls.
   await Supabase.initialize(
     url: const String.fromEnvironment('SUPABASE_URL',
         defaultValue: 'https://dhazxwfzaccrttckuylw.supabase.co'),
@@ -20,46 +20,94 @@ Future<void> main() async {
 
 class SoloForgeApp extends StatelessWidget {
   const SoloForgeApp({super.key});
+
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    debugShowCheckedModeBanner: false,
-    title: 'SoloForge AI',
-    theme: SoloForgeTheme.dark(),
-    home: const OwnerAppGate(),
-  );
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'SoloForge AI',
+      theme: SoloForgeTheme.dark(),
+      home: const bool.fromEnvironment('SOLOFORGE_OWNER_OAUTH_UAT')
+          ? const OwnerOAuthUatPage()
+          : const OwnerAppGate(),
+    );
+  }
 }
 
 class OwnerAppGate extends StatefulWidget {
   const OwnerAppGate({super.key});
+
   @override
   State<OwnerAppGate> createState() => _OwnerAppGateState();
 }
 
 class _OwnerAppGateState extends State<OwnerAppGate> {
-  final OwnerV2SessionService _session = OwnerV2SessionService.shared;
-  bool _authenticated = false;
+  final SoloForgeSessionService _sessions = SoloForgeSessionService();
+  StreamSubscription<AuthState>? _subscription;
+  bool _authorized = false;
+  bool _checking = true;
+  String? _ownerError;
+  int _checkGeneration = 0;
 
   @override
-  Widget build(BuildContext context) => _authenticated
-      ? Scaffold(
-          body: const HomePage(),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () async {
-              try {
-                await _session.logout();
-              } catch (_) {
-                // Local session was already cleared; never keep owner access open.
-              }
-              if (mounted) setState(() => _authenticated = false);
-            },
-            icon: const Icon(Icons.logout),
-            label: const Text('Owner logout'),
-          ),
-        )
-      : OwnerV2LoginPage(
-          session: _session,
-          onAuthenticated: () {
-            if (mounted) setState(() => _authenticated = true);
-          },
-        );
+  void initState() {
+    super.initState();
+    _subscription = Supabase.instance.client.auth.onAuthStateChange.listen((_) {
+      _checkOwner();
+    });
+    _checkOwner();
+  }
+
+  Future<void> _checkOwner() async {
+    if (!mounted) return;
+    final generation = ++_checkGeneration;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null || Supabase.instance.client.auth.currentSession == null) {
+      await _sessions.clear();
+      if (mounted && generation == _checkGeneration) {
+        setState(() { _checking = false; _authorized = false; });
+      }
+      return;
+    }
+    setState(() { _checking = true; _authorized = false; });
+    var authorized = false;
+    String? error;
+    try {
+      await _sessions.authorizationHeaders();
+      authorized = Supabase.instance.client.auth.currentUser?.id == userId &&
+          Supabase.instance.client.auth.currentSession != null;
+    } on SoloForgeSessionException catch (exc) {
+      error = exc.message;
+    } catch (_) {
+      error = 'Cannot connect to SoloForge. Please retry.';
+    }
+    if (mounted && generation == _checkGeneration) {
+      setState(() {
+        _checking = false;
+        _authorized = authorized;
+        _ownerError = error;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    _sessions.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_checking) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    return _authorized
+        ? const HomePage()
+        : OwnerOAuthUatPage(
+            identityOnly: false,
+            onRetry: _checkOwner,
+            ownerAccessMessage: _ownerError,
+          );
+  }
 }
