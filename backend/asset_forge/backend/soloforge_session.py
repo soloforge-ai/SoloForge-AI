@@ -188,6 +188,7 @@ def bootstrap_first_party_session(
         except Unavailable:
             raise HTTPException(status_code=503, detail="Owner V2 unavailable") from None
         return {"session_token": result["session_token"], "expires_in": result["expires_in"],
+                "expires_at": int(time.time()) + result["expires_in"],
                 "session_type": "owner_v2", "identity_provider": "supabase_github"}
     session = issue_session(owner_id)
     return {
@@ -223,6 +224,7 @@ def refresh_soloforge_session(
         except Unavailable:
             raise HTTPException(status_code=503, detail="Owner V2 unavailable") from None
         return {"session_token": result["session_token"], "expires_in": result["expires_in"],
+                "expires_at": int(time.time()) + result["expires_in"],
                 "session_type": "owner_v2", "identity_provider": "supabase_github"}
     session = issue_session(owner_id)
     return {
@@ -236,6 +238,15 @@ def refresh_soloforge_session(
 def soloforge_session_status(
     authorization: str | None = Header(default=None),
 ) -> dict[str, object]:
+    if os.getenv("OWNER_V2_AUTH_ENABLED", "").strip().lower() == "true":
+        from .owner_v2 import OwnerV2, Unauthorized, Unavailable
+        try:
+            identity = OwnerV2().authenticate(authorization)
+        except Unauthorized:
+            return {"authenticated": False, "session_type": "owner_v2"}
+        except Unavailable:
+            raise HTTPException(status_code=503, detail="Owner V2 unavailable") from None
+        return {"authenticated": bool(identity["authenticated"]), "session_type": "owner_v2"}
     return {
         "authenticated": validate_session_token(bearer_token(authorization)),
         "session_type": "soloforge",
