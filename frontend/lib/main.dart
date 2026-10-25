@@ -36,14 +36,8 @@ class OwnerAppGate extends StatefulWidget {
 }
 
 class _OwnerAppGateState extends State<OwnerAppGate> {
-  final OwnerV2SessionService _session = OwnerV2SessionService();
+  final OwnerV2SessionService _session = OwnerV2SessionService.shared;
   bool _authenticated = false;
-
-  @override
-  void dispose() {
-    _session.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) => _authenticated
