@@ -19,6 +19,7 @@ class OwnerV2Challenge {
 /// V2 authentication never exchanges or trusts a legacy Supabase OAuth session.
 /// Secrets are held only in memory and discarded on logout or app restart.
 class OwnerV2SessionService {
+  static final OwnerV2SessionService shared = OwnerV2SessionService();
   OwnerV2SessionService({http.Client? client, String? baseUrl})
       : _client = client ?? http.Client(),
         _baseUrl = (baseUrl ?? assetForgeApiUrl).replaceFirst(RegExp(r'/$'), '');
