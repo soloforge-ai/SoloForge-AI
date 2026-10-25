@@ -111,8 +111,26 @@ def bearer_token(authorization: str | None) -> str | None:
 
 
 def require_soloforge_session(authorization: str | None) -> None:
-    if not validate_session_token(bearer_token(authorization)):
-        raise HTTPException(status_code=401, detail="SoloForge session required")
+    # V2 is the sole application identity authority when enabled.
+    # The legacy branch is retained only for deployments where V2 is OFF;
+    # it is never a fallback after V2 authentication fails.
+    from .owner_v2 import OwnerV2, Unauthorized, Unavailable, require_enabled
+
+    try:
+        require_enabled()
+    except Unavailable:
+        if os.getenv("OWNER_V2_AUTH_ENABLED", "").strip().lower() == "true":
+            raise HTTPException(status_code=503, detail="Owner V2 unavailable") from None
+        if not validate_session_token(bearer_token(authorization)):
+            raise HTTPException(status_code=401, detail="SoloForge session required")
+        return
+
+    try:
+        OwnerV2().authenticate(authorization)
+    except Unauthorized:
+        raise HTTPException(status_code=401, detail="Owner V2 session required") from None
+    except Unavailable:
+        raise HTTPException(status_code=503, detail="Owner V2 unavailable") from None
 
 
 def _supabase_owner_id(authorization: str | None) -> str | None:
