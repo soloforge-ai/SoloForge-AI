@@ -73,9 +73,10 @@ class _OwnerAppGateState extends State<OwnerAppGate> {
     var authorized = false;
     String? error;
     try {
-      await _sessions.authorizationHeaders();
-      authorized = Supabase.instance.client.auth.currentUser?.id == userId &&
+      authorized = await _sessions.verifyOwnerV2() &&
+          Supabase.instance.client.auth.currentUser?.id == userId &&
           Supabase.instance.client.auth.currentSession != null;
+      if (!authorized) error = 'Owner V2 session is not active. Please retry.';
     } on SoloForgeSessionException catch (exc) {
       error = exc.message;
     } catch (_) {
