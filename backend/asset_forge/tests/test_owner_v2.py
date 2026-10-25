@@ -46,7 +46,8 @@ def database():
     if not module or not Path(module).is_file():
         pytest.fail("Set OWNER_V2_TEST_PGLITE to installed @electric-sql/pglite@0.3.14 dist/index.js")
     migration = ROOT / "supabase/migrations/20261024151629_owner_identity_v2.sql"
-    with subprocess.Popen(["node", str(Path(__file__).with_name("owner_v2_pg_bridge.mjs")), str(migration)],
+    github_bridge = ROOT / "supabase/migrations/20261025152000_owner_v2_github_bridge.sql"
+    with subprocess.Popen(["node", str(Path(__file__).with_name("owner_v2_pg_bridge.mjs")), str(migration), str(github_bridge)],
                           stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1) as process:
         assert json.loads(process.stdout.readline()) == {"ready": True}
         yield Database(process)
