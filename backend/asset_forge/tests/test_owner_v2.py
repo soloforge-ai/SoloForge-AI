@@ -531,3 +531,94 @@ def test_v2_validation_handler_preserves_unrelated_routes():
     assert isinstance(result.json()["detail"], list)
     assert result.json()["detail"][0]["loc"] == ["body", "email"]
     assert "cache-control" not in result.headers
+
+
+def test_application_guard_revalidates_v2_without_legacy_fallback(setup, monkeypatch):
+    from backend.asset_forge.backend import soloforge_session as legacy
+    db, mail, service, client = setup
+    token = login(setup)
+    monkeypatch.setattr(auth, 'OwnerV2', lambda: service)
+    # Legacy validation must never participate in V2 authentication.
+    monkeypatch.setattr(legacy, 'validate_session_token', lambda _: pytest.fail('legacy fallback'))
+    legacy.require_soloforge_session(f'Bearer {token}')
+    service.logout(f'Bearer {token}')
+    with pytest.raises(Exception) as rejected:
+        legacy.require_soloforge_session(f'Bearer {token}')
+    assert rejected.value.status_code == 401
+    with pytest.raises(Exception) as malformed:
+        legacy.require_soloforge_session('Bearer sf_owner_v2_invalid')
+    assert malformed.value.status_code == 401
+
+
+def test_application_guard_v2_disabled_and_infra_fail_closed(setup, monkeypatch):
+    from backend.asset_forge.backend import soloforge_session as legacy
+    service = setup[2]
+    token = login(setup)
+    monkeypatch.setattr(auth, 'OwnerV2', lambda: service)
+    monkeypatch.setenv('OWNER_V2_AUTH_ENABLED', 'false')
+    with pytest.raises(Exception) as disabled:
+        legacy.require_soloforge_session(f'Bearer {token}')
+    assert disabled.value.status_code == 503
+    monkeypatch.setenv('OWNER_V2_AUTH_ENABLED', 'true')
+    def unavailable(*args):
+        raise auth.Unavailable('private infrastructure detail')
+    monkeypatch.setattr(service, 'call', unavailable)
+    with pytest.raises(Exception) as failed:
+        legacy.require_soloforge_session(f'Bearer {token}')
+    assert failed.value.status_code == 503
+    assert 'private' not in failed.value.detail
+
+
+def test_v2_login_to_protected_http_then_revocation(setup, monkeypatch):
+    from backend.asset_forge.backend import soloforge_session as legacy
+    from fastapi import Header
+    service = setup[2]
+    monkeypatch.setattr(auth, 'OwnerV2', lambda: service)
+    app = FastAPI()
+    app.include_router(routes.router)
+    @app.get('/protected')
+    def protected(authorization: str | None = Header(default=None)):
+        legacy.require_soloforge_session(authorization)
+        return {'ok': True}
+    token = login(setup)
+    headers = {'Authorization': f'Bearer {token}'}
+    with TestClient(app) as client:
+        assert client.get('/protected', headers=headers).status_code == 200
+        assert client.get('/protected').status_code == 401
+        assert client.post('/auth/owner-v2/logout', headers=headers).status_code == 204
+        assert client.get('/protected', headers=headers).status_code == 401
+
+
+def test_v2_real_content_api_read_and_execution_denial(setup, monkeypatch):
+    from backend.asset_forge import main
+    from backend import owner_v2 as runtime_auth, content_jobs_api as jobs
+    service = setup[2]
+    runtime_service = runtime_auth.OwnerV2(setup[0].call, lambda: setup[1])
+    monkeypatch.setattr(runtime_auth, 'OwnerV2', lambda: runtime_service)
+    calls = []
+    def fake_db(method, path, **kwargs):
+        assert method == 'GET'
+        calls.append(path)
+        return [{'id': 'offline-job', 'status': 'APPROVED'}]
+    monkeypatch.setattr(jobs, '_supabase_request', fake_db)
+    token = login(setup)
+    headers = {'Authorization': f'Bearer {token}'}
+    # Do not enter application lifespan: no worker startup is needed.
+    client = TestClient(main.app)
+    assert client.get('/v1/content-jobs', headers=headers).status_code == 200
+    reads = len(calls)
+    assert reads == 1
+    assert client.post('/v1/content-jobs/offline-job/continue', headers=headers).status_code == 503
+    assert len(calls) == reads + 1  # existing row read, no mutation
+    reads = len(calls)
+    service.logout(f'Bearer {token}')
+    assert client.get('/v1/content-jobs', headers=headers).status_code == 401
+    assert len(calls) == reads
+
+
+def test_v2_bearer_never_forwarded_to_legacy_auth_provider(monkeypatch):
+    from backend.asset_forge.backend import soloforge_session as legacy
+    monkeypatch.setenv('SUPABASE_URL', 'https://never-call.invalid')
+    monkeypatch.setenv('SUPABASE_PUBLISHABLE_KEY', 'fixture')
+    monkeypatch.setattr(legacy.urllib.request, 'urlopen', lambda *a, **k: pytest.fail('V2 token leaked'))
+    assert legacy._supabase_owner_id('Bearer sf_owner_v2_' + 'a' * 43) is None

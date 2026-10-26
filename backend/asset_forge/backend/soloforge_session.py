@@ -111,7 +111,19 @@ def bearer_token(authorization: str | None) -> str | None:
 
 
 def require_soloforge_session(authorization: str | None) -> None:
-    if not validate_session_token(bearer_token(authorization)):
+    token = bearer_token(authorization)
+    if token and token.startswith("sf_owner_v2_"):
+        # V2 is never exchanged for a legacy bearer: registry revocation and
+        # status/epoch checks remain authoritative on every protected request.
+        from .owner_v2 import OwnerV2, Unauthorized, Unavailable
+        try:
+            OwnerV2().authenticate(f"Bearer {token}")
+        except Unauthorized:
+            raise HTTPException(401, "SoloForge session required") from None
+        except Unavailable:
+            raise HTTPException(503, "Owner V2 is unavailable") from None
+        return
+    if not validate_session_token(token):
         raise HTTPException(status_code=401, detail="SoloForge session required")
 
 
@@ -121,7 +133,7 @@ def _supabase_owner_id(authorization: str | None) -> str | None:
     token = bearer_token(authorization)
     base_url = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
     publishable_key = os.getenv("SUPABASE_PUBLISHABLE_KEY", "").strip()
-    if not token or not base_url or not publishable_key:
+    if not token or token.startswith("sf_owner_v2_") or not base_url or not publishable_key:
         return None
     request = urllib.request.Request(
         f"{base_url}/auth/v1/user",

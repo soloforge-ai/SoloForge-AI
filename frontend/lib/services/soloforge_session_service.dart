@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'pollinations_session_service.dart';
+import 'owner_v2_session_service.dart';
 
 class SoloForgeSessionException implements Exception {
   const SoloForgeSessionException(this.message);
@@ -15,21 +16,26 @@ class SoloForgeSessionException implements Exception {
 
 typedef OwnerIdentity = ({String userId, String accessToken});
 
-/// Requests a short-lived backend session for the current GitHub identity.
-/// No app bearer is cached, so an account switch cannot reuse an owner's token.
+/// Selects the opt-in V2 authority or the retained GitHub bootstrap.
+/// A V2 failure never falls back to a legacy bearer.
 class SoloForgeSessionService {
   SoloForgeSessionService({
     http.Client? client,
     FlutterSecureStorage? storage,
     OwnerIdentity? Function()? currentIdentity,
-  })  : _client = client ?? http.Client(),
-        _storage = storage ?? const FlutterSecureStorage(),
-        _currentIdentity = currentIdentity ?? _supabaseIdentity;
+    OwnerV2SessionService? ownerV2Session,
+    this.useOwnerV2 = ownerV2Enabled,
+  }) : _ownerV2 = ownerV2Session ?? OwnerV2SessionService.shared,
+       _client = client ?? http.Client(),
+       _storage = storage ?? const FlutterSecureStorage(),
+       _currentIdentity = currentIdentity ?? _supabaseIdentity;
 
   static const _legacySessionKey = 'soloforge_session_token';
   static const _legacyExpiresAtKey = 'soloforge_session_expires_at';
   static const _legacyOwnerKey = 'soloforge_session_owner_user_id';
 
+  final OwnerV2SessionService _ownerV2;
+  final bool useOwnerV2;
   final http.Client _client;
   final FlutterSecureStorage _storage;
   final OwnerIdentity? Function() _currentIdentity;
@@ -42,9 +48,17 @@ class SoloForgeSessionService {
     return (userId: userId, accessToken: session.accessToken);
   }
 
-  String get _baseUrl => assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
+  String get _baseUrl =>
+      assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
 
   Future<Map<String, String>> authorizationHeaders() async {
+    if (useOwnerV2) {
+      try {
+        return await _ownerV2.authorizationHeaders();
+      } on OwnerV2Exception catch (error) {
+        throw SoloForgeSessionException(error.message);
+      }
+    }
     final identity = _currentIdentity();
     if (identity == null) {
       throw const SoloForgeSessionException('Sign in with GitHub to continue.');
@@ -56,7 +70,9 @@ class SoloForgeSessionService {
     // OAuth state can change while the request is in flight. Never return an
     // owner bearer to a different or signed-out account on the same device.
     if (_currentIdentity()?.userId != identity.userId) {
-      throw const SoloForgeSessionException('GitHub account changed. Please retry.');
+      throw const SoloForgeSessionException(
+        'GitHub account changed. Please retry.',
+      );
     }
     if (response.statusCode != 200) {
       throw const SoloForgeSessionException(
@@ -64,9 +80,12 @@ class SoloForgeSessionService {
       );
     }
     final body = jsonDecode(response.body);
-    if (body is! Map || body['session_token'] is! String ||
+    if (body is! Map ||
+        body['session_token'] is! String ||
         (body['session_token'] as String).isEmpty) {
-      throw const SoloForgeSessionException('Invalid SoloForge session response.');
+      throw const SoloForgeSessionException(
+        'Invalid SoloForge session response.',
+      );
     }
     return {'Authorization': 'Bearer ${body['session_token']}'};
   }
