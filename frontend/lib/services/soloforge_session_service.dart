@@ -108,6 +108,21 @@ class SoloForgeSessionService {
       if (!RegExp(r'^sf_owner_v2_[A-Za-z0-9_-]{43}
   }
 
+  /// Revoke only the app's V2 bearer. GitHub OAuth remains connected.
+  Future<void> logoutV2() async {
+    final token = _v2Token;
+    _v2Token = null;
+    _v2UserId = null;
+    if (token == null) return;
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/auth/owner-v2/logout'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode != 204) {
+      throw const SoloForgeSessionException('Server logout could not be confirmed.');
+    }
+  }
+
   /// Remove any v1/v2 tokens left by older APKs; no new app token is stored.
   Future<void> clear() async {
     await _storage.delete(key: _legacySessionKey);
