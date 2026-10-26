@@ -133,11 +133,7 @@ class _OwnerAppGateState extends State<OwnerAppGate> {
     }
     return _authorized
         ? ownerV2Enabled
-            ? Scaffold(body: Column(children: [
-                SafeArea(child: Align(alignment: Alignment.centerRight,
-                  child: TextButton(onPressed: _logoutV2, child: const Text('Sign out')))),
-                const Expanded(child: HomePage()),
-              ]))
+            ? HomePage(onSignOut: _logoutV2)
             : const HomePage()
         : OwnerOAuthUatPage(
             identityOnly: false,
