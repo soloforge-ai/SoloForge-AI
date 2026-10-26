@@ -8,11 +8,25 @@ SoloForge AI is a single-owner product under active development. Optimize for co
 ## Source of truth
 1. Explicit current owner instruction and task authorization.
 2. This protocol and `.ai/AI_RULES.md` for execution standards.
-3. `docs/CURRENT_SPRINT.md` — the **only current-work status and priority source**.
+3. `docs/CURRENT_SPRINT.md` — the human-maintained current-work priority, scope and owner-decision source; operational status requires live evidence reconciliation.
 4. `docs/ROADMAP.md` — longer-term direction, not automatic execution authorization.
 5. Source code and tests — evidence of implementation, not permission.
 
 `.ai/AI_CONTEXT.md` is retired. Do not read it as required startup context, update it, or recreate a replacement status document. Historical task boards, checkpoints, PRs and generated scanner outputs are evidence only, never standing authorization.
+
+## Live state reconciliation
+Before planning, resuming or reporting implementation status, reconcile relevant, current evidence from GitHub, CI, Supabase, Render and other affected systems. Inspect only what is necessary for the task, using read-only checks unless writes are separately authorized.
+
+`docs/CURRENT_SPRINT.md` is human-maintained and authoritative for owner-directed priorities, scope and decisions, but it is not automatic or conclusive evidence of implementation, migration, deployment or runtime state.
+
+- Distinguish `NOT IMPLEMENTED`, `NOT VERIFIED`, `NOT DEPLOYED` and `UNKNOWN`. Missing verification is not proof that implementation is missing.
+- Verify relevant commits/merged PRs, tests, database migrations, deployment versions and runtime configuration before declaring work incomplete. Cite the environment and evidence actually checked.
+- Reuse verified completed work. Never rebuild, duplicate or reopen work solely because a document has not been updated.
+- If documentation conflicts with current verified evidence, report `DOCUMENTATION DRIFT`; preserve owner decisions and do not silently rewrite them.
+- If access or evidence is unavailable, state the precise verification limitation rather than declaring the entire initiative blocked.
+- Update `CURRENT_SPRINT.md` only within an authorized write scope; never let automated status sync override owner priorities or decisions.
+
+**Operational state is established by current evidence; authorization and priority are established by owner decisions.**
 
 ## Build-to-completion workflow
 For an owner-approved task: inspect only relevant implementation and tests; reuse or repair existing components where practical; implement the end-to-end change; run proportionate offline tests; fix failures inside the approved scope; report the delivered outcome and genuine blockers. Do not insert repeated approval gates for ordinary decisions inside the same authorized action. Do not create process documents by default.
