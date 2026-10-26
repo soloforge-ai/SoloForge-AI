@@ -24,8 +24,7 @@ class SoloForgeSessionService {
     FlutterSecureStorage? storage,
     OwnerIdentity? Function()? currentIdentity,
     this.useOwnerV2 = ownerV2Enabled,
-  }) : _ownerV2 = ownerV2Session ?? OwnerV2SessionService.shared,
-       _client = client ?? http.Client(),
+  }) : _client = client ?? http.Client(),
        _storage = storage ?? const FlutterSecureStorage(),
        _currentIdentity = currentIdentity ?? _supabaseIdentity;
 
