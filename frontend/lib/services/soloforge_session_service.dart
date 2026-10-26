@@ -23,7 +23,6 @@ class SoloForgeSessionService {
     http.Client? client,
     FlutterSecureStorage? storage,
     OwnerIdentity? Function()? currentIdentity,
-    OwnerV2SessionService? ownerV2Session,
     this.useOwnerV2 = ownerV2Enabled,
   }) : _ownerV2 = ownerV2Session ?? OwnerV2SessionService.shared,
        _client = client ?? http.Client(),
@@ -34,7 +33,6 @@ class SoloForgeSessionService {
   static const _legacyExpiresAtKey = 'soloforge_session_expires_at';
   static const _legacyOwnerKey = 'soloforge_session_owner_user_id';
 
-  final OwnerV2SessionService _ownerV2;
   static String? _v2Token;
   static String? _v2UserId;
   final bool useOwnerV2;
