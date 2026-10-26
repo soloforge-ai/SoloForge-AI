@@ -11,6 +11,7 @@ import 'analytics_page.dart';
 import 'asset_forge_page.dart';
 import 'content_job_page.dart';
 import 'settings_page.dart';
+import 'pollinations_account_inspect_page.dart';
 import 'prawtwan_chat_page.dart';
 import '../services/prawtwan_oauth_return.dart';
 
@@ -509,6 +510,16 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('SoloForge AI'),
         actions: [
+          IconButton(
+            tooltip: 'Inspect Pollinations Account',
+            icon: const Icon(Icons.manage_search),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const PollinationsAccountInspectPage(),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: 'Refresh',
             icon: const Icon(Icons.refresh),
