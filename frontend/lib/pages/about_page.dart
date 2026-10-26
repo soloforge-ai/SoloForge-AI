@@ -99,7 +99,7 @@ class AboutPage extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 12),
-                        const Text('Commit: ' + String.fromEnvironment('SOLOFORGE_COMMIT_SHA', defaultValue: 'local build')),
+                        const Text('Commit: ${String.fromEnvironment('SOLOFORGE_COMMIT_SHA', defaultValue: 'local build')}'),
                         const SizedBox(height: 12),
                         const Text('• Owner V2 GitHub sign-in'),
                         const Text('• Sign out in Settings'),
