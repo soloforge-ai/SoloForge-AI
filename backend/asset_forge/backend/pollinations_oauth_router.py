@@ -510,28 +510,6 @@ def pollinations_sk_preflight(
     return {"state": result.state.value, "reason": result.reason, "can_reuse": False}
 
 
-def _verified_pollinations_session_for_owner(session_id: str) -> bool:
-    """A session ID alone is not ownership proof; legacy NULL bindings fail closed."""
-    from backend.soloforge_session import _owner_user_id
-    if not session_id or _supabase_config() is None:
-        return False
-    encoded = urllib.parse.quote(session_id, safe="")
-    try:
-        raw = _supabase_request(
-            "GET",
-            f"pollinations_sessions?session_id=eq.{encoded}&select=owner_user_id&limit=1",
-        )
-        rows = json.loads(raw.decode("utf-8")) if raw else []
-    except (RuntimeError, ValueError, UnicodeError, TypeError):
-        return False
-    return (
-        isinstance(rows, list) and len(rows) == 1
-        and isinstance(rows[0], dict)
-        and bool(_owner_user_id())
-        and rows[0].get("owner_user_id") == _owner_user_id()
-    )
-
-
 @router.get("/account/inspect")
 def pollinations_account_inspect(
     authorization: str | None = Header(default=None),
@@ -542,8 +520,8 @@ def pollinations_account_inspect(
     from backend.pollinations_account_inspect import inspect_account
 
     require_soloforge_session(authorization)
-    if not pollinations_session or not _verified_pollinations_session_for_owner(pollinations_session):
-        raise HTTPException(status_code=403, detail="Pollinations session ownership unverified.")
+    if not pollinations_session:
+        raise HTTPException(status_code=401, detail="Pollinations session required.")
     session = _get_session(pollinations_session)
     if session is None:
         raise HTTPException(status_code=404, detail="Pollinations session unavailable.")
