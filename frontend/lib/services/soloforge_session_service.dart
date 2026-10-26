@@ -142,27 +142,3 @@ class SoloForgeSessionService {
     _client.close();
   }
 }
-).hasMatch(token) ||
-          body['identity_version'] != 'owner_v2' ||
-          body['authenticated'] != true) {
-        throw const SoloForgeSessionException('Invalid Owner V2 identity response.');
-      }
-    }
-    if (useOwnerV2) {
-      _v2Token = body['session_token'] as String;
-      _v2UserId = identity.userId;
-    }
-    return {'Authorization': 'Bearer ${body['session_token']}'};
-  }
-
-  /// Remove any v1/v2 tokens left by older APKs; no new app token is stored.
-  Future<void> clear() async {
-    await _storage.delete(key: _legacySessionKey);
-    await _storage.delete(key: _legacyExpiresAtKey);
-    await _storage.delete(key: _legacyOwnerKey);
-  }
-
-  void dispose() {
-    _client.close();
-  }
-}
