@@ -1,6 +1,6 @@
 # Owner Identity V2 — local backend implementation
 
-Status: implemented and tested offline; not migrated, seeded, deployed or enabled.
+Status: backend and opt-in frontend/API integration implemented locally; not migrated, seeded, deployed or enabled.
 Source baseline: `bfccddf219e71e46cd3b35b252e2a0ee6d022077`.
 Owner decision baseline: 24 October 2026, Bootstrap Once → Verify on Login.
 
@@ -11,8 +11,9 @@ The V2 registry is a new authority. The only reused runtime component is
 No legacy tables, provider bindings, Auth users, trusted-binding configuration,
 legacy signing keys or sessions participate in V2 authentication. No runtime
 dependencies were added. Existing login, workers, generation, wallet/budget and
-publishing controls are unchanged. V2 tokens are intentionally unusable by legacy
-API guards. Adapting dependent APIs or building the frontend is a separate task.
+publishing controls are unchanged. The shared API guard accepts V2 bearers only after current registry/session validation.
+Legacy signed tokens remain supported during transition; V2 rejection never falls back
+to legacy identity or exchanges a V2 bearer for a legacy token.
 
 All 10 source SQL files and Python V2 name references were inspected for name
 collisions. No matching V2 tables/functions were found in this source snapshot.
@@ -149,7 +150,7 @@ regression tests use their own mocks. No real workers/providers are invoked.
 Limitations: PGlite's bridge serializes queries; parallel redemption tests prove
 single-consumption across repeated requests but not native PostgreSQL multi-connection
 lock contention. Supabase/PostgREST grants and RPC mapping need staging verification,
-as do live SMTP deliverability, ingress limits, frontend login and production cutover.
+as do live SMTP deliverability, ingress limits, device/browser E2E and production cutover.
 Do not infer production readiness from offline results. Existing FastAPI lifecycle
 and Starlette/httpx deprecation warnings are recorded, not repaired in this patch.
 
@@ -160,3 +161,33 @@ push, PR, merge, deploy, production/DB mutation, worker enablement or live provi
 execution was authorized. Review this patch before any subsequent action. The
 decision document's older read-only gate is superseded only for this explicitly
 requested local implementation; it remains in force for production activation.
+
+## Local frontend/API integration (current main baseline)
+
+Baseline: `36621e15e0eab19de72ae8d5a7b679299421ead7` (merged backend).
+The opt-in Flutter build define `SOLOFORGE_OWNER_V2=true` selects the independent
+email/code login and shared memory-only session service. Default builds retain
+the GitHub gate. `SOLOFORGE_OWNER_OAUTH_UAT` remains legacy identity-only UAT.
+V2 builds skip Supabase Auth initialization unless explicitly running that UAT.
+No production/build configuration was enabled by this patch.
+
+The login UI requests a code, presents a generic delivery message, verifies the
+full 43-character code, and unlocks Home. Proofs are discarded before redemption;
+ambiguous failures require a fresh request and are never retried automatically.
+Tokens are shared only within the app process, never persisted or placed in URLs.
+Restart requires email login again. Session validation runs before content API
+requests and on app resume; a local one-hour timer also removes stale UI access.
+Logout removes local access immediately and calls server revocation once. If the
+response is lost, the UI reports that revocation is unconfirmed; there is no retry.
+
+The existing content service reuses `SoloForgeSessionService.authorizationHeaders`;
+in V2 builds it delegates to the V2 service, without GitHub bootstrap fallback.
+The backend shared guard independently validates every protected request against
+V2 session status/expiry/revocation/owner epoch. V2 bearer tokens are rejected before
+legacy bootstrap/refresh can forward them to Supabase Auth. Existing execution,
+wallet/budget, provider, and publishing policy remains independently enforced.
+Neither authentication nor this UI grants execution/spending consent.
+
+Local validation uses the existing seccomp runner and actual in-memory migration/RPCs,
+plus frontend MockClient/widget tests. Live PostgREST, native multi-connection SQL,
+SMTP and production/device cutover remain separate verification steps.
