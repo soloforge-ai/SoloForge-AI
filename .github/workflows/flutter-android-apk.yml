@@ -38,7 +38,7 @@ jobs:
 
       - name: Build release APK
         working-directory: frontend
-        run: flutter build apk --release --dart-define=ASSET_FORGE_API_URL=https://soloforge-asset-forge.onrender.com
+        run: flutter build apk --release --dart-define=ASSET_FORGE_API_URL=https://soloforge-asset-forge.onrender.com --dart-define=SOLOFORGE_OWNER_V2=true
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
