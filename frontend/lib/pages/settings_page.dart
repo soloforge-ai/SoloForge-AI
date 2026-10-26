@@ -4,7 +4,9 @@ import '../core/theme/app_theme.dart';
 import 'developer_page.dart';
 
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({super.key, this.onSignOut});
+
+  final Future<void> Function()? onSignOut;
 
   @override
   Widget build(BuildContext context) {
@@ -13,6 +15,24 @@ class SettingsPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          if (onSignOut != null) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('Account', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            Card(
+              margin: EdgeInsets.zero,
+              child: ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Sign out'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await onSignOut!();
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           Card(
             margin: EdgeInsets.zero,
             child: ListTile(

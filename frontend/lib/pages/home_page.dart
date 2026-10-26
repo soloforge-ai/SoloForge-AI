@@ -144,7 +144,9 @@ class JobQueuePresentation {
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.onSignOut});
+
+  final Future<void> Function()? onSignOut;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -528,7 +530,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const SettingsPage()),
+                MaterialPageRoute(builder: (_) => SettingsPage(onSignOut: widget.onSignOut)),
               );
             },
           ),
