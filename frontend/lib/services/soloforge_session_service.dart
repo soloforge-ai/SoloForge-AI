@@ -52,19 +52,12 @@ class SoloForgeSessionService {
       assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
 
   Future<Map<String, String>> authorizationHeaders() async {
-    if (useOwnerV2) {
-      try {
-        return await _ownerV2.authorizationHeaders();
-      } on OwnerV2Exception catch (error) {
-        throw SoloForgeSessionException(error.message);
-      }
-    }
     final identity = _currentIdentity();
     if (identity == null) {
       throw const SoloForgeSessionException('Sign in with GitHub to continue.');
     }
     final response = await _client.post(
-      Uri.parse('$_baseUrl/auth/soloforge/bootstrap'),
+      Uri.parse('$_baseUrl/auth/soloforge/${useOwnerV2 ? 'bootstrap-v2' : 'bootstrap'}'),
       headers: {'Authorization': 'Bearer ${identity.accessToken}'},
     );
     // OAuth state can change while the request is in flight. Never return an
@@ -86,6 +79,28 @@ class SoloForgeSessionService {
       throw const SoloForgeSessionException(
         'Invalid SoloForge session response.',
       );
+    }
+    if (useOwnerV2) {
+      final token = body['session_token'] as String;
+      if (!RegExp(r'^sf_owner_v2_[A-Za-z0-9_-]{43}
+  }
+
+  /// Remove any v1/v2 tokens left by older APKs; no new app token is stored.
+  Future<void> clear() async {
+    await _storage.delete(key: _legacySessionKey);
+    await _storage.delete(key: _legacyExpiresAtKey);
+    await _storage.delete(key: _legacyOwnerKey);
+  }
+
+  void dispose() {
+    _client.close();
+  }
+}
+).hasMatch(token) ||
+          body['identity_version'] != 'owner_v2' ||
+          body['authenticated'] != true) {
+        throw const SoloForgeSessionException('Invalid Owner V2 identity response.');
+      }
     }
     return {'Authorization': 'Bearer ${body['session_token']}'};
   }
