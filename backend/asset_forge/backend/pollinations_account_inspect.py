@@ -5,8 +5,10 @@ import urllib.error
 import urllib.request
 
 BASE = "https://enter.pollinations.ai"
-PATHS = {"identity": "/api/oauth/userinfo", "key": "/api/account/key",
-         "balance": "/api/account/balance", "usage": "/api/account/key/usage"}
+PATHS = {
+    "identity": "https://enter.pollinations.ai/api/oauth/userinfo",
+    "balance": "https://gen.pollinations.ai/account/balance",
+}
 SAFE = frozenset({"sub", "id", "keyId", "key_id", "type", "keyType", "key_type",
                   "status", "expiresAt", "expires_at", "scope", "scopes", "budget",
                   "remaining", "balance", "currency", "usage", "limit", "used",
@@ -30,7 +32,7 @@ def inspect_account(token: str) -> dict:
         return {"state": "UNKNOWN", "reason": "credential_invalid", "evidence": {}}
     evidence = {}
     for name, path in PATHS.items():
-        req = urllib.request.Request(BASE + path,
+        req = urllib.request.Request(path,
             headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
             method="GET")
         try:
@@ -38,9 +40,32 @@ def inspect_account(token: str) -> dict:
                 data = json.loads(response.read(32768).decode("utf-8"))
                 evidence[name] = {"http_status": response.status, "data": _safe(data)}
         except urllib.error.HTTPError as exc:
-            evidence[name] = {"http_status": exc.code, "data": None}
-        except (urllib.error.URLError, TimeoutError, OSError, ValueError, UnicodeError):
-            evidence[name] = {"http_status": None, "data": None}
+            status = exc.code
+            reason = (
+                "unauthorized" if status == 401 else
+                "forbidden" if status == 403 else
+                "endpoint_unavailable" if status == 404 else
+                "rate_limited" if status == 429 else
+                "provider_error" if status >= 500 else
+                "http_error"
+            )
+            evidence[name] = {
+                "http_status": status,
+                "reason": reason,
+                "data": None,
+            }
+        except (urllib.error.URLError, TimeoutError, OSError):
+            evidence[name] = {
+                "http_status": None,
+                "reason": "network_error",
+                "data": None,
+            }
+        except (ValueError, UnicodeError):
+            evidence[name] = {
+                "http_status": None,
+                "reason": "invalid_response",
+                "data": None,
+            }
     identity = evidence.get("identity", {}).get("data")
     subject = identity.get("sub") if isinstance(identity, dict) else None
     return {"state": "EVIDENCE_COLLECTED" if isinstance(subject, str) and subject else "UNKNOWN",
