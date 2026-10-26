@@ -4,6 +4,19 @@ Status: backend and opt-in frontend/API integration implemented locally; not mig
 Source baseline: `bfccddf219e71e46cd3b35b252e2a0ee6d022077`.
 Owner decision baseline: 24 October 2026, Bootstrap Once → Verify on Login.
 
+## Owner authentication decision — 2026-10-26
+
+**Owner decision (supersedes earlier email-first activation assumptions):**
+
+- **Primary login:** GitHub OAuth. Reuse the existing GitHub login path and Owner V2 GitHub bridge; do not build a parallel login system.
+- **Identity authority:** the isolated Owner Identity V2 Registry. A successful GitHub OAuth login alone is not proof of Owner identity; validate the verified Owner binding before issuing or accepting an Owner session.
+- **Email OTP:** implemented in source, but **not approved for activation**. Keep it disabled as an optional future channel unless the Owner explicitly authorizes it. SMTP provisioning and email-code delivery are not prerequisites for the GitHub-first rollout.
+- **Legacy login:** retain compatibility during the verified migration and cutover; never allow a failed V2 identity check to fall back to a legacy token.
+- **Security boundary:** authentication does not authorize wallet spending, generation, paid provider calls, workers or publishing.
+- **Activation and verification:** verify the GitHub account-to-Owner binding and end-to-end login/session/logout behavior before replacing the legacy path. Production deployment and configuration changes require their own authorized execution scope.
+
+This section records the Owner's intended configuration, **not** a claim that the GitHub-first cutover is already deployed or production E2E verified. Earlier sections below describe the implemented email-code path and historical development/test conditions; they do not override this decision.
+
 ## Boundaries and reuse
 
 The V2 registry is a new authority. The only reused runtime component is
