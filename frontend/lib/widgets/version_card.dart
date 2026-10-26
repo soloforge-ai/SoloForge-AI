@@ -84,7 +84,7 @@ class VersionCard extends StatelessWidget {
                   ),
                   SizedBox(width: 8),
                   Text(
-                    'Latest Version',
+                    'Installed Version',
                     style: TextStyle(
                       color: Colors.green,
                       fontWeight: FontWeight.bold,
