@@ -39,8 +39,13 @@ def normalize_email(value: str) -> str:
 
 
 def require_enabled() -> None:
-    if os.getenv("OWNER_V2_AUTH_ENABLED", "").strip().lower() != "true":
+    if not (os.getenv("OWNER_V2_AUTH_ENABLED", "").strip().lower() == "true" or os.getenv("OWNER_V2_GITHUB_ENABLED", "").strip().lower() == "true"):
         raise Unavailable("Owner V2 is unavailable")
+
+
+def require_email_enabled() -> None:
+    if os.getenv("OWNER_V2_AUTH_ENABLED", "").strip().lower() != "true":
+        raise Unavailable("Owner email sign-in is unavailable")
 
 
 def rpc(name: str, body: dict) -> object:
@@ -93,7 +98,7 @@ class OwnerV2:
         self.delivery_factory = delivery_factory
 
     def request(self, email: str) -> dict:
-        require_enabled()
+        require_email_enabled()
         email = normalize_email(email)
         delivery = self.delivery_factory()  # Validate settings before DB mutation.
         challenge_id = str(uuid4())
@@ -116,7 +121,7 @@ class OwnerV2:
                 "browser_proof": browser_proof, "expires_in": 600}
 
     def verify(self, challenge_id: str, browser_proof: str, code: str) -> dict:
-        require_enabled()
+        require_email_enabled()
         try:
             challenge_id = str(UUID(challenge_id))
         except (ValueError, TypeError, AttributeError):

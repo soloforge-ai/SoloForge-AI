@@ -23,10 +23,8 @@ class SoloForgeSessionService {
     http.Client? client,
     FlutterSecureStorage? storage,
     OwnerIdentity? Function()? currentIdentity,
-    OwnerV2SessionService? ownerV2Session,
     this.useOwnerV2 = ownerV2Enabled,
-  }) : _ownerV2 = ownerV2Session ?? OwnerV2SessionService.shared,
-       _client = client ?? http.Client(),
+  }) : _client = client ?? http.Client(),
        _storage = storage ?? const FlutterSecureStorage(),
        _currentIdentity = currentIdentity ?? _supabaseIdentity;
 
@@ -34,7 +32,8 @@ class SoloForgeSessionService {
   static const _legacyExpiresAtKey = 'soloforge_session_expires_at';
   static const _legacyOwnerKey = 'soloforge_session_owner_user_id';
 
-  final OwnerV2SessionService _ownerV2;
+  static String? _v2Token;
+  static String? _v2UserId;
   final bool useOwnerV2;
   final http.Client _client;
   final FlutterSecureStorage _storage;
@@ -52,19 +51,33 @@ class SoloForgeSessionService {
       assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
 
   Future<Map<String, String>> authorizationHeaders() async {
-    if (useOwnerV2) {
-      try {
-        return await _ownerV2.authorizationHeaders();
-      } on OwnerV2Exception catch (error) {
-        throw SoloForgeSessionException(error.message);
+    final identity = _currentIdentity();
+    if (useOwnerV2 && _v2Token != null) {
+      if (identity?.userId != _v2UserId) {
+        _v2Token = null;
+        _v2UserId = null;
+      } else {
+        final response = await _client.get(
+          Uri.parse('$_baseUrl/auth/owner-v2/session'),
+          headers: {'Authorization': 'Bearer $_v2Token'},
+        );
+        if (response.statusCode == 200) {
+          final body = jsonDecode(response.body);
+          if (body is Map && body['authenticated'] == true &&
+              body['identity_version'] == 'owner_v2') {
+            return {'Authorization': 'Bearer $_v2Token'};
+          }
+        }
+        _v2Token = null;
+        _v2UserId = null;
+        throw const SoloForgeSessionException('Owner V2 session expired. Sign in again.');
       }
     }
-    final identity = _currentIdentity();
     if (identity == null) {
       throw const SoloForgeSessionException('Sign in with GitHub to continue.');
     }
     final response = await _client.post(
-      Uri.parse('$_baseUrl/auth/soloforge/bootstrap'),
+      Uri.parse('$_baseUrl/auth/soloforge/${useOwnerV2 ? 'bootstrap-v2' : 'bootstrap'}'),
       headers: {'Authorization': 'Bearer ${identity.accessToken}'},
     );
     // OAuth state can change while the request is in flight. Never return an
@@ -87,7 +100,32 @@ class SoloForgeSessionService {
         'Invalid SoloForge session response.',
       );
     }
+    if (useOwnerV2) {
+      final token = body['session_token'] as String;
+      if (!RegExp(r'^sf_owner_v2_[A-Za-z0-9_-]{43}$').hasMatch(token) ||
+          body['identity_version'] != 'owner_v2' ||
+          body['authenticated'] != true) {
+        throw const SoloForgeSessionException('Invalid Owner V2 identity response.');
+      }
+      _v2Token = token;
+      _v2UserId = identity.userId;
+    }
     return {'Authorization': 'Bearer ${body['session_token']}'};
+  }
+
+  /// Revoke only the app's V2 bearer. GitHub OAuth remains connected.
+  Future<void> logoutV2() async {
+    final token = _v2Token;
+    _v2Token = null;
+    _v2UserId = null;
+    if (token == null) return;
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/auth/owner-v2/logout'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode != 204) {
+      throw const SoloForgeSessionException('Server logout could not be confirmed.');
+    }
   }
 
   /// Remove any v1/v2 tokens left by older APKs; no new app token is stored.

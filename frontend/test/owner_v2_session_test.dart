@@ -34,47 +34,43 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  test(
-    'content session bridge selects V2 and never falls back to GitHub',
-    () async {
-      var status = 200;
-      final v2 = OwnerV2SessionService(
-        client: MockClient((request) async {
-          if (request.url.path.endsWith('/request')) {
-            return response({
-              'challenge_id': 'id',
-              'browser_proof': proof,
-            }, 202);
-          }
-          if (request.url.path.endsWith('/verify')) {
-            return response({...identity, 'session_token': token});
-          }
+  test('GitHub bridge issues V2 bearer and rejects revoked sessions', () async {
+    var status = 200;
+    final paths = <String>[];
+    final bridge = SoloForgeSessionService(
+      useOwnerV2: true,
+      currentIdentity: () => (userId: 'verified-owner', accessToken: 'oauth'),
+      client: MockClient((request) async {
+        paths.add(request.url.path);
+        if (request.url.path.endsWith('/bootstrap-v2')) {
+          expect(request.headers['Authorization'], 'Bearer oauth');
+          return response({...identity, 'session_token': token});
+        }
+        if (request.url.path.endsWith('/session')) {
+          expect(request.headers['Authorization'], 'Bearer $token');
           return response(identity, status);
-        }),
-      );
-      final bridge = SoloForgeSessionService(
-        ownerV2Session: v2,
-        useOwnerV2: true,
-        currentIdentity: () =>
-            throw StateError('Legacy identity must not be read'),
-        client: MockClient(
-          (_) async => throw StateError('Legacy bootstrap forbidden'),
-        ),
-      );
-      await login(v2);
-      expect(await bridge.authorizationHeaders(), {
-        'Authorization': 'Bearer $token',
-      });
-      status = 401;
-      await expectLater(
-        bridge.authorizationHeaders(),
-        throwsA(isA<SoloForgeSessionException>()),
-      );
-      expect(v2.authenticated, isFalse);
-      bridge.dispose();
-      v2.dispose();
-    },
-  );
+        }
+        throw StateError('Unexpected legacy endpoint');
+      }),
+    );
+    expect(await bridge.authorizationHeaders(), {
+      'Authorization': 'Bearer $token',
+    });
+    expect(await bridge.authorizationHeaders(), {
+      'Authorization': 'Bearer $token',
+    });
+    status = 401;
+    await expectLater(
+      bridge.authorizationHeaders(),
+      throwsA(isA<SoloForgeSessionException>()),
+    );
+    expect(paths, [
+      '/auth/soloforge/bootstrap-v2',
+      '/auth/owner-v2/session',
+      '/auth/owner-v2/session',
+    ]);
+    bridge.dispose();
+  });
 
   test(
     'request, verify, session validation, logout; no secrets in URLs',
