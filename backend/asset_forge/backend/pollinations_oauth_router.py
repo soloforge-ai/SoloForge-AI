@@ -510,21 +510,68 @@ def pollinations_sk_preflight(
     return {"state": result.state.value, "reason": result.reason, "can_reuse": False}
 
 
+def _existing_pollinations_session(record_id: str | None) -> _OAuthSession:
+    """Retrieve an existing SK without sending it or a session token to the client.
+
+    Multiple unbound active records must never be selected arbitrarily.
+    """
+    from uuid import UUID
+    if _supabase_config() is None:
+        raise HTTPException(503, "Credential store unavailable.")
+    if record_id is not None:
+        try:
+            record_id = str(UUID(record_id))
+        except (ValueError, TypeError, AttributeError):
+            raise HTTPException(400, "Invalid credential record ID.") from None
+        filter_path = f"id=eq.{record_id}&"
+    else:
+        filter_path = ""
+    try:
+        raw = _supabase_request(
+            "GET", "pollinations_sessions?" + filter_path
+            + "expires_at=gt." + urllib.parse.quote(
+                datetime.now(tz=timezone.utc).isoformat(), safe=""
+            ) + "&select=id,access_token,expires_at,scope&order=updated_at.desc&limit=2",
+        )
+        rows = json.loads(raw.decode("utf-8")) if raw else []
+    except (RuntimeError, ValueError, UnicodeError, TypeError):
+        raise HTTPException(503, "Credential store unavailable.") from None
+    if not isinstance(rows, list):
+        raise HTTPException(503, "Credential store unavailable.")
+    if not rows:
+        raise HTTPException(404, "No active credential found.")
+    if len(rows) != 1:
+        raise HTTPException(409, "Multiple active credentials; select an existing record ID.")
+    row = rows[0]
+    if not isinstance(row, dict):
+        raise HTTPException(503, "Invalid credential record.")
+    try:
+        expiry = datetime.fromisoformat(str(row["expires_at"]).replace("Z", "+00:00")).timestamp()
+        token = row["access_token"]
+    except (KeyError, TypeError, ValueError):
+        raise HTTPException(503, "Invalid credential record.") from None
+    if not isinstance(token, str) or not token.startswith("sk_") or expiry <= time.time():
+        raise HTTPException(409, "Stored credential unavailable or expired.")
+    return _OAuthSession(token, expiry, str(row.get("scope") or ""))
+
+
 @router.get("/account/inspect")
 def pollinations_account_inspect(
     authorization: str | None = Header(default=None),
     pollinations_session: str | None = Header(default=None, alias="X-Pollinations-Session"),
+    credential_record_id: str | None = Query(default=None),
 ) -> dict[str, object]:
-    """Read-only evidence; no owner promotion, persistence, key creation or spending."""
+    """Read-only evidence from an existing stored SK; no owner promotion or spending."""
     from backend.soloforge_session import require_soloforge_session
     from backend.pollinations_account_inspect import inspect_account
 
     require_soloforge_session(authorization)
-    if not pollinations_session:
-        raise HTTPException(status_code=401, detail="Pollinations session required.")
-    session = _get_session(pollinations_session)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Pollinations session unavailable.")
+    if pollinations_session:
+        session = _get_session(pollinations_session)
+        if session is None:
+            raise HTTPException(status_code=404, detail="Pollinations session unavailable.")
+    else:
+        session = _existing_pollinations_session(credential_record_id)
     if session.expires_at <= time.time():
         return {"state": "UNKNOWN", "reason": "session_expired", "evidence": {}}
     return inspect_account(session.access_token)
