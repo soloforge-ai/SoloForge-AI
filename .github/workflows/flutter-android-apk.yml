@@ -36,9 +36,28 @@ jobs:
         working-directory: frontend
         run: flutter analyze
 
+      - name: Compute APK version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if (( GITHUB_RUN_ATTEMPT >= 100 )); then
+            echo 'Run attempt exceeds reserved build-number range' >&2
+            exit 1
+          fi
+          echo "build_number=$((10000 + GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))" >> "$GITHUB_OUTPUT"
+
       - name: Build release APK
         working-directory: frontend
-        run: flutter build apk --release --dart-define=ASSET_FORGE_API_URL=https://soloforge-asset-forge.onrender.com --dart-define=SOLOFORGE_OWNER_V2=true
+        run: >-
+          flutter build apk --release
+          --build-name=0.1.2
+          --build-number=${{ steps.version.outputs.build_number }}
+          --dart-define=SOLOFORGE_APP_VERSION=0.1.2
+          --dart-define=SOLOFORGE_BUILD_NUMBER=${{ steps.version.outputs.build_number }}
+          --dart-define=SOLOFORGE_COMMIT_SHA=${{ github.sha }}
+          --dart-define=ASSET_FORGE_API_URL=https://soloforge-asset-forge.onrender.com
+          --dart-define=SOLOFORGE_OWNER_V2=true
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
