@@ -482,6 +482,34 @@ def pollinations_status(
     }
 
 
+@router.get("/sk/preflight")
+def pollinations_sk_preflight(
+    authorization: str | None = Header(default=None),
+    pollinations_session: str | None = Header(default=None, alias="X-Pollinations-Session"),
+) -> dict[str, object]:
+    """Read-only owner-gated SK preflight; never creates or rotates a key.
+
+    No unverified Pollinations session may be promoted to owner binding.
+    """
+    from backend.soloforge_session import require_soloforge_session
+    from backend.pollinations_sk_lifecycle import SKState, inspect_sk
+
+    require_soloforge_session(authorization)
+    session = _get_session(pollinations_session)
+    if session is None:
+        return {"state": SKState.UNKNOWN.value, "reason": "session_unavailable", "can_reuse": False}
+
+    # Owner V2 provider binding is not yet activated. Never infer ownership
+    # from possession of the Pollinations session ID or user-provided subject.
+    result = inspect_sk(
+        token=session.access_token,
+        expires_at=session.expires_at,
+        expected_subject=None,
+        owner_authorized=False,
+    )
+    return {"state": result.state.value, "reason": result.reason, "can_reuse": False}
+
+
 @router.post("/logout")
 def pollinations_logout(
     session_id: str | None = Cookie(default=None, alias=_SESSION_COOKIE),
