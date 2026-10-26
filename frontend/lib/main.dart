@@ -13,8 +13,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (!ownerV2Enabled ||
-      const bool.fromEnvironment('SOLOFORGE_OWNER_OAUTH_UAT')) {
+  {
     await Supabase.initialize(
       url: const String.fromEnvironment(
         'SUPABASE_URL',
@@ -40,8 +39,6 @@ class SoloForgeApp extends StatelessWidget {
       theme: SoloForgeTheme.dark(),
       home: const bool.fromEnvironment('SOLOFORGE_OWNER_OAUTH_UAT')
           ? const OwnerOAuthUatPage()
-          : ownerV2Enabled
-          ? const OwnerV2AppGate()
           : const OwnerAppGate(),
     );
   }
