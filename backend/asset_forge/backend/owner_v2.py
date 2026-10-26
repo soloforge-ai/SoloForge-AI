@@ -39,7 +39,7 @@ def normalize_email(value: str) -> str:
 
 
 def require_enabled() -> None:
-    if os.getenv("OWNER_V2_AUTH_ENABLED", "").strip().lower() != "true":
+    if not (os.getenv("OWNER_V2_AUTH_ENABLED", "").strip().lower() == "true" or os.getenv("OWNER_V2_GITHUB_ENABLED", "").strip().lower() == "true"):
         raise Unavailable("Owner V2 is unavailable")
 
 
