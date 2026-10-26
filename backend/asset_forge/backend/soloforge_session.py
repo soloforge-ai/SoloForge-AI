@@ -182,6 +182,42 @@ def bootstrap_first_party_session(
     }
 
 
+@router.post("/bootstrap-v2")
+def bootstrap_owner_v2_github(
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    """Verified GitHub OAuth -> registry-bound, revocable V2 session.
+
+    Never exchange a legacy app token or trust client-supplied owner identifiers.
+    """
+    from .owner_v2 import OwnerV2, Unauthorized, Unavailable, digest, require_enabled, rpc
+
+    try:
+        require_enabled()
+    except Unavailable:
+        raise HTTPException(503, "Owner V2 is unavailable") from None
+    owner_id = _supabase_owner_id(authorization)
+    if not owner_id:
+        raise HTTPException(403, "SoloForge owner authorization required")
+    token = "sf_owner_v2_" + secrets.token_urlsafe(32)
+    try:
+        row = rpc("github_session", {
+            "p_supabase_user_id": owner_id,
+            "p_session_hash": digest(token),
+        })
+        identity = OwnerV2._identity(row)
+    except Unauthorized:
+        raise HTTPException(403, "SoloForge owner authorization required") from None
+    except Unavailable:
+        raise HTTPException(503, "Owner V2 is unavailable") from None
+    return {
+        **identity,
+        "session_token": token,
+        "token_type": "Bearer",
+        "expires_in": 3600,
+    }
+
+
 @router.post("/exchange")
 def exchange_legacy_session(
     authorization: str | None = Header(default=None),
