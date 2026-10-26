@@ -22,13 +22,26 @@ def test_unauthenticated_owner_never_loads_provider_session():
     assert exc.value.status_code == 401
     load.assert_not_called()
 
-def test_missing_pollinations_session_fails_closed():
+def test_no_session_uses_stored_credential():
+    stored = _OAuthSession(access_token="sk_stored", expires_at=9999999999, scope="profile usage")
     with patch("backend.soloforge_session.require_soloforge_session"), \
-         patch("backend.pollinations_oauth_router._get_session") as load:
+         patch("backend.pollinations_oauth_router._existing_pollinations_session", return_value=stored) as load, \
+         patch("backend.pollinations_account_inspect.inspect_account", return_value={"state": "EVIDENCE_COLLECTED"}) as inspect:
+        result = pollinations_account_inspect(
+            authorization="Bearer owner", pollinations_session=None, credential_record_id=None
+        )
+    load.assert_called_once_with(None)
+    inspect.assert_called_once_with("sk_stored")
+    assert result["state"] == "EVIDENCE_COLLECTED"
+
+def test_multiple_credentials_require_selection():
+    with patch("backend.soloforge_session.require_soloforge_session"), \
+         patch("backend.pollinations_oauth_router._existing_pollinations_session", side_effect=HTTPException(409)):
         with pytest.raises(HTTPException) as exc:
-            pollinations_account_inspect(authorization="Bearer owner", pollinations_session=None)
-    assert exc.value.status_code == 401
-    load.assert_not_called()
+            pollinations_account_inspect(
+                authorization="Bearer owner", pollinations_session=None, credential_record_id=None
+            )
+    assert exc.value.status_code == 409
 
 def test_unknown_pollinations_session_fails_closed():
     with patch("backend.soloforge_session.require_soloforge_session"), \
