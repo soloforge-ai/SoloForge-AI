@@ -108,6 +108,17 @@ class _OwnerAppGateState extends State<OwnerAppGate> {
     }
   }
 
+  Future<void> _logoutV2() async {
+    try {
+      await _sessions.logoutV2();
+    } on SoloForgeSessionException {
+      // Local access is cleared even when server revocation is ambiguous.
+    } finally {
+      await Supabase.instance.client.auth.signOut();
+      if (mounted) setState(() { _authorized = false; });
+    }
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();
@@ -121,7 +132,13 @@ class _OwnerAppGateState extends State<OwnerAppGate> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return _authorized
-        ? const HomePage()
+        ? ownerV2Enabled
+            ? Scaffold(body: Column(children: [
+                SafeArea(child: Align(alignment: Alignment.centerRight,
+                  child: TextButton(onPressed: _logoutV2, child: const Text('Sign out')))),
+                const Expanded(child: HomePage()),
+              ]))
+            : const HomePage()
         : OwnerOAuthUatPage(
             identityOnly: false,
             onRetry: _checkOwner,
