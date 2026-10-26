@@ -105,7 +105,15 @@ class SoloForgeSessionService {
     }
     if (useOwnerV2) {
       final token = body['session_token'] as String;
-      if (!RegExp(r'^sf_owner_v2_[A-Za-z0-9_-]{43}
+      if (!RegExp(r'^sf_owner_v2_[A-Za-z0-9_-]{43}$').hasMatch(token) ||
+          body['identity_version'] != 'owner_v2' ||
+          body['authenticated'] != true) {
+        throw const SoloForgeSessionException('Invalid Owner V2 identity response.');
+      }
+      _v2Token = token;
+      _v2UserId = identity.userId;
+    }
+    return {'Authorization': 'Bearer ${body['session_token']}'};
   }
 
   /// Revoke only the app's V2 bearer. GitHub OAuth remains connected.
