@@ -555,6 +555,34 @@ def _existing_pollinations_session(record_id: str | None) -> _OAuthSession:
     return _OAuthSession(token, expiry, str(row.get("scope") or ""))
 
 
+@router.get("/account/credentials")
+def pollinations_credential_choices(
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    """List only nonsecret metadata for active stored credentials."""
+    from backend.soloforge_session import require_soloforge_session
+
+    require_soloforge_session(authorization)
+    if _supabase_config() is None:
+        raise HTTPException(503, "Credential store unavailable.")
+    try:
+        raw = _supabase_request(
+            "GET", "pollinations_sessions?expires_at=gt."
+            + urllib.parse.quote(datetime.now(tz=timezone.utc).isoformat(), safe="")
+            + "&select=id,expires_at,scope,created_at&order=updated_at.desc&limit=50",
+        )
+        rows = json.loads(raw.decode("utf-8")) if raw else []
+    except (RuntimeError, ValueError, UnicodeError, TypeError):
+        raise HTTPException(503, "Credential store unavailable.") from None
+    if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
+        raise HTTPException(503, "Invalid credential list.")
+    return {"credentials": [
+        {"id": row.get("id"), "expires_at": row.get("expires_at"),
+         "scope": row.get("scope"), "created_at": row.get("created_at")}
+        for row in rows
+    ]}
+
+
 @router.get("/account/inspect")
 def pollinations_account_inspect(
     authorization: str | None = Header(default=None),
