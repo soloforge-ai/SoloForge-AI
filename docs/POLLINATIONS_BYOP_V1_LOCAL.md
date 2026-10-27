@@ -179,6 +179,12 @@ Both workflows now explicitly check out the PR head SHA. Backend `-rA` output
 makes the four actual HTTP E2E results visible without skipping or repeating tests.
 Final CI outcomes are reported in the Draft PR and delivery response, not inferred
 from the initial run. The existing manual-only S1 job remains manual-only.
+The next run passed Flutter analysis, all 105 Flutter tests and APK build/upload,
+while backend dependency installation remained in progress for over ten minutes
+before any tests. A CI-only repair bounds the backend job to 15 minutes, the
+FFmpeg dependency step to six minutes, and package-network waits/retries. Existing
+FFmpeg/ffprobe are reused only if both exist; both version checks and all tests
+remain mandatory. No test skip, provider call or production action is introduced.
 
 ## Exact changed files
 
