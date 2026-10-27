@@ -46,6 +46,13 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r backend/asset_forge/requirements.txt pytest httpx
 
+      - name: Install offline render test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version
+          ffprobe -version
+
       - name: Set up Node for Owner V2 SQL tests
         uses: actions/setup-node@v4
         with:

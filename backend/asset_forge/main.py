@@ -782,6 +782,13 @@ def generate_asset_pack(
     authorization: str | None = Header(default=None),
 ) -> AssetForgeResponse:
     access_token = get_pollinations_access_token_from_authorization(authorization)
+    return build_asset_pack(request, access_token=access_token)
+
+
+def build_asset_pack(
+    request: AssetForgeRequest, *, access_token: str | None,
+) -> AssetForgeResponse:
+    """Shared processing contract; a credential never replaces execution approval."""
     single = request.generation_layout == "single_character"
     if single and not access_token:
         raise HTTPException(status_code=401, detail="Connect Pollinations before single-character generation")
