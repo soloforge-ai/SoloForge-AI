@@ -1,5 +1,101 @@
 # BYOP V1 local application wiring — verification limited by sandbox
 
+## Local role/readiness and Developer Earnings follow-up (2026-10-27)
+
+Uncommitted follow-up based on `2f63dd570eb630958ea0a1169bc184412c96fac9`.
+No push, PR update, deployment, migration or live provider/OAuth call is authorized
+or performed in this follow-up. Earlier CI results below apply to that committed
+baseline, not to these new local changes.
+
+Owner V2 principals are eligible for a controlled pilot only. Active Members can
+still connect/verify/disconnect and manage their own records, but production Flow
+denies consent and execution before reservation; it checks the role again before
+dispatch. Owner eligibility never replaces trusted pricing, consent, budget,
+credential ownership or the existing hard execution lock. `/v1/byop/session`
+now reports this distinction and Flutter disables member spending actions.
+
+Trusted pricing must explicitly attest `includes_all_charges: true` before consent
+or reservation, including reuse of an older RESERVED execution. The amount is a
+maximum total inclusive of any applicable markup, not a base-only quote, confirmed
+charge or earnings. Missing/old/base-only quotes fail closed and need fresh consent.
+No provider price is invented; production pricing still returns 503. Flutter
+displays the server-quoted maximum when available and otherwise reports unknown.
+
+### Verified official provider contracts
+
+Sources pinned to Pollinations revision
+`5fe341f5690bb0c553c02ab77f35a9a762413fe3`, inspected 2026-10-27:
+
+- [Connect User Wallets](https://github.com/pollinations/pollinations/blob/5fe341f5690bb0c553c02ab77f35a9a762413fe3/BRING_YOUR_OWN_POLLEN.md):
+  publishable App Keys identify the OAuth client; PKCE issues a scoped user SK.
+  Developer earnings are opt-in with `earningsEnabled`, add 25% over base usage,
+  and credit the same Quest/Paid Pollen balance type used by the payer. OAuth
+  approval does not replace SoloForge's per-execution consent. There are no refresh
+  tokens; expired keys require reauthorization.
+- [Provider markup code](https://github.com/pollinations/pollinations/blob/5fe341f5690bb0c553c02ab77f35a9a762413fe3/shared/billing/markup.ts):
+  requires trusted `byop_client_key_id`, a valid/enabled publishable client,
+  `earningsEnabled`, and different payer/app-owner subjects. **App-owner self-use
+  does not earn developer markup.** A submitted personal SK does not establish
+  these conditions; never add an invented generation attribution header.
+- [App Lookup](https://github.com/pollinations/pollinations/blob/5fe341f5690bb0c553c02ab77f35a9a762413fe3/enter.pollinations.ai/src/routes/app-lookup.ts):
+  resolves the client ID, app owner, registered redirects and earnings setting.
+  Client identity is not inferred from a redirect hostname.
+- [API docs](https://github.com/pollinations/pollinations/blob/5fe341f5690bb0c553c02ab77f35a9a762413fe3/APIDOCS.md)
+  distinguish HTTP 402 account/key-budget exhaustion from HTTP 401 authentication.
+  No automatic quest redirect contract was verified.
+- [FAQ](https://github.com/pollinations/pollinations/blob/5fe341f5690bb0c553c02ab77f35a9a762413fe3/enter.pollinations.ai/POLLEN_FAQ.md)
+  explicitly links `https://enter.pollinations.ai/quests`. UI offers this official
+  destination as text; it never auto-navigates, claims a reward or retries a call.
+
+`pollinations_app_contract.py` prepares only an **offline** attributed authorization
+request using the existing PKCE URL builder and verified server-side App Lookup
+evidence for the intended client/developer/redirect. It performs no I/O and is not
+mounted as a new onboarding endpoint. Existing-SK readiness remains
+`UNVERIFIED_EXISTING_SK`, earnings eligibility/confirmation false, amounts unknown.
+No developer earnings ledger, wallet or alternate OAuth system was introduced.
+
+### Remaining blockers and verification scope
+
+Live earnings require a separately authorized App Key/OAuth onboarding integration
+that durably binds provider-issued SKs to the verified client, independent app-owner
+identity, current earnings setting and payer. Current records do not establish
+that evidence. App configuration alone is not a confirmed credit. Model pricing,
+key budget, native database/schema/Storage checks and charge/earnings reconciliation
+remain blocked; no balance fetch, earnings claim or spending unlock is added.
+
+The pre-existing owner/member lower-layer fixtures retain explicit future-member
+policy injection to exercise tenant isolation. New tests separately use the real
+default owner-only policy, including the actual application Flow construction and
+two member HTTP denial cases. The latter are collected only locally; HTTP tests
+must execute in a later authorized CI runtime. Flutter is unavailable locally.
+
+Final bounded, credential-cleared, seccomp network-denied results for this patch:
+**78 PASS** (BYOP component/repository/App Key contract suites, 22.63s), plus
+**19 PASS** (selected non-HTTP execution-policy/security regressions, 0.42s).
+No skip/deselection in these explicitly selected runs; three deprecation warnings
+per run. Six HTTP cases collect (0.27s), **NOT RUN**. Flutter analyzer/tests/build,
+including the new readiness service test, **NOT RUN** (SDK absent). Python AST,
+runtime imports/OpenAPI, and `git diff --check` are checked separately. The earlier
+737 backend / 105 Flutter CI passes are not evidence for this uncommitted patch.
+
+Changed files in this follow-up (relative to the committed delivery):
+
+- `backend/asset_forge/backend/byop_principal.py`
+- `backend/asset_forge/backend/byop_flow.py`
+- `backend/asset_forge/backend/byop_ledger.py`
+- `backend/asset_forge/backend/byop_router.py`
+- `backend/asset_forge/backend/pollinations_app_contract.py` (new)
+- `backend/asset_forge/tests/test_byop_repository.py`
+- `backend/asset_forge/tests/test_byop_v1.py`
+- `backend/asset_forge/tests/test_byop_http.py`
+- `backend/asset_forge/tests/test_pollinations_app_contract.py` (new)
+- `frontend/lib/services/byop_service.dart`
+- `frontend/lib/pages/byop_page.dart`
+- `frontend/test/byop_service_test.dart`
+- `docs/POLLINATIONS_BYOP_V1_LOCAL.md`
+
+The following sections describe the preserved earlier delivery and its history.
+
 Delivery branch: `feature/pollinations-byop-v1`; original worktree remains untouched.
 Integration base: `4bc9f8a179836fb04c4300a5c93ccb7c7ff6228c`.
 Draft delivery: https://github.com/soloforge-ai/SoloForge-AI/pull/212

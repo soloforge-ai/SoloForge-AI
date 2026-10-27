@@ -20,6 +20,12 @@ class Principal:
         return f"{self.kind}:{self.id}"
 
 
+def require_generation_role(principal: Principal) -> None:
+    """Pilot eligibility only; never replaces consent, pricing or execution locks."""
+    if principal.kind != "owner":
+        raise HTTPException(403, "Member generation is disabled pending separate authorization")
+
+
 def authenticate(authorization: str | None) -> Principal:
     token = bearer_token(authorization)
     if not token:

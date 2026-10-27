@@ -60,7 +60,7 @@ def ledger(pg):
         pg.query("insert into public.byop_ledgers(principal,state) values($1,$2)",
                  [p, json.dumps({"budget": 100, "settled": 0, "concurrency_limit": 1})])
     return spend.Ledger(Store(pg), lambda _: {"basis": "OFFLINE FIXTURE ONLY",
-                        "maximum_micro_pollen": 70, "expires_at": 1200}, lambda: 1000)
+                        "maximum_micro_pollen": 70, "includes_all_charges": True, "expires_at": 1200}, lambda: 1000)
 
 
 def consent(ledger, principal, snapshot=None):
@@ -321,7 +321,9 @@ def test_offline_connect_authorize_generate_review_render_disconnect(ledger, mon
                               "output_sha256": sha, "output_storage_path": f"{job['id']}/{sha}.mp4"})
         return job
 
-    flow = Flow(authenticate, repository, ledger, generate, render)
+    # Explicit offline future-member fixture; production policy is tested separately.
+    flow = Flow(authenticate, repository, ledger, generate, render,
+                generation_policy=lambda principal: None)
     auth = principal.key
     cid = flow.connect(auth, "sk_offline_member")["credential_id"]
     jid = flow.create_job(auth, {"character": "CEO", "generation_layout": "single_character",

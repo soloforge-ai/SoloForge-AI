@@ -2,8 +2,8 @@
 
 No environment credential fallback, worker dispatch, or publishing. The SQL
 adapter enforces tenant predicates and confirmed revocation. Production pricing
-and the separate live generation gate remain closed; offline tests substitute
-only provider/Auth/storage transports and the trusted pricing authority.
+and the separate live generation gate remain closed. Offline future-member
+fixtures explicitly inject a policy; production construction uses owner-only.
 """
 from copy import deepcopy
 import hashlib
@@ -14,12 +14,16 @@ from .asset_provider import require_ceo_asset_review, require_ceo_render_provena
 
 
 class Flow:
-    def __init__(self, authenticate, repository, ledger, generate, render):
+    def __init__(self, authenticate, repository, ledger, generate, render, *, generation_policy=None):
+        from .byop_principal import require_generation_role
         self.authenticate = authenticate
         self.repository = repository
         self.ledger = ledger
         self.generate = generate
         self.render = render
+        # Injected only by offline fixtures exercising future member isolation.
+        # Application construction always uses the server's Owner V2 pilot policy.
+        self.generation_policy = generation_policy or require_generation_role
 
     def credential(self, principal, credential_id):
         # Repository lookup must include the authenticated principal, not merely
@@ -86,17 +90,20 @@ class Flow:
 
     def authorize(self, authorization, credential_id, job_id, maximum, expires_at):
         principal = self.authenticate(authorization)
+        self.generation_policy(principal)
         snapshot = self.snapshot(principal, credential_id, job_id)
         return self.ledger.consent(principal.key, snapshot, maximum, expires_at)
 
     def execute(self, authorization, consent_id, execution_id):
         principal = self.authenticate(authorization)
+        self.generation_policy(principal)
         execution = self.ledger.reserve(principal.key, consent_id, execution_id)
         snapshot = execution["snapshot"]
         current = self.snapshot(principal, snapshot["credential_id"], snapshot["job_id"])
         credential = self.credential(principal, snapshot["credential_id"])
         if self.authenticate(authorization) != principal:
             raise HTTPException(403, "Application principal changed before dispatch")
+        self.generation_policy(principal)
         # Production adapter atomically locks membership, credential, job and
         # ledger and persists CALL_STARTED before any provider dispatch.
         self.repository.claim_execution(principal.key, execution_id, current, self.ledger)

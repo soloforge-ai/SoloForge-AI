@@ -11,6 +11,22 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
 
+  test('server readiness stays distinct from authenticated member access', () async {
+    final client = ByopService(member: true,
+      applicationAuthorization: () async => {'Authorization': 'Bearer member-fixture'},
+      client: MockClient((request) async => http.Response(jsonEncode({
+        'principal': 'member:fixture',
+        'readiness': {'pilot_role_eligible': false, 'generation_enabled': false,
+          'earnings': {'confirmed': false}, 'total_cost_micro_pollen': null},
+      }), 200)));
+    await client.headers();
+    expect(client.readiness['pilot_role_eligible'], isFalse);
+    expect(client.readiness['generation_enabled'], isFalse);
+    expect(client.readiness['total_cost_micro_pollen'], isNull);
+    expect((client.readiness['earnings'] as Map)['confirmed'], isFalse);
+    client.dispose();
+  });
+
   test('member request uses Supabase bearer and active principal, without owner bootstrap', () async {
     final calls = <String>[];
     final client = ByopService(member: true,

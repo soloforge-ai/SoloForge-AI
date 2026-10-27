@@ -29,6 +29,8 @@ class _ByopPageState extends State<ByopPage> {
   String? _notice;
   Map<String, dynamic>? _job;
   Map<String, dynamic>? _credential;
+  Map<String, dynamic> _readiness = {};
+  int? _quotedMaximum;
   List<Map<String, dynamic>> _credentials = [];
   Uint8List? _image;
   bool _displayed = false;
@@ -47,6 +49,7 @@ class _ByopPageState extends State<ByopPage> {
         setState(() {
           _userId = current; _principal = null; _image = null; _displayed = false;
           _job = null; _credential = null; _consent = null; _execution = null;
+          _readiness = {}; _quotedMaximum = null;
           _consentCredential = null; _credentials = []; _key.clear(); _jobId.clear(); _script.clear();
           _notice = 'Account changed. Reopen BYOP to validate access.';
         });
@@ -74,6 +77,7 @@ class _ByopPageState extends State<ByopPage> {
           _consent = null; _consentCredential = null; _execution = null; _confirmed = false;
         }
         _principal = principal; _credential = status;
+        _readiness = _service.readiness;
         _credentials = (list['credentials'] as List).cast<Map<String, dynamic>>();
       });
     }
@@ -113,6 +117,7 @@ class _ByopPageState extends State<ByopPage> {
   Widget build(BuildContext context) {
     final jobId = _job?['id'] as String?;
     final status = _job?['status'];
+    final pilotEligible = _readiness['pilot_role_eligible'] == true;
     return Scaffold(
       appBar: AppBar(title: Text(widget.member ? 'Member BYOP' : 'Owner BYOP')),
       body: ListView(padding: const EdgeInsets.all(20), children: [
@@ -121,6 +126,13 @@ class _ByopPageState extends State<ByopPage> {
         Text(_principal == null ? 'Application access not verified. Sign in using the existing GitHub flow first.' : 'Authenticated: $_principal'),
         OutlinedButton(onPressed: _busy ? null : () => _run(_connectApplication), child: const Text('Verify application access')),
         if (_principal != null) ...[
+          Text(_readiness['reason']?.toString() ?? 'Generation readiness unavailable; spending remains locked.'),
+          const Text('Live generation remains locked. Owner pilot eligibility is not spending permission.'),
+          Text('Developer earnings: ${(_readiness['earnings'] as Map?)?['status'] ?? 'unverified'}. No earnings confirmed.'),
+          const Text('Existing SKs do not prove App Key attribution. Eligible App Key traffic adds 25% to base usage; app-owner self-use is excluded.'),
+          const Text('Total cost: unavailable until a trusted server quote, including any applicable markup. No request will run without bounded consent.'),
+          const Text('For insufficient provider balance or key budget, use Pollinations’ official Quests dashboard. Rewards and eligibility are not guaranteed; a started call will not be retried.'),
+          const SelectableText('https://enter.pollinations.ai/quests'),
           Text('Selected credential: ${_credential?['credential_id'] ?? 'none'}\nStatus: ${_credential?['verification_status'] ?? 'not connected'}'),
           for (final choice in _credentials)
             OutlinedButton(onPressed: _busy || choice['disconnected'] == true ? null : () => _run(() async {
@@ -164,16 +176,21 @@ class _ByopPageState extends State<ByopPage> {
             const Text('A trusted server estimate is required. Spending stays blocked when pricing is unavailable.'),
             CheckboxListTile(value: _confirmed, onChanged: _busy ? null : (v) => setState(() => _confirmed = v ?? false),
                 title: const Text('Authorize only this job, my selected credential and maximum, expiring in five minutes.')),
-            FilledButton(onPressed: _busy || !_confirmed || _credential?['verification_status'] != 'VERIFIED' ? null : () => _run(() async {
+            FilledButton(onPressed: _busy || !pilotEligible || !_confirmed || _credential?['verification_status'] != 'VERIFIED' ? null : () => _run(() async {
               final id = await _service.connections.byopCredentialId(_principal!);
               if (id == null) throw const FormatException('Connect your own credential first.');
               final result = await _service.post('jobs/$jobId/consents', {'credential_id': id,
                 'maximum_micro_pollen': _maximumMicroPollen(),
                 'expires_at': DateTime.now().millisecondsSinceEpoch / 1000 + 300});
-              if (mounted) setState(() { _consent = result['consent_id'] as String; _consentCredential = id; _execution = ByopService.newExecutionId(); });
+              if (mounted) setState(() {
+                _consent = result['consent_id'] as String; _consentCredential = id; _execution = ByopService.newExecutionId();
+                _quotedMaximum = (result['quote'] as Map<String, dynamic>)['maximum_micro_pollen'] as int;
+              });
             }), child: const Text('Authorize bounded spending')),
+            if (_consent != null && _quotedMaximum != null)
+              Text('Server-quoted maximum total: ${(_quotedMaximum! / 1000000).toStringAsFixed(6)} Pollen. This is a bound, not a confirmed charge or earnings.'),
             if (_execution != null) SelectableText('Execution: $_execution'),
-            FilledButton(onPressed: _busy || _consent == null || _attempted ? null : () => _run(() async {
+            FilledButton(onPressed: _busy || !pilotEligible || _consent == null || _attempted ? null : () => _run(() async {
               if (await _service.connections.byopCredentialId(_principal!) != _consentCredential) {
                 throw const FormatException('Selected credential changed. Refresh and authorize again.');
               }

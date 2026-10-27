@@ -11,6 +11,7 @@ from .byop_repository import Repository
 from .byop_ledger import Ledger
 from .byop_flow import Flow
 from .byop_runtime import generate, render
+from .pollinations_app_contract import readiness
 
 router = APIRouter(prefix="/v1/byop", tags=["byop"], route_class=_PrivateRoute)
 
@@ -52,7 +53,8 @@ class Review(StrictBody):
 def session(authorization: str | None = Header(default=None), flow=Depends(get_flow)):
     principal = flow.authenticate(authorization)
     return {"authenticated": True, "principal": principal.key,
-            "membership_required": principal.kind == "member", "spending_authorized": False}
+            "membership_required": principal.kind == "member", "spending_authorized": False,
+            "readiness": readiness(principal)}
 
 
 @router.post("/credentials")

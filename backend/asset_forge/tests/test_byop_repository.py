@@ -127,8 +127,11 @@ def persistent(byop_db, monkeypatch):
         return master
     monkeypatch.setattr(forge,'_generate_sheet',provider)
     ledger=byop_ledger.Ledger(pricing=lambda _: {'basis':'OFFLINE FIXTURE, NOT PROVIDER PRICING',
-        'maximum_micro_pollen':70,'expires_at':time.time()+300})
-    flow=byop_flow.Flow(byop_principal.authenticate,repository.Repository(),ledger,byop_runtime.generate,byop_runtime.render)
+        'maximum_micro_pollen':70,'includes_all_charges':True,'expires_at':time.time()+300})
+    # Explicit offline future-member fixture: production Flow defaults to owner-only.
+    # Role-policy tests restore the real policy before invoking sensitive methods.
+    flow=byop_flow.Flow(byop_principal.authenticate,repository.Repository(),ledger,byop_runtime.generate,byop_runtime.render,
+                        generation_policy=lambda principal: None)
     return {'db':db,'flow':flow,'subjects':subjects,'calls':calls,'objects':objects}
 
 
@@ -244,7 +247,7 @@ def test_byop_started_crash_survives_repository_restart(persistent):
     execution=flow.ledger.reserve(PRINCIPALS[1],consent,eid)
     flow.repository.claim_execution(PRINCIPALS[1],eid,execution['snapshot'],flow.ledger)
     restarted=byop_flow.Flow(flow.authenticate,repository.Repository(),byop_ledger.Ledger(pricing=flow.ledger.pricing),
-                            flow.generate,flow.render)
+                            flow.generate,flow.render, generation_policy=flow.generation_policy)
     with pytest.raises(HTTPException):restarted.execute(header,consent,eid)
     _,state=restarted.ledger.store.read(PRINCIPALS[1])
     assert state['executions'][eid]['state']=='CALL_STARTED' and not persistent['calls']
@@ -366,3 +369,82 @@ def test_byop_sql_rejects_missing_snapshot_hash_before_call_started(persistent):
         persistent['db'].query('select public.byop_claim_execution($1,$2,null)',[PRINCIPALS[1],eid],'service_role')
     _,state=flow.ledger.store.read(PRINCIPALS[1])
     assert state['executions'][eid]['state']=='RESERVED' and not persistent['calls']
+
+
+@pytest.mark.parametrize('principal', PRINCIPALS)
+def test_byop_two_own_credentials_consent_a_dispatches_a(persistent, principal, monkeypatch):
+    from backend.byop_principal import require_generation_role
+    flow = persistent['flow']
+    header, a, job, consent = prepared(persistent, principal)
+    if principal.startswith('owner:'):
+        flow.generation_policy = require_generation_role
+    token_a = flow.repository.credential(principal, a)['token']
+    token_b = 'sk_' + str(uuid4())
+    persistent['subjects'][token_b] = flow.repository.expected_subject(principal)
+    b = flow.connect(header, token_b)['credential_id']
+    assert flow.verify(header, b)['verification_status'] == 'VERIFIED'
+    # UI can select/recover B, but /executions accepts consent/execution IDs only.
+    assert flow.repository.credential(principal, b)['token'] == token_b
+    monkeypatch.setenv('POLLINATIONS_API_KEY', 'sk_offline_forbidden_fallback')
+    eid = str(uuid4())
+    flow.execute(header, consent, eid)
+    assert persistent['calls'] == [token_a]
+    _, state = flow.ledger.store.read(principal)
+    assert state['executions'][eid]['snapshot']['credential_id'] == a
+    assert state['executions'][eid]['principal'] == principal
+
+
+@pytest.mark.parametrize('principal', PRINCIPALS[1:])
+def test_byop_production_role_denies_members_before_consent_or_reservation(persistent, principal):
+    from backend.byop_principal import require_generation_role
+    flow = persistent['flow']
+    header, cid, job, old_consent = prepared(persistent, principal)
+    flow.generation_policy = require_generation_role
+    before = flow.ledger.store.read(principal)
+    with pytest.raises(HTTPException) as exc:
+        flow.authorize(header, cid, job['id'], 80, time.time() + 60)
+    assert exc.value.status_code == 403
+    with pytest.raises(HTTPException) as exc:
+        flow.execute(header, old_consent, str(uuid4()))
+    assert exc.value.status_code == 403
+    assert flow.ledger.store.read(principal) == before
+    assert not persistent['calls']
+
+
+def test_byop_owner_role_never_replaces_consent_or_budget(persistent):
+    from backend.byop_principal import require_generation_role
+    flow = persistent['flow']
+    header, cid, job, consent = prepared(persistent, PRINCIPALS[0])
+    flow.generation_policy = require_generation_role
+    with pytest.raises(HTTPException):
+        flow.execute(header, str(uuid4()), str(uuid4()))
+    persistent['db'].query("update public.byop_ledgers set state=jsonb_set(state,'{budget}','0') where principal=$1", [PRINCIPALS[0]])
+    with pytest.raises(HTTPException):
+        flow.execute(header, consent, str(uuid4()))
+    assert not persistent['calls']
+
+
+@pytest.mark.parametrize('includes_all_charges', [None, False, 'true'])
+def test_byop_base_only_quote_cannot_authorize(persistent, includes_all_charges):
+    flow = persistent['flow']
+    header, cid, job, _ = prepared(persistent, PRINCIPALS[0])
+    flow.ledger.pricing = lambda _: {'basis': 'OFFLINE ONLY', 'maximum_micro_pollen': 70,
+        'expires_at': time.time() + 60, 'includes_all_charges': includes_all_charges}
+    with pytest.raises(HTTPException):
+        flow.authorize(header, cid, job['id'], 80, time.time() + 60)
+    assert not persistent['calls']
+
+
+@pytest.mark.parametrize('already_reserved', [False, True])
+def test_byop_old_consent_without_all_in_quote_cannot_reserve(persistent, already_reserved):
+    flow = persistent['flow']
+    header, _, _, consent = prepared(persistent, PRINCIPALS[0])
+    eid = str(uuid4())
+    if already_reserved:
+        flow.ledger.reserve(PRINCIPALS[0], consent, eid)
+    revision, state = flow.ledger.store.read(PRINCIPALS[0])
+    del state['consents'][consent]['quote']['includes_all_charges']
+    assert flow.ledger.store.cas(PRINCIPALS[0], revision, state)
+    with pytest.raises(HTTPException):
+        flow.execute(header, consent, eid)
+    assert not persistent['calls']

@@ -24,8 +24,29 @@ def http_client(persistent):
         yield client
 
 
+@pytest.mark.parametrize('principal', PRINCIPALS[1:])
+def test_byop_http_real_policy_denies_member_generation(persistent, http_client, principal):
+    from backend.byop_principal import require_generation_role
+    persistent['flow'].generation_policy = require_generation_role
+    headers = {'Authorization': auth(principal)}
+    session = http_client.get('/v1/byop/session', headers=headers)
+    assert session.status_code == 200
+    assert session.json()['readiness']['pilot_role_eligible'] is False
+    job = http_client.post('/v1/byop/jobs', headers=headers,
+                           json={'asset_forge_request': REQUEST}).json()
+    consent = http_client.post(f"/v1/byop/jobs/{job['id']}/consents", headers=headers,
+        json={'credential_id': str(uuid4()), 'maximum_micro_pollen': 80,
+              'expires_at': time.time() + 60})
+    assert consent.status_code == 403
+    execute = http_client.post('/v1/byop/executions', headers=headers,
+        json={'consent_id': str(uuid4()), 'execution_id': str(uuid4())})
+    assert execute.status_code == 403 and not persistent['calls']
+
+
 @pytest.mark.parametrize('principal', PRINCIPALS)
 def test_byop_http_owner_and_members_vertical_slice(persistent, http_client, principal, monkeypatch):
+    # Historical member vertical slices use the explicit future-member fixture
+    # policy. The test above checks today's real production denial policy.
     client = http_client
     headers = {'Authorization': auth(principal)}
     session = client.get('/v1/byop/session', headers=headers)

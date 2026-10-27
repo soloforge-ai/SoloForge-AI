@@ -63,6 +63,7 @@ class Ledger:
         quote = self.pricing(deepcopy(snapshot))
         if (not isinstance(quote, dict) or type(quote.get("maximum_micro_pollen")) is not int
                 or not 0 < quote["maximum_micro_pollen"] <= maximum
+                or quote.get("includes_all_charges") is not True
                 or not quote.get("basis") or quote.get("expires_at", 0) <= now):
             raise HTTPException(409, "Trusted pricing does not fit consent")
         consent_id = str(uuid4())
@@ -89,10 +90,17 @@ class Ledger:
                 current = executions[execution_id]
                 if current["consent_id"] != consent_id:
                     raise HTTPException(409, "Execution identifier already bound")
+                consent = state.get("consents", {}).get(consent_id) or {}
+                if (current["state"] == "RESERVED"
+                        and consent.get("quote", {}).get("includes_all_charges") is not True):
+                    raise HTTPException(409, "Trusted all-in pricing required; authorize again")
                 return deepcopy(current)
             consent = state.get("consents", {}).get(consent_id)
             if not consent or consent["used"] or consent["expires_at"] <= self.clock():
                 raise HTTPException(409, "Consent absent, expired or consumed")
+            # Old/base-only quotes cannot silently omit an App Key markup.
+            if consent.get("quote", {}).get("includes_all_charges") is not True:
+                raise HTTPException(409, "Trusted all-in pricing required; authorize again")
             active = [e for e in executions.values() if e["state"] in
                       {"RESERVED", "CALL_STARTED", "UNKNOWN", "GENERATED"}]
             reserved = sum(e["reserved"] for e in active)

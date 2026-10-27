@@ -28,6 +28,7 @@ class ByopService {
   final _owner = SoloForgeSessionService(useOwnerV2: true);
   late final PollinationsSessionService connections;
   String? principal;
+  Map<String, dynamic> readiness = {};
   String get _base => assetForgeApiUrl.replaceFirst(RegExp(r'/$'), '');
 
   Future<Map<String, String>> applicationHeaders() async {
@@ -54,6 +55,7 @@ class ByopService {
       throw const FormatException('Application identity changed. Reopen BYOP.');
     }
     principal = current;
+    readiness = (data['readiness'] as Map<String, dynamic>?) ?? {};
     return result;
   }
 
