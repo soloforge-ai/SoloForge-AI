@@ -110,13 +110,22 @@ void main() {
       final service = ReviewService();
       await tester.pumpWidget(MaterialApp(home: ContentJobPage(job: reviewJob(), service: service)));
       await tester.pump();
-      final approveButton = find.widgetWithText(FilledButton, 'Approve CEO image');
+      await tester.scrollUntilVisible(find.text('Approve CEO image'), 400,
+          scrollable: find.byType(Scrollable).first);
+      final approveButton = find.ancestor(
+        of: find.text('Approve CEO image'),
+        matching: find.byWidgetPredicate((widget) => widget is FilledButton),
+      );
       expect(tester.widget<FilledButton>(approveButton).onPressed, isNull);
       service.image.complete(png);
+      await tester.pump();
+      await tester.scrollUntilVisible(find.byType(Image), -400,
+          scrollable: find.byType(Scrollable).first);
       await tester.pumpAndSettle();
       expect((tester.widget<Image>(find.byType(Image)).image as MemoryImage).bytes, same(png));
       final action = find.text(approved ? 'Approve CEO image' : 'Reject CEO image');
-      await tester.ensureVisible(action);
+      await tester.scrollUntilVisible(action, 400,
+          scrollable: find.byType(Scrollable).first);
       await tester.tap(action);
       await tester.pumpAndSettle();
       expect(service.decisions, [approved]);
@@ -129,7 +138,8 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: ContentJobPage(job: reviewJob(ceo: false), service: service)));
     await tester.pumpAndSettle();
     final action = find.text('Approve');
-    await tester.ensureVisible(action);
+    await tester.scrollUntilVisible(action, 400,
+        scrollable: find.byType(Scrollable).first);
     await tester.tap(action);
     await tester.pumpAndSettle();
     expect(service.ordinaryApprovals, 1);
