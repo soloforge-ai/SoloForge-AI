@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'soloforge_session_service.dart';
+
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -29,9 +31,14 @@ class PollinationsSessionService {
     http.Client? client,
     FlutterSecureStorage? storage,
     AppLinks? appLinks,
+    Future<Map<String, String>> Function()? ownerAuthorization,
   }) : _client = client ?? http.Client(),
        _storage = storage ?? const FlutterSecureStorage(),
-       _appLinks = appLinks ?? AppLinks();
+       _appLinks = appLinks ?? AppLinks(),
+       _ownerAuthorization = ownerAuthorization,
+       _ownerSessions = ownerAuthorization == null
+           ? SoloForgeSessionService(useOwnerV2: true)
+           : null;
 
   static const _sessionKey = 'pollinations_session_token';
   static const _returnTo = 'soloforge://oauth/pollinations';
@@ -52,6 +59,11 @@ class PollinationsSessionService {
   final http.Client _client;
   final FlutterSecureStorage _storage;
   final AppLinks _appLinks;
+  final Future<Map<String, String>> Function()? _ownerAuthorization;
+  final SoloForgeSessionService? _ownerSessions;
+
+  Future<Map<String, String>> _ownerHeaders() =>
+      _ownerAuthorization?.call() ?? _ownerSessions!.authorizationHeaders();
   StreamSubscription<Uri>? _linkSubscription;
 
   String get _baseUrl =>
@@ -76,6 +88,7 @@ class PollinationsSessionService {
   Future<void> dispose() async {
     await _linkSubscription?.cancel();
     _client.close();
+    _ownerSessions?.dispose();
   }
 
   Future<void> connect() {
@@ -104,8 +117,22 @@ class PollinationsSessionService {
       queryParameters['return_to'] = _returnTo;
     }
 
-    final loginUri = Uri.parse('$_baseUrl/auth/pollinations/login')
-        .replace(queryParameters: queryParameters);
+    final ownerHeaders = await _ownerHeaders();
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/auth/pollinations/connect'),
+      headers: {...ownerHeaders, 'Content-Type': 'application/json'},
+      body: jsonEncode(queryParameters),
+    );
+    if (response.statusCode != 200) {
+      throw PollinationsSessionException(_errorMessage(response));
+    }
+    final path =
+        (jsonDecode(response.body) as Map<String, dynamic>)['launch_path']
+            as String;
+    if (!path.startsWith('/auth/pollinations/launch?ticket=')) {
+      throw const PollinationsSessionException('Invalid connection response.');
+    }
+    final loginUri = Uri.parse('$_baseUrl$path');
 
     final opened = await launchUrl(
       loginUri,
@@ -181,7 +208,7 @@ class PollinationsSessionService {
     );
     final response = await _client.post(
       exchangeUri,
-      headers: const {'Content-Type': 'application/json'},
+      headers: {...await _ownerHeaders(), 'Content-Type': 'application/json'},
       body: jsonEncode({'code': code}),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -214,11 +241,13 @@ class PollinationsSessionService {
 
     final response = await _client.get(
       Uri.parse('$_baseUrl/auth/pollinations/status'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {...await _ownerHeaders(), 'X-Pollinations-Session': token},
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       // A transient backend outage is not evidence that OAuth was revoked.
-      if (response.statusCode != 401 && response.statusCode != 403) {
+      if (response.statusCode != 401 &&
+          response.statusCode != 403 &&
+          response.statusCode != 404) {
         throw PollinationsSessionException(_errorMessage(response));
       }
       await _invalidateToken(token);
@@ -251,7 +280,7 @@ class PollinationsSessionService {
       if (token != null && token.isNotEmpty) {
         await _client.post(
           Uri.parse('$_baseUrl/auth/pollinations/logout'),
-          headers: {'Authorization': 'Bearer $token'},
+          headers: {...await _ownerHeaders(), 'X-Pollinations-Session': token},
         );
       }
     } finally {

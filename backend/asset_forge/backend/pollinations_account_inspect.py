@@ -31,43 +31,20 @@ def inspect_account(token: str) -> dict:
     if not isinstance(token, str) or not token.startswith("sk_"):
         return {"state": "UNKNOWN", "reason": "credential_invalid", "evidence": {}}
     evidence = {}
+    from backend.pollinations_sk_lifecycle import provider_get
     for name, path in PATHS.items():
-        req = urllib.request.Request(path,
-            headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
-            method="GET")
-        try:
-            with urllib.request.urlopen(req, timeout=8) as response:
-                data = json.loads(response.read(32768).decode("utf-8"))
-                evidence[name] = {"http_status": response.status, "data": _safe(data)}
-        except urllib.error.HTTPError as exc:
-            status = exc.code
-            reason = (
-                "unauthorized" if status == 401 else
-                "forbidden" if status == 403 else
-                "endpoint_unavailable" if status == 404 else
-                "rate_limited" if status == 429 else
-                "provider_error" if status >= 500 else
-                "http_error"
-            )
-            evidence[name] = {
-                "http_status": status,
-                "reason": reason,
-                "data": None,
-            }
-        except (urllib.error.URLError, TimeoutError, OSError):
-            evidence[name] = {
-                "http_status": None,
-                "reason": "network_error",
-                "data": None,
-            }
-        except (ValueError, UnicodeError):
-            evidence[name] = {
-                "http_status": None,
-                "reason": "invalid_response",
-                "data": None,
-            }
+        status, data = provider_get(path, token)
+        if status == 200:
+            evidence[name] = {"http_status": status, "data": _safe(data)}
+        else:
+            reason = ("unauthorized" if status == 401 else "forbidden" if status == 403
+                else "endpoint_unavailable" if status == 404 else "rate_limited" if status == 429
+                else "provider_error" if status >= 500 else "network_error" if status == 0 else "http_error")
+            evidence[name] = {"http_status": status or None, "reason": reason, "data": None}
     identity = evidence.get("identity", {}).get("data")
     subject = identity.get("sub") if isinstance(identity, dict) else None
+    if not isinstance(subject, str) or not subject.strip() or subject == "[REDACTED]":
+        subject = None
     return {"state": "EVIDENCE_COLLECTED" if isinstance(subject, str) and subject else "UNKNOWN",
             "provider_subject": subject if isinstance(subject, str) and subject else None,
             "owner_binding": "UNVERIFIED", "spending_authorized": False, "evidence": evidence}

@@ -32,20 +32,28 @@ class SKPreflight:
     reason: str = ""
 
 
-def _userinfo(token: str) -> tuple[int, dict]:
-    """One bounded, read-only provider request. Never log token or response."""
-    request = urllib.request.Request(
-        USERINFO_URL,
-        headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
-        method="GET",
-    )
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Never forward a bearer credential to a redirected origin.
+        return None
+
+
+def provider_get(url: str, token: str) -> tuple[int, dict]:
+    if url not in (USERINFO_URL, "https://gen.pollinations.ai/account/balance"):
+        return 0, {}
+    request = urllib.request.Request(url,
+        headers={"Authorization": f"Bearer {token}", "Accept": "application/json"}, method="GET")
     try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
-            return response.status, json.loads(response.read(16384).decode("utf-8"))
+        with urllib.request.build_opener(_NoRedirect()).open(request, timeout=TIMEOUT_SECONDS) as response:
+            return response.status, json.loads(response.read(32768).decode("utf-8"))
     except urllib.error.HTTPError as exc:
         return exc.code, {}
     except (urllib.error.URLError, TimeoutError, OSError, ValueError, UnicodeError):
         return 0, {}
+
+
+def _userinfo(token: str) -> tuple[int, dict]:
+    return provider_get(USERINFO_URL, token)
 
 
 def inspect_sk(
@@ -81,3 +89,25 @@ def inspect_sk(
     if not budget_confirmed:
         return SKPreflight(SKState.UNKNOWN, provider_subject=subject, reason="key_budget_unverified")
     return SKPreflight(SKState.VALID, provider_subject=subject)
+
+
+def verify_identity(token: str, expires_at: float, expected_subject: str | None) -> dict:
+    """Identity-only reverification. Pending is allowed; balance is not identity proof."""
+    result = {"verification_status": "PENDING_VERIFICATION", "verification_outcome": "UNKNOWN",
+              "provider_ownership_verified": False, "spending_authorized": False}
+    if not isinstance(token, str) or not token.startswith("sk_"):
+        return {**result, "verification_outcome": "REJECTED", "reason": "credential_invalid"}
+    if expires_at <= time.time():
+        return {**result, "reason": "credential_expired"}
+    status, payload = _userinfo(token)
+    subject = payload.get("sub") if isinstance(payload, dict) else None
+    if status in (401, 403):
+        return {**result, "verification_outcome": "REJECTED", "reason": "provider_rejected"}
+    if status != 200 or not isinstance(subject, str) or not subject.strip() or len(subject) > 512 or "sk_" in subject or "Bearer " in subject:
+        return {**result, "reason": "provider_identity_unavailable"}
+    if not expected_subject:
+        return {**result, "reason": "independent_account_evidence_required", "provider_subject": subject}
+    if subject != expected_subject:
+        return {**result, "verification_outcome": "REJECTED", "reason": "provider_subject_mismatch"}
+    return {**result, "verification_status": "VERIFIED", "verification_outcome": "VERIFIED", "provider_ownership_verified": True,
+            "provider_subject": subject}

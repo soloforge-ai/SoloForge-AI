@@ -16,20 +16,20 @@ class Response:
         return json.dumps(self.data).encode()
 
 def test_redacts_secrets_and_collects_subject():
-    def fake(req, timeout):
-        if req.full_url.endswith("/userinfo"):
-            return Response({"sub": "subject-1", "access_token": "sk_hidden"})
-        return Response({"balance": 12, "token": "sk_hidden"})
-    with patch("backend.pollinations_account_inspect.urllib.request.urlopen", side_effect=fake) as call:
+    def fake(url, token):
+        if url.endswith("/userinfo"):
+            return 200, {"sub": "subject-1", "access_token": "sk_hidden"}
+        return 200, {"balance": 12, "token": "sk_hidden"}
+    with patch("backend.pollinations_sk_lifecycle.provider_get", side_effect=fake) as call:
         result = inspect_account("sk_fake")
-    assert call.call_count == 4
+    assert call.call_count == 2
     assert result["provider_subject"] == "subject-1"
     assert result["owner_binding"] == "UNVERIFIED"
     assert result["spending_authorized"] is False
     assert "sk_hidden" not in str(result)
 
 def test_invalid_credential_never_calls_network():
-    with patch("backend.pollinations_account_inspect.urllib.request.urlopen") as call:
+    with patch("backend.pollinations_sk_lifecycle.provider_get") as call:
         result = inspect_account("invalid")
     call.assert_not_called()
     assert result["state"] == "UNKNOWN"

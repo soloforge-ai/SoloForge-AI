@@ -1,7 +1,7 @@
 from urllib.parse import parse_qs, urlparse
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 import backend.pollinations_oauth_router as router_module
@@ -37,9 +37,16 @@ def _client(monkeypatch):
         "POLLINATIONS_WEB_RETURN_TO",
         "https://soloforge-ai-web.onrender.com/",
     )
+    def authenticated_owner(authorization):
+        if authorization != "Bearer owner-test":
+            raise HTTPException(401, "Owner sign-in required")
+        return "owner-test-id"
+    monkeypatch.setattr(router_module, "_owner", authenticated_owner)
+    monkeypatch.setattr(router_module, "_persist_session", lambda *args: None)
+    monkeypatch.setattr(router_module, "_delete_persisted_session", lambda *args: None)
     app = FastAPI()
     app.include_router(router_module.router)
-    return TestClient(app, base_url="https://testserver")
+    return TestClient(app, base_url="https://testserver", headers={"Authorization": "Bearer owner-test"})
 
 
 def _fake_exchange(*args, **kwargs):
@@ -209,7 +216,7 @@ def test_bearer_session_status_and_logout(monkeypatch):
         json={"code": handoff_code},
     )
     session_token = exchange.json()["session_token"]
-    headers = {"Authorization": f"Bearer {session_token}"}
+    headers = {"Authorization": "Bearer owner-test", "X-Pollinations-Session": session_token}
 
     status = client.get("/auth/pollinations/status", headers=headers)
     assert status.status_code == 200
@@ -230,6 +237,7 @@ def test_status_restores_persisted_session_after_backend_restart(monkeypatch):
         access_token="sk_persisted_secret",
         expires_at=router_module.time.time() + 600,
         scope="profile usage",
+        submitted_by_owner="owner-test-id",
     )
     monkeypatch.setattr(
         router_module,
@@ -242,7 +250,7 @@ def test_status_restores_persisted_session_after_backend_restart(monkeypatch):
 
     response = client.get(
         "/auth/pollinations/status",
-        headers={"Authorization": "Bearer persisted-session"},
+        headers={"Authorization": "Bearer owner-test", "X-Pollinations-Session": "persisted-session"},
     )
 
     assert response.status_code == 200
@@ -253,7 +261,7 @@ def test_status_restores_persisted_session_after_backend_restart(monkeypatch):
         assert router_module._sessions["persisted-session"] == persisted
 
 
-def test_oauth_transaction_survives_transient_exchange_failure(monkeypatch):
+def test_oauth_transaction_is_consumed_on_ambiguous_exchange_failure(monkeypatch):
     client = _client(monkeypatch)
 
     def fail_exchange(*args, **kwargs):
@@ -271,7 +279,7 @@ def test_oauth_transaction_survives_transient_exchange_failure(monkeypatch):
     assert response.status_code == 502
     assert "Please retry the connection" in response.text
     with router_module._lock:
-        assert state in router_module._transactions
+        assert state not in router_module._transactions
 
 
 def test_ceo_missing_master_fails_closed_without_pollinations_session(monkeypatch):
