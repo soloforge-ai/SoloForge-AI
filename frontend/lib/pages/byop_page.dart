@@ -182,10 +182,12 @@ class _ByopPageState extends State<ByopPage> {
               final result = await _service.post('jobs/$jobId/consents', {'credential_id': id,
                 'maximum_micro_pollen': _maximumMicroPollen(),
                 'expires_at': DateTime.now().millisecondsSinceEpoch / 1000 + 300});
-              if (mounted) setState(() {
-                _consent = result['consent_id'] as String; _consentCredential = id; _execution = ByopService.newExecutionId();
-                _quotedMaximum = (result['quote'] as Map<String, dynamic>)['maximum_micro_pollen'] as int;
-              });
+              if (mounted) {
+                setState(() {
+                  _consent = result['consent_id'] as String; _consentCredential = id; _execution = ByopService.newExecutionId();
+                  _quotedMaximum = (result['quote'] as Map<String, dynamic>)['maximum_micro_pollen'] as int;
+                });
+              }
             }), child: const Text('Authorize bounded spending')),
             if (_consent != null && _quotedMaximum != null)
               Text('Server-quoted maximum total: ${(_quotedMaximum! / 1000000).toStringAsFixed(6)} Pollen. This is a bound, not a confirmed charge or earnings.'),
