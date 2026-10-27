@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -113,7 +114,7 @@ void main() {
   }
 
   testWidgets(
-    'CTA launches the unchanged OAuth login URL through the real service',
+    'CTA obtains an owner-bound launch ticket through the real service',
     (tester) async {
       final launched = <String>[];
       const channel = MethodChannel('plugins.flutter.io/url_launcher');
@@ -131,7 +132,21 @@ void main() {
           null,
         ),
       );
-      final session = ListeningSession();
+      final session = ListeningSession(
+        client: MockClient((request) async {
+          expect(request.method, 'POST');
+          expect(request.url.path, '/auth/pollinations/connect');
+          expect(request.headers['Authorization'], 'Bearer owner-v2-test');
+          expect(jsonDecode(request.body), {
+            'client': 'mobile',
+            'return_to': 'soloforge://oauth/pollinations',
+          });
+          return http.Response(
+            '{"launch_path":"/auth/pollinations/launch?ticket=offline"}',
+            200,
+          );
+        }),
+      );
       await tester.pumpWidget(
         MaterialApp(
           home: PrawtwanChatPage(
@@ -145,11 +160,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(launched, hasLength(1));
       final uri = Uri.parse(launched.single);
-      expect(uri.path, '/auth/pollinations/login');
-      expect(uri.queryParameters, {
-        'client': 'mobile',
-        'return_to': 'soloforge://oauth/pollinations',
-      });
+      expect(uri.path, '/auth/pollinations/launch');
+      expect(uri.queryParameters, {'ticket': 'offline'});
     },
   );
 
@@ -406,7 +418,12 @@ void main() {
 }
 
 class ListeningSession extends PollinationsSessionService {
-  ListeningSession({super.client});
+  ListeningSession({super.client})
+    : super(
+        ownerAuthorization: () async => {
+          'Authorization': 'Bearer owner-v2-test',
+        },
+      );
   Future<void> Function(Uri)? callback;
   @override
   Future<void> startListening({
