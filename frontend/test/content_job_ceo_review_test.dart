@@ -121,6 +121,8 @@ void main() {
       await tester.pump();
       await tester.scrollUntilVisible(find.byType(Image), -400,
           scrollable: find.byType(Scrollable).first);
+      await tester.runAsync(() => precacheImage(
+          MemoryImage(png), tester.element(find.byType(Image))));
       await tester.pumpAndSettle();
       expect((tester.widget<Image>(find.byType(Image)).image as MemoryImage).bytes, same(png));
       final action = find.text(approved ? 'Approve CEO image' : 'Reject CEO image');
