@@ -9,6 +9,7 @@ from io import BytesIO
 import json
 from pathlib import Path
 import socket
+import sys
 import math
 import struct
 import wave
@@ -20,6 +21,10 @@ from fastapi import BackgroundTasks, HTTPException
 from fastapi.testclient import TestClient
 from PIL import Image
 import pytest
+
+# Match the deployed runtime layout even when pytest starts at repository root.
+# The retained root backend namespace also contains legacy memory modules.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from backend import (
     asset_provider, content_asset_generation as assets, content_jobs_api,
