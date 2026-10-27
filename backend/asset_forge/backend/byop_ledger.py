@@ -8,6 +8,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import time
 from uuid import uuid4
 from fastapi import HTTPException
@@ -20,7 +21,7 @@ def digest(value):
 
 
 def unavailable_pricing(*args, **kwargs):
-    raise HTTPException(503, "Documented model-specific maximum Pollen pricing unavailable")
+    raise HTTPException(503, "Trusted credential-bound catalog, key-budget and funding evidence unavailable; live pricing remains locked")
 
 
 class SupabaseLedger:
@@ -52,20 +53,25 @@ class Ledger:
                 return result
         raise HTTPException(409, "Concurrent ledger update; no provider call started")
 
-    def consent(self, principal, snapshot, maximum, expires_at):
+    def consent(self, principal, snapshot, maximum, expires_at, *, credential=None):
         now = self.clock()
-        if type(maximum) is not int or maximum <= 0 or not now < expires_at <= now + 600:
+        if (type(maximum) is not int or maximum <= 0 or type(expires_at) not in (int, float)
+                or not math.isfinite(expires_at) or not now < expires_at <= now + 600):
             raise HTTPException(400, "Invalid consent bound or expiry")
         required = {"credential_id", "job_id", "revision", "operation", "model",
                     "image_count", "prompt_sha256", "reference_sha256", "settings"}
         if set(snapshot) != required or snapshot["operation"] != "ceo_image" or snapshot["image_count"] != 1:
             raise HTTPException(400, "Exact single-image CEO snapshot required")
-        quote = self.pricing(deepcopy(snapshot))
+        quote = deepcopy(self.pricing(deepcopy(snapshot)))
         if (not isinstance(quote, dict) or type(quote.get("maximum_micro_pollen")) is not int
                 or not 0 < quote["maximum_micro_pollen"] <= maximum
                 or quote.get("includes_all_charges") is not True
+                or type(quote.get("expires_at")) not in (int, float)
+                or not math.isfinite(quote["expires_at"])
                 or not quote.get("basis") or quote.get("expires_at", 0) <= now):
             raise HTTPException(409, "Trusted pricing does not fit consent")
+        if hasattr(self.pricing, "validate_context"):
+            self.pricing.validate_context(principal, snapshot, quote, credential)
         consent_id = str(uuid4())
         record = {"principal": principal, "snapshot": deepcopy(snapshot),
                   "snapshot_sha256": digest(snapshot), "maximum": maximum,
@@ -113,11 +119,28 @@ class Ledger:
             execution = {"id": execution_id, "consent_id": consent_id,
                          "principal": principal, "snapshot": deepcopy(consent["snapshot"]),
                          "snapshot_sha256": consent["snapshot_sha256"],
+                         "quote_sha256": digest(consent["quote"]),
                          "reserved": amount, "state": "RESERVED",
                          "expires_at": consent["expires_at"], "created_at": self.clock()}
             executions[execution_id] = execution
             return deepcopy(execution)
         return self.change(principal, reserve)
+
+    def check_dispatch(self, principal, execution, snapshot, credential):
+        """Recheck frozen quote/evidence before the atomic CALL_STARTED claim."""
+        _, state = self.store.read(principal)
+        current = state.get("executions", {}).get(execution["id"], {})
+        consent = state.get("consents", {}).get(current.get("consent_id"), {})
+        quote = consent.get("quote", {})
+        if (current.get("state") != "RESERVED" or current.get("principal") != principal
+                or current.get("snapshot_sha256") != digest(snapshot)
+                or current.get("quote_sha256") != digest(quote)
+                or current.get("expires_at", 0) <= self.clock()):
+            raise HTTPException(409, "Execution quote changed, expired or already started; dispatch denied")
+        if hasattr(self.pricing, "validate_dispatch"):
+            held = sum(e["reserved"] for e in state.get("executions", {}).values()
+                       if e["state"] in {"RESERVED", "CALL_STARTED", "UNKNOWN", "GENERATED"})
+            self.pricing.validate_dispatch(principal, snapshot, quote, credential, held)
 
     def start(self, principal, execution_id, snapshot):
         def start(state):

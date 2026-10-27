@@ -6,6 +6,7 @@ import os
 import zipfile
 from fastapi import HTTPException
 from .asset_provider import require_ceo_render_provenance
+from .byop_pricing import same_reviewed_model
 
 
 def generate(snapshot, token):
@@ -16,12 +17,14 @@ def generate(snapshot, token):
     configured = {"model": os.getenv("POLLINATIONS_IMAGE_EDIT_MODEL", "kontext").strip() or "kontext",
                   "width": int(os.getenv("POLLINATIONS_IMAGE_WIDTH", "1024")),
                   "height": int(os.getenv("POLLINATIONS_IMAGE_HEIGHT", "1024"))}
-    if (snapshot["model"] != configured["model"]
+    if (not same_reviewed_model(snapshot["model"], configured["model"])
             or snapshot["settings"].get("image_width") != configured["width"]
             or snapshot["settings"].get("image_height") != configured["height"]
             or hashlib.sha256(reference or b"").hexdigest() != snapshot["reference_sha256"]
             or hashlib.sha256(prompt.encode()).hexdigest() != snapshot["prompt_sha256"]):
         raise HTTPException(409, "Execution settings or identity reference changed")
+    # Alias migration must not rewrite the immutable consent's model string.
+    configured["model"] = snapshot["model"]
     # Existing hard execution gate remains enforced by the shared builder.
     # Offline tests replace only that gate and the provider transport; no runtime
     # flag or environment credential can unlock live execution in this patch.

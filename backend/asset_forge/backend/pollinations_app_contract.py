@@ -31,7 +31,7 @@ def prepare_app_authorization(config, lookup, *, lookup_client_id, expected_deve
             or not isinstance(lookup.get("redirectUris"), list)
             or config.redirect_uri not in lookup["redirectUris"]
             or type(lookup.get("earningsEnabled")) is not bool
-            or type(budget) is not int or budget <= 0
+            or type(budget) is not int or not 0 < budget <= 10
             or type(expiry_days) is not int or not 1 <= expiry_days <= 7
             or not model):
         raise ValueError("Verified app owner, redirect and bounded OAuth request required")

@@ -44,6 +44,7 @@ class Repository:
         if not row:
             return None
         return {"principal": principal, "token": row["access_token"],
+                "provider_subject": row.get("provider_subject"),
                 "expires_at": datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00")).timestamp(),
                 "verification_status": row["verification_status"],
                 "provider_ownership_verified": row["provider_ownership_verified"],

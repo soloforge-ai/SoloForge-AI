@@ -45,6 +45,13 @@ begin
         or active_count > (p_state->>'concurrency_limit')::bigint then
         raise exception 'Principal budget or concurrency exceeded';
     end if;
+    for entry in select key,value from jsonb_each(coalesce(old_state->'consents','{}')) loop
+        if (entry.value - 'used') is distinct from ((p_state->'consents'->entry.key) - 'used')
+            or (entry.value->'used' = 'true'::jsonb
+                and p_state->'consents'->entry.key->'used' is distinct from 'true'::jsonb) then
+            raise exception 'Consent terms and quoted evidence are immutable';
+        end if;
+    end loop;
     for entry in select key,value from jsonb_each(coalesce(p_state->'executions','{}')) loop
         if entry.value->>'principal' is distinct from p_principal
             or (entry.value->>'reserved')::bigint <= 0
@@ -56,6 +63,7 @@ begin
         if not (p_state->'executions' ? entry.key)
             or entry.value->'snapshot' is distinct from p_state->'executions'->entry.key->'snapshot'
             or entry.value->'snapshot_sha256' is distinct from p_state->'executions'->entry.key->'snapshot_sha256'
+            or entry.value->'quote_sha256' is distinct from p_state->'executions'->entry.key->'quote_sha256'
             or entry.value->'reserved' is distinct from p_state->'executions'->entry.key->'reserved'
             or entry.value->'principal' is distinct from p_state->'executions'->entry.key->'principal'
             or entry.value->'consent_id' is distinct from p_state->'executions'->entry.key->'consent_id' then

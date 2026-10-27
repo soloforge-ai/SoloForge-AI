@@ -1,5 +1,223 @@
 # BYOP V1 local application wiring — verification limited by sandbox
 
+## Owner-supplied snapshot contract reconciliation (local only)
+
+Baseline remains `bed3476f5045bc447a8067b0260c83a7aff83859`; the prior eight-file
+uncommitted pricing patch was preserved. This reconciliation adds three files to
+that change set (11 total relative to baseline), with no commit/push/PR change,
+authenticated provider call, migration application, spending or execution unlock.
+
+VERIFIED_CONTRACTS / SNAPSHOT_PROVENANCE:
+
+- Both supplied files were accessible MIME/MHTML snapshots. The primary HTML was
+  decoded and relevant visible contract text inspected without executing page
+  scripts or the API tester. Snapshot 1 location: `https://enter.pollinations.ai/models`;
+  SHA-256 `76d40c32120332f797bf3d298ac488ec97f6c38ed2234f5ec100486a50622a61`.
+  Snapshot 2 location: `https://gen.pollinations.ai/docs#tag/`;
+  SHA-256 `83336e0d8a788f57149e08436a239b874e8b59c12d1688e315bb50b5f0d8b727`.
+  Account display details are not copied into this implementation record.
+- Snapshot 1 displays FLUX.1 Kontext Pro, canonical ID
+  `black-forest-labs/flux.1-kontext-pro`, image output `$0.03 /gen`. Snapshot 2
+  states the publisher/model migration, preserved request aliases, matching saved
+  choices against both IDs/aliases, and `publisher` replacing model `brand`.
+  These are dated snapshots, not fresh selected-key evidence.
+- Official public source pinned at
+  `059bc8f51ad7c62658bf571f472a58dfe882ab4f` was inspected for current contracts.
+  Public unauthenticated catalog URLs were attempted through the read-only web
+  connector. `/models` and filtered/single-model URLs were inaccessible there;
+  `/v1/models` returned retrieval metadata without a usable catalog body. No live
+  catalog row or current live price is claimed from those attempts. No alternate
+  authenticated route or known failing Cloud proxy was attempted.
+
+PRICE_AND_UNIT_RECONCILIATION:
+
+- The dashboard dollar sign is not an exchange-rate contract. The independent
+  [model schema](https://github.com/pollinations/pollinations/blob/059bc8f51ad7c62658bf571f472a58dfe882ab4f/shared/registry/model-info.ts#L99)
+  explicitly labels catalog prices `currency: pollen`. The
+  [registry](https://github.com/pollinations/pollinations/blob/059bc8f51ad7c62658bf571f472a58dfe882ab4f/shared/registry/registry.ts#L86)
+  distinguishes USD-equivalent upstream cost from Pollen user price. Kontext's
+  reviewed .04 cost × .75 multiplier yields .03 Pollen per image. Thus the reviewed
+  numerical Pollen price matches the snapshot's .03 display, not because arbitrary
+  USD and Pollen values are interchangeable. USD-denominated pricing is rejected.
+- [Markup code](https://github.com/pollinations/pollinations/blob/059bc8f51ad7c62658bf571f472a58dfe882ab4f/shared/billing/markup.ts#L28)
+  excludes app-owner self-use by comparing Pollinations account IDs. Owner V2 role
+  alone is not that comparison. Personal/unattributed keys and attested self-use
+  bound at .03; an issued key belonging to another app owner conservatively bounds
+  at .0375. No earnings eligibility or credit is claimed from a personal SK.
+- Neither catalog prices nor these local quote ceilings are provider-enforced
+  final-charge caps. The previous freshness, separate funding buckets, finite key
+  budget, immutable consent, quote hash, reservation and CALL_STARTED rules remain.
+
+CATALOG_COMPATIBILITY:
+
+- `EvidencePricing` now accepts a selected `/models` row (`name`) or a selected
+  `/v1/models` row (`id`). Conflicting identifiers fail closed. The complete list
+  response must still be handled by a future trusted collector, not by a client.
+- Required image-edit support must appear in `supported_endpoints`. Missing or
+  non-healthy `health.status` fails the Owner pilot quote policy. The provider's
+  [health schema](https://github.com/pollinations/pollinations/blob/059bc8f51ad7c62658bf571f472a58dfe882ab4f/shared/registry/model-info.ts#L35)
+  defines healthy/degraded/down/unknown using historical gateway requests. Healthy
+  is not a guarantee of availability or selected-key permission at execution.
+- Backend runtime previously compared job alias `kontext` and canonical config
+  literally, incorrectly rejecting an equivalent ID. It now recognizes only the
+  reviewed alias pair and dispatches the exact frozen snapshot model string. It
+  does not rewrite consent, jobs or request hashes, nor accept arbitrary aliases.
+- Publisher metadata is retained for quote audit only; it never selects the
+  inference provider. Flutter BYOP has a fixed `kontext` display and no provider
+  catalog parser/saved model selector or model `brand` reader to migrate. Product
+  brand fields are unrelated and unchanged. No duplicate catalog UI was added.
+
+OAUTH_AND_EARNINGS_ATTRIBUTION:
+
+- [Connect User Wallets](https://github.com/pollinations/pollinations/blob/059bc8f51ad7c62658bf571f472a58dfe882ab4f/BRING_YOUR_OWN_POLLEN.md#L100)
+  specifies `pk_` client_id, exact registered redirect, fresh state/S256 PKCE,
+  single-use authorization code and an issued user-scoped `sk_`. Issued permissions
+  can be narrower than requested; expired keys require reauthorization, not refresh
+  tokens. Hosted web consent does not offer `keys` administration scope.
+- The current guide limits auth-link budget prefill to 10 Pollen; the existing
+  offline preparation helper now rejects larger prefill. Users may change/clear
+  the cap at provider consent; the local pricing validator still rejects unlimited
+  or unavailable key budgets. This does not expand permissions or spending scope.
+- Actual deployed client_id, app-owner binding, registered redirect, earnings
+  toggle and issued-key attribution remain unverified. OAuth is not execution
+  consent. Members remain generation-disabled and all live generation remains locked.
+
+USAGE_AND_SETTLEMENT_CORRELATION:
+
+- [Account routes/schema](https://github.com/pollinations/pollinations/blob/059bc8f51ad7c62658bf571f472a58dfe882ab4f/enter.pollinations.ai/src/routes/account.ts#L471):
+  `/account/usage` requires account:usage; `/account/key/usage` requires the calling
+  API key, with no additional scope, and filters by that key's opaque ID. JSON is
+  `{usage, count}`, default limit 100, maximum 50,000, default 30 days/up to 90 days.
+  UTC timestamps have second precision; use `before` plus `before_event_id` for
+  stable same-second pagination. Display names are not credential identity.
+- Rows expose model, key ID/type/name, meter bucket, usage quantities, `cost_usd`,
+  response duration and `cursor_event_id`, but no generation request ID or debit
+  finality/receipt field. The cursor is NOT the response's X-Request-ID:
+  [tracking](https://github.com/pollinations/pollinations/blob/059bc8f51ad7c62658bf571f472a58dfe882ab4f/gen.pollinations.ai/src/middleware/track.ts#L270)
+  generates a separate event ID while retaining the request ID independently;
+  [usage projection](https://github.com/pollinations/pollinations/blob/059bc8f51ad7c62658bf571f472a58dfe882ab4f/enter.pollinations.ai/observability/endpoints/activity_usage_transactions.pipe#L9)
+  exposes the event cursor and omits the request ID. Exact request/debit correlation
+  is not supported by these examined public usage contracts.
+- DOCUMENTATION DRIFT: the API schema labels `cost_usd` as USD, while the inspected
+  [materialization](https://github.com/pollinations/pollinations/blob/059bc8f51ad7c62658bf571f472a58dfe882ab4f/enter.pollinations.ai/observability/materializations/activity_usage_events_mv.pipe#L37)
+  maps billed `total_price` through legacy `price_usd` into that field. Tracking's
+  `totalPrice` is the billed Pollen price. This source mapping is not a generic
+  currency conversion or evidence of the deployed accounting revision. The
+  materialization includes only positive-price events; absent rows, zero rows or
+  analytics delay do not prove no debit. No automatic settlement/release is added.
+
+CHANGED_FILES: the previous eight-file patch remains, plus only
+`backend/asset_forge/backend/byop_runtime.py`,
+`backend/asset_forge/backend/pollinations_app_contract.py` and
+`backend/asset_forge/tests/test_pollinations_app_contract.py`.
+The reconciliation also extends the existing `byop_pricing.py`, its test file and
+this record. No Flutter source, migration application or production configuration
+was changed.
+
+TEST_RESULTS: **139 PASS**, 0 failed, 3 deprecation warnings, 27.97s across affected
+pricing, repository, BYOP component and App Key contract suites. Tests ran in the
+existing credential-clearing seccomp harness with outbound sockets denied. Added
+coverage includes canonical/id-row shapes, conflicting IDs, endpoint/health
+absence, alias equivalence without request mutation, and OAuth prefill limits.
+The previous 107 count is superseded for these affected suites; broad unchanged
+suites were not rerun. HTTP E2E is NOT RUN locally (known socketpair restriction).
+Flutter is unchanged and not rerun. Static checks are reported separately.
+
+REMAINING_BLOCKERS / NEXT_EXACT_ACTION: obtain separately authorized, sanitized
+same-key evidence through a trusted server collector, and an authoritative
+request-ID-to-final-debit mapping (including units/finality or a documented provider
+receipt API). Current snapshots/public source cannot establish deployed key status,
+fresh funds, exact output dimensions or settlement. Keep reservations conservative
+and generation locked; do not replace this evidence with screenshot balances,
+timestamp matching, dollar conversion or catalog-based charge-cap assumptions.
+
+## Owner pilot provider/pricing evidence follow-up (local only)
+
+Baseline verified clean at `bed3476f5045bc447a8067b0260c83a7aff83859`.
+This follow-up is uncommitted and not pushed. No production migration, provider
+account call, spending, worker, publishing or execution unlock was performed.
+
+EXISTING_IMPLEMENTATION / REUSE_DECISION: retain Owner V2, Active Membership,
+the existing `Ledger.pricing` dependency, Supabase repositories, consent/execution
+JSON records, atomic reservation CAS and dispatch claim. `EvidencePricing` is a
+validator for that existing pricing hook, not another wallet or pricing service.
+It has no network transport, endpoint or persistent store. Production `Ledger()`
+still uses `unavailable_pricing` (503); no collector is installed or enabled.
+
+VERIFIED_CONTRACTS: official Pollinations source pinned to
+`636c4e4de0bb19a2d13d5c44d08a41004db39da2`, inspected 2026-10-27.
+Source inspection does not prove the provider's deployed revision or live prices.
+
+| Contract | Verified evidence / limit |
+| --- | --- |
+| Public catalog | [`GET /models`, `/image/models`, `/v1/models`](https://github.com/pollinations/pollinations/blob/636c4e4de0bb19a2d13d5c44d08a41004db39da2/APIDOCS.md); `/models` rows carry `name`, aliases, `pricing` and optional units/variants/adjustments. No fixed-price guarantee for arbitrary models. |
+| Reviewed model | [Image registry](https://github.com/pollinations/pollinations/blob/636c4e4de0bb19a2d13d5c44d08a41004db39da2/shared/registry/image.ts): `kontext` aliases `black-forest-labs/flux.1-kontext-pro`; upstream cost .04 times multiplier .75 yields a public per-image rate .03, as defined by [registry billing](https://github.com/pollinations/pollinations/blob/636c4e4de0bb19a2d13d5c44d08a41004db39da2/shared/registry/registry.ts). This is source evidence, not a fetched live quote. |
+| Dimensions/count | [Azure Kontext adapter](https://github.com/pollinations/pollinations/blob/636c4e4de0bb19a2d13d5c44d08a41004db39da2/gen.pollinations.ai/src/image/models/azureFluxKontextModel.ts) requests one image and reports one completion-image unit. Edit mode forwards one reference, not explicit pixel dimensions. No dimension-specific premium appears for this listing; exact 1024×1024 provider output is NOT established. Local quoting accepts only the existing 1024×1024 single-image request contract. |
+| Maximum markup | [Markup policy](https://github.com/pollinations/pollinations/blob/636c4e4de0bb19a2d13d5c44d08a41004db39da2/shared/billing/markup.ts) adds 25% for eligible app-issued keys, excludes self-use. A verified personal key or self-use bounds at .03; another app owner's key conservatively bounds at .0375 without claiming its earnings toggle or actual credit. |
+| Precision | [Provider billing](https://github.com/pollinations/pollinations/blob/636c4e4de0bb19a2d13d5c44d08a41004db39da2/shared/billing/precision.ts) rounds at 1e-8 Pollen. SoloForge ceilings the total to integer micro-Pollen and floors available funds, conservatively. |
+| Selected-key evidence | [`GET /account/key`](https://github.com/pollinations/pollinations/blob/636c4e4de0bb19a2d13d5c44d08a41004db39da2/enter.pollinations.ai/src/routes/account.ts) reports `id`, `userId`, `valid`, `type`, `expiresAt`, model restrictions, `pollenBudget`, `questPollenOnly`, `byopApp`. Null budget means unlimited; the local pilot intentionally rejects unlimited/unknown budget or expiry. |
+| Funding evidence | The same source and API docs specify `GET /account/balance`: budgeted keys see their remaining key budget in `balance`. Independent `accountBalance.tier/paid` requires account-usage visibility; a key budget is not proof of wallet funding. A regular model uses one sufficient bucket, not a pooled sum. |
+| Budget limitation | [Atomic budget code](https://github.com/pollinations/pollinations/blob/636c4e4de0bb19a2d13d5c44d08a41004db39da2/shared/billing/deduction.ts) reserves an estimate, then adjusts the final charge. A finite key budget is NOT a documented absolute final-charge guarantee; external account activity can race observations. |
+| Response/audit identifiers | [Request-ID middleware tests](https://github.com/pollinations/pollinations/blob/636c4e4de0bb19a2d13d5c44d08a41004db39da2/gen.pollinations.ai/test/request-id.test.ts) establish a server-generated UUID in `X-Request-ID`, ignoring inbound spoofed values. `/account/key/usage` exposes key-specific rows with `api_key_id`, `cursor_event_id`, timestamp, model, meter source and `cost_usd`. A guaranteed join from the generation header to a final Pollen debit is NOT verified. Image bytes and tracking usage headers are not settlement receipts. |
+
+LOCAL_IMPLEMENTATION:
+
+- `EvidencePricing` consumes only a trusted, server-bound catalog/key/balance
+  evidence bundle for the exact owner credential. No client-supplied evidence is
+  accepted by any HTTP route. Each component must have its own fetch timestamp
+  within 30 seconds, and future dates fail. This is a SoloForge freshness policy,
+  not a provider TTL promise. Independent subject and immutable token digest must
+  match the selected repository credential; model permissions must allow the call.
+- Only the audited flat per-image .03 rate is accepted from fresh catalog evidence.
+  Changed prices, extra token rates, variants, adjustments, unknown units/models,
+  count or request dimensions fail closed. The all-in maximum is 30,000 or 37,500
+  micro-Pollen under the verified markup upper-bound rule, not invented pricing.
+- Quoting requires finite key budget, the caller-visible budget and one eligible
+  account bucket. Dispatch re-reads evidence and checks all held principal
+  reservations conservatively. It never adds Quest and Paid balances together.
+- Consent is deep-copied; execution commits its quote hash. The existing local SQL
+  candidate now guards consent terms/quoted evidence and execution quote hashes.
+  `check_dispatch` verifies the commitment, expiry and current evidence before the
+  existing atomic CALL_STARTED claim. No evidence refresh or generation is retried
+  after a started/unknown/generated execution. Pre-dispatch evidence failures leave
+  reservations held, with no release or reconciliation shortcut.
+- Owner eligibility remains separate from spending authority. Members remain
+  generation-disabled. There is no environment-key fallback. The source pricing
+  adapter is exercised offline through the existing hook; default application
+  pricing and the independent generation policy remain locked.
+
+TEST_EVIDENCE: **107 PASS**, 0 failed, 3 deprecation warnings, 25.77s, in the
+affected pricing/repository/BYOP component suites under the existing credential-
+clearing seccomp runner (IPv4/IPv6 TCP/UDP socket creation denied). Includes actual
+disposable PostgreSQL/WASM guards and existing real FFmpeg fixtures. Python AST
+and diff checks PASS. HTTP E2E is NOT RUN locally due to the known socketpair
+restriction. Flutter is unchanged and was not rerun. Previous GitHub CI passes
+apply to `bed3476f`, not this local patch. Native PostgreSQL contention is unproven.
+
+REMAINING_BLOCKERS / NEXT_EXACT_ACTION: obtain separately authorized, sanitized
+same-key catalog/key/balance response evidence from a trusted collector (including
+per-fetch timestamps, key ID, independent subject and funding restrictions), and
+verify a request-ID-to-settled-Pollen receipt contract. Neither account balances,
+key names, public GitHub prices nor generated images close those gaps. Catalog
+changes and external concurrent usage remain races, not solved by a 30-second
+TTL. Confirm provider-deployed rate/fallback behavior and native SQL/Storage gates
+before any later spending decision. The current generator also discards response
+headers; receipt capture and reconciliation need a separately reviewed integration
+once an authoritative debit correlation is established. Never unlock generation
+merely because these offline fixtures pass. Owner Pilot is closer in offline
+validation coverage, but live execution remains BLOCKED.
+
+CHANGED_FILES (relative to `bed3476f`):
+
+- `backend/asset_forge/backend/byop_pricing.py` (new)
+- `backend/asset_forge/backend/byop_ledger.py`
+- `backend/asset_forge/backend/byop_flow.py`
+- `backend/asset_forge/backend/byop_repository.py`
+- `backend/asset_forge/sql/byop_v1_candidate.sql` (local candidate only, not applied)
+- `backend/asset_forge/tests/test_byop_pricing.py` (new)
+- `backend/asset_forge/tests/test_byop_repository.py`
+- `docs/POLLINATIONS_BYOP_V1_LOCAL.md`
+
 ## Local role/readiness and Developer Earnings follow-up (2026-10-27)
 
 Uncommitted follow-up based on `2f63dd570eb630958ea0a1169bc184412c96fac9`.

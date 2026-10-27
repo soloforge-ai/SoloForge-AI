@@ -15,10 +15,16 @@ LOOKUP = {'found': True, 'userId': 'developer-fixture',
           'redirectUris': [CONFIG.redirect_uri], 'earningsEnabled': True}
 
 
-def prepare(config=CONFIG, lookup=None):
+def prepare(config=CONFIG, lookup=None, budget=1):
     return prepare_app_authorization(config, LOOKUP if lookup is None else lookup,
         lookup_client_id=CONFIG.client_id, expected_developer_subject='developer-fixture', state='offline-csrf-state',
-        code_challenge='offline-pkce-challenge', model='kontext', budget=1, expiry_days=1)
+        code_challenge='offline-pkce-challenge', model='kontext', budget=budget, expiry_days=1)
+
+
+def test_documented_oauth_link_prefill_limit_is_enforced_offline():
+    assert parse_qs(urlsplit(prepare(budget=10)['authorization_url']).query)['budget'] == ['10']
+    with pytest.raises(ValueError):
+        prepare(budget=11)
 
 
 def test_app_contract_reuses_pkce_without_claiming_earnings():

@@ -444,7 +444,9 @@ def test_byop_old_consent_without_all_in_quote_cannot_reserve(persistent, alread
         flow.ledger.reserve(PRINCIPALS[0], consent, eid)
     revision, state = flow.ledger.store.read(PRINCIPALS[0])
     del state['consents'][consent]['quote']['includes_all_charges']
-    assert flow.ledger.store.cas(PRINCIPALS[0], revision, state)
+    # Simulate historical rows, not a permitted edit through the guarded RPC.
+    persistent['db'].query('update public.byop_ledgers set state=$2 where principal=$1',
+                           [PRINCIPALS[0], json.dumps(state)])
     with pytest.raises(HTTPException):
         flow.execute(header, consent, eid)
     assert not persistent['calls']

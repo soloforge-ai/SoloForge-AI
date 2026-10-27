@@ -92,7 +92,8 @@ class Flow:
         principal = self.authenticate(authorization)
         self.generation_policy(principal)
         snapshot = self.snapshot(principal, credential_id, job_id)
-        return self.ledger.consent(principal.key, snapshot, maximum, expires_at)
+        return self.ledger.consent(principal.key, snapshot, maximum, expires_at,
+                                   credential=self.credential(principal, credential_id))
 
     def execute(self, authorization, consent_id, execution_id):
         principal = self.authenticate(authorization)
@@ -104,6 +105,7 @@ class Flow:
         if self.authenticate(authorization) != principal:
             raise HTTPException(403, "Application principal changed before dispatch")
         self.generation_policy(principal)
+        self.ledger.check_dispatch(principal.key, execution, current, credential)
         # Production adapter atomically locks membership, credential, job and
         # ledger and persists CALL_STARTED before any provider dispatch.
         self.repository.claim_execution(principal.key, execution_id, current, self.ledger)
