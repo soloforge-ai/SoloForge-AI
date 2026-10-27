@@ -5,6 +5,7 @@ from __future__ import annotations
 from backend.execution_policy import generation_execution_authorized
 
 import asyncio
+import hashlib
 from datetime import datetime, timezone
 import json
 import os
@@ -18,6 +19,10 @@ import urllib.request
 from typing import Any
 
 from backend.branding import BRAND_STAMP_VERSION, ffmpeg_brand_filter
+from backend.asset_provider import (
+    CharacterAssetError, requires_ceo_asset_review, require_ceo_asset_review,
+    require_ceo_render_provenance,
+)
 from backend.shared_supabase import supabase_request as _supabase_request
 
 AUDIO_BUCKET = "content-audio"
@@ -317,6 +322,14 @@ def _claim_ready(limit: int = 1) -> list[dict[str, Any]]:
 
 
 def _finish(job: dict[str, Any], object_path: str, qa: dict[str, Any]) -> None:
+    try:
+        package = dict(job.get("content_package") or {})
+        require_ceo_asset_review(package)
+        if requires_ceo_asset_review(package) and package.get("pipeline_route") != "VIDEO":
+            raise ValueError("CEO video rendering requires a VIDEO route")
+        require_ceo_render_provenance({**job, "video_storage_path": object_path, "render_qa": qa})
+    except ValueError as exc:
+        raise CharacterAssetError(str(exc)) from exc
     job_id = urllib.parse.quote(str(job["id"]), safe="")
     _supabase_request(
         "PATCH",
@@ -336,7 +349,7 @@ def _finish(job: dict[str, Any], object_path: str, qa: dict[str, Any]) -> None:
 def _fail(job: dict[str, Any], exc: Exception) -> None:
     job_id = urllib.parse.quote(str(job["id"]), safe="")
     retry_count = int(job.get("retry_count") or 0) + 1
-    status = "AUDIO_READY" if retry_count <= 2 else "RENDER_FAILED"
+    status = "AUDIO_READY" if retry_count <= 2 and not isinstance(exc, CharacterAssetError) else "RENDER_FAILED"
     _supabase_request(
         "PATCH",
         f"content_jobs?id=eq.{job_id}",
@@ -351,6 +364,17 @@ def _fail(job: dict[str, Any], exc: Exception) -> None:
 
 def _process_claimed_render(job: dict[str, Any]) -> bool:
     try:
+        package = dict(job.get("content_package") or {})
+        ceo = requires_ceo_asset_review(package)
+        if ceo:
+            try:
+                require_ceo_asset_review(package)
+                if package.get("pipeline_route") != "VIDEO":
+                    raise ValueError("CEO video rendering requires a VIDEO route")
+                if job.get("video_url"):
+                    raise ValueError("CEO rendering rejects existing video_url; regenerate from the approved image")
+            except ValueError as exc:
+                raise CharacterAssetError(str(exc)) from exc
         if not job.get("audio_storage_path"):
             raise ValueError("audio_storage_path is missing")
         with TemporaryDirectory(prefix="soloforge_render_") as tmp:
@@ -372,6 +396,8 @@ def _process_claimed_render(job: dict[str, Any]) -> bool:
                 if not asset_path:
                     raise ValueError("asset_storage_path is missing")
                 _storage_download(CONTENT_ASSET_BUCKET, asset_path, still)
+                if ceo and hashlib.sha256(still.read_bytes()).hexdigest() != package["asset_review_sha256"]:
+                    raise CharacterAssetError("Downloaded CEO image does not match its approved SHA-256")
                 subprocess.run(
                     [
                         "ffmpeg", "-y",
@@ -445,6 +471,15 @@ def _process_claimed_render(job: dict[str, Any]) -> bool:
                 raise RuntimeError("Final video duration does not match voiceover")
 
             object_path = f"{job['id']}/final.mp4"
+            if ceo:
+                output_sha256 = hashlib.sha256(output.read_bytes()).hexdigest()
+                object_path = f"{job['id']}/{output_sha256}.mp4"
+                qa.update({
+                    "source_asset_sha256": package["asset_review_sha256"],
+                    "source_asset_storage_path": package["asset_storage_path"],
+                    "output_sha256": output_sha256,
+                    "output_storage_path": object_path,
+                })
             _storage_upload(VIDEO_BUCKET, object_path, output, "video/mp4")
 
         _finish(job, object_path, qa)

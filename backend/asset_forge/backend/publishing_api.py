@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from backend.soloforge_session import require_soloforge_session
 from backend.publishing_policy import require_publishing_enabled
+from backend.asset_provider import require_ceo_asset_review, require_ceo_render_provenance
 
 from backend.shared_supabase import supabase_request as _supabase_request
 
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/v1/publishing", tags=["publishing"])
 
 _FIELDS = (
     "id,idea,status,caption,cta,script,publish_platform,publish_status,"
-    "publora_post_id,published_at,video_storage_path,content_package,updated_at"
+    "publora_post_id,published_at,video_storage_path,video_url,render_qa,content_package,updated_at"
 )
 
 
@@ -60,6 +61,8 @@ def _claim_submission(
 ) -> dict[str, object]:
     """Claim before external side effects; uncertain outcomes need reconciliation."""
     package = dict(job.get("content_package") or {})
+    require_ceo_asset_review(package)
+    require_ceo_render_provenance(job)
     package.update(
         {
             "publish_platform_ids": platform_ids,
@@ -124,6 +127,8 @@ def _submit(
         )
 
     try:
+        require_ceo_asset_review(dict(job.get("content_package") or {}))
+        require_ceo_render_provenance(job)
         connections = list_connections()
         selected = platform_ids or default_platform_ids(job, connections)
         if not selected:
