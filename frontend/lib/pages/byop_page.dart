@@ -68,12 +68,15 @@ class _ByopPageState extends State<ByopPage> {
     final principal = _service.principal!;
     final status = await _service.connections.byopStatus(principal);
     final list = await _service.get('credentials');
-    if (mounted) setState(() {
-      if (_credential?['credential_id'] != status['credential_id']) {
-        _consent = null; _consentCredential = null; _execution = null; _confirmed = false;
-      }
-      _principal = principal; _credential = status;
-      _credentials = (list['credentials'] as List).cast<Map<String, dynamic>>(); });
+    if (mounted) {
+      setState(() {
+        if (_credential?['credential_id'] != status['credential_id']) {
+          _consent = null; _consentCredential = null; _execution = null; _confirmed = false;
+        }
+        _principal = principal; _credential = status;
+        _credentials = (list['credentials'] as List).cast<Map<String, dynamic>>();
+      });
+    }
   }
 
   Future<void> _loadJob() async {
@@ -187,7 +190,7 @@ class _ByopPageState extends State<ByopPage> {
                 });
               }
               return child;
-            }, errorBuilder: (_, __, ___) => const Text('Image could not be displayed.')),
+            }, errorBuilder: (context, error, stackTrace) => const Text('Image could not be displayed.')),
             for (final approved in [true, false]) OutlinedButton(
               onPressed: _busy || !_displayed || status != 'READY_FOR_REVIEW' ? null : () => _run(() async {
                 await _service.review(jobId, _image!, approved); await _loadJob();

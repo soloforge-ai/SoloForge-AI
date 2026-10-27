@@ -267,7 +267,7 @@ def list_content_jobs(
     _require_session(authorization)
     rows = _supabase_request(
         "GET",
-        f"content_jobs?content_package->>byop_principal=is.null&select={_FIELDS}&order=created_at.desc&limit={limit}",
+        f"content_jobs?select={_FIELDS}&content_package->>byop_principal=is.null&order=created_at.desc&limit={limit}",
     ) or []
     return {"items": rows}
 

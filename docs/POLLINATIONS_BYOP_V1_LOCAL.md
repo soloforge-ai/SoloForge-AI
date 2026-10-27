@@ -1,7 +1,11 @@
 # BYOP V1 local application wiring — verification limited by sandbox
 
-Local branch: `local/pollinations-byop-v1`; original worktree remains untouched.
-HEAD: `4bc9f8a179836fb04c4300a5c93ccb7c7ff6228c` (no new commit).
+Delivery branch: `feature/pollinations-byop-v1`; original worktree remains untouched.
+Integration base: `4bc9f8a179836fb04c4300a5c93ccb7c7ff6228c`.
+Draft delivery: https://github.com/soloforge-ai/SoloForge-AI/pull/212
+Initial delivered head: `474ac1ff1ffa8fb0dd75731b15f1b170510a2664`.
+Its tree `6ff5f1104934d0e7c6912f714182b3d6f0cb2d4d` exactly matches the original
+51-file reviewed local commit, preserved at `local/pollinations-byop-v1-delivery-checkpoint`.
 Sources reconstructed from GitHub blobs and validated patches:
 
 - #210: `97bececac53a5e16c4d14cb284862b5255aa8f15`, 19 files.
@@ -160,11 +164,26 @@ flutter analyze
 flutter test
 ```
 
-No GitHub workflow was triggered or PR updated in this task.
+During the local-only implementation phase, no GitHub workflow was triggered or PR updated.
+
+## Authorized GitHub delivery and CI repair
+
+The owner subsequently authorized commit/push, one Draft PR and bounded CI repairs.
+PR #212 is Draft; #210/#211 remain untouched. No merge or deployment is authorized.
+The initial integrated-head CI ran the full backend suite: 736 passed, one failed
+because a retained read-only harness expects `select=` first in the queue URL.
+The repair preserves the BYOP exclusion filter and reorders query parameters;
+no security assertion is removed or changed. Flutter analyze found three lints
+in the new page; the repair adds the required block and names callback parameters.
+Both workflows now explicitly check out the PR head SHA. Backend `-rA` output
+makes the four actual HTTP E2E results visible without skipping or repeating tests.
+Final CI outcomes are reported in the Draft PR and delivery response, not inferred
+from the initial run. The existing manual-only S1 job remains manual-only.
 
 ## Exact changed files
 
 - `.github/workflows/asset-forge-backend-test.yml`
+- `.github/workflows/flutter-asset-forge-test.yml`
 - `backend/asset_forge/backend/asset_provider.py`
 - `backend/asset_forge/backend/audio_generation.py`
 - `backend/asset_forge/backend/byop_flow.py`
