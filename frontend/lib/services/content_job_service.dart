@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:crypto/crypto.dart';
 
 import '../models/content_job.dart';
 import 'pollinations_session_service.dart';
@@ -266,12 +267,14 @@ class ContentAssetPreview {
     required this.mediaType,
     required this.assetStatus,
     required this.pipelineRoute,
+    this.assetSha256,
   });
 
   final String url;
   final String mediaType;
   final String? assetStatus;
   final String? pipelineRoute;
+  final String? assetSha256;
 
   factory ContentAssetPreview.fromJson(Map<String, dynamic> json) {
     return ContentAssetPreview(
@@ -279,6 +282,7 @@ class ContentAssetPreview {
       mediaType: json['media_type']?.toString() ?? 'image',
       assetStatus: json['asset_status']?.toString(),
       pipelineRoute: json['pipeline_route']?.toString(),
+      assetSha256: json['asset_sha256']?.toString(),
     );
   }
 }
@@ -534,6 +538,36 @@ class ContentJobService {
       throw const FormatException('Storage did not return a valid PNG or JPEG image.');
     }
     return bytes;
+  }
+
+  Future<Uint8List> downloadReviewImage(ContentAssetPreview preview) async {
+    final bytes = await downloadReadyImage(preview);
+    if (preview.assetSha256 == null ||
+        sha256.convert(bytes).toString() != preview.assetSha256) {
+      throw const FormatException('Image changed. Refresh the preview before reviewing.');
+    }
+    return bytes;
+  }
+
+  Future<ContentJob> reviewAsset(
+    String id, {
+    required ContentAssetPreview preview,
+    required Uint8List displayedImage,
+    required bool approved,
+  }) async {
+    final digest = sha256.convert(displayedImage).toString();
+    if (preview.mediaType != 'image' || preview.assetSha256 != digest) {
+      throw const FormatException('Review must match the displayed image. Refresh the preview.');
+    }
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/v1/content-jobs/$id/asset-review'),
+      headers: await _headers(json: true),
+      body: jsonEncode({'decision': approved ? 'APPROVED' : 'REJECTED', 'asset_sha256': digest}),
+    ).timeout(const Duration(seconds: 30));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwFor(response, 'Asset review');
+    }
+    return _decodeJob(response);
   }
 
   Future<ContentJob> getJob(String id) async {

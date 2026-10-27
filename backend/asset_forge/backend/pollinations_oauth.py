@@ -13,6 +13,11 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 DEFAULT_AUTHORIZE_URL = "https://enter.pollinations.ai/authorize"
 DEFAULT_TOKEN_URL = "https://enter.pollinations.ai/api/oauth/token"
 DEFAULT_SCOPE = "profile usage"
@@ -97,7 +102,7 @@ def exchange_authorization_code(config: PollinationsOAuthConfig, *, code: str, c
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with urllib.request.build_opener(_NoRedirect()).open(request, timeout=timeout) as response:
             raw = response.read()
             status = response.status
     except urllib.error.HTTPError as exc:

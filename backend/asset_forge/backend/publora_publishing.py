@@ -215,6 +215,9 @@ def submit_to_publora(
     platform_ids: list[str],
     scheduled_time: datetime,
 ) -> dict[str, Any]:
+    from backend.asset_provider import require_ceo_asset_review, require_ceo_render_provenance
+    require_ceo_asset_review(dict(job.get("content_package") or {}))
+    require_ceo_render_provenance(job)
     connections = list_connections()
     media_urls = media_urls_for_job(job)
     validate_platform_selection(platform_ids, connections, has_media=bool(media_urls))

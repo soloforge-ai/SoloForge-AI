@@ -1,0 +1,51 @@
+"""Offline authorization tests for existing Pollinations sessions."""
+from unittest.mock import patch
+import pytest
+from fastapi import HTTPException
+from backend.pollinations_oauth_router import pollinations_account_inspect, _OAuthSession
+
+def test_owner_submitted_pending_session_can_inspect():
+    session = _OAuthSession(access_token="sk_mock", expires_at=9999999999, scope="", submitted_by_owner="owner")
+    with patch("backend.pollinations_oauth_router._owner", return_value="owner") as auth, \
+         patch("backend.pollinations_oauth_router._get_session", return_value=session), \
+         patch("backend.pollinations_account_inspect.inspect_account", return_value={"state": "EVIDENCE_COLLECTED"}) as inspect:
+        result = pollinations_account_inspect(authorization="Bearer owner", pollinations_session="opaque-session")
+    auth.assert_called_once()
+    inspect.assert_called_once_with("sk_mock")
+    assert result["state"] == "EVIDENCE_COLLECTED"
+
+def test_unauthenticated_owner_never_loads_provider_session():
+    with patch("backend.pollinations_oauth_router._owner", side_effect=HTTPException(401)), \
+         patch("backend.pollinations_oauth_router._get_session") as load:
+        with pytest.raises(HTTPException) as exc:
+            pollinations_account_inspect(authorization=None, pollinations_session="opaque-session")
+    assert exc.value.status_code == 401
+    load.assert_not_called()
+
+def test_no_session_uses_stored_credential():
+    stored = _OAuthSession(access_token="sk_stored", expires_at=9999999999, scope="profile usage", submitted_by_owner="owner")
+    with patch("backend.pollinations_oauth_router._owner", return_value="owner"), \
+         patch("backend.pollinations_oauth_router._existing_pollinations_session", return_value=stored) as load, \
+         patch("backend.pollinations_account_inspect.inspect_account", return_value={"state": "EVIDENCE_COLLECTED"}) as inspect:
+        result = pollinations_account_inspect(
+            authorization="Bearer owner", pollinations_session=None, credential_record_id=None
+        )
+    load.assert_called_once_with(None, "owner")
+    inspect.assert_called_once_with("sk_stored")
+    assert result["state"] == "EVIDENCE_COLLECTED"
+
+def test_multiple_credentials_require_selection():
+    with patch("backend.pollinations_oauth_router._owner", return_value="owner"), \
+         patch("backend.pollinations_oauth_router._existing_pollinations_session", side_effect=HTTPException(409)):
+        with pytest.raises(HTTPException) as exc:
+            pollinations_account_inspect(
+                authorization="Bearer owner", pollinations_session=None, credential_record_id=None
+            )
+    assert exc.value.status_code == 409
+
+def test_unknown_pollinations_session_fails_closed():
+    with patch("backend.pollinations_oauth_router._owner", return_value="owner"), \
+         patch("backend.pollinations_oauth_router._get_session", return_value=None):
+        with pytest.raises(HTTPException) as exc:
+            pollinations_account_inspect(authorization="Bearer owner", pollinations_session="unknown")
+    assert exc.value.status_code == 404

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'soloforge_session_service.dart';
+
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -29,9 +31,14 @@ class PollinationsSessionService {
     http.Client? client,
     FlutterSecureStorage? storage,
     AppLinks? appLinks,
+    Future<Map<String, String>> Function()? ownerAuthorization,
   }) : _client = client ?? http.Client(),
        _storage = storage ?? const FlutterSecureStorage(),
-       _appLinks = appLinks ?? AppLinks();
+       _appLinks = appLinks ?? AppLinks(),
+       _ownerAuthorization = ownerAuthorization,
+       _ownerSessions = ownerAuthorization == null
+           ? SoloForgeSessionService(useOwnerV2: true)
+           : null;
 
   static const _sessionKey = 'pollinations_session_token';
   static const _returnTo = 'soloforge://oauth/pollinations';
@@ -52,12 +59,100 @@ class PollinationsSessionService {
   final http.Client _client;
   final FlutterSecureStorage _storage;
   final AppLinks _appLinks;
+  final Future<Map<String, String>> Function()? _ownerAuthorization;
+  final SoloForgeSessionService? _ownerSessions;
+
+  Future<Map<String, String>> _ownerHeaders() =>
+      _ownerAuthorization?.call() ?? _ownerSessions!.authorizationHeaders();
   StreamSubscription<Uri>? _linkSubscription;
 
   String get _baseUrl =>
       assetForgeApiUrl.trim().replaceFirst(RegExp(r'/$'), '');
 
   Future<String?> readSessionToken() => _storage.read(key: _sessionKey);
+
+  // BYOP keeps opaque record IDs per application principal. Provider secrets
+  // are sent once to the backend and are never persisted by this service.
+  Future<String?> byopCredentialId(String principal) =>
+      _storage.read(key: 'pollinations_byop_id_$principal');
+
+  Future<Map<String, String>> _byopHeaders(String principal) async {
+    final headers = await _ownerHeaders();
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/v1/byop/session'), headers: headers,
+    ).timeout(const Duration(seconds: 20));
+    if (response.statusCode != 200 ||
+        (jsonDecode(response.body) as Map<String, dynamic>)['principal'] != principal) {
+      throw const PollinationsSessionException('Active application principal changed or is unavailable.');
+    }
+    if ((await _ownerHeaders())['Authorization'] != headers['Authorization']) {
+      throw const PollinationsSessionException('Account changed during BYOP validation.');
+    }
+    return headers;
+  }
+
+  Future<Map<String, dynamic>> _byopResult(http.Response response) async {
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw PollinationsSessionException(_errorMessage(response));
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> submitByopKey(String principal, String key) async {
+    final headers = await _byopHeaders(principal);
+    final result = await _byopResult(await _client.post(
+      Uri.parse('$_baseUrl/v1/byop/credentials'),
+      headers: {...headers, 'Content-Type': 'application/json'},
+      body: jsonEncode({'access_token': key}),
+    ).timeout(const Duration(seconds: 30)));
+    await _byopHeaders(principal);
+    final id = result['credential_id'] as String;
+    await _updateStorage(() => _storage.write(key: 'pollinations_byop_id_$principal', value: id));
+    return result;
+  }
+
+  Future<Map<String, dynamic>> byopStatus(String principal) async {
+    final headers = await _byopHeaders(principal);
+    final id = await byopCredentialId(principal);
+    if (id == null) return {'connected': false, 'spending_authorized': false};
+    return _byopResult(await _client.get(
+      Uri.parse('$_baseUrl/v1/byop/credentials/$id'), headers: headers,
+    ).timeout(const Duration(seconds: 20)));
+  }
+
+  Future<void> selectByopCredential(String principal, String id) async {
+    final headers = await _byopHeaders(principal);
+    final result = await _byopResult(await _client.get(
+      Uri.parse('$_baseUrl/v1/byop/credentials/$id'), headers: headers,
+    ).timeout(const Duration(seconds: 20)));
+    if (result['credential_id'] != id || result['connected'] != true) {
+      throw const PollinationsSessionException('Select an active credential belonging to this account.');
+    }
+    await _byopHeaders(principal);
+    await _updateStorage(() => _storage.write(key: 'pollinations_byop_id_$principal', value: id));
+  }
+
+  Future<Map<String, dynamic>> verifyByopCredential(String principal) async {
+    final headers = await _byopHeaders(principal);
+    final id = await byopCredentialId(principal);
+    if (id == null) throw const PollinationsSessionException('Connect your own credential first.');
+    return _byopResult(await _client.post(
+      Uri.parse('$_baseUrl/v1/byop/credentials/$id/verify'), headers: headers,
+    ).timeout(const Duration(seconds: 30)));
+  }
+
+  Future<void> disconnectByop(String principal) async {
+    final headers = await _byopHeaders(principal);
+    final id = await byopCredentialId(principal);
+    if (id == null) return;
+    final result = await _byopResult(await _client.post(
+      Uri.parse('$_baseUrl/v1/byop/credentials/$id/disconnect'), headers: headers,
+    ).timeout(const Duration(seconds: 20)));
+    if (result['server_revocation_confirmed'] != true) {
+      throw const PollinationsSessionException('Server disconnect is unconfirmed.');
+    }
+    await _updateStorage(() => _storage.delete(key: 'pollinations_byop_id_$principal'));
+  }
 
   Future<void> startListening({
     required Future<void> Function(Uri uri) onCallback,
@@ -76,6 +171,7 @@ class PollinationsSessionService {
   Future<void> dispose() async {
     await _linkSubscription?.cancel();
     _client.close();
+    _ownerSessions?.dispose();
   }
 
   Future<void> connect() {
@@ -104,8 +200,22 @@ class PollinationsSessionService {
       queryParameters['return_to'] = _returnTo;
     }
 
-    final loginUri = Uri.parse('$_baseUrl/auth/pollinations/login')
-        .replace(queryParameters: queryParameters);
+    final ownerHeaders = await _ownerHeaders();
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/auth/pollinations/connect'),
+      headers: {...ownerHeaders, 'Content-Type': 'application/json'},
+      body: jsonEncode(queryParameters),
+    );
+    if (response.statusCode != 200) {
+      throw PollinationsSessionException(_errorMessage(response));
+    }
+    final path =
+        (jsonDecode(response.body) as Map<String, dynamic>)['launch_path']
+            as String;
+    if (!path.startsWith('/auth/pollinations/launch?ticket=')) {
+      throw const PollinationsSessionException('Invalid connection response.');
+    }
+    final loginUri = Uri.parse('$_baseUrl$path');
 
     final opened = await launchUrl(
       loginUri,
@@ -181,7 +291,7 @@ class PollinationsSessionService {
     );
     final response = await _client.post(
       exchangeUri,
-      headers: const {'Content-Type': 'application/json'},
+      headers: {...await _ownerHeaders(), 'Content-Type': 'application/json'},
       body: jsonEncode({'code': code}),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -214,11 +324,13 @@ class PollinationsSessionService {
 
     final response = await _client.get(
       Uri.parse('$_baseUrl/auth/pollinations/status'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {...await _ownerHeaders(), 'X-Pollinations-Session': token},
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       // A transient backend outage is not evidence that OAuth was revoked.
-      if (response.statusCode != 401 && response.statusCode != 403) {
+      if (response.statusCode != 401 &&
+          response.statusCode != 403 &&
+          response.statusCode != 404) {
         throw PollinationsSessionException(_errorMessage(response));
       }
       await _invalidateToken(token);
@@ -251,7 +363,7 @@ class PollinationsSessionService {
       if (token != null && token.isNotEmpty) {
         await _client.post(
           Uri.parse('$_baseUrl/auth/pollinations/logout'),
-          headers: {'Authorization': 'Bearer $token'},
+          headers: {...await _ownerHeaders(), 'X-Pollinations-Session': token},
         );
       }
     } finally {

@@ -155,7 +155,7 @@ def test_chat_and_generation_authorization_are_independently_fail_closed(monkeyp
 
 
 @pytest.mark.parametrize("kind,expected", [
-    ("valid", 503), ("expired", 401), ("forged", 401),
+    ("valid", 401), ("expired", 401), ("forged", 401),
     ("mismatched", 401), ("missing", 401),
 ])
 def test_shared_session_never_authorizes_provider_execution(monkeypatch, kind, expected):
@@ -184,7 +184,8 @@ def test_shared_session_never_authorizes_provider_execution(monkeypatch, kind, e
     resolved = prawtwan.get_pollinations_access_token_from_authorization(
         headers.get("Authorization")
     )
-    assert (resolved is not None) is (kind == "valid")
+    # Even a valid provider session cannot grant execution authorization.
+    assert resolved is None
     for _ in range(2):
         response = client.post("/v1/prawtwan/chat", headers=headers,
                                json={"messages": [{"role": "user", "content": "scene"}]})
@@ -202,7 +203,7 @@ def test_shared_pollinations_session_cannot_authorize_publora(monkeypatch, actio
     monkeypatch.setitem(namespace, "_sessions", {
         "shared-oauth": oauth._OAuthSession("mock-only", oauth.time.time() + 600, "profile usage")
     })
-    assert prawtwan.get_pollinations_access_token_from_authorization("Bearer shared-oauth")
+    assert prawtwan.get_pollinations_access_token_from_authorization("Bearer shared-oauth") is None
     database = Mock(side_effect=AssertionError("No publishing DB access"))
     network = Mock(side_effect=AssertionError("No publishing network access"))
     monkeypatch.setattr(publishing_api, "_supabase_request", database)
