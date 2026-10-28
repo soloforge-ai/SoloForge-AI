@@ -42,14 +42,15 @@ def byop_db(binding_db):
     '''
     root = Path(__file__).resolve().parents[1]
     exec_fixture(binding_db, schema + (root/'sql/byop_v1_candidate.sql').read_text()
-                 + (root/'sql/byop_v1_integration.sql').read_text())
+                 + (root/'sql/byop_v1_integration.sql').read_text()
+                 + (root/'sql/byop_owner_pilot_candidate.sql').read_text())
     return binding_db
 
 
 @pytest.fixture
 def persistent(byop_db, monkeypatch):
     db = byop_db
-    db.query('truncate public.content_jobs,public.pollinations_sessions,public.byop_ledgers,public.soloforge_memberships,public.owner_v2_sessions,public.owner_v2_challenges,public.soloforge_owner_accounts,public.soloforge_owners')
+    db.query('truncate public.byop_owner_pilot_permits,public.content_jobs,public.pollinations_sessions,public.byop_ledgers,public.soloforge_memberships,public.owner_v2_sessions,public.owner_v2_challenges,public.soloforge_owner_accounts,public.soloforge_owners')
     db.query('select public.owner_v2_bootstrap($1,$2)', [OWNER,'owner@example.test'])
     db.query("update public.soloforge_owner_accounts set provider_account_id='provider-owner', verification_status='verified',verification_evidence='independent admin fixture',verified_at=now() where provider='pollinations'")
     for index, member in enumerate(MEMBERS):

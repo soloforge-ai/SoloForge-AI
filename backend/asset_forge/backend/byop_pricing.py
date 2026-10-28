@@ -1,7 +1,7 @@
 """Evidence validator for the existing Ledger.pricing hook; no provider I/O.
 
 The evidence reader is a trusted server dependency, never HTTP request data.
-No production reader is installed: default pricing and execution remain locked.
+The application collector defaults to a disabled transport; live I/O stays locked.
 Audited contract: pollinations/pollinations@636c4e4de0bb19a2d13d5c44d08a41004db39da2.
 Only the reviewed single-image Kontext contract is supported, not arbitrary models.
 """
@@ -57,6 +57,12 @@ class EvidencePricing:
     def __init__(self, reader, clock):
         self.reader = reader
         self.clock = clock
+
+    def quote_for(self, principal, snapshot, credential):
+        if hasattr(self.reader, "collect"):
+            evidence = self.reader.collect(principal, deepcopy(snapshot), credential)
+            return EvidencePricing(lambda _: evidence, self.clock)(snapshot)
+        return self(snapshot)
 
     def __call__(self, snapshot):
         evidence = self.reader(deepcopy(snapshot))
@@ -176,7 +182,7 @@ class EvidencePricing:
         if quote.get("expires_at", 0) <= self.clock():
             unavailable("Quote expired before CALL_STARTED; fresh consent required")
         self.validate_context(principal, snapshot, quote, credential)
-        current = self(snapshot)  # local trusted reader only; never a generation/retry.
+        current = self.quote_for(principal, snapshot, credential)
         self.validate_context(principal, snapshot, current, credential)
         stable = ("principal", "credential_id", "credential_digest", "provider_key_id", "provider_subject",
                   "snapshot_sha256", "contract_revision", "base_micro_pollen", "maximum_micro_pollen", "markup_upper_percent")
@@ -184,3 +190,4 @@ class EvidencePricing:
             unavailable("Pricing or credential evidence changed; fresh consent required")
         if current["available_micro_pollen"] < held:
             raise HTTPException(409, "Provider budget cannot cover all held principal reservations")
+        return current

@@ -6,6 +6,7 @@ and the separate live generation gate remain closed. Offline future-member
 fixtures explicitly inject a policy; production construction uses owner-only.
 """
 from copy import deepcopy
+from contextlib import nullcontext
 import hashlib
 from fastapi import HTTPException
 from .byop_ledger import digest
@@ -14,7 +15,8 @@ from .asset_provider import require_ceo_asset_review, require_ceo_render_provena
 
 
 class Flow:
-    def __init__(self, authenticate, repository, ledger, generate, render, *, generation_policy=None):
+    def __init__(self, authenticate, repository, ledger, generate, render, *, generation_policy=None,
+                 owner_pilot=False):
         from .byop_principal import require_generation_role
         self.authenticate = authenticate
         self.repository = repository
@@ -24,6 +26,7 @@ class Flow:
         # Injected only by offline fixtures exercising future member isolation.
         # Application construction always uses the server's Owner V2 pilot policy.
         self.generation_policy = generation_policy or require_generation_role
+        self.owner_pilot = owner_pilot
 
     def credential(self, principal, credential_id):
         # Repository lookup must include the authenticated principal, not merely
@@ -105,14 +108,30 @@ class Flow:
         if self.authenticate(authorization) != principal:
             raise HTTPException(403, "Application principal changed before dispatch")
         self.generation_policy(principal)
-        self.ledger.check_dispatch(principal.key, execution, current, credential)
+        dispatch_evidence = self.ledger.check_dispatch(principal.key, execution, current, credential)
         # Production adapter atomically locks membership, credential, job and
         # ledger and persists CALL_STARTED before any provider dispatch.
-        self.repository.claim_execution(principal.key, execution_id, current, self.ledger)
+        dispatch_scope = nullcontext()
+        if self.owner_pilot:
+            from .byop_pilot import owner_pilot_dispatch
+            from .byop_principal import require_generation_role
+            require_generation_role(principal)
+            # Requires the trusted evidence validator; a base-price lambda is
+            # insufficient even if an administrative permit exists.
+            from .byop_pricing import EvidencePricing
+            if not isinstance(self.ledger.pricing, EvidencePricing):
+                raise HTTPException(503, "Trusted owner pilot evidence validator required")
+            receipt = self.repository.claim_owner_pilot(principal.key, execution, dispatch_evidence)
+            _, state = self.ledger.store.read(principal.key)
+            consent = state["consents"][consent_id]
+            dispatch_scope = owner_pilot_dispatch(receipt, execution, consent, credential, self.ledger.clock)
+        else:
+            self.repository.claim_execution(principal.key, execution_id, current, self.ledger)
         # From this point, any crash or exception leaves the reservation held.
         # No retry of provider dispatch or persistence is permitted.
         try:
-            generated = self.generate(deepcopy(current), credential["token"])
+            with dispatch_scope:
+                generated = self.generate(deepcopy(current), credential["token"])
             image, provider_meta = generated if isinstance(generated, tuple) else (generated, {})
             from .branding import stamp_image_bytes
             image, branding = stamp_image_bytes(image)

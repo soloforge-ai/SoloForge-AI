@@ -73,6 +73,12 @@ class Repository:
         return rpc("claim_execution", p_principal=principal, p_execution=record_id(execution_id),
                    p_snapshot_hash=digest(snapshot))
 
+    def claim_owner_pilot(self, principal, execution, evidence):
+        return rpc("claim_owner_pilot", p_principal=principal,
+                   p_execution=record_id(execution["id"]),
+                   p_snapshot_hash=execution["snapshot_sha256"],
+                   p_quote_hash=execution["quote_sha256"], p_evidence=evidence)
+
     def update_job(self, principal, job_id, revision, action, value):
         return job_record(rpc("job_update", p_principal=principal, p_id=record_id(job_id),
                               p_revision=revision, p_action=action, p_value=value))

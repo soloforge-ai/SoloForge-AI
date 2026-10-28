@@ -62,7 +62,8 @@ class Ledger:
                     "image_count", "prompt_sha256", "reference_sha256", "settings"}
         if set(snapshot) != required or snapshot["operation"] != "ceo_image" or snapshot["image_count"] != 1:
             raise HTTPException(400, "Exact single-image CEO snapshot required")
-        quote = deepcopy(self.pricing(deepcopy(snapshot)))
+        quote = deepcopy(self.pricing.quote_for(principal, deepcopy(snapshot), credential)
+                         if hasattr(self.pricing, "quote_for") else self.pricing(deepcopy(snapshot)))
         if (not isinstance(quote, dict) or type(quote.get("maximum_micro_pollen")) is not int
                 or not 0 < quote["maximum_micro_pollen"] <= maximum
                 or quote.get("includes_all_charges") is not True
@@ -140,7 +141,7 @@ class Ledger:
         if hasattr(self.pricing, "validate_dispatch"):
             held = sum(e["reserved"] for e in state.get("executions", {}).values()
                        if e["state"] in {"RESERVED", "CALL_STARTED", "UNKNOWN", "GENERATED"})
-            self.pricing.validate_dispatch(principal, snapshot, quote, credential, held)
+            return self.pricing.validate_dispatch(principal, snapshot, quote, credential, held)
 
     def start(self, principal, execution_id, snapshot):
         def start(state):

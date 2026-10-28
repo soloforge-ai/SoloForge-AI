@@ -12,12 +12,23 @@ from .byop_ledger import Ledger
 from .byop_flow import Flow
 from .byop_runtime import generate, render
 from .pollinations_app_contract import readiness
+from .byop_evidence import EvidenceCollector, disabled_transport
+from .byop_pricing import EvidencePricing
+import time
 
 router = APIRouter(prefix="/v1/byop", tags=["byop"], route_class=_PrivateRoute)
 
 
-def get_flow():
-    return Flow(authenticate, Repository(), Ledger(), generate, render)
+def get_evidence_transport():
+    # No environment switch or HTTP flag activates authenticated provider I/O.
+    return disabled_transport
+
+
+def get_flow(transport=Depends(get_evidence_transport)):
+    repository = Repository()
+    pricing = EvidencePricing(EvidenceCollector(repository, transport), time.time)
+    return Flow(authenticate, repository, Ledger(pricing=pricing), generate, render,
+                owner_pilot=True)
 
 
 class StrictBody(BaseModel):

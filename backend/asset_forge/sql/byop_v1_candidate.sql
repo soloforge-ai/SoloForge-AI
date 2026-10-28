@@ -64,6 +64,8 @@ begin
             or entry.value->'snapshot' is distinct from p_state->'executions'->entry.key->'snapshot'
             or entry.value->'snapshot_sha256' is distinct from p_state->'executions'->entry.key->'snapshot_sha256'
             or entry.value->'quote_sha256' is distinct from p_state->'executions'->entry.key->'quote_sha256'
+            or (entry.value ? 'dispatch_evidence' and entry.value->'dispatch_evidence'
+                is distinct from p_state->'executions'->entry.key->'dispatch_evidence')
             or entry.value->'reserved' is distinct from p_state->'executions'->entry.key->'reserved'
             or entry.value->'principal' is distinct from p_state->'executions'->entry.key->'principal'
             or entry.value->'consent_id' is distinct from p_state->'executions'->entry.key->'consent_id' then

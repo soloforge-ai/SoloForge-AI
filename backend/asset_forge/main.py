@@ -358,7 +358,7 @@ def _multipart_body(fields: dict[str, str], file_field: str, filename: str, file
     return b"".join(chunks), boundary
 
 
-def _extract_image_response(data: bytes) -> bytes:
+def _extract_image_response(data: bytes, *, allow_url: bool = True) -> bytes:
     """Accept Pollinations OpenAI-compatible JSON responses with URL or base64 image data."""
     try:
         payload = json.loads(data.decode("utf-8"))
@@ -379,6 +379,8 @@ def _extract_image_response(data: bytes) -> bytes:
 
     image_url = item.get("url")
     if image_url:
+        if not allow_url:
+            raise HTTPException(502, "Pilot requires inline image bytes; URL outcome requires reconciliation")
         try:
             with urllib.request.urlopen(image_url, timeout=60) as response:
                 return response.read()
@@ -435,7 +437,18 @@ def _generate_sheet(
             headers["Accept"] = "image/png,image/jpeg;q=0.9,*/*;q=0.8"
             request = urllib.request.Request(url, headers=headers, method="GET")
 
-        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+        from backend.byop_pilot import active, claim_request
+        pilot = active()
+        claim_request(prompt, reference_bytes, access_token, {"model": model, "width": width, "height": height})
+        if pilot:
+            # Never forward the selected credential through a provider redirect.
+            class NoRedirect(urllib.request.HTTPRedirectHandler):
+                def redirect_request(self, *args, **kwargs):
+                    return None
+            open_request = urllib.request.build_opener(NoRedirect()).open
+        else:
+            open_request = urllib.request.urlopen
+        with open_request(request, timeout=timeout_seconds) as response:
             data = response.read()
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
@@ -449,7 +462,7 @@ def _generate_sheet(
         raise HTTPException(status_code=502, detail="Pollinations returned an empty image response.")
 
     if reference_bytes is not None:
-        data = _extract_image_response(data)
+        data = _extract_image_response(data, allow_url=not pilot)
 
     try:
         with Image.open(io.BytesIO(data)) as image:

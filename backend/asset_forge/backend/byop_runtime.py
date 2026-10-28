@@ -25,9 +25,8 @@ def generate(snapshot, token):
         raise HTTPException(409, "Execution settings or identity reference changed")
     # Alias migration must not rewrite the immutable consent's model string.
     configured["model"] = snapshot["model"]
-    # Existing hard execution gate remains enforced by the shared builder.
-    # Offline tests replace only that gate and the provider transport; no runtime
-    # flag or environment credential can unlock live execution in this patch.
+    # Shared builder requires the internal, one-use dispatch scope created only
+    # after a durable pilot claim. Global non-pilot execution remains denied.
     pack = forge.build_asset_pack(request, access_token=token, _byop_context={
         "reference_bytes": reference, "prompt": prompt,
         "request_sha256": snapshot["settings"]["request_sha256"],

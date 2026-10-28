@@ -554,3 +554,62 @@ remain mandatory. No test skip, provider call or production action is introduced
 - `frontend/test/content_job_ceo_review_test.dart`
 - `frontend/test/pollinations_shared_session_test.dart`
 - `frontend/test/prawtwan_connection_ux_test.dart`
+
+## Local Owner pilot slice — 2026-10-28
+
+Baseline `a26e06af123f807debbef6dc6b16074fe9f8631d`, branch
+`feature/pollinations-byop-v1`. PR #212 remains Draft against main at that SHA;
+this slice is local/uncommitted. The original checkout is unchanged.
+
+The real `/v1/byop` dependency now wires the retained EvidencePricing validator
+to a same-credential EvidenceCollector. Its default transport is disabled.
+The explicit GET-only provider adapter is implemented but not activated. It
+allows only `/models`, `/account/key`, `/account/balance`, has a bounded response
+and timeout, and refuses redirects/retries. Collection adds server timestamps,
+principal/credential/digest binding and independently verified provider identity.
+
+The additive `byop_owner_pilot_candidate.sql` provides administrative-only permit
+provisioning and an invoker RPC. No client or service-role insert privilege and
+no issuance HTTP endpoint exist. An exact Owner/credential/job/model/consent/
+execution/snapshot/quote/maximum/expiry permit is consumed atomically with the
+retained CALL_STARTED claim. Under the ledger lock the RPC rechecks fresh funding
+against all held reservations and freezes the dispatch evidence. A scoped guard
+then allows exactly one matching credential/prompt/reference/settings dispatch
+through the shared builder. Global generation authorization still returns false.
+Members, legacy paths, workers and publishing remain denied. The pilot rejects
+redirects and URL-only results instead of following an unbound second request.
+
+Offline results (credential-cleared Linux seccomp; outbound sockets denied):
+
+- Affected BYOP pricing/repository/ledger/role suites: **168 passed**, 3 warnings,
+  33.75s. This run includes 29 pilot cases before the final added race assertion.
+- Final focused run: **48 passed**, 5 warnings, 6.52s: **30 pilot cases** plus
+  **18 selected non-HTTP legacy/security cases**. Twenty-nine cases overlap the
+  preceding run; these are not 216 distinct tests.
+- HTTP uses real ASGI routing, dependency resolution, real Owner V2 session SQL,
+  real permit/ledger/job SQL and the real builder. Only synchronous scheduling
+  is inline in the local fixture. Provider evidence/image responses and delivery
+  are deterministic fakes. Stored images are private filesystem fixtures, readable
+  through a new Repository instance and hash-checked authenticated preview.
+- Covered A/B credential selection, two member denials, foreign preview denial,
+  missing/expired/mismatched permits, missing consent, stale/changed price/key/
+  funding, revoked identity/credential, failed/lost claim, concurrent claims and
+  aggregate holds, request mutation, timeout/crash/URL ambiguity and no replay.
+  Generated/unknown/CALL_STARTED reservations remain held; permit issuance never
+  substitutes for consent, evidence or funding.
+- **17 native TestClient cases collected; NOT RUN locally**, no skips. They reuse
+  the same assertions in `test_byop_owner_pilot_native_http.py` for isolated CI.
+- AST (13 Python files), application imports/OpenAPI (15 BYOP paths) and
+  `git diff --check`: PASS. No Flutter source changes/checks in this slice.
+
+Native PostgreSQL/PostgREST row-lock contention and real private-bucket/RLS
+durability are **BLOCKED/unverified**: no isolated native server/client is
+available. PGlite serializes database access and is not native contention proof.
+No production migration or provider authentication was performed.
+
+Live readiness remains **NO**. Separate isolated native/runtime verification,
+actual Owner/credential/permissions/fresh evidence and an explicit one-attempt
+permit/activation are still required. Catalog rates and finite key budgets are
+not provider-enforced charge caps. Maximum financial exposure must be established
+and separately accepted before payment. Unknown final debits retain reservations
+for manual reconciliation; usage analytics are not exact settled-debit receipts.
