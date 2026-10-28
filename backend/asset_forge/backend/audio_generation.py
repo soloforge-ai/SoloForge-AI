@@ -57,6 +57,7 @@ def _claim_video_asset(job_id: str) -> dict[str, Any] | None:
     rows = _supabase_request(
         "GET",
         f"content_jobs?id=eq.{encoded}&status=eq.ASSET_READY"
+        "&content_package->>byop_principal=is.null"
         "&select=id,idea_flow_id,script,retry_count,voice_profile"
         "&limit=1",
     ) or []
@@ -82,6 +83,7 @@ def _claim_video_assets(limit: int = 2) -> list[dict[str, Any]]:
     rows = _supabase_request(
         "GET",
         "content_jobs?status=eq.ASSET_READY"
+        "&content_package->>byop_principal=is.null"
         "&select=id,idea_flow_id,script,retry_count,voice_profile"
         f"&order=updated_at.asc&limit={limit}",
     ) or []

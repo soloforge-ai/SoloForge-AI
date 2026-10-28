@@ -10,6 +10,7 @@ import urllib.parse
 from typing import Any
 
 from backend.branding import provenance_metadata
+from backend.asset_provider import require_ceo_asset_review, requires_ceo_asset_review
 from backend.shared_supabase import supabase_request as _supabase_request
 
 
@@ -47,6 +48,8 @@ def _route_approved_row(row: dict[str, Any]) -> dict[str, Any] | None:
     job_id = urllib.parse.quote(str(row["id"]), safe="")
     package = dict(row.get("content_package") or {})
     route = classify_route(package)
+    if requires_ceo_asset_review(package) and route == "TEXT":
+        route = "VISUAL"
     package.update(
         {
             "pipeline_route": route,
@@ -56,6 +59,9 @@ def _route_approved_row(row: dict[str, Any]) -> dict[str, Any] | None:
         }
     )
     next_status = "READY_TO_PUBLISH" if route == "TEXT" else "ASSET_QUEUED"
+    if requires_ceo_asset_review(package) and package.get("asset_storage_path"):
+        require_ceo_asset_review(package)
+        next_status = "ASSET_READY" if route == "VIDEO" else "READY_TO_PUBLISH"
     updated = _supabase_request(
         "PATCH",
         f"content_jobs?id=eq.{job_id}&status=eq.APPROVED",

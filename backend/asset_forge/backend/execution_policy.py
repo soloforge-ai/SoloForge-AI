@@ -33,6 +33,9 @@ def require_interactive_chat_execution() -> None:
 
 
 def require_generation_execution() -> None:
+    from .byop_pilot import check_gate
+    if check_gate():
+        return
     if not generation_execution_authorized():
         raise HTTPException(
             status_code=503,

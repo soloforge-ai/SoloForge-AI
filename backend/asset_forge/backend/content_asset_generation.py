@@ -5,6 +5,7 @@ from __future__ import annotations
 from backend.execution_policy import generation_execution_authorized
 
 import asyncio
+import hashlib
 from datetime import datetime, timezone
 import json
 import os
@@ -13,7 +14,7 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
-from backend.asset_provider import generate_asset
+from backend.asset_provider import CharacterAssetError, generate_asset, requires_ceo_asset_review
 from backend.branding import stamp_image_bytes
 from backend.product_grounding import (
     ProductGroundingError,
@@ -44,6 +45,7 @@ def _claim_asset_job(job_id: str) -> dict[str, Any] | None:
     rows = _supabase_request(
         "GET",
         f"content_jobs?id=eq.{encoded}&status=eq.ASSET_QUEUED"
+        "&content_package->>byop_principal=is.null"
         "&select=id,idea_flow_id,idea,visual_prompt,retry_count,content_package"
         "&limit=1",
     ) or []
@@ -76,6 +78,7 @@ def _claim_assets(limit: int = 2) -> list[dict[str, Any]]:
     rows = _supabase_request(
         "GET",
         "content_jobs?status=eq.ASSET_QUEUED"
+        "&content_package->>byop_principal=is.null"
         "&select=id"
         f"&order=updated_at.asc&limit={limit}",
     ) or []
@@ -146,6 +149,13 @@ def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str
         package["product_grounding_source_url"] = provider_meta.get("source_url")
         package["product_grounding_source_sha256"] = provider_meta.get("source_sha256")
 
+    if "asset_forge_manifest" in provider_meta:
+        package["asset_forge_manifest"] = provider_meta["asset_forge_manifest"]
+    if requires_ceo_asset_review(package):
+        package["asset_review_status"] = "PENDING"
+        package["asset_sha256"] = provider_meta.get("asset_sha256")
+        package.pop("asset_review_sha256", None)
+
     if route == "VIDEO" and not _video_asset_is_publishable(provider_meta):
         package["asset_status"] = "FAILED"
         package["asset_quality_gate"] = {
@@ -172,13 +182,15 @@ def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str
         return
 
     next_status = "ASSET_READY" if route == "VIDEO" else "READY_TO_PUBLISH"
+    if requires_ceo_asset_review(package):
+        next_status = "READY_FOR_REVIEW"
     _supabase_request(
         "PATCH",
         f"content_jobs?id=eq.{job_id}&status=eq.ASSET_GENERATING",
         body={
             "status": next_status,
             "content_package": package,
-            "qa_status": "PASS",
+            "qa_status": "PENDING" if requires_ceo_asset_review(package) else "PASS",
             "error_message": None,
             "updated_at": _now(),
         },
@@ -188,7 +200,11 @@ def _finish_asset(job: dict[str, Any], object_path: str, provider_meta: dict[str
 def _fail_asset(job: dict[str, Any], exc: Exception) -> None:
     job_id = urllib.parse.quote(str(job["id"]), safe="")
     retry_count = int(job.get("retry_count") or 0) + 1
-    retry = retry_count <= 2 and not isinstance(exc, ProductGroundingError)
+    retry = (
+        retry_count <= 2
+        and not isinstance(exc, (ProductGroundingError, CharacterAssetError))
+        and "asset_forge_request" not in (job.get("content_package") or {})
+    )
     package = dict(job.get("content_package") or {})
     package["asset_status"] = "PENDING" if retry else "FAILED"
     if isinstance(exc, ProductGroundingError):
@@ -208,8 +224,16 @@ def _fail_asset(job: dict[str, Any], exc: Exception) -> None:
 
 
 def _process_claimed_asset(job: dict[str, Any]) -> bool:
+    if (job.get("content_package") or {}).get("byop_principal"):
+        return False  # BYOP requires its authenticated atomic execution claim.
     try:
         package = dict(job.get("content_package") or {})
+        character_requested = requires_ceo_asset_review(package)
+        if character_requested and (
+            not isinstance(package.get("asset_forge_request"), dict)
+            or is_commercial_product_job(package)
+        ):
+            raise CharacterAssetError("CEO request is invalid or conflicts with product grounding")
         if is_commercial_product_job(package):
             grounding = validate_product_grounding(package)
             data, provider_meta = download_grounded_product_image(
@@ -226,14 +250,23 @@ def _process_claimed_asset(job: dict[str, Any]) -> bool:
                     "Editorial social media visual, clean premium creator-tech design, "
                     f"topic: {str(job.get('idea') or '')[:400]}"
                 )
+            character_options = (
+                {"asset_forge_request": package["asset_forge_request"]}
+                if character_requested else {}
+            )
             data, provider_meta = generate_asset(
                 prompt,
                 fallback_title=str(job.get("idea") or "SoloForge")[:240],
                 fallback_subtitle=str(package.get("goal") or "").strip() or None,
+                **character_options,
             )
         data, brand_meta = stamp_image_bytes(data)
         provider_meta = {**provider_meta, **brand_meta}
-        object_path = f"{job['id']}/cover.png"
+        provider_meta["asset_sha256"] = hashlib.sha256(data).hexdigest()
+        object_path = (
+            f"{job['id']}/{provider_meta['asset_sha256']}.png"
+            if character_requested else f"{job['id']}/cover.png"
+        )
         _upload_asset(data, object_path)
         _finish_asset(job, object_path, provider_meta)
         return True

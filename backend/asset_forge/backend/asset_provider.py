@@ -3,12 +3,14 @@ from __future__ import annotations
 from backend.execution_policy import require_generation_execution
 
 from io import BytesIO
+import base64
 import os
 from pathlib import Path
 import textwrap
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -16,6 +18,77 @@ from PIL import Image, ImageDraw, ImageFont
 ASSET_PROVIDER_VERSION = "asset_provider_v0.1"
 DEFAULT_WIDTH = 1080
 DEFAULT_HEIGHT = 1350
+
+
+class CharacterAssetError(RuntimeError):
+    """Identity-bound generation must not fall back or automatically retry."""
+
+
+def requires_ceo_asset_review(package: dict) -> bool:
+    return (package.get("ceo_identity_required") is True
+            or "asset_forge_request" in package or "asset_forge_manifest" in package)
+
+
+def require_ceo_asset_review(package: dict) -> None:
+    if requires_ceo_asset_review(package) and not (
+        package.get("asset_review_status") == "APPROVED"
+        and package.get("asset_status") == "READY"
+        and package.get("asset_storage_path")
+        and package.get("asset_sha256")
+        and package.get("asset_review_sha256") == package.get("asset_sha256")
+    ):
+        raise ValueError("CEO asset requires explicit approval of the current image")
+
+
+def require_ceo_render_provenance(job: dict) -> None:
+    package = dict(job.get("content_package") or {})
+    if not requires_ceo_asset_review(package) or package.get("pipeline_route") != "VIDEO":
+        return
+    require_ceo_asset_review(package)
+    qa = job.get("render_qa") or {}
+    digest = qa.get("output_sha256") if isinstance(qa, dict) else None
+    if not (
+        isinstance(digest, str) and len(digest) == 64
+        and all(c in "0123456789abcdef" for c in digest)
+        and qa.get("status") == "PASS"
+        and qa.get("source_asset_sha256") == package.get("asset_sha256")
+        and qa.get("source_asset_storage_path") == package.get("asset_storage_path")
+        and qa.get("output_storage_path") == job.get("video_storage_path")
+        and job.get("video_storage_path") == f"{job['id']}/{digest}.mp4"
+        and not job.get("video_url")
+    ):
+        raise ValueError("CEO video provenance does not match the approved image")
+
+
+def _character_asset(payload: dict[str, object]) -> tuple[bytes, dict[str, object]]:
+    # Lazy import avoids the runtime -> content worker -> provider import cycle
+    # and uses the same Character DNA and output-quality hooks as the API.
+    from runtime import asset_forge_main as forge
+
+    try:
+        request = forge.AssetForgeRequest.model_validate(payload)
+        if request.generation_layout != "single_character":
+            raise ValueError("Content assets require single_character CEO generation")
+        token = os.getenv("POLLINATIONS_API_KEY", "").strip()
+        if not token:
+            raise ValueError("Pollinations credential is not configured")
+        response = forge.build_asset_pack(request, access_token=token)
+        if response.generation_mode != "pollinations" or len(response.files) != 1:
+            raise ValueError("Expected exactly one generated CEO image")
+        with zipfile.ZipFile(BytesIO(base64.b64decode(response.zip_base64))) as archive:
+            data = archive.read(f"{response.asset_pack_name}/{response.files[0]}")
+        return data, {
+            "provider": "pollinations",
+            "mode": "ai_generated",
+            "provider_version": ASSET_PROVIDER_VERSION,
+            "attempts": [{"provider": "pollinations", "result": "success"}],
+            "asset_forge_manifest": response.output_manifest,
+        }
+    except Exception as exc:
+        # Never leak provider/credential details into persisted job errors.
+        raise CharacterAssetError(
+            "CEO asset generation failed or is ambiguous; manual review required."
+        ) from exc
 
 
 def _dimensions() -> tuple[int, int]:
@@ -173,8 +246,11 @@ def generate_asset(
     *,
     fallback_title: str,
     fallback_subtitle: str | None = None,
+    asset_forge_request: dict[str, object] | None = None,
 ) -> tuple[bytes, dict[str, object]]:
     require_generation_execution()
+    if asset_forge_request is not None:
+        return _character_asset(asset_forge_request)
     attempts: list[dict[str, str]] = []
 
     try:

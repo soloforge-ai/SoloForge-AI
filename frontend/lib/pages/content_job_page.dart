@@ -61,16 +61,17 @@ class ContentQualityReview {
 }
 
 class ContentJobPage extends StatefulWidget {
-  const ContentJobPage({super.key, required this.job});
+  const ContentJobPage({super.key, required this.job, this.service});
 
   final ContentJob job;
+  final ContentJobService? service;
 
   @override
   State<ContentJobPage> createState() => _ContentJobPageState();
 }
 
 class _ContentJobPageState extends State<ContentJobPage> {
-  final ContentJobService _service = ContentJobService();
+  late final ContentJobService _service;
 
   late ContentJob _job;
   late final TextEditingController _hook;
@@ -89,11 +90,15 @@ class _ContentJobPageState extends State<ContentJobPage> {
   bool _exportingImage = false;
   bool _assetPreviewLoading = false;
   String? _assetPreviewError;
+  Uint8List? _reviewImageBytes;
+  bool _reviewImageDisplayed = false;
+  int _previewRequest = 0;
 
   @override
   void initState() {
     super.initState();
     _job = widget.job;
+    _service = widget.service ?? ContentJobService();
     _hook = TextEditingController(text: _job.hook ?? '');
     _script = TextEditingController(text: _job.script ?? '');
     _caption = TextEditingController(text: _job.caption ?? '');
@@ -105,9 +110,19 @@ class _ContentJobPageState extends State<ContentJobPage> {
     _loadAssetPreview();
   }
 
-  bool get _hasPreviewableAsset => _job.hasReadyMediaMetadata;
+  bool get _requiresCeoReview =>
+      _job.contentPackage['ceo_identity_required'] == true ||
+      _job.contentPackage.containsKey('asset_forge_request') ||
+      _job.contentPackage.containsKey('asset_forge_manifest');
+  bool get _isCeoAssetReview => _requiresCeoReview &&
+      _job.status == 'READY_FOR_REVIEW' && _job.assetStatus == 'READY';
+  bool get _hasPreviewableAsset => _job.hasReadyMediaMetadata ||
+      (_isCeoAssetReview && (_job.assetStoragePath?.isNotEmpty ?? false));
 
   Future<void> _loadAssetPreview() async {
+    final request = ++_previewRequest;
+    _reviewImageBytes = null;
+    _reviewImageDisplayed = false;
     if (!_hasPreviewableAsset) {
       if (!mounted) return;
       setState(() {
@@ -125,17 +140,21 @@ class _ContentJobPageState extends State<ContentJobPage> {
 
     try {
       final preview = await _service.getAssetPreview(_job.id);
-      if (!mounted) return;
-      setState(() => _assetPreview = preview);
+      final bytes = _isCeoAssetReview ? await _service.downloadReviewImage(preview) : null;
+      if (!mounted || request != _previewRequest) return;
+      setState(() {
+        _assetPreview = preview;
+        _reviewImageBytes = bytes;
+      });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || request != _previewRequest) return;
       setState(() {
         _assetPreview = null;
         _assetPreviewError =
             error.toString().replaceFirst('Exception: ', '');
       });
     } finally {
-      if (mounted) setState(() => _assetPreviewLoading = false);
+      if (mounted && request == _previewRequest) setState(() => _assetPreviewLoading = false);
     }
   }
 
@@ -297,7 +316,16 @@ class _ContentJobPageState extends State<ContentJobPage> {
     }
   }
 
-  Future<void> _approve() => _run(() => _service.approve(_job.id));
+  Future<void> _approve() => _isCeoAssetReview
+      ? _reviewCeoAsset(true) : _run(() => _service.approve(_job.id));
+
+  Future<void> _reviewCeoAsset(bool approved) async {
+    final bytes = _reviewImageBytes;
+    final preview = _assetPreview;
+    if (!_isCeoAssetReview || !_reviewImageDisplayed || bytes == null || preview == null) return;
+    await _run(() => _service.reviewAsset(_job.id,
+        preview: preview, displayedImage: bytes, approved: approved));
+  }
 
   Future<void> _resolveProduct() async {
     final url = _productUrl.text.trim();
@@ -524,6 +552,12 @@ class _ContentJobPageState extends State<ContentJobPage> {
                 loading: _assetPreviewLoading,
                 error: _assetPreviewError,
                 onRetry: _loadAssetPreview,
+                imageBytes: _reviewImageBytes,
+                onImageDisplayed: (displayedBytes) {
+                  if (mounted && !_reviewImageDisplayed && identical(_reviewImageBytes, displayedBytes) && !_assetPreviewLoading) {
+                    setState(() => _reviewImageDisplayed = true);
+                  }
+                },
               ),
             ],
             if (_caption.text.trim().isNotEmpty)
@@ -708,9 +742,15 @@ class _ContentJobPageState extends State<ContentJobPage> {
               ],
               if (_canApprove)
                 FilledButton.icon(
-                  onPressed: _busy ? null : _approve,
+                  onPressed: _busy || (_isCeoAssetReview && !_reviewImageDisplayed) ? null : _approve,
                   icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('Approve'),
+                  label: Text(_isCeoAssetReview ? 'Approve CEO image' : 'Approve'),
+                ),
+              if (_isCeoAssetReview)
+                OutlinedButton.icon(
+                  onPressed: _busy || !_reviewImageDisplayed ? null : () => _reviewCeoAsset(false),
+                  icon: const Icon(Icons.cancel_outlined),
+                  label: const Text('Reject CEO image'),
                 ),
               if (_job.status == 'READY_FOR_REVIEW') const SizedBox(height: 8),
               if (_canRegenerate)
@@ -755,12 +795,16 @@ class _AssetPreviewCard extends StatelessWidget {
     required this.loading,
     required this.error,
     required this.onRetry,
+    this.imageBytes,
+    this.onImageDisplayed,
   });
 
   final ContentAssetPreview? preview;
   final bool loading;
   final String? error;
   final VoidCallback onRetry;
+  final Uint8List? imageBytes;
+  final ValueChanged<Uint8List>? onImageDisplayed;
 
   @override
   Widget build(BuildContext context) {
@@ -813,6 +857,17 @@ class _AssetPreviewCard extends StatelessWidget {
                   ),
                 ],
               ),
+            )
+          else if (imageBytes != null)
+            Image.memory(
+              imageBytes!, fit: BoxFit.contain,
+              frameBuilder: (context, child, frame, syncLoaded) {
+                if (frame != null) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) => onImageDisplayed?.call(imageBytes!));
+                }
+                return child;
+              },
+              errorBuilder: (context, error, stack) => const Text('The CEO image could not be displayed. Refresh the preview.'),
             )
           else if (preview?.mediaType == 'image')
             Image.network(

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'byop_page.dart';
 
 String ownerOAuthRedirectTo({
   required bool isWeb,
@@ -91,7 +92,10 @@ class _OwnerOAuthUatPageState extends State<OwnerOAuthUatPage> {
   Widget build(BuildContext context) {
     final user = _session?.user;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.identityOnly ? 'Owner sign-in test' : 'SoloForge sign-in')),
+      appBar: AppBar(title: Text(widget.identityOnly ? 'Owner sign-in test' : 'SoloForge sign-in'), actions: [
+        TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => const ByopPage(member: true))), child: const Text('Member BYOP')),
+      ]),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),

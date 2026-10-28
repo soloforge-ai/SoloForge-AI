@@ -41,6 +41,7 @@ from backend.content_jobs_api import router as content_jobs_router
 from backend.analytics_api import router as analytics_router
 from backend.publishing_api import router as publishing_router
 from backend.ops_webhook import router as ops_webhook_router
+from backend.byop_router import router as byop_router
 from backend.publora_publishing import publishing_worker_loop
 
 
@@ -62,6 +63,7 @@ app.include_router(content_jobs_router)
 app.include_router(analytics_router)
 app.include_router(publishing_router)
 app.include_router(ops_webhook_router)
+app.include_router(byop_router)
 
 CHARACTER_REFERENCE_DIR = Path(__file__).resolve().parent / "characters"
 CHARACTER_LIBRARY_BASE_URL = (
@@ -356,7 +358,7 @@ def _multipart_body(fields: dict[str, str], file_field: str, filename: str, file
     return b"".join(chunks), boundary
 
 
-def _extract_image_response(data: bytes) -> bytes:
+def _extract_image_response(data: bytes, *, allow_url: bool = True) -> bytes:
     """Accept Pollinations OpenAI-compatible JSON responses with URL or base64 image data."""
     try:
         payload = json.loads(data.decode("utf-8"))
@@ -377,6 +379,8 @@ def _extract_image_response(data: bytes) -> bytes:
 
     image_url = item.get("url")
     if image_url:
+        if not allow_url:
+            raise HTTPException(502, "Pilot requires inline image bytes; URL outcome requires reconciliation")
         try:
             with urllib.request.urlopen(image_url, timeout=60) as response:
                 return response.read()
@@ -390,12 +394,14 @@ def _generate_sheet(
     prompt: str,
     reference_bytes: bytes | None,
     access_token: str,
+    *,
+    settings: dict | None = None,
 ) -> bytes:
     """Generate one image sheet through Pollinations using the connected user's token."""
     require_generation_execution()
-    model = os.getenv("POLLINATIONS_IMAGE_EDIT_MODEL", "kontext").strip() or "kontext"
-    width = int(os.getenv("POLLINATIONS_IMAGE_WIDTH", "1024"))
-    height = int(os.getenv("POLLINATIONS_IMAGE_HEIGHT", "1024"))
+    model = settings["model"] if settings is not None else (os.getenv("POLLINATIONS_IMAGE_EDIT_MODEL", "kontext").strip() or "kontext")
+    width = settings["width"] if settings is not None else int(os.getenv("POLLINATIONS_IMAGE_WIDTH", "1024"))
+    height = settings["height"] if settings is not None else int(os.getenv("POLLINATIONS_IMAGE_HEIGHT", "1024"))
     timeout_seconds = int(os.getenv("POLLINATIONS_TIMEOUT_SECONDS", "240"))
 
     headers = {
@@ -431,7 +437,18 @@ def _generate_sheet(
             headers["Accept"] = "image/png,image/jpeg;q=0.9,*/*;q=0.8"
             request = urllib.request.Request(url, headers=headers, method="GET")
 
-        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+        from backend.byop_pilot import active, claim_request
+        pilot = active()
+        claim_request(prompt, reference_bytes, access_token, {"model": model, "width": width, "height": height})
+        if pilot:
+            # Never forward the selected credential through a provider redirect.
+            class NoRedirect(urllib.request.HTTPRedirectHandler):
+                def redirect_request(self, *args, **kwargs):
+                    return None
+            open_request = urllib.request.build_opener(NoRedirect()).open
+        else:
+            open_request = urllib.request.urlopen
+        with open_request(request, timeout=timeout_seconds) as response:
             data = response.read()
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
@@ -445,7 +462,7 @@ def _generate_sheet(
         raise HTTPException(status_code=502, detail="Pollinations returned an empty image response.")
 
     if reference_bytes is not None:
-        data = _extract_image_response(data)
+        data = _extract_image_response(data, allow_url=not pilot)
 
     try:
         with Image.open(io.BytesIO(data)) as image:
@@ -782,6 +799,13 @@ def generate_asset_pack(
     authorization: str | None = Header(default=None),
 ) -> AssetForgeResponse:
     access_token = get_pollinations_access_token_from_authorization(authorization)
+    return build_asset_pack(request, access_token=access_token)
+
+
+def build_asset_pack(
+    request: AssetForgeRequest, *, access_token: str | None, _byop_context: dict | None = None,
+) -> AssetForgeResponse:
+    """Shared processing contract; a credential never replaces execution approval."""
     single = request.generation_layout == "single_character"
     if single and not access_token:
         raise HTTPException(status_code=401, detail="Connect Pollinations before single-character generation")
@@ -789,7 +813,8 @@ def generate_asset_pack(
         require_generation_execution()
 
     try:
-        reference_bytes = _load_character_reference(request.character)
+        reference_bytes = (_load_character_reference(request.character) if _byop_context is None
+                           else _byop_context["reference_bytes"])
         if _character_key(request.character) in {"pearli", "ceo"} and reference_bytes is None:
             raise HTTPException(
                 status_code=409,
@@ -799,12 +824,19 @@ def generate_asset_pack(
         if single and hashlib.sha256(reference_bytes).hexdigest() != CEO_MASTER_SHA256:
             raise HTTPException(status_code=409, detail="CEO master reference hash does not match the approved master")
         columns, rows = (1, 1) if single else _grid(request.quantity)
-        prompt = _build_prompt(request, columns, rows, reference_bytes is not None)
+        prompt = _build_prompt(request, columns, rows, reference_bytes is not None) if _byop_context is None else _byop_context["prompt"]
+        if _byop_context is not None:
+            from backend.byop_ledger import digest
+            if (not single or digest(request.model_dump()) != _byop_context["request_sha256"]
+                    or hashlib.sha256(prompt.encode()).hexdigest() != _byop_context["prompt_sha256"]):
+                raise HTTPException(409, "BYOP immutable generation context does not match the request")
 
         generation_mode = "local_fallback"
         if access_token:
             try:
-                source_bytes = _generate_sheet(prompt, reference_bytes, access_token)
+                source_bytes = (_generate_sheet(prompt, reference_bytes, access_token) if _byop_context is None
+                                else _generate_sheet(prompt, reference_bytes, access_token,
+                                                     settings=_byop_context["provider_settings"]))
                 if not single:
                     source_bytes, _ = stamp_image_bytes(source_bytes)
                 generation_mode = "pollinations"

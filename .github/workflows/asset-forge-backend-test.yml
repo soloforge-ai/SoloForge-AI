@@ -32,9 +32,12 @@ jobs:
   backend-test:
     if: ${{ github.event_name != 'workflow_dispatch' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -45,6 +48,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r backend/asset_forge/requirements.txt pytest httpx
+
+      - name: Install offline render test dependencies
+        timeout-minutes: 6
+        run: |
+          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends ffmpeg
+          fi
+          ffmpeg -version
+          ffprobe -version
 
       - name: Set up Node for Owner V2 SQL tests
         uses: actions/setup-node@v4
@@ -72,7 +85,7 @@ jobs:
 
       - name: Run complete backend and scanner test suites
         run: |
-          PYTHONPATH=backend/asset_forge:. python -m pytest -q \
+          PYTHONPATH=backend/asset_forge:. python -m pytest -q -rA \
             backend/asset_forge/tests \
             backend/tests \
             tools/scanner/tests \
