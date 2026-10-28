@@ -524,6 +524,16 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           IconButton(
+            tooltip: 'Inspect Pollinations Account',
+            icon: const Icon(Icons.manage_search),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const PollinationsAccountInspectPage(),
+              ),
+            ),
+          ),
+          IconButton(
             tooltip: 'Refresh',
             icon: const Icon(Icons.refresh),
             onPressed: _loading ? null : _loadJobs,
