@@ -138,7 +138,9 @@ def _supabase_request(
         with urllib.request.urlopen(request, timeout=10) as response:
             return response.read()
     except urllib.error.HTTPError as exc:
-        raise RuntimeError("Supabase session store is unavailable.") from exc
+        # Status only: response bodies can contain credential-bearing row details.
+        print("supabase_session_store_http_error", {"status": exc.code, "method": method})
+        raise RuntimeError("Supabase session store is unavailable.") from None
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         print(
             "supabase_session_store_transport_error",
