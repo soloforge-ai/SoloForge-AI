@@ -689,6 +689,35 @@ def pollinations_sk_preflight(
     return verify_identity(session.access_token, session.expires_at, _expected_subject(owner_id))
 
 
+@router.get("/sk/identity-diagnostic")
+def pollinations_sk_identity_diagnostic(
+    authorization: str | None = Header(default=None),
+    pollinations_session: str | None = Header(default=None, alias="X-Pollinations-Session"),
+    credential_record_id: str | None = Query(default=None),
+) -> dict:
+    """Read-only identity comparison. Never changes credential or spending state."""
+    from backend.pollinations_sk_lifecycle import _userinfo
+    owner_id = _owner(authorization)
+    session = _credential(owner_id, pollinations_session, credential_record_id)
+    result = {"comparison": "UNKNOWN", "spending_authorized": False,
+              "owner_binding": "UNVERIFIED"}
+    if session.expires_at <= time.time():
+        return {**result, "reason": "session_expired"}
+    if not isinstance(session.access_token, str) or not session.access_token.startswith("sk_"):
+        return {**result, "reason": "credential_invalid"}
+    expected = os.getenv("POLLINATIONS_TRUSTED_APP_KEY_ID", "").strip()
+    if not expected:
+        return {**result, "reason": "reference_missing"}
+    status, payload = _userinfo(session.access_token)
+    if status != 200 or not isinstance(payload, dict):
+        return {**result, "reason": "userinfo_unavailable"}
+    subject = payload.get("sub")
+    if not isinstance(subject, str) or not subject.strip() or len(subject) > 512:
+        return {**result, "reason": "provider_subject_missing"}
+    return {**result, "comparison": "MATCH" if secrets.compare_digest(subject, expected)
+            else "MISMATCH"}
+
+
 class ReverificationRequest(BaseModel):
     credential_record_id: str
 
