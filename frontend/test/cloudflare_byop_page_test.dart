@@ -50,15 +50,25 @@ void main() {
     service.provider = 'cloudflare';
     await tester.pumpWidget(MaterialApp(home: ByopPage(member: false, service: service)));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('FLUX.1 Schnell'), 300,
+      scrollable: find.byType(Scrollable).first);
     expect(find.text('FLUX.1 Schnell'), findsOneWidget);
     final create = find.text('Create mock image job');
-    await tester.ensureVisible(create); await tester.tap(create); await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(create, 300, scrollable: find.byType(Scrollable).first);
+    await tester.tap(create); await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byType(Image), 300, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     expect(find.byType(Image), findsOneWidget);
     final approve = find.text('Approve displayed image');
-    await tester.ensureVisible(approve); await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(approve, 300, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     await tester.tap(approve); await tester.pumpAndSettle();
     expect(reviews, 1);
+    await tester.scrollUntilVisible(find.textContaining('Status: ASSET_READY'), -300,
+      scrollable: find.byType(Scrollable).first);
     expect(find.textContaining('Status: ASSET_READY'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Render approved image'), 300,
+      scrollable: find.byType(Scrollable).first);
     final render = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Render approved image'));
     expect(render.onPressed, isNull);
     await tester.pumpWidget(const SizedBox());

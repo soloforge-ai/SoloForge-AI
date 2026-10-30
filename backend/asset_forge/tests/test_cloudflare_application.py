@@ -187,5 +187,14 @@ def test_concurrent_http_execution_has_one_dispatch(app):
     cid,jid=prepare(app); consent=authorize(app,cid,jid).json()
     body={'consent_id':consent['consent_id'],'execution_id':str(uuid4())}
     with ThreadPoolExecutor(2) as pool:
-        results=list(pool.map(lambda _: app['http']('POST','/executions',json=body).status_code,range(2)))
-    assert sorted(results)==[200,409] and len(app['calls'])==1
+        responses=list(pool.map(lambda _: app['http']('POST','/executions',json=body),range(2)))
+    assert sum(r.status_code==200 for r in responses)==1 and len(app['calls'])==1
+    loser=next(r for r in responses if r.status_code!=200)
+    # Native independent connections can both see RESERVED before one claims it.
+    # A rejected/lost claim acknowledgement deliberately returns fail-closed 503.
+    assert loser.status_code in (409,503)
+    if loser.status_code==503:
+        assert loser.json()['detail']=='Cloudflare claim unconfirmed; no dispatch'
+    assert app['http']('POST','/executions',json=body).status_code==409
+    state=app['ledger'].store.read(PRINCIPAL)[1]['executions'][body['execution_id']]
+    assert state['state']=='GENERATED' and state['reserved']==70 and len(app['calls'])==1
