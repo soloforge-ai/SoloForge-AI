@@ -86,6 +86,7 @@ def test_postgrest_schema_cache_and_real_upsert(repair,monkeypatch,capsys):
     r=repair
     # Start PostgREST BEFORE migration, exactly reproducing the missing contract.
     with rest_service(r.db) as rest:
+        diagnostics=[]
         headers={'Authorization':'Bearer '+jwt()}
         missing=rest.post('/pollinations_sessions',headers=headers,json={
             'session_id':'legacy-contract','access_token':SECRET,'submitted_by_owner':OWNER})
@@ -106,6 +107,8 @@ def test_postgrest_schema_cache_and_real_upsert(repair,monkeypatch,capsys):
             path=request.full_url.removeprefix('https://offline.invalid/rest/v1')
             response=rest.request(request.get_method(),path,headers=dict(request.header_items()),content=request.data)
             if response.status_code>=400:
+                code=response.json().get('code','unknown')
+                diagnostics.append((response.status_code,code if isinstance(code,str) and code.isalnum() else 'unclassified'))
                 raise urllib.error.HTTPError('http://isolated.test',response.status_code,'storage rejected',{},BytesIO(response.content))
             return Response(response.content)
         monkeypatch.setattr(routes.urllib.request,'urlopen',local_http)
@@ -114,7 +117,7 @@ def test_postgrest_schema_cache_and_real_upsert(repair,monkeypatch,capsys):
             async with r.client() as client:
                 state=await r.start(client)
                 response=await r.callback(client,state)
-                assert response.status_code==302
+                assert response.status_code==302, diagnostics
                 handoff=parse_qs(urlsplit(response.headers['location']).query)['code'][0]
                 exchanged=await client.post('/auth/pollinations/mobile/exchange',json={'code':handoff})
                 assert exchanged.status_code==200 and SECRET not in exchanged.text

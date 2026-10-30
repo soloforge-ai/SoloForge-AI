@@ -103,8 +103,15 @@ def reload_schema(db, client):
     db.query("notify pgrst, 'reload schema'")
     deadline=time.monotonic()+15
     while True:
-        response=client.get('/pollinations_sessions',params={'select':'submitted_by_owner','limit':0},
-            headers={'Authorization':'Bearer '+jwt()})
-        if response.status_code==200: return
+        # A SELECT can see a newly added column before PostgREST's write/RPC
+        # metadata cache is refreshed. Poll the actual cached OpenAPI contract.
+        response=client.get('/',headers={'Authorization':'Bearer '+jwt()})
+        if response.status_code==200:
+            metadata=response.json()
+            schemas=metadata.get('definitions',metadata.get('components',{}).get('schemas',{}))
+            columns=schemas.get('pollinations_sessions',{}).get('properties',{})
+            if {'submitted_by_owner','verification_status','provider_ownership_verified',
+                'spending_authorized','credential_digest'} <= columns.keys() and '/rpc/pollinations_reverify' in metadata.get('paths',{}):
+                return
         if time.monotonic()>deadline: raise RuntimeError('PostgREST schema refresh not established')
         time.sleep(.1)

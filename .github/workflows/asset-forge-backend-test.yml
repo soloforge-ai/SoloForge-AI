@@ -283,6 +283,11 @@ jobs:
           EXPECTED_DIGEST=sha256:839fbb5a4942a7758dd93e18b42ea5649807491a0545b5eeeb8f0b8bb11857a5 IMAGE_DIGESTS="$digests" python -c 'import json,os; assert any(x.endswith("@"+os.environ["EXPECTED_DIGEST"]) for x in json.loads(os.environ["IMAGE_DIGESTS"]))'
           echo "$digests"
           docker exec "$CF_NATIVE_CONTAINER" postgres --version
+          # Test-only cluster: prevent PostgreSQL error DETAIL/statement logs
+          # from echoing synthetic credential rows in GitHub's service logs.
+          docker exec "$CF_NATIVE_CONTAINER" psql -U postgres -d cloudflare_ci -c "ALTER SYSTEM SET log_min_messages = 'panic'"
+          docker exec "$CF_NATIVE_CONTAINER" psql -U postgres -d cloudflare_ci -c "ALTER SYSTEM SET log_min_error_statement = 'panic'"
+          docker exec "$CF_NATIVE_CONTAINER" psql -U postgres -d cloudflare_ci -c 'SELECT pg_reload_conf()'
           for net in $(docker inspect --format '{{range $name, $value := .NetworkSettings.Networks}}{{$name}} {{end}}' "$CF_NATIVE_CONTAINER"); do
             docker network disconnect "$net" "$CF_NATIVE_CONTAINER"
           done
