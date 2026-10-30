@@ -57,11 +57,18 @@ void main() {
     await tester.scrollUntilVisible(create, 300, scrollable: find.byType(Scrollable).first);
     await tester.tap(create); await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.byType(Image), 300, scrollable: find.byType(Scrollable).first);
+    // Complete the real codec outside the widget test's fake async clock.
+    // The application must still observe a rendered frame before approval.
+    await tester.runAsync(() => precacheImage(
+      tester.widget<Image>(find.byType(Image)).image,
+      tester.element(find.byType(Image))));
     await tester.pumpAndSettle();
     expect(find.byType(Image), findsOneWidget);
     final approve = find.text('Approve displayed image');
     await tester.scrollUntilVisible(approve, 300, scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
+    expect(tester.widget<OutlinedButton>(find.widgetWithText(
+      OutlinedButton, 'Approve displayed image')).onPressed, isNotNull);
     await tester.tap(approve); await tester.pumpAndSettle();
     expect(reviews, 1);
     await tester.scrollUntilVisible(find.textContaining('Status: ASSET_READY'), -300,
