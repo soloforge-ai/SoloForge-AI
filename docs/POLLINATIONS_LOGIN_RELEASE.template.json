@@ -1,0 +1,32 @@
+{
+  "status": "BLOCKED_NOT_AUTHORIZATION_TO_DEPLOY",
+  "source_sha": "a04a2ede7c9de94a0f523ee8e9e1a7d51b771f1b",
+  "web": {
+    "autoDeploy": false,
+    "build": "flutter build web --release --dart-define=SOLOFORGE_OWNER_V2=true --dart-define=ASSET_FORGE_API_URL=https://soloforge-asset-forge.onrender.com",
+    "url": "https://soloforge-ai-web.onrender.com/"
+  },
+  "backend": {
+    "autoDeploy": false,
+    "required_present_without_values": ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "POLLINATIONS_CLIENT_ID"],
+    "proposed_nonsecret_settings": {
+      "OWNER_V2_GITHUB_ENABLED": "true",
+      "POLLINATIONS_REDIRECT_URI": "https://soloforge-asset-forge.onrender.com/auth/pollinations/callback",
+      "POLLINATIONS_WEB_RETURN_TO": "https://soloforge-ai-web.onrender.com/",
+      "POLLINATIONS_MOBILE_RETURN_TO": "soloforge://oauth/pollinations",
+      "SOLOFORGE_RUN_EMBEDDED_WORKERS": "false",
+      "SOLOFORGE_RUN_DEDICATED_WORKERS": "false"
+    }
+  },
+  "prerequisites": [
+    "Verify provider registration and client ID without exposing keys",
+    "Verify existing Owner V2 GitHub binding and runtime authentication; no reseeding",
+    "Validate exact production constraints/triggers and native PostgreSQL/PostgREST permissions",
+    "Review backups and duplicate credentials before separately authorized schema adoption",
+    "Exact-SHA backend/security and Web artifact verification; no live OAuth in offline tests"
+  ],
+  "order": ["maintenance/drain OAuth", "compatible additive schema", "pinned backend", "pinned web", "GET-only health/OpenAPI and static smoke"],
+  "rollback": "Paired artifacts only after old-code/new-schema credential compatibility review. Preserve schema and rows; never replay exchanges.",
+  "runtime_limit": "One backend instance; process-local transactions/handoffs are lost on restart.",
+  "generation": "DENIED; no pilot permit issuance, workers or publishing"
+}
