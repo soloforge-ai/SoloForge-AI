@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:crypto/crypto.dart';
 import '../services/byop_service.dart';
 
 /// Minimal bounded BYOP journey; it never changes owner administration access.
@@ -21,6 +23,7 @@ class _ByopPageState extends State<ByopPage> {
   final _account = TextEditingController();
   String? _cfCredentialId;
   bool get _cloudflare => _service.provider == 'cloudflare';
+  bool get _liveCloudflare => _cloudflare && _readiness['transport_mode'] == 'cloudflare_http';
   static const _cfModel = '@cf/black-forest-labs/flux-1-schnell';
   final _script = TextEditingController(text: 'Welcome to SoloForge.');
   final _maximum = TextEditingController();
@@ -154,18 +157,21 @@ class _ByopPageState extends State<ByopPage> {
           items: [
             const DropdownMenuItem(value: 'pollinations', child: Text('Pollinations')),
             DropdownMenuItem(value: 'cloudflare', enabled: !widget.member && _service.cloudflareAvailable,
-              child: const Text('Cloudflare — offline test capability only')),
+              child: const Text('Cloudflare — server capability required')),
           ],
           onChanged: _busy ? null : (value) { if (value != null) _run(() => _changeProvider(value)); },
         ),
-        Text(_cloudflare ? 'Mock images only. Not CEO identity compatible. No live provider execution.'
+        Text(_cloudflare ? (_liveCloudflare
+          ? 'Cloudflare text-to-image. No image-to-image or CEO identity guarantee.'
+          : 'Mock images only. Not CEO identity compatible. No live provider execution.')
           : 'Use your own Pollinations account. Connecting never authorizes Pollen spending.'),
         const SizedBox(height: 12),
         Text(_principal == null ? 'Application access not verified. Sign in using the existing GitHub flow first.' : 'Authenticated: $_principal'),
         OutlinedButton(onPressed: _busy ? null : () => _run(_connectApplication), child: const Text('Verify application access')),
         if (_principal != null) ...[
           Text(_readiness['reason']?.toString() ?? 'Generation readiness unavailable; spending remains locked.'),
-          const Text('Live generation remains locked. Owner pilot eligibility is not spending permission.'),
+          Text(_liveCloudflare ? 'Live transport configured. Verified credentials, trusted pricing, Neurons budget and explicit consent are mandatory.'
+            : 'Live generation remains locked. Owner pilot eligibility is not spending permission.'),
           if (!_cloudflare) ...[
           Text('Developer earnings: ${(_readiness['earnings'] as Map?)?['status'] ?? 'unverified'}. No earnings confirmed.'),
           const Text('Existing SKs do not prove App Key attribution. Eligible App Key traffic adds 25% to base usage; app-owner self-use is excluded.'),
@@ -222,7 +228,7 @@ class _ByopPageState extends State<ByopPage> {
             _jobId.text = job['id'] as String;
             if (mounted) setState(() { _consent = null; _consentCredential = null; _execution = null; _attempted = false; _confirmed = false; });
             await _loadJob();
-          }), child: Text(_cloudflare ? 'Create mock image job' : 'Create CEO Content Job')),
+          }), child: Text(_cloudflare ? (_liveCloudflare ? 'Create Cloudflare image job' : 'Create mock image job') : 'Create CEO Content Job')),
           TextField(controller: _jobId, decoration: const InputDecoration(labelText: 'Content Job ID (save for recovery)')),
           OutlinedButton(onPressed: _busy ? null : () => _run(_loadJob), child: const Text('Load / refresh my job')),
           if (jobId != null) ...[
@@ -232,7 +238,7 @@ class _ByopPageState extends State<ByopPage> {
               if (mounted) setState(() => _notice = 'Execution history: ${result['executions']}. Unknown charges require reconciliation.');
             }), child: const Text('Check execution / reconciliation state')),
             TextField(controller: _maximum, keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: _cloudflare ? 'Maximum Neurons for this mock execution' : 'Maximum Pollen for this one execution')),
+                decoration: InputDecoration(labelText: _cloudflare ? (_liveCloudflare ? 'Maximum Neurons for this execution' : 'Maximum Neurons for this mock execution') : 'Maximum Pollen for this one execution')),
             const Text('A trusted server estimate is required. Spending stays blocked when pricing is unavailable.'),
             CheckboxListTile(value: _confirmed, onChanged: _busy ? null : (v) => setState(() => _confirmed = v ?? false),
                 title: const Text('Authorize only this job, my selected credential and maximum, expiring in five minutes.')),
@@ -248,9 +254,9 @@ class _ByopPageState extends State<ByopPage> {
                   _quotedMaximum = (result['quote'] as Map<String, dynamic>)[_cloudflare ? 'maximum_neurons' : 'maximum_micro_pollen'] as int;
                 });
               }
-            }), child: Text(_cloudflare ? 'Authorize bounded mock execution' : 'Authorize bounded spending')),
+            }), child: Text(_cloudflare ? (_liveCloudflare ? 'Authorize bounded Cloudflare execution' : 'Authorize bounded mock execution') : 'Authorize bounded spending')),
             if (_consent != null && _quotedMaximum != null)
-              Text(_cloudflare ? 'Server-quoted mock maximum: $_quotedMaximum Neurons; not a provider charge.' : 'Server-quoted maximum total: ${(_quotedMaximum! / 1000000).toStringAsFixed(6)} Pollen. This is a bound, not a confirmed charge or earnings.'),
+              Text(_cloudflare ? (_liveCloudflare ? 'Server-quoted maximum: $_quotedMaximum Neurons; final charge unknown until reconciled.' : 'Server-quoted mock maximum: $_quotedMaximum Neurons; not a provider charge.') : 'Server-quoted maximum total: ${(_quotedMaximum! / 1000000).toStringAsFixed(6)} Pollen. This is a bound, not a confirmed charge or earnings.'),
             if (_execution != null) SelectableText('Execution: $_execution'),
             FilledButton(onPressed: _busy || !pilotEligible || _consent == null || _attempted ? null : () => _run(() async {
               if ((_cloudflare ? _cfCredentialId : await _service.connections.byopCredentialId(_principal!)) != _consentCredential) {
@@ -259,7 +265,7 @@ class _ByopPageState extends State<ByopPage> {
               setState(() => _attempted = true);
               await _service.post('executions', {'consent_id': _consent, 'execution_id': _execution});
               await _loadJob();
-            }), child: Text(_cloudflare ? 'Generate mock image once' : 'Generate once')),
+            }), child: Text(_cloudflare ? (_liveCloudflare ? 'Generate Cloudflare image once' : 'Generate mock image once') : 'Generate once')),
             if (_attempted) const Text('Execution submitted. Unknown outcomes require reconciliation; do not automatically retry.'),
             if (_image != null) Image.memory(_image!, frameBuilder: (context, child, frame, syncLoaded) {
               final displayed = _image;
@@ -274,6 +280,15 @@ class _ByopPageState extends State<ByopPage> {
               onPressed: _busy || !_displayed || status != 'READY_FOR_REVIEW' ? null : () => _run(() async {
                 await _service.review(jobId, _image!, approved); await _loadJob();
               }), child: Text(approved ? 'Approve displayed image' : 'Reject displayed image')),
+            if (_cloudflare) for (final zip in [false, true]) OutlinedButton(
+              onPressed: _busy || status != 'ASSET_READY' || _image == null ? null : () => _run(() async {
+                final sha = sha256.convert(_image!).toString();
+                final bytes = await _service.exportAsset(jobId, sha, zip: zip);
+                final name = 'soloforge-$jobId.${zip ? 'zip' : 'png'}';
+                await SharePlus.instance.share(ShareParams(
+                  files: [XFile.fromData(bytes, mimeType: zip ? 'application/zip' : 'image/png', name: name)],
+                  fileNameOverrides: [name]));
+              }), child: Text(zip ? 'Export approved ZIP' : 'Export approved PNG')),
             OutlinedButton(onPressed: _busy || _cloudflare || status != 'ASSET_READY' ? null : () => _run(() async {
               final pick = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['wav'], withData: true);
               if (pick == null) return;

@@ -52,7 +52,7 @@ def render(job):
 
 
 def cloudflare_mock_dispatch(ledger, principal, execution, credential, prompt, *, fake_transport=None, repository=None, store_asset=None):
-    """Offline extension of the retained dispatch boundary; never HTTP registered.
+    """Retained dispatch boundary; requires an explicitly injected transport.
 
     Uses the existing consent/CAS/CALL_STARTED ledger. CEO builder/reference paths
     remain Pollinations-only; text-to-image is not CEO identity evidence.

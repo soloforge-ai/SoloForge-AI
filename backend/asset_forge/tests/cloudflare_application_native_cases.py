@@ -25,6 +25,16 @@ from test_cloudflare_application import (
 )
 from cloudflare_native_cases import AppCrypto
 from cloudflare_native_fixture import disposable_database, connection
+from test_cloudflare_http import (
+    test_owner_http_transport_to_private_review_and_retained_export,
+    test_http_failure_unknown_held_no_replay_no_secret,
+    test_live_transport_default_flags_and_redirects_fail_closed,
+    test_exact_credential_a_dispatch_and_revoked_denial,
+    test_revoked_credential_denies_http_dispatch,
+    test_invalid_http_contract_never_opens_socket,
+    test_http_flow_requires_consent_budget_and_owner,
+    test_live_mode_request_is_immutable_and_unverified_prices_deny,
+)
 
 
 @pytest.fixture(scope='module')

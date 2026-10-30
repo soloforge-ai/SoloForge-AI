@@ -1,4 +1,4 @@
-"""Mock-only Workers AI adapter. No network implementation or runtime enable flag."""
+"""Retained Workers AI dispatch boundary; transport is explicit and default denied."""
 import base64
 from copy import deepcopy
 import hashlib
@@ -44,11 +44,14 @@ class CloudflareImage:
                 or snap.get('reference_sha256') != hashlib.sha256(b'').hexdigest()
                 or hashlib.sha256(prompt.encode()).hexdigest() != snap.get('prompt_sha256')
                 or not 1 <= len(prompt) <= 2048
-                or snap.get('settings') not in ({'steps':4}, {'steps':4,'job_bound':True})):
+                or snap.get('settings') not in ({'steps':4}, {'steps':4,'job_bound':True},
+                    {'steps':4,'job_bound':True,'transport_mode':'cloudflare_http'})
+                or (snap.get('settings',{}).get('transport_mode') == 'cloudflare_http') !=
+                    (getattr(self.transport,'mode',None) == 'cloudflare_http')):
             raise HTTPException(403, 'Exact Owner/provider/credential/request binding required')
         ledger.check_dispatch(principal, execution, snap, credential)
         # CAS is the one-use durable claim; failure cannot dispatch. Concurrent
-        # losers never enter transport. Production Supabase construction is denied.
+        # losers never enter transport. Defaults never enable provider execution.
         ledger.start(principal, execution['id'], snap)
         try:
             # A callback/claim may mutate the supplied object. Never reread its
@@ -66,7 +69,7 @@ class CloudflareImage:
                 raise ValueError('Invalid image response')
             data = base64.b64decode(encoded, validate=True)
             with Image.open(BytesIO(data)) as image:
-                if image.width * image.height > 16_000_000:
+                if image.format not in ('PNG','JPEG') or getattr(image,'n_frames',1) != 1 or image.width * image.height > 16_000_000:
                     raise ValueError('Image too large')
                 image.verify()
             asset = {'provider':'cloudflare','sha256':hashlib.sha256(data).hexdigest(),

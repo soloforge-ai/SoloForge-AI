@@ -16,23 +16,24 @@ begin
  return result;
 end;
 $$;
-create function public.byop_cloudflare_job(p_principal text,p_prompt text,p_model text) returns jsonb
+create function public.byop_cloudflare_job(p_principal text,p_prompt text,p_model text,p_mode text default 'offline_mock') returns jsonb
 language plpgsql security invoker set search_path='' as $$
 declare job public.content_jobs;
 begin
  perform public.byop_assert_principal(p_principal);
- if split_part(p_principal,':',1)<>'owner' or p_model is distinct from '@cf/black-forest-labs/flux-1-schnell'
+ if p_mode is null or p_mode not in ('offline_mock','cloudflare_http')
+  or split_part(p_principal,':',1)<>'owner' or p_model is distinct from '@cf/black-forest-labs/flux-1-schnell'
   or p_prompt is null or length(btrim(p_prompt)) not between 1 and 2048 then raise exception 'Invalid Owner mock image job'; end if;
  insert into public.content_jobs(idea,source,status,qa_status,byop_principal,byop_model,script,content_package)
  values('Cloudflare offline image','app_byop','ASSET_QUEUED','PENDING',p_principal,p_model,'',
-  jsonb_build_object('byop_principal',p_principal,'byop_provider','cloudflare','offline_mock',true,
+  jsonb_build_object('byop_principal',p_principal,'byop_provider','cloudflare','offline_mock',p_mode='offline_mock','generation_mode',p_mode,
    'asset_forge_request',jsonb_build_object('prompt',p_prompt,'model',p_model),
    'ceo_identity_required',false,'pipeline_route','TEXT')) returning * into job;
  return to_jsonb(job);
 end;
 $$;
-revoke all on function public.byop_cloudflare_credentials(text),public.byop_cloudflare_job(text,text,text) from public,anon,authenticated;
-grant execute on function public.byop_cloudflare_credentials(text),public.byop_cloudflare_job(text,text,text) to service_role;
+revoke all on function public.byop_cloudflare_credentials(text),public.byop_cloudflare_job(text,text,text,text) from public,anon,authenticated;
+grant execute on function public.byop_cloudflare_credentials(text),public.byop_cloudflare_job(text,text,text,text) to service_role;
 
 create or replace function public.byop_job_binding_immutable() returns trigger
 language plpgsql set search_path='' as $$
@@ -48,6 +49,7 @@ begin
         or new.content_package->>'pipeline_route' is distinct from old.content_package->>'pipeline_route'
         or new.content_package->'byop_provider' is distinct from old.content_package->'byop_provider'
         or new.content_package->'offline_mock' is distinct from old.content_package->'offline_mock'
+        or new.content_package->'generation_mode' is distinct from old.content_package->'generation_mode'
         or new.content_package->'ceo_identity_required' is distinct from
             case when old.content_package->>'byop_provider'='cloudflare' then 'false'::jsonb else 'true'::jsonb end) then
         raise exception 'BYOP job request/revision is immutable; create a new job';
@@ -96,7 +98,8 @@ begin
    or job.byop_revision::text is distinct from p_snapshot->>'revision'
    or job.byop_model is distinct from p_snapshot->>'model'
    or job.content_package->>'byop_provider' is distinct from 'cloudflare'
-   or job.content_package->'offline_mock' is distinct from 'true'::jsonb
+   or coalesce(job.content_package->>'generation_mode','offline_mock') is distinct from
+       coalesce(p_snapshot->'settings'->>'transport_mode','offline_mock')
    or encode(sha256(convert_to(job.content_package->'asset_forge_request'->>'prompt','UTF8')),'hex') is distinct from p_snapshot->>'prompt_sha256'
    then raise exception 'Mock image job changed or already claimed'; end if;
   update public.content_jobs set status='ASSET_GENERATING' where id=job.id;
@@ -122,17 +125,17 @@ begin
         sha:=p_value->>'sha256';
         if job.status is distinct from 'ASSET_GENERATING' or sha is null or sha !~ '^[0-9a-f]{64}$'
           or p_value->>'path' is distinct from p_id::text||'/'||sha||'.png'
-          or package->'offline_mock' is distinct from 'true'::jsonb
+          or coalesce(package->>'generation_mode','offline_mock') not in ('offline_mock','cloudflare_http')
           or package->'ceo_identity_required' is distinct from 'false'::jsonb
           or p_value->'manifest'->>'provider' is distinct from 'cloudflare'
-          or p_value->'manifest'->>'generation_mode' is distinct from 'offline_mock'
+          or p_value->'manifest'->>'generation_mode' is distinct from coalesce(package->>'generation_mode','offline_mock')
           or p_value->'manifest'->>'generation_layout' is distinct from 'text_image'
           or p_value->'manifest'->>'model' is distinct from job.byop_model
           or p_value->'branding'->'brand_applied' is distinct from 'true'::jsonb then
             raise exception 'Invalid offline image outcome'; end if;
         package:=package||jsonb_build_object('asset_sha256',sha,'asset_storage_path',p_value->>'path',
           'asset_status','READY','asset_review_status','PENDING','asset_review_sha256',null,
-          'asset_provider','cloudflare','asset_mode','offline_mock','asset_forge_manifest',p_value->'manifest')||(p_value->'branding');
+          'asset_provider','cloudflare','asset_mode',coalesce(package->>'generation_mode','offline_mock'),'asset_forge_manifest',p_value->'manifest')||(p_value->'branding');
         update public.content_jobs set content_package=package,status='READY_FOR_REVIEW',qa_status='PENDING' where id=p_id;
     elsif p_action='asset' then
         sha:=p_value->>'sha256';

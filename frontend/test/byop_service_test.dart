@@ -1,5 +1,6 @@
 // Mock-only tests intended for CI; Flutter SDK unavailable in local executor.
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/services/byop_service.dart';
@@ -123,6 +124,46 @@ void main() {
     service.provider = 'cloudflare';
     await expectLater(service.post('executions', {}), throwsFormatException);
     expect(mutations, 0);
+    service.dispose();
+  });
+
+  test('Cloudflare export preserves provider, auth and approved PNG hash', () async {
+    final image = base64Decode('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAADElEQVR4nGNgGB4AAADIAAGtQHYiAAAAAElFTkSuQmCC');
+    final hash = sha256.convert(image).toString();
+    final service = ByopService(member: false,
+      applicationAuthorization: () async => {'Authorization':'Bearer offline-owner'},
+      client: MockClient((request) async {
+        expect(request.url.queryParameters['provider'], 'cloudflare');
+        expect(request.headers['Authorization'], 'Bearer offline-owner');
+        if (request.url.path.endsWith('/session')) {
+          return http.Response('{"principal":"owner:fixture","cloudflare_available":true}', 200);
+        }
+        expect(request.url.path, '/v1/byop/jobs/offline-job/export');
+        expect(request.url.queryParameters['format'], 'png');
+        return http.Response.bytes(image, 200);
+      }));
+    service.provider = 'cloudflare';
+    expect(await service.exportAsset('offline-job', hash), image);
+    expect(service.cloudflareAvailable, isTrue);
+    await expectLater(service.exportAsset('offline-job', 'wrong-hash'), throwsFormatException);
+    service.dispose();
+  });
+
+  test('unapproved export failure does not retry or fall back', () async {
+    var exports = 0;
+    final service = ByopService(member: false,
+      applicationAuthorization: () async => {'Authorization':'Bearer offline-owner'},
+      client: MockClient((request) async {
+        if (request.url.path.endsWith('/session')) {
+          return http.Response('{"principal":"owner:fixture","cloudflare_available":true}', 200);
+        }
+        exports++;
+        expect(request.url.queryParameters['format'], 'zip');
+        return http.Response('{"detail":"Exact image approval required"}', 409);
+      }));
+    service.provider = 'cloudflare';
+    await expectLater(service.exportAsset('offline-job', 'hash', zip: true), throwsFormatException);
+    expect(exports, 1);
     service.dispose();
   });
 

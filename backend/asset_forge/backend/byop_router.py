@@ -24,10 +24,39 @@ def get_evidence_transport():
     return disabled_transport
 
 
-def get_cloudflare_capability():
-    # Only offline test applications may override this dependency. No env/HTTP
-    # activation, production transport, crypto key loading or budget provisioning.
-    return None
+def get_cloudflare_pricing():
+    # No inferred free-tier allowance, account balance or hardcoded charge cap.
+    # A future verified server evidence adapter may override this dependency.
+    from .byop_ledger import unavailable_pricing
+    return unavailable_pricing
+
+
+def get_cloudflare_capability(pricing=Depends(get_cloudflare_pricing)):
+    import os, json, base64
+    if os.getenv("SOLOFORGE_CLOUDFLARE_LIVE_ENABLED", "false") != "true":
+        return None
+    # Only AEAD wrapping keys are configured; provider tokens remain BYOP rows.
+    # A flag alone cannot create credentials, verified status, budgets or pricing.
+    try:
+        from .byop_secret import SecretBox
+        from .shared_supabase import supabase_request
+        from .byop_repository import rpc
+        from .byop_ledger import SupabaseLedger
+        from .cloudflare_flow import CloudflareFlow
+        from .cloudflare_http import CloudflareHTTPTransport
+        keys = json.loads(os.environ["CLOUDFLARE_BYOP_KEYRING_JSON"])
+        box = SecretBox({k:base64.b64decode(v, validate=True) for k,v in keys.items()},
+                        os.environ["CLOUDFLARE_BYOP_ACTIVE_KEY_ID"])
+        if not callable(pricing):
+            raise ValueError()
+        repository = Repository(secret_box=box, offline_rpc=lambda name, **params: rpc(name, **params))
+        ledger = Ledger(SupabaseLedger(offline_transport=supabase_request), pricing,
+                        provider="cloudflare", unit="neurons")
+        return CloudflareFlow(repository, ledger,
+            transport=CloudflareHTTPTransport(enabled=True), enabled=True)
+    except Exception:
+        # A broken optional provider must not break retained Pollinations routes.
+        return None
 
 
 def get_flow(transport=Depends(get_evidence_transport),
@@ -79,11 +108,14 @@ def session(authorization: str | None = Header(default=None), flow=Depends(get_f
     principal = flow.authenticate(authorization)
     return {"authenticated": True, "principal": principal.key,
             "membership_required": principal.kind == "member", "spending_authorized": False,
-            "readiness": ({"pilot_role_eligible":True,"generation_enabled":False,"offline_mock_enabled":True,
+            "readiness": ({"pilot_role_eligible":True,"generation_enabled":False,"offline_mock_enabled":getattr(flow,"mode","offline_mock")=="offline_mock",
+                "transport_mode":getattr(flow,"mode","offline_mock"),
+                "text_to_image":True,"image_to_image":False,"reference_identity":False,
                 "provider":"cloudflare","models":["@cf/black-forest-labs/flux-1-schnell"],"budget_unit":"neurons",
-                "reason":"Offline mock capability only; not CEO identity compatible"}
+                "reason":"Verified credential, trusted pricing, consent and Neurons budget required; no CEO identity guarantee"}
                 if getattr(flow,"provider",None)=="cloudflare" else readiness(principal)),
-            "cloudflare_offline_available": cloudflare is not None}
+            "cloudflare_available": cloudflare is not None,
+            "cloudflare_offline_available": cloudflare is not None and getattr(cloudflare,"mode","offline_mock")=="offline_mock"}
 
 
 @router.post("/credentials")
@@ -221,3 +253,14 @@ def video(job_id: UUID, authorization: str | None = Header(default=None), flow=D
     except ValueError:
         raise HTTPException(409, "Render provenance invalid") from None
     return {"url": _signed_storage_url("content-video", current["video_storage_path"])}
+
+
+@router.get("/jobs/{job_id}/export")
+def export_asset(job_id: UUID, format: Literal["png", "zip"] = Query(default="png"),
+                 authorization: str | None = Header(default=None), flow=Depends(get_flow)):
+    if getattr(flow,"provider",None) != "cloudflare":
+        raise HTTPException(503, "Use the existing provider export flow")
+    data = flow.export_asset(authorization, str(job_id), format)
+    return Response(data, media_type="image/png" if format == "png" else "application/zip",
+        headers={"Cache-Control":"no-store",
+                 "Content-Disposition":f'attachment; filename="soloforge-{job_id}.{format}"'})

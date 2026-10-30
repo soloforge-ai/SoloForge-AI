@@ -59,7 +59,7 @@ class ByopService {
       throw const FormatException('Application identity changed. Reopen BYOP.');
     }
     principal = current;
-    cloudflareAvailable = data['cloudflare_offline_available'] == true;
+    cloudflareAvailable = data['cloudflare_available'] == true || data['cloudflare_offline_available'] == true;
     readiness = (data['readiness'] as Map<String, dynamic>?) ?? {};
     return result;
   }
@@ -118,6 +118,24 @@ class ByopService {
         .timeout(const Duration(seconds: 60));
     await _sameIdentity(auth);
     return decode(response);
+  }
+
+  Future<Uint8List> exportAsset(String jobId, String expectedSha, {bool zip = false}) async {
+    final auth = await headers();
+    final uri = endpoint('jobs/$jobId/export');
+    final response = await _client.get(uri.replace(queryParameters: {
+      ...uri.queryParameters, 'format': zip ? 'zip' : 'png'}), headers: auth)
+      .timeout(const Duration(seconds: 30));
+    await _sameIdentity(auth);
+    if (response.statusCode != 200) {
+      throw const FormatException('Approved private image export unavailable.');
+    }
+    final bytes = response.bodyBytes;
+    if (zip ? (bytes.length < 4 || bytes[0] != 0x50 || bytes[1] != 0x4b)
+        : sha256.convert(bytes).toString() != expectedSha) {
+      throw const FormatException('Export integrity check failed.');
+    }
+    return bytes;
   }
 
   void dispose() {

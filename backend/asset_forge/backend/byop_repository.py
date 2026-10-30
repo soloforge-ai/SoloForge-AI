@@ -37,7 +37,7 @@ def job_record(row):
 
 class Repository:
     def __init__(self, *, secret_box=None, offline_rpc=None):
-        # Cloudflare remains offline-only: no default key or live RPC fallback.
+        # Cloudflare requires an explicit keyring and RPC; no default credential fallback.
         self.secret_box = secret_box
         self.offline_rpc = offline_rpc
 
@@ -52,9 +52,9 @@ class Repository:
     def cloudflare_credentials(self, principal):
         return self._cloudflare_rpc("cloudflare_credentials", p_principal=principal)
 
-    def create_cloudflare_job(self, principal, prompt, model):
+    def create_cloudflare_job(self, principal, prompt, model, *, mode="offline_mock"):
         return job_record(self._cloudflare_rpc("cloudflare_job", p_principal=principal,
-                                              p_prompt=prompt, p_model=model))
+                                              p_prompt=prompt, p_model=model, p_mode=mode))
 
     def submit_cloudflare(self, principal, account_id, token):
         import re
