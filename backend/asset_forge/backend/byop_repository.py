@@ -49,6 +49,13 @@ class Repository:
         except Exception:
             raise HTTPException(503, "Credential persistence unavailable or unconfirmed") from None
 
+    def cloudflare_credentials(self, principal):
+        return self._cloudflare_rpc("cloudflare_credentials", p_principal=principal)
+
+    def create_cloudflare_job(self, principal, prompt, model):
+        return job_record(self._cloudflare_rpc("cloudflare_job", p_principal=principal,
+                                              p_prompt=prompt, p_model=model))
+
     def submit_cloudflare(self, principal, account_id, token):
         import re
         from uuid import uuid4

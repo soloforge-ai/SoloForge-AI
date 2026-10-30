@@ -51,7 +51,7 @@ def render(job):
     return result
 
 
-def cloudflare_mock_dispatch(ledger, principal, execution, credential, prompt, *, fake_transport=None, repository=None):
+def cloudflare_mock_dispatch(ledger, principal, execution, credential, prompt, *, fake_transport=None, repository=None, store_asset=None):
     """Offline extension of the retained dispatch boundary; never HTTP registered.
 
     Uses the existing consent/CAS/CALL_STARTED ledger. CEO builder/reference paths
@@ -59,4 +59,4 @@ def cloudflare_mock_dispatch(ledger, principal, execution, credential, prompt, *
     """
     from .cloudflare_image import CloudflareImage
     return CloudflareImage(fake_transport=fake_transport).dispatch(
-        ledger, principal, execution, credential, prompt, repository=repository)
+        ledger, principal, execution, credential, prompt, repository=repository, store_asset=store_asset)

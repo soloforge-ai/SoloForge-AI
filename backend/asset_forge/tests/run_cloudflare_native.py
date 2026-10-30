@@ -56,4 +56,5 @@ if __name__=='__main__':
     import pytest
     raise SystemExit(pytest.main(['-q','-rA','--tb=short','-p','no:cacheprovider',
         str(Path(__file__).with_name('cloudflare_native_cases.py')),
+        str(Path(__file__).with_name('cloudflare_application_native_cases.py')),
         str(Path(__file__).with_name('test_cloudflare_image.py'))]))

@@ -27,6 +27,10 @@ class ByopService {
   final Future<Map<String, String>> Function()? _override;
   final _owner = SoloForgeSessionService(useOwnerV2: true);
   late final PollinationsSessionService connections;
+  String provider = 'pollinations';
+  bool cloudflareAvailable = false;
+  Uri endpoint(String path) => Uri.parse('$_base/v1/byop/$path').replace(
+    queryParameters: provider == 'cloudflare' ? {'provider': provider} : null);
   String? principal;
   Map<String, dynamic> readiness = {};
   String get _base => assetForgeApiUrl.replaceFirst(RegExp(r'/$'), '');
@@ -45,7 +49,7 @@ class ByopService {
 
   Future<Map<String, String>> headers() async {
     final result = await applicationHeaders();
-    final response = await _client.get(Uri.parse('$_base/v1/byop/session'), headers: result)
+    final response = await _client.get(endpoint('session'), headers: result)
         .timeout(const Duration(seconds: 20));
     final data = decode(response);
     await _sameIdentity(result);
@@ -55,6 +59,7 @@ class ByopService {
       throw const FormatException('Application identity changed. Reopen BYOP.');
     }
     principal = current;
+    cloudflareAvailable = data['cloudflare_offline_available'] == true;
     readiness = (data['readiness'] as Map<String, dynamic>?) ?? {};
     return result;
   }
@@ -75,7 +80,7 @@ class ByopService {
 
   Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
     final auth = await headers();
-    final response = await _client.post(Uri.parse('$_base/v1/byop/$path'),
+    final response = await _client.post(endpoint(path),
         headers: {...auth, 'Content-Type': 'application/json'}, body: jsonEncode(body))
         .timeout(const Duration(minutes: 6));
     await _sameIdentity(auth);
@@ -84,7 +89,7 @@ class ByopService {
 
   Future<Map<String, dynamic>> get(String path) async {
     final auth = await headers();
-    final response = await _client.get(Uri.parse('$_base/v1/byop/$path'), headers: auth)
+    final response = await _client.get(endpoint(path), headers: auth)
         .timeout(const Duration(seconds: 30));
     await _sameIdentity(auth);
     return decode(response);
@@ -92,7 +97,7 @@ class ByopService {
 
   Future<Uint8List> image(String jobId, String expectedSha) async {
     final auth = await headers();
-    final response = await _client.get(Uri.parse('$_base/v1/byop/jobs/$jobId/asset'), headers: auth)
+    final response = await _client.get(endpoint('jobs/$jobId/asset'), headers: auth)
         .timeout(const Duration(seconds: 30));
     await _sameIdentity(auth);
     if (response.statusCode != 200) decode(response);
@@ -108,7 +113,7 @@ class ByopService {
 
   Future<Map<String, dynamic>> audio(String jobId, Uint8List wav) async {
     final auth = await headers();
-    final response = await _client.post(Uri.parse('$_base/v1/byop/jobs/$jobId/audio'),
+    final response = await _client.post(endpoint('jobs/$jobId/audio'),
         headers: {...auth, 'Content-Type': 'audio/wav'}, body: wav)
         .timeout(const Duration(seconds: 60));
     await _sameIdentity(auth);

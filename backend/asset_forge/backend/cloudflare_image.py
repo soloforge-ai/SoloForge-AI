@@ -13,7 +13,7 @@ class CloudflareImage:
     def __init__(self, *, fake_transport=None):
         self.transport = fake_transport
 
-    def dispatch(self, ledger, principal, execution, credential, prompt, *, repository=None):
+    def dispatch(self, ledger, principal, execution, credential, prompt, *, repository=None, store_asset=None):
         if self.transport is None:
             raise HTTPException(503, 'Cloudflare generation is disabled')
         if ledger.provider != 'cloudflare' or ledger.unit != 'neurons':
@@ -44,7 +44,7 @@ class CloudflareImage:
                 or snap.get('reference_sha256') != hashlib.sha256(b'').hexdigest()
                 or hashlib.sha256(prompt.encode()).hexdigest() != snap.get('prompt_sha256')
                 or not 1 <= len(prompt) <= 2048
-                or snap.get('settings') != {'steps': 4}):
+                or snap.get('settings') not in ({'steps':4}, {'steps':4,'job_bound':True})):
             raise HTTPException(403, 'Exact Owner/provider/credential/request binding required')
         ledger.check_dispatch(principal, execution, snap, credential)
         # CAS is the one-use durable claim; failure cannot dispatch. Concurrent
@@ -69,10 +69,12 @@ class CloudflareImage:
                 if image.width * image.height > 16_000_000:
                     raise ValueError('Image too large')
                 image.verify()
+            asset = {'provider':'cloudflare','sha256':hashlib.sha256(data).hexdigest(),
+                     'ceo_identity_verified':False}
+            if store_asset is not None:
+                asset = store_asset(data, asset)
         except Exception:
             ledger.outcome(principal, execution['id'])
             raise HTTPException(409, 'Cloudflare outcome unknown; reservation held; no replay') from None
-        asset = {'provider': 'cloudflare', 'sha256': hashlib.sha256(data).hexdigest(),
-                 'ceo_identity_verified': False}
         ledger.outcome(principal, execution['id'], generated=True, asset=asset)
         return data, asset

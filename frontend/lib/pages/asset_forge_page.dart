@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/asset_forge_character_config.dart';
 import '../models/asset_forge_generation_config.dart';
 import '../services/pollinations_session_service.dart';
+import 'byop_page.dart';
 
 class AssetForgePage extends StatefulWidget {
   const AssetForgePage({super.key, this.useBackend});
@@ -909,6 +910,12 @@ class _AssetForgePageState extends State<AssetForgePage> {
                   icon: Icon(isGenerating ? Icons.hourglass_top : Icons.auto_awesome),
                   label: Text(isGenerating ? 'Generating...' : singleCharacter ? 'Generate Single CEO Image' : 'Generate Asset Pack'),
                 ),
+              ),
+              OutlinedButton.icon(
+                onPressed: isGenerating ? null : () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ByopPage(member: false))),
+                icon: const Icon(Icons.account_balance_wallet_outlined),
+                label: const Text('BYOP image providers and review'),
               ),
               if (previewBytes != null) ...[
                 const SizedBox(height: 16),

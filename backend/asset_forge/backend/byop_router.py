@@ -1,7 +1,7 @@
 """Owner/member BYOP endpoints. Principal IDs are always server-derived."""
 from typing import Literal
 from uuid import UUID
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Query
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from starlette.concurrency import run_in_threadpool
@@ -24,7 +24,19 @@ def get_evidence_transport():
     return disabled_transport
 
 
-def get_flow(transport=Depends(get_evidence_transport)):
+def get_cloudflare_capability():
+    # Only offline test applications may override this dependency. No env/HTTP
+    # activation, production transport, crypto key loading or budget provisioning.
+    return None
+
+
+def get_flow(transport=Depends(get_evidence_transport),
+             provider: Literal["pollinations", "cloudflare"] = Query(default="pollinations"),
+             cloudflare=Depends(get_cloudflare_capability)):
+    if provider == "cloudflare":
+        if cloudflare is None:
+            raise HTTPException(503, "Cloudflare offline capability is disabled")
+        return cloudflare
     repository = Repository()
     pricing = EvidencePricing(EvidenceCollector(repository, transport), time.time)
     return Flow(authenticate, repository, Ledger(pricing=pricing), generate, render,
@@ -37,6 +49,7 @@ class StrictBody(BaseModel):
 
 class Connect(StrictBody):
     access_token: SecretStr = Field(min_length=4, max_length=4096)
+    account_id: str | None = Field(default=None, pattern=r"^[0-9a-f]{32}$")
 
 
 class Job(StrictBody):
@@ -46,7 +59,8 @@ class Job(StrictBody):
 
 class Consent(StrictBody):
     credential_id: UUID
-    maximum_micro_pollen: int = Field(strict=True, gt=0)
+    maximum_micro_pollen: int | None = Field(default=None, strict=True, gt=0)
+    maximum_neurons: int | None = Field(default=None, strict=True, gt=0)
     expires_at: float
 
 
@@ -61,31 +75,40 @@ class Review(StrictBody):
 
 
 @router.get("/session")
-def session(authorization: str | None = Header(default=None), flow=Depends(get_flow)):
+def session(authorization: str | None = Header(default=None), flow=Depends(get_flow), cloudflare=Depends(get_cloudflare_capability)):
     principal = flow.authenticate(authorization)
     return {"authenticated": True, "principal": principal.key,
             "membership_required": principal.kind == "member", "spending_authorized": False,
-            "readiness": readiness(principal)}
+            "readiness": ({"pilot_role_eligible":True,"generation_enabled":False,"offline_mock_enabled":True,
+                "provider":"cloudflare","models":["@cf/black-forest-labs/flux-1-schnell"],"budget_unit":"neurons",
+                "reason":"Offline mock capability only; not CEO identity compatible"}
+                if getattr(flow,"provider",None)=="cloudflare" else readiness(principal)),
+            "cloudflare_offline_available": cloudflare is not None}
 
 
 @router.post("/credentials")
 def connect(body: Connect, authorization: str | None = Header(default=None), flow=Depends(get_flow)):
+    if getattr(flow,"provider",None)=="cloudflare":
+        return flow.connect(authorization, body.access_token.get_secret_value(), body.account_id)
+    if body.account_id is not None:
+        raise HTTPException(400,"Account field is not a Pollinations credential")
     return flow.connect(authorization, body.access_token.get_secret_value())
 
 
 @router.get("/credentials")
 def credentials(authorization: str | None = Header(default=None), flow=Depends(get_flow)):
     principal = flow.authenticate(authorization)
-    return {"credentials": flow.repository.credentials(principal.key), "spending_authorized": False}
+    return {"credentials": (flow.repository.cloudflare_credentials(principal.key) if getattr(flow,"provider",None)=="cloudflare" else flow.repository.credentials(principal.key)), "spending_authorized": False}
 
 
 @router.get("/credentials/{credential_id}")
 def credential_status(credential_id: UUID, authorization: str | None = Header(default=None), flow=Depends(get_flow)):
     principal = flow.authenticate(authorization)
-    record = flow.repository.credential(principal.key, str(credential_id))
+    record = (flow.repository.cloudflare_credential(principal.key, str(credential_id))
+              if getattr(flow,"provider",None)=="cloudflare" else flow.repository.credential(principal.key, str(credential_id)))
     if not record:
         raise HTTPException(404, "Credential unavailable")
-    connected = not record.get("disconnected") and record["expires_at"] > flow.ledger.clock()
+    connected = not record.get("disconnected") and not record.get("revoked") and record["expires_at"] > flow.ledger.clock()
     return {"credential_id": str(credential_id), "connected": connected,
             "verification_status": record["verification_status"], "expires_at": record["expires_at"],
             "provider_ownership_verified": record["provider_ownership_verified"], "spending_authorized": False}
@@ -93,6 +116,9 @@ def credential_status(credential_id: UUID, authorization: str | None = Header(de
 
 @router.post("/credentials/{credential_id}/verify")
 def verify(credential_id: UUID, authorization: str | None = Header(default=None), flow=Depends(get_flow)):
+    if getattr(flow,"provider",None)=="cloudflare":
+        flow.authenticate(authorization)
+        raise HTTPException(403,"Independent verification is administrative; no provider call is available")
     return flow.verify(authorization, str(credential_id))
 
 
@@ -116,8 +142,12 @@ def job(job_id: UUID, authorization: str | None = Header(default=None), flow=Dep
 
 @router.post("/jobs/{job_id}/consents")
 def consent(job_id: UUID, body: Consent, authorization: str | None = Header(default=None), flow=Depends(get_flow)):
-    return flow.authorize(authorization, str(body.credential_id), str(job_id),
-                          body.maximum_micro_pollen, body.expires_at)
+    cloudflare = getattr(flow,"provider",None)=="cloudflare"
+    maximum = body.maximum_neurons if cloudflare else body.maximum_micro_pollen
+    foreign = body.maximum_micro_pollen if cloudflare else body.maximum_neurons
+    if maximum is None or foreign is not None:
+        raise HTTPException(400,"Exactly one provider-specific maximum is required")
+    return flow.authorize(authorization, str(body.credential_id), str(job_id), maximum, body.expires_at)
 
 
 @router.post("/executions")
@@ -131,7 +161,7 @@ def executions(job_id: UUID, authorization: str | None = Header(default=None), f
     flow.job(principal, str(job_id))
     _, state = flow.ledger.store.read(principal.key)
     return {"executions": [{"execution_id": e["id"], "state": e["state"],
-                            "reserved_micro_pollen": e["reserved"],
+                            ("reserved_neurons" if getattr(flow,"provider",None)=="cloudflare" else "reserved_micro_pollen"): e["reserved"],
                             "reconciliation_required": e["state"] in {"CALL_STARTED", "UNKNOWN", "GENERATED"}}
                            for e in state.get("executions", {}).values()
                            if e["snapshot"]["job_id"] == str(job_id)]}
@@ -159,6 +189,9 @@ def review(job_id: UUID, body: Review, authorization: str | None = Header(defaul
 
 @router.post("/jobs/{job_id}/audio")
 async def audio(job_id: UUID, request: Request, authorization: str | None = Header(default=None), flow=Depends(get_flow)):
+    if getattr(flow,"provider",None)=="cloudflare":
+        flow.authenticate(authorization)
+        raise HTTPException(503,"Cloudflare mock image has no audio capability")
     principal = flow.authenticate(authorization)
     data = bytearray()
     async for chunk in request.stream():

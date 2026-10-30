@@ -43,6 +43,11 @@ class NativeDatabase:
     def __init__(self, name):
         self.name = name
 
+    def call(self, name, body):
+        args = ','.join(f'{key} => ${i}' for i, key in enumerate(body, 1))
+        return self.query(f'select public.owner_v2_{name}({args}) as value',
+            list(body.values()), 'service_role')[0]['value']
+
     def query(self, statement, params=(), role='postgres'):
         from psycopg import sql
         from psycopg.rows import dict_row
