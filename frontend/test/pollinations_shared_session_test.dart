@@ -31,6 +31,62 @@ void main() {
   const key = 'pollinations_session_token';
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
 
+  for (final status in [401, 403, 404]) {
+    test('owner denial $status preserves handle without authenticating it', () async {
+      FlutterSecureStorage.setMockInitialValues({key: 'retained-provider'});
+      var ownerRestored = false;
+      var launches = 0;
+      http.Client client() => MockClient((request) async {
+        if (!request.url.path.endsWith('/status')) launches++;
+        return ownerRestored
+            ? http.Response('{"connected":true,"spending_authorized":false}', 200)
+            : http.Response('{"detail":"Owner authorization required"}', status);
+      });
+      final beforeRestart = sessionService(client: client());
+      await expectLater(beforeRestart.status(), throwsA(isA<PollinationsSessionException>()));
+      await expectLater(beforeRestart.connect(), throwsA(isA<PollinationsSessionException>()));
+      expect(await beforeRestart.readSessionToken(), 'retained-provider');
+      expect(launches, 0);
+      await beforeRestart.dispose();
+      final restarted = sessionService(client: client());
+      await expectLater(restarted.status(), throwsA(isA<PollinationsSessionException>()));
+      ownerRestored = true;
+      expect((await restarted.status()).connected, isTrue);
+      expect(await restarted.readSessionToken(), 'retained-provider');
+      await restarted.dispose();
+    });
+  }
+
+  for (final reason in ['expired', 'revoked']) {
+    test('confirmed provider $reason clears handle and permits fresh handoff', () async {
+      FlutterSecureStorage.setMockInitialValues({key: reason});
+      final session = sessionService(client: MockClient((request) async {
+        if (request.url.path.endsWith('/status')) {
+          return http.Response('{"connected":false}', 200);
+        }
+        return http.Response('{"session_token":"new-$reason"}', 200);
+      }));
+      expect((await session.status()).connected, isFalse);
+      expect(await session.readSessionToken(), isNull);
+      expect((await session.restoreCallbackCode('reconnect-$reason')).connected, isTrue);
+      expect(await session.readSessionToken(), 'new-$reason');
+      await session.dispose();
+    });
+  }
+
+  test('local Owner sign-in failure preserves provider handle and sends nothing', () async {
+    FlutterSecureStorage.setMockInitialValues({key: 'retained'});
+    var requests = 0;
+    final session = PollinationsSessionService(
+      ownerAuthorization: () async => throw const SoloForgeSessionException('Sign in required'),
+      client: MockClient((_) async { requests++; return http.Response('{}', 200); }),
+    );
+    await expectLater(session.status(), throwsA(isA<SoloForgeSessionException>()));
+    expect(await session.readSessionToken(), 'retained');
+    expect(requests, 0);
+    await session.dispose();
+  });
+
   for (final token in ['valid', 'expired', 'forged', 'mismatched']) {
     test('$token stored session is validated before callback restoration', () async {
       FlutterSecureStorage.setMockInitialValues({key: token});
@@ -244,11 +300,11 @@ void main() {
   });
 
   test(
-    'unbound legacy handle is cleared so a fresh connection can proceed',
+    'authenticated disconnected status clears an unavailable provider handle',
     () async {
       FlutterSecureStorage.setMockInitialValues({key: 'unbound-legacy'});
       final session = sessionService(
-        client: MockClient((_) async => http.Response('{}', 404)),
+        client: MockClient((_) async => http.Response('{"connected":false}', 200)),
       );
       expect((await session.status()).connected, isFalse);
       expect(await session.readSessionToken(), isNull);

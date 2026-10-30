@@ -327,15 +327,10 @@ class PollinationsSessionService {
       headers: {...await _ownerHeaders(), 'X-Pollinations-Session': token},
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      // A transient backend outage is not evidence that OAuth was revoked.
-      if (response.statusCode != 401 &&
-          response.statusCode != 403 &&
-          response.statusCode != 404) {
-        throw PollinationsSessionException(_errorMessage(response));
-      }
-      await _invalidateToken(token);
-      if (await readSessionToken() != null) return status();
-      return const PollinationsSessionState(connected: false);
+      // Owner authorization failures (including concealed wrong-owner 404s)
+      // do not establish provider expiry/revocation. Retain the opaque handle
+      // for revalidation after sign-in; never report it as connected here.
+      throw PollinationsSessionException(_errorMessage(response));
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
