@@ -446,6 +446,9 @@ def pollinations_callback(
         transaction = _transactions.pop(state, None)
     if transaction is None:
         raise HTTPException(status_code=400, detail="Invalid or expired OAuth state.")
+    # Validate the original owner session, not callback headers. This preserves
+    # browser redirects while rejecting revoked sessions and owner mismatches
+    # before any provider token exchange or credential persistence.
     if _owner(transaction.owner_authorization) != transaction.owner_id:
         raise HTTPException(403, "Owner identity changed. Start again.")
 
