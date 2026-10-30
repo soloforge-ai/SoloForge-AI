@@ -1,6 +1,8 @@
 """Per-principal durable consent/reservation ledger. No provider dispatch here.
 
-All money uses integer micro-Pollen. A quote must come from a trusted server
+Pollinations uses integer micro-Pollen; offline Cloudflare contracts use integer
+Neurons in an explicitly separate provider/unit budget namespace. Cloudflare
+Supabase persistence remains disabled. A quote must come from a trusted server
 pricing authority, never the requesting client. Production pricing is unavailable
 in V1, so quote acquisition fails closed. Offline tests supply a fake authority.
 """
@@ -25,21 +27,46 @@ def unavailable_pricing(*args, **kwargs):
 
 
 class SupabaseLedger:
+    def __init__(self, *, offline_transport=None):
+        self.offline_transport = offline_transport
+
+    def request(self, *args, **kwargs):
+        return (self.offline_transport or supabase_request)(*args, **kwargs)
+
+    def cloudflare_claim(self, principal, execution_id, snapshot):
+        if self.offline_transport is None:
+            raise HTTPException(503, "Cloudflare claims are disabled")
+        try:
+            result = self.request("POST", "rpc/byop_cloudflare_claim", {
+                "p_principal": principal, "p_execution": execution_id,
+                "p_snapshot": snapshot, "p_snapshot_hash": digest(snapshot)})
+            if not isinstance(result, dict) or result.get("state") != "CALL_STARTED" or result.get("id") != execution_id:
+                raise ValueError()
+            return result
+        except Exception:
+            raise HTTPException(503, "Cloudflare claim unconfirmed; no dispatch") from None
+
     def read(self, principal):
         from urllib.parse import quote
-        rows = supabase_request("GET", "byop_ledgers?principal=eq." + quote(principal, safe="")
+        rows = self.request("GET", "byop_ledgers?principal=eq." + quote(principal, safe="")
                                 + "&select=revision,state&limit=1")
         if not rows:
             raise HTTPException(503, "Principal budget has not been provisioned")
         return rows[0]["revision"], rows[0]["state"]
 
     def cas(self, principal, revision, state):
-        return supabase_request("POST", "rpc/byop_ledger_cas", {
+        return self.request("POST", "rpc/byop_ledger_cas", {
             "p_principal": principal, "p_revision": revision, "p_state": state}) is True
 
 
 class Ledger:
-    def __init__(self, store=None, pricing=unavailable_pricing, clock=time.time):
+    def __init__(self, store=None, pricing=unavailable_pricing, clock=time.time, *, provider="pollinations", unit="micro_pollen"):
+        if (provider, unit) not in {("pollinations", "micro_pollen"), ("cloudflare", "neurons")}:
+            raise HTTPException(400, "Unsupported provider budget unit")
+        if provider != "pollinations" and (store is None or (isinstance(store, SupabaseLedger) and store.offline_transport is None)):
+            raise HTTPException(503, "Cloudflare persistence is not enabled")
+        self.provider, self.unit = provider, unit
+        self.amount_field = "maximum_micro_pollen" if unit == "micro_pollen" else "maximum_neurons"
         self.store = store or SupabaseLedger()
         self.pricing = pricing
         self.clock = clock
@@ -48,6 +75,9 @@ class Ledger:
         for _ in range(8):
             revision, state = self.store.read(principal)
             state = deepcopy(state)
+            if self.provider != "pollinations" or "provider" in state or "unit" in state:
+                if state.get("provider") != self.provider or state.get("unit") != self.unit:
+                    raise HTTPException(409, "Provider budget namespace mismatch")
             result = action(state)
             if self.store.cas(principal, revision, state):
                 return result
@@ -60,17 +90,33 @@ class Ledger:
             raise HTTPException(400, "Invalid consent bound or expiry")
         required = {"credential_id", "job_id", "revision", "operation", "model",
                     "image_count", "prompt_sha256", "reference_sha256", "settings"}
-        if set(snapshot) != required or snapshot["operation"] != "ceo_image" or snapshot["image_count"] != 1:
+        if self.provider == "cloudflare":
+            required |= {"provider", "budget_unit", "account_id", "credential_sha256"}
+            if (snapshot.get("provider") != self.provider or snapshot.get("budget_unit") != self.unit
+                    or not credential or credential.get("provider") != self.provider
+                    or credential.get("principal") != principal
+                    or credential.get("id") != snapshot.get("credential_id")
+                    or credential.get("account_id") != snapshot.get("account_id")
+                    or hashlib.sha256(str(credential.get("token", "")).encode()).hexdigest() != snapshot.get("credential_sha256")
+                    or credential.get("verification_status") != "VERIFIED"
+                    or not credential.get("provider_ownership_verified")
+                    or credential.get("revoked") or credential.get("disconnected")
+                    or credential.get("expires_at", 0) <= now):
+                raise HTTPException(403, "Provider-bound verified credential required")
+        operation = "text_image" if self.provider == "cloudflare" else "ceo_image"
+        if set(snapshot) != required or snapshot["operation"] != operation or snapshot["image_count"] != 1:
             raise HTTPException(400, "Exact single-image CEO snapshot required")
         quote = deepcopy(self.pricing.quote_for(principal, deepcopy(snapshot), credential)
                          if hasattr(self.pricing, "quote_for") else self.pricing(deepcopy(snapshot)))
-        if (not isinstance(quote, dict) or type(quote.get("maximum_micro_pollen")) is not int
-                or not 0 < quote["maximum_micro_pollen"] <= maximum
+        if (not isinstance(quote, dict) or type(quote.get(self.amount_field)) is not int
+                or not 0 < quote[self.amount_field] <= maximum
                 or quote.get("includes_all_charges") is not True
                 or type(quote.get("expires_at")) not in (int, float)
                 or not math.isfinite(quote["expires_at"])
                 or not quote.get("basis") or quote.get("expires_at", 0) <= now):
             raise HTTPException(409, "Trusted pricing does not fit consent")
+        if self.provider == "cloudflare" and (quote.get("provider") != self.provider or quote.get("unit") != self.unit):
+            raise HTTPException(409, "Provider quote unit mismatch")
         if hasattr(self.pricing, "validate_context"):
             self.pricing.validate_context(principal, snapshot, quote, credential)
         consent_id = str(uuid4())
@@ -113,7 +159,7 @@ class Ledger:
             reserved = sum(e["reserved"] for e in active)
             if len(active) >= state.get("concurrency_limit", 1):
                 raise HTTPException(409, "Principal execution limit reached")
-            amount = consent["quote"]["maximum_micro_pollen"]
+            amount = consent["quote"][self.amount_field]
             if amount + reserved + state.get("settled", 0) > state.get("budget", 0):
                 raise HTTPException(409, "Principal budget exhausted")
             consent["used"] = True
@@ -144,6 +190,8 @@ class Ledger:
             return self.pricing.validate_dispatch(principal, snapshot, quote, credential, held)
 
     def start(self, principal, execution_id, snapshot):
+        if self.provider == "cloudflare" and isinstance(self.store, SupabaseLedger):
+            return self.store.cloudflare_claim(principal, execution_id, snapshot)
         def start(state):
             execution = state.get("executions", {}).get(execution_id)
             if (not execution or execution["state"] != "RESERVED"

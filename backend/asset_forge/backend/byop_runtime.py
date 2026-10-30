@@ -49,3 +49,14 @@ def render(job):
     result = Repository().content_job(job["principal"], job["id"])
     require_ceo_render_provenance(result)
     return result
+
+
+def cloudflare_mock_dispatch(ledger, principal, execution, credential, prompt, *, fake_transport=None, repository=None, store_asset=None):
+    """Retained dispatch boundary; requires an explicitly injected transport.
+
+    Uses the existing consent/CAS/CALL_STARTED ledger. CEO builder/reference paths
+    remain Pollinations-only; text-to-image is not CEO identity evidence.
+    """
+    from .cloudflare_image import CloudflareImage
+    return CloudflareImage(fake_transport=fake_transport).dispatch(
+        ledger, principal, execution, credential, prompt, repository=repository, store_asset=store_asset)

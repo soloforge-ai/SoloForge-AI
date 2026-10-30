@@ -36,6 +36,68 @@ def job_record(row):
 
 
 class Repository:
+    def __init__(self, *, secret_box=None, offline_rpc=None):
+        # Cloudflare requires an explicit keyring and RPC; no default credential fallback.
+        self.secret_box = secret_box
+        self.offline_rpc = offline_rpc
+
+    def _cloudflare_rpc(self, name, **params):
+        if self.secret_box is None or self.offline_rpc is None:
+            raise HTTPException(503, "Cloudflare persistence is disabled")
+        try:
+            return self.offline_rpc(name, **params)
+        except Exception:
+            raise HTTPException(503, "Credential persistence unavailable or unconfirmed") from None
+
+    def cloudflare_credentials(self, principal):
+        return self._cloudflare_rpc("cloudflare_credentials", p_principal=principal)
+
+    def create_cloudflare_job(self, principal, prompt, model, *, mode="offline_mock"):
+        return job_record(self._cloudflare_rpc("cloudflare_job", p_principal=principal,
+                                              p_prompt=prompt, p_model=model, p_mode=mode))
+
+    def submit_cloudflare(self, principal, account_id, token):
+        import re
+        from uuid import uuid4
+        if (not isinstance(account_id, str) or not re.fullmatch(r"[0-9a-f]{32}", account_id)
+                or not isinstance(token, str) or not 1 <= len(token) <= 4096):
+            raise HTTPException(400, "Bounded Cloudflare account and credential required")
+        if self.secret_box is None or self.offline_rpc is None:
+            raise HTTPException(503, "Cloudflare persistence is disabled")
+        rid = str(uuid4())
+        key_id, ciphertext = self.secret_box.encrypt(token, principal, account_id, rid)
+        result = self._cloudflare_rpc("cloudflare_submit", p_principal=principal,
+            p_id=rid, p_account=account_id, p_ciphertext=ciphertext, p_key_id=key_id,
+            p_token_sha256=hashlib.sha256(token.encode()).hexdigest())
+        if not isinstance(result, dict) or result.get("credential_id") != rid or result.get("spending_authorized") is not False:
+            raise HTTPException(503, "Credential submission unconfirmed")
+        return result
+
+    def cloudflare_credential(self, principal, credential_id):
+        row = self._cloudflare_rpc("cloudflare_credential", p_principal=principal,
+                                  p_id=record_id(credential_id))
+        if not row:
+            return None
+        try:
+            token = self.secret_box.decrypt(row["secret_key_id"], row["secret_ciphertext"],
+                                           principal, row["provider_account_id"], str(row["id"]))
+            if hashlib.sha256(token.encode()).hexdigest() != row["secret_sha256"]:
+                raise ValueError()
+            return {"id": str(row["id"]), "principal": principal, "provider": "cloudflare",
+                "account_id": row["provider_account_id"], "token": token,
+                "verification_status": row["verification_status"],
+                "provider_ownership_verified": row["provider_ownership_verified"],
+                "revoked": row.get("byop_revoked_at") is not None,
+                "expires_at": datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00")).timestamp()}
+        except Exception:
+            raise HTTPException(503, "Credential decryption unavailable") from None
+
+    def disconnect_cloudflare(self, principal, credential_id):
+        if self._cloudflare_rpc("cloudflare_disconnect", p_principal=principal,
+                p_id=record_id(credential_id)) is not True:
+            raise HTTPException(503, "Credential revocation unconfirmed")
+        return {"server_revocation_confirmed": True, "upstream_revocation_confirmed": False}
+
     def credentials(self, principal):
         return rpc("credentials", p_principal=principal)
 

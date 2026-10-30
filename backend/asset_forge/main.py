@@ -732,7 +732,12 @@ def _zip_files(
     manifest: dict | None = None,
 ) -> bytes:
     """Package processed stickers together with the original generated master sheet."""
-    pack_name = _pack_name(request)
+    return _zip_image_files(files, _pack_name(request), source_bytes, manifest,
+                            single_image=request.generation_layout == "single_character")
+
+
+def _zip_image_files(files, pack_name, source_bytes, manifest=None, *, single_image=True, include_raw_provider=True):
+    """Retained ZIP writer for reviewed images; performs no generation or I/O."""
     output = io.BytesIO()
 
     with Image.open(io.BytesIO(source_bytes)) as source_image:
@@ -741,9 +746,9 @@ def _zip_files(
         master_png = master_output.getvalue()
 
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        source_name = "original_image.png" if request.generation_layout == "single_character" else "original_sheet.png"
+        source_name = "original_image.png" if single_image else "original_sheet.png"
         archive.writestr(f"{pack_name}/master/{source_name}", master_png)
-        if request.generation_layout == "single_character":
+        if single_image and include_raw_provider:
             archive.writestr(f"{pack_name}/raw/provider_image.bin", source_bytes)
         if manifest is not None:
             archive.writestr(f"{pack_name}/manifest.json", json.dumps(manifest, ensure_ascii=False))

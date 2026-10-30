@@ -6,9 +6,11 @@ import { pathToFileURL } from 'node:url';
 
 globalThis.fetch = () => { throw new Error('Network forbidden in offline tests'); };
 const { PGlite } = await import(pathToFileURL(process.env.OWNER_V2_TEST_PGLITE).href);
-const db = new PGlite();
-await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
-await db.exec(fs.readFileSync(process.argv[2], 'utf8'));
+const db = new PGlite(process.argv[3]);
+if (process.argv[4] !== 'reopen') {
+    await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
+    await db.exec(fs.readFileSync(process.argv[2], 'utf8'));
+}
 console.log(JSON.stringify({ready: true}));
 for await (const line of readline.createInterface({input: process.stdin})) {
   const {sql, params = [], role = 'postgres', exec = false} = JSON.parse(line);
