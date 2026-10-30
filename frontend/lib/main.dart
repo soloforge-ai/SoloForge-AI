@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'pages/home_page.dart';
 import 'pages/owner_v2_login_page.dart';
+import 'pages/pollinations_sk_diagnostic_page.dart';
 import 'services/owner_v2_session_service.dart';
 import 'pages/owner_oauth_uat_page.dart';
 import 'services/soloforge_session_service.dart';
@@ -227,6 +228,15 @@ class _OwnerV2AppGateState extends State<OwnerV2AppGate>
                 onPressed: _loggingOut ? null : _logout,
                 child: const Text('Sign out'),
               ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => const PollinationsSkDiagnosticPage(),
+              )),
+              child: const Text('Check Pollinations SK'),
             ),
           ),
           const Expanded(child: HomePage()),
