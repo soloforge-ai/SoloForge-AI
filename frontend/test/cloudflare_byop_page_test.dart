@@ -41,8 +41,10 @@ void main() {
           expect((body['asset_forge_request'] as Map)['model'], '@cf/black-forest-labs/flux-1-schnell');
           return http.Response('{"id":"offline-job"}', 200);
         }
-        if (path.endsWith('/jobs/offline-job')) return http.Response(jsonEncode({
-          'id':'offline-job', 'status':status, 'content_package':{'asset_sha256':hash}}), 200);
+        if (path.endsWith('/jobs/offline-job')) {
+          return http.Response(jsonEncode({
+            'id':'offline-job', 'status':status, 'content_package':{'asset_sha256':hash}}), 200);
+        }
         fail('Unexpected request: ${request.method} $path');
       }));
     service.provider = 'cloudflare';
