@@ -125,8 +125,8 @@ class PollinationsSessionService {
     final result = await _byopResult(await _client.get(
       Uri.parse('$_baseUrl/v1/byop/credentials/$id'), headers: headers,
     ).timeout(const Duration(seconds: 20)));
-    if (result['credential_id'] != id || result['connected'] != true) {
-      throw const PollinationsSessionException('Select an active credential belonging to this account.');
+    if (result['credential_id'] != id || result['verification_status'] == null) {
+      throw const PollinationsSessionException('Credential unavailable for this owner.');
     }
     await _byopHeaders(principal);
     await _updateStorage(() => _storage.write(key: 'pollinations_byop_id_$principal', value: id));
