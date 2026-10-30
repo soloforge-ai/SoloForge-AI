@@ -446,12 +446,11 @@ def pollinations_callback(
         transaction = _transactions.pop(state, None)
     if transaction is None:
         raise HTTPException(status_code=400, detail="Invalid or expired OAuth state.")
-    # Owner V2 was authenticated when this one-time OAuth transaction was
-    # created. The provider callback has no SoloForge Authorization header:
-    # re-authenticating here incorrectly rejects a valid provider login.
-    # Preserve the original owner binding; never infer an owner from callback data.
-    if not transaction.owner_id or not transaction.owner_authorization:
-        raise HTTPException(403, "Owner-bound OAuth transaction required.")
+    # Validate the original owner session, not callback headers. This preserves
+    # browser redirects while rejecting revoked sessions and owner mismatches
+    # before any provider token exchange or credential persistence.
+    if _owner(transaction.owner_authorization) != transaction.owner_id:
+        raise HTTPException(403, "Owner identity changed. Start again.")
 
     try:
         config = PollinationsOAuthConfig.from_env()
