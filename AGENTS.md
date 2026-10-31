@@ -1,6 +1,6 @@
 # SoloForge AI assistant entry point
 
-Read `.ai/AI_CONTEXT.md`, then follow the startup procedure and authoritative instruction precedence in `.ai/PROTOCOL.md`. Explicit owner instructions come first; `.ai/PROTOCOL.md` and `.ai/AI_RULES.md` govern execution, while `docs/CURRENT_SPRINT.md` governs current development intent. Conflicting task-board entries and historical task records do not authorize work.
+Read `.ai/PROTOCOL.md` and `.ai/AI_RULES.md`, then consult `docs/CURRENT_SPRINT.md` for current owner-approved priorities. `.ai/AI_CONTEXT.md` is retired and must not be required as startup context. Explicit owner instructions come first; `.ai/PROTOCOL.md` and `.ai/AI_RULES.md` govern execution, while `docs/CURRENT_SPRINT.md` governs current development intent. Conflicting task-board entries and historical task records do not authorize work.
 
 For owner-requested Ruj pilot tasks, use `.ai/ruj/README.md` and `.ai/ruj/quality-gate.md`.
 The roles are คุณรุจ (Main), ป้ารุจ (Builder), จ่ารุจ (QA), and ยามรุจ (Reviewer).
