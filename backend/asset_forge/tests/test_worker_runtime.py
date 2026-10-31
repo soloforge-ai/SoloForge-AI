@@ -30,7 +30,6 @@ def test_worker_runtime_registers_all_pipeline_loops() -> None:
         "content_asset",
         "audio",
         "final_render",
-        "publishing",
     ]
 
 

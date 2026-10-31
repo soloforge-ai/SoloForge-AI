@@ -53,7 +53,7 @@ def offline(monkeypatch, tmp_path):
     monkeypatch.setattr(socket, "create_connection", forbidden)
     monkeypatch.setattr(urllib.request, "urlopen", forbidden)
     for name in ("content_worker_loop", "content_router_loop", "content_asset_worker_loop",
-                 "audio_worker_loop", "final_render_worker_loop", "publishing_worker_loop"):
+                 "audio_worker_loop", "final_render_worker_loop"):
         monkeypatch.setattr(forge, name, forbidden)
     monkeypatch.setattr(asset_provider, "_pollinations_image", forbidden)
     monkeypatch.setattr(asset_provider, "_template_image", forbidden)

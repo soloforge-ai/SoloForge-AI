@@ -80,7 +80,7 @@ def isolated_api(monkeypatch):
 
     for name in (
         "content_worker_loop", "content_router_loop", "content_asset_worker_loop",
-        "audio_worker_loop", "final_render_worker_loop", "publishing_worker_loop",
+        "audio_worker_loop", "final_render_worker_loop",
     ):
         monkeypatch.setattr(main, name, forbidden_worker(name))
 

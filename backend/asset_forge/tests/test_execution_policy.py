@@ -63,7 +63,7 @@ def test_explicit_embedded_startup_is_mocked_only(monkeypatch, value):
         coro.close()  # Never run any real loop.
     monkeypatch.setattr(main.asyncio, "create_task", fake_create)
     asyncio.run(main.start_content_workers())
-    assert len(calls) == 6
+    assert len(calls) == 5
     assert policy.generation_execution_authorized() is False
 
 
@@ -89,13 +89,13 @@ def test_dedicated_explicit_enablement_runs_only_fake_loops(monkeypatch):
     class ImmediateStop:
         def set(self): pass
         async def wait(self): await asyncio.sleep(0)
-    monkeypatch.setattr(worker, "WORKERS", tuple((str(i), fake_worker) for i in range(6)))
+    monkeypatch.setattr(worker, "WORKERS", tuple((str(i), fake_worker) for i in range(5)))
     monkeypatch.setattr(worker.asyncio, "Event", ImmediateStop)
     async def run():
         monkeypatch.setattr(asyncio.get_running_loop(), "add_signal_handler", lambda *a: None)
         await worker.run_background_workers()
     asyncio.run(run())
-    assert len(calls) == 6
+    assert len(calls) == 5
 
 
 @pytest.mark.parametrize("module,func,arg,result", [
