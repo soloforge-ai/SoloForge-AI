@@ -695,7 +695,6 @@ class _ContentJobPageState extends State<ContentJobPage> {
                   label: const Text('Continue Pipeline'),
                 ),
               ],
-
             ],
           ],
         ),
