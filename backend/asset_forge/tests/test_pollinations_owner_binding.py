@@ -50,7 +50,7 @@ def binding_db():
         end; $$;
         create trigger pollinations_sessions_require_owner_on_insert before insert on public.pollinations_sessions
             for each row execute function public.reject_unbound_pollinations_session_insert();
-    """ + (ROOT / 'backend/asset_forge/sql/pollinations_owner_binding.sql').read_text() + (ROOT / 'backend/asset_forge/sql/owner_v2_github_session_reference.sql').read_text()
+    """ + (ROOT / 'backend/asset_forge/sql/pollinations_owner_binding.sql').read_text() + (ROOT / 'backend/asset_forge/sql/owner_v2_github_session_reference.sql').read_text() + (ROOT / 'supabase/migrations/20261031111000_pollinations_owner_binding_atomic_rpc.sql').read_text()
     with tempfile.NamedTemporaryFile(mode='w', suffix='.sql') as snapshot:
         snapshot.write(schema); snapshot.flush()
         process = subprocess.Popen(['node', str(Path(__file__).with_name('owner_v2_pg_bridge.mjs')), snapshot.name],
@@ -87,6 +87,10 @@ def flow(binding_db, monkeypatch):
 
     def transport(method, path, *, body=None, prefer=None):
         calls.append((method, path))
+        if path == 'rpc/pollinations_bind_and_reverify':
+            result = db.query('select public.pollinations_bind_and_reverify($1,$2,$3) as value',
+                [body['p_owner_id'], body['p_record_id'], body['p_subject']], 'service_role')[0]['value']
+            return json.dumps(result).encode()
         if path == 'rpc/pollinations_reverify':
             result = db.query('select public.pollinations_reverify($1,$2,$3,$4) as value',
                 [body['p_owner_id'], body['p_record_id'], body['p_subject'], body['p_identity_verified']], 'service_role')[0]['value']
@@ -464,3 +468,41 @@ def test_oauth_key_without_provider_expiry_enters_bounded_pending(flow, monkeypa
     record, session, state=connected(flow)
     row=db.query("select verification_status, expires_at > now() and expires_at <= now()+interval '601 seconds' as bounded from public.pollinations_sessions")[0]
     assert row['verification_status']=='PENDING_VERIFICATION' and row['bounded'] is True
+
+
+def test_pending_trusted_subject_atomic_owner_binding(flow, monkeypatch):
+    client, headers, db, calls = flow
+    record, session, _ = connected(flow)
+    db.query("""update public.soloforge_owner_accounts set
+        provider_account_id=null, verification_status='pending',
+        verification_evidence=null, verified_at=null where provider='pollinations'""")
+    monkeypatch.setenv('POLLINATIONS_TRUSTED_APP_KEY_ID', SUBJECT)
+    response = client.post('/auth/pollinations/sk/reverify', headers=headers,
+        json={'credential_record_id': record})
+    assert response.status_code == 200, response.text
+    assert response.json()['verification_status'] == 'VERIFIED'
+    assert response.json()['spending_authorized'] is False
+    assert ('POST', 'rpc/pollinations_bind_and_reverify') in calls
+    owner_row = db.query("""select verification_status,provider_account_id
+        from public.soloforge_owner_accounts where provider='pollinations'""")[0]
+    assert owner_row['verification_status'] == 'verified'
+    assert owner_row['provider_account_id'] == SUBJECT
+
+
+def test_atomic_binding_denies_wrong_owner_and_unbound_subject(flow, monkeypatch):
+    client, headers, db, calls = flow
+    record, session, _ = connected(flow)
+    db.query("""update public.soloforge_owner_accounts set
+        provider_account_id=null, verification_status='pending',
+        verification_evidence=null, verified_at=null where provider='pollinations'""")
+    assert db.query('select public.pollinations_bind_and_reverify($1,$2,$3) as value',
+        [OTHER, record, SUBJECT], 'service_role')[0]['value'] is None
+    assert db.query('select public.pollinations_bind_and_reverify($1,$2,$3) as value',
+        [OWNER, str(uuid4()), SUBJECT], 'service_role')[0]['value'] is None
+    assert db.query("select verification_status from public.soloforge_owner_accounts where provider='pollinations'")[0]['verification_status'] == 'pending'
+    monkeypatch.setenv('POLLINATIONS_TRUSTED_APP_KEY_ID', 'different-subject')
+    response = client.post('/auth/pollinations/sk/reverify', headers=headers,
+        json={'credential_record_id':record})
+    assert response.status_code == 200
+    assert response.json()['provider_ownership_verified'] is False
+    assert db.query("select verification_status from public.soloforge_owner_accounts where provider='pollinations'")[0]['verification_status'] == 'pending'
