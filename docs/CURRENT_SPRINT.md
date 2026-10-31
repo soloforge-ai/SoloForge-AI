@@ -1,51 +1,38 @@
 # SoloForge AI Current Work
 
-> Human-maintained source of truth for the active development cycle.
+> Human-maintained source of truth for owner-approved priorities and closure decisions.
 >
 > This file MUST NOT be overwritten by Project Scanner output.
 
-## Active Initiative
+## Current Cycle Status
 
-**Owner Identity V2 — P0 (owner-directed priority, 2026-10-24)**
+**CLOSED — Development Scope Complete; Outstanding Verification Documented**
 
-## Current Implementation
+**Owner approval / closure date:** 2026-10-31 (31 October 2026).
 
-**Owner Identity V2: isolated Owner Registry and passwordless backend — implemented; offline verified; activation pending**
+**Closed initiatives:** Owner Identity V2 (P0 development scope) and Pollinations OAuth / BYOP development cycle.
 
-## Status
+**Next focus:** Dead Code & Unused Components Audit — STRICT READ-ONLY. This is a proposed next focus, not authorization to delete code or execute changes.
 
-The local implementation provides an additive migration, administrator-only bootstrap, independent email-code authentication, opaque V2 sessions and offline security tests. V2 defaults OFF. No production migration, owner seed, SMTP delivery, frontend login cutover or deployment has been performed. See `docs/OWNER_IDENTITY_V2.md` for the backend contract and verification limits.
+## Closure Decision and Evidence Boundary — 2026-10-31
+
+- **Owner Identity V2 — DEVELOPMENT SCOPE COMPLETE (owner-accepted).** The isolated Owner Registry, backend/session validation and frontend/API integration have been implemented with offline verification evidence. GitHub OAuth is the owner-selected primary login, with verified Owner Registry binding required; OAuth alone is not Owner authorization. This closure does **not** certify production migration, current deployment configuration, or production login/session/logout E2E.
+- **Pollinations OAuth / BYOP — DEVELOPMENT SCOPE COMPLETE (owner-accepted).** PR [#212](https://github.com/soloforge-ai/SoloForge-AI/pull/212) was merged on 2026-10-28 at `ad0cb4ea1b06677c19c6c82380ec97e9f121da59`. Connection/SK verification has been reported; do not infer live image-generation E2E or paid-provider execution from the merge. Live generation and spending remain OFF by default unless separately authorized.
+- **Cancelled / superseded rollout:** Email OTP activation and SMTP delivery are not required for the selected GitHub OAuth-first login. Email OTP implementation may remain disabled in source; do not interpret this decision as authorization to delete it.
+- **Not planned in this cycle:** Expansion of provider account management beyond verified binding needed for the accepted scope.
+- **Retained for compatibility:** Legacy authentication components during verified transition. No automatic removal or insecure fallback from rejected V2 identity to legacy tokens.
+- **DEFERRED — no near-term schedule:** Pollinations SK expiration handling, reconnect policy, credential retention/history and cleanup. These are future lifecycle improvements, not current sprint blockers.
+- **Verification boundary:** Distinguish owner acceptance of development scope, merged code and offline tests from live production E2E. Any future production cutover, migration, deployment, worker enablement, paid provider use or destructive cleanup requires separate authorization.
 
 ## Source-of-Truth Date
 
-2026-10-24
+2026-10-31
 
-## Owner Identity V2 — Current Scope
+## Historical Record
 
-- Establish a new canonical Owner Registry seeded from the owner-provided Supabase owner UUID and primary email. Avoid embedding personal identifiers in this project-wide planning document; obtain actual values from approved owner-controlled configuration when implementing.
-- Design new Owner Authentication rather than reusing the failing legacy login flow. Retain legacy components only until a verified migration/cutover, without treating them as the new identity authority.
-- Record Supabase, Render, and Pollinations as separate provider accounts with provider-specific IDs, registration email, and evidence-based verification status. A shared email is a candidate matching attribute, not proof of cross-provider ownership.
-- Do not require unrelated provider tables or sessions to share the same primary key. Link records only when a valid, verified relationship exists; otherwise keep their identifiers and verification separate.
-- After implementation and verification, adapt dependent components to use Owner Identity V2 as their single source of truth. Do not switch production integrations or remove old authentication as part of this documentation change.
-- Focus on owner records, identity verification, account relationships, and login integration. Wallet, budget, spending authorization, and provider execution are **out of scope for this initiative**; existing runtime safety controls remain unchanged.
+The sections below preserve earlier plans and evidence for traceability. Any historical "active" status or email-first activation gate below is **superseded by the closure decision above**. Historical notes are not authorization to resume work.
 
-## Current Gate
-
-Review the isolated backend patch and offline evidence. Before activation, separately authorize staging verification of database collisions/permissions, PostgREST RPC integration, native multi-connection contention and SMTP delivery. Canonical owner seed confirmation and frontend/API cutover remain pending; no production change or login replacement is authorized by this status update.
-
-## Completed milestones — 2026-10-28
-
-- **Pollinations BYOP PR #212 — MERGED.** [PR #212](https://github.com/soloforge-ai/SoloForge-AI/pull/212) merged at `ad0cb4ea1b06677c19c6c82380ec97e9f121da59`. Live provider generation and spending remain disabled by default; merge is not production E2E proof.
-- **Content Studio Phase 0 Exact Reuse & Quality Audit — COMPLETED.** Audited the merged main baseline and identified the smallest text-first extension of existing Content Factory jobs, review and UI contracts.
-
-## Content Studio Phase 1 — IMPLEMENTED LOCALLY — VERIFICATION PENDING
-
-- **13 changed files reported**, implementing the offline manual text-variant slice; **77 distinct backend tests passed** across affected offline runs.
-- **Flutter analyze and tests: NOT RUN.** Flutter SDK unavailable locally.
-- **Native PostgreSQL concurrency, actual Supabase RLS and production E2E: UNVERIFIED.** SQL/WASM and offline fixtures do not establish production behavior.
-- **Local patch not committed or delivered to GitHub.** No production migration, live provider use, worker activation or publishing was performed.
-
-Owner Identity V2 remains the active P0 initiative.
+---
 
 ## Previous Initiative — Paused
 
