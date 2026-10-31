@@ -146,6 +146,27 @@ def credential_status(credential_id: UUID, authorization: str | None = Header(de
             "provider_ownership_verified": record["provider_ownership_verified"], "spending_authorized": False}
 
 
+@router.get("/credentials/{credential_id}/identity-discovery")
+def credential_identity_discovery(credential_id: UUID, authorization: str | None = Header(default=None),
+                                  flow=Depends(get_flow)):
+    """Owner-scoped identity discovery; never promotes credentials or authorizes spending."""
+    if getattr(flow, "provider", None) == "cloudflare":
+        raise HTTPException(403, "Pollinations identity discovery only")
+    principal = flow.authenticate(authorization)
+    if principal.kind != "owner":
+        raise HTTPException(403, "Owner identity discovery only")
+    record = flow.repository.credential(principal.key, str(credential_id))
+    if not record or record.get("principal") != principal.key or record.get("disconnected"):
+        raise HTTPException(404, "Credential unavailable")
+    from .pollinations_sk_lifecycle import verify_identity
+    result = verify_identity(record["token"], record["expires_at"], None)
+    # No subject or token is returned to the browser. A discovered subject is not owner proof.
+    return {"identity_discovered": bool(result.get("provider_subject")),
+            "reason": result.get("reason", "identity_unavailable"),
+            "verification_status": record["verification_status"],
+            "owner_binding": "UNVERIFIED", "spending_authorized": False}
+
+
 @router.post("/credentials/{credential_id}/verify")
 def verify(credential_id: UUID, authorization: str | None = Header(default=None), flow=Depends(get_flow)):
     if getattr(flow,"provider",None)=="cloudflare":

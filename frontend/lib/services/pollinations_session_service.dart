@@ -132,6 +132,18 @@ class PollinationsSessionService {
     await _updateStorage(() => _storage.write(key: 'pollinations_byop_id_$principal', value: id));
   }
 
+  Future<Map<String, dynamic>> discoverByopIdentity(String principal) async {
+    final headers = await _byopHeaders(principal);
+    final id = await byopCredentialId(principal);
+    if (id == null) throw const PollinationsSessionException('Select your own credential first.');
+    final result = await _byopResult(await _client.get(
+      Uri.parse('$_baseUrl/v1/byop/credentials/$id/identity-discovery'),
+      headers: headers,
+    ).timeout(const Duration(seconds: 30)));
+    await _byopHeaders(principal);
+    return result;
+  }
+
   Future<Map<String, dynamic>> verifyByopCredential(String principal) async {
     final headers = await _byopHeaders(principal);
     final id = await byopCredentialId(principal);
