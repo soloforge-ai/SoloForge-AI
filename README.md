@@ -347,9 +347,7 @@ AI assistants should read:
 1. `.ai/PROTOCOL.md`
 2. `.ai/AI_RULES.md`
 3. `docs/CURRENT_SPRINT.md`
-The active instruction for this cycle is:
-
-> Do not add unrelated features. Fix only what is required to establish the real Content Factory E2E path.
+Current priorities and approved work are defined in `docs/CURRENT_SPRINT.md`. Historical Content Factory E2E instructions below are not standing authorization to resume that work.
 
 ---
 
