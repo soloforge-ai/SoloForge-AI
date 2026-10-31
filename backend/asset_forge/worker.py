@@ -17,7 +17,6 @@ from backend.content_asset_generation import content_asset_worker_loop
 from backend.content_generation import content_worker_loop
 from backend.content_router import content_router_loop
 from backend.final_render import final_render_worker_loop
-from backend.publora_publishing import publishing_worker_loop
 
 
 WORKERS = (
@@ -26,7 +25,6 @@ WORKERS = (
     ("content_asset", content_asset_worker_loop),
     ("audio", audio_worker_loop),
     ("final_render", final_render_worker_loop),
-    ("publishing", publishing_worker_loop),
 )
 
 
