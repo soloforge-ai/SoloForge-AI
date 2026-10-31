@@ -42,7 +42,6 @@ from backend.analytics_api import router as analytics_router
 from backend.publishing_api import router as publishing_router
 from backend.ops_webhook import router as ops_webhook_router
 from backend.byop_router import router as byop_router
-from backend.publora_publishing import publishing_worker_loop
 
 
 app = FastAPI(title="SoloForge Asset Forge API", version="0.8.0")
@@ -771,7 +770,6 @@ async def start_content_workers() -> None:
     asyncio.create_task(content_asset_worker_loop())
     asyncio.create_task(audio_worker_loop())
     asyncio.create_task(final_render_worker_loop())
-    asyncio.create_task(publishing_worker_loop())
 
 
 @app.get("/health")
