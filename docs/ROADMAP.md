@@ -40,7 +40,8 @@ Synchronize:
 - `README.md`
 - `docs/CURRENT_SPRINT.md`
 - `docs/ROADMAP.md`
-- `.ai/AI_CONTEXT.md`
+- `.ai/PROTOCOL.md`
+- `.ai/AI_RULES.md`
 
 The documentation must distinguish:
 
@@ -287,10 +288,10 @@ If the answer is no to all four, it should not enter active development.
 Priority order for current project intent:
 
 1. Explicit owner instruction
-2. `docs/CURRENT_SPRINT.md`
-3. `docs/ROADMAP.md`
-4. `.ai/AI_CONTEXT.md`
-5. Project Scanner output
+2. `.ai/PROTOCOL.md` and `.ai/AI_RULES.md` (execution rules)
+3. `docs/CURRENT_SPRINT.md` (current priorities)
+4. `docs/ROADMAP.md` (future direction)
+5. Source code, tests and Project Scanner output (implementation evidence, not authorization)
 Generated scanner output must never replace human-approved product direction.
 
 ---
