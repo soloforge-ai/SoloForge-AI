@@ -332,10 +332,10 @@ These checks validate important components, but they do **not** replace the curr
 Current project intent must be read in this order:
 
 1. Explicit owner instruction
-2. `docs/CURRENT_SPRINT.md`
-3. `docs/ROADMAP.md`
-4. `.ai/AI_CONTEXT.md`
-5. Project Scanner output
+2. `.ai/PROTOCOL.md` and `.ai/AI_RULES.md` (execution rules)
+3. `docs/CURRENT_SPRINT.md` (current priorities)
+4. `docs/ROADMAP.md` (future direction)
+5. Source code, tests and Project Scanner output (implementation evidence, not authorization)
 Project Scanner describes observed implementation. It must not replace human-approved product intent.
 
 ---
@@ -345,12 +345,9 @@ Project Scanner describes observed implementation. It must not replace human-app
 AI assistants should read:
 
 1. `.ai/PROTOCOL.md`
-2. `.ai/AI_CONTEXT.md`
-3. `.ai/AI_RULES.md`
-4. `docs/CURRENT_SPRINT.md`
-The active instruction for this cycle is:
-
-> Do not add unrelated features. Fix only what is required to establish the real Content Factory E2E path.
+2. `.ai/AI_RULES.md`
+3. `docs/CURRENT_SPRINT.md`
+Current priorities and approved work are defined in `docs/CURRENT_SPRINT.md`. Historical Content Factory E2E instructions below are not standing authorization to resume that work.
 
 ---
 
