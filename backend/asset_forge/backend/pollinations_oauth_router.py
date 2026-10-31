@@ -683,27 +683,6 @@ def _trusted_owner_subject(owner_id: str) -> str | None:
     return expected
 
 
-def _persist_trusted_owner_binding(owner_id: str, subject: str) -> None:
-    """Promote only an existing pending owner record after live provider match."""
-    path = ("soloforge_owner_accounts?owner_id=eq."
-        + urllib.parse.quote(owner_id, safe="")
-        + "&provider=eq.pollinations&verification_status=eq.pending"
-        + "&provider_account_id=is.null")
-    try:
-        raw = _supabase_request("PATCH", path,
-            body={"provider_account_id": subject, "verification_status": "verified",
-                  "verification_evidence": "owner_v2_configured_subject_sk_userinfo_v1",
-                  "verified_at": datetime.now(tz=timezone.utc).isoformat()},
-            prefer="return=representation")
-        updated = json.loads(raw) if raw else []
-    except (RuntimeError, ValueError, TypeError):
-        raise HTTPException(503, "Owner binding persistence unavailable.") from None
-    if (not isinstance(updated, list) or len(updated) != 1
-            or updated[0].get("provider_account_id") != subject
-            or updated[0].get("verification_status") != "verified"):
-        raise HTTPException(409, "Owner binding changed; review before retry.")
-
-
 def _record_id(value: str) -> str:
     from uuid import UUID
     try:
@@ -829,8 +808,25 @@ def pollinations_reverify(payload: ReverificationRequest,
     if expected is None:
         expected = _trusted_owner_subject(owner_id)
         result = verify_identity(session.access_token, session.expires_at, expected)
+        # Bind and verify the credential atomically in one restricted database RPC.
         if expected and result["provider_ownership_verified"]:
-            _persist_trusted_owner_binding(owner_id, expected)
+            try:
+                raw = _supabase_request("POST", "rpc/pollinations_bind_and_reverify", body={
+                    "p_owner_id": owner_id, "p_record_id": record_id, "p_subject": expected,
+                })
+                persisted = json.loads(raw) if raw else None
+                if (not isinstance(persisted, dict)
+                        or persisted.get("verification_status") != "VERIFIED"
+                        or persisted.get("provider_ownership_verified") is not True
+                        or persisted.get("provider_subject") != expected
+                        or persisted.get("spending_authorized") is not False):
+                    raise RuntimeError()
+            except (RuntimeError, ValueError, TypeError):
+                raise HTTPException(503, "Verification persistence unconfirmed; reload before retry.") from None
+            with _lock:
+                _sessions.clear()
+            return {"verification_outcome": "VERIFIED", **{k: persisted.get(k) for k in
+                ("verification_status", "provider_ownership_verified", "provider_subject", "spending_authorized")}}
     else:
         result = verify_identity(session.access_token, session.expires_at, expected)
     # Failed evidence never promotes or preserves a stale verified status.
