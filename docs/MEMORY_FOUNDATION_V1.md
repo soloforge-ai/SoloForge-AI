@@ -35,7 +35,7 @@ Memory Foundation extends existing SoloForge systems. It does not replace Projec
 | Information | Source of Truth | Authority |
 | --- | --- | --- |
 | Human-approved active development intent | `docs/CURRENT_SPRINT.md` | Human |
-| Stable project context | `.ai/AI_CONTEXT.md` | Human-approved project context |
+| Current project priorities and owner decisions | `docs/CURRENT_SPRINT.md` | Human-maintained current-work authority |
 | Engineering rules | `.ai/AI_RULES.md` and `.ai/PROTOCOL.md` | Human-approved rules |
 | Observed repository structure | Project Scanner output | Generated observation |
 | Durable architectural/product decisions | Decision Memory | Human-approved memory |
