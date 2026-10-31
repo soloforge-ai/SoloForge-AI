@@ -487,6 +487,9 @@ def pollinations_callback(
     )
     if not transaction.owner_id or not isinstance(session.access_token, str) or not session.access_token.startswith("sk_"):
         raise HTTPException(502, "Invalid owner-bound credential response.")
+    # OAuth code/PKCE plus authenticated Owner V2 establishes independent proof.
+    # A standalone submitted SK never enters this binding path.
+    _bind_oauth_owner_subject(transaction.owner_id, session.access_token)
     try:
         _persist_session(session_id, session)
     except RuntimeError as exc:
@@ -593,6 +596,47 @@ def _rows(path: str) -> list[dict]:
         return rows
     except (RuntimeError, ValueError, TypeError, UnicodeError):
         raise HTTPException(503, "Credential store unavailable.") from None
+
+
+def _bind_oauth_owner_subject(owner_id: str, oauth_token: str) -> str:
+    """Bind an independently completed OAuth code/PKCE login, never an SK submission.
+
+    Existing verified bindings are immutable here. An absent or conflicting owner
+    account fails closed; no owner account is auto-created from provider data.
+    """
+    from .pollinations_sk_lifecycle import _userinfo
+    status, payload = _userinfo(oauth_token)
+    subject = payload.get("sub") if isinstance(payload, dict) else None
+    if (status != 200 or not isinstance(subject, str) or not subject.strip()
+            or len(subject) > 512 or "sk_" in subject or "Bearer " in subject):
+        raise HTTPException(503, "Independent Pollinations OAuth identity unavailable.")
+    owner = urllib.parse.quote(owner_id, safe="")
+    path = "soloforge_owner_accounts?owner_id=eq." + owner + "&provider=eq.pollinations"
+    rows = _rows(path + "&select=provider_account_id,verification_status,verification_evidence,verified_at&limit=1")
+    if len(rows) != 1:
+        raise HTTPException(409, "Pollinations owner account registration required.")
+    previous = rows[0]
+    if previous.get("verification_status") == "verified":
+        if (previous.get("provider_account_id") != subject
+                or not previous.get("verification_evidence") or not previous.get("verified_at")):
+            raise HTTPException(409, "Conflicting verified Pollinations owner binding.")
+        return subject
+    if previous.get("verification_status") != "pending":
+        raise HTTPException(409, "Pollinations owner account requires manual review.")
+    # Conditional update is the concurrency gate. Never overwrite a verified row.
+    # Evidence records the OAuth proof type, not the access token or authorization code.
+    try:
+        raw = _supabase_request("PATCH", path + "&verification_status=eq.pending",
+            body={"provider_account_id": subject, "verification_status": "verified",
+                  "verification_evidence": "pollinations_oauth_code_pkce_userinfo_v1",
+                  "verified_at": datetime.now(tz=timezone.utc).isoformat()},
+            prefer="return=representation")
+        updated = json.loads(raw) if raw else []
+    except (RuntimeError, ValueError, TypeError):
+        raise HTTPException(503, "Pollinations owner binding persistence unavailable.") from None
+    if not isinstance(updated, list) or len(updated) != 1 or updated[0].get("provider_account_id") != subject:
+        raise HTTPException(409, "Pollinations owner binding changed; reconnect or review.")
+    return subject
 
 
 def _expected_subject(owner_id: str) -> str | None:
