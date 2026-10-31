@@ -661,6 +661,49 @@ def _expected_subject(owner_id: str) -> str | None:
     return subject if isinstance(subject, str) and subject.strip() else None
 
 
+def _trusted_owner_subject(owner_id: str) -> str | None:
+    """Owner-scoped, operator-configured subject; never inferred from the submitted SK."""
+    expected = os.getenv("POLLINATIONS_TRUSTED_APP_KEY_ID", "").strip()
+    if not expected or len(expected) > 512 or "sk_" in expected or "Bearer " in expected:
+        return None
+    rows = _rows("soloforge_owner_accounts?owner_id=eq."
+        + urllib.parse.quote(owner_id, safe="")
+        + "&provider=eq.pollinations&select=provider_account_id,verification_status,verification_evidence,verified_at&limit=1")
+    if len(rows) != 1:
+        return None
+    row = rows[0]
+    if row.get("verification_status") == "verified":
+        subject = row.get("provider_account_id")
+        if (subject != expected or not row.get("verification_evidence")
+                or not row.get("verified_at")):
+            raise HTTPException(409, "Conflicting verified Pollinations owner binding.")
+        return expected
+    if row.get("verification_status") != "pending" or row.get("provider_account_id"):
+        return None
+    return expected
+
+
+def _persist_trusted_owner_binding(owner_id: str, subject: str) -> None:
+    """Promote only an existing pending owner record after live provider match."""
+    path = ("soloforge_owner_accounts?owner_id=eq."
+        + urllib.parse.quote(owner_id, safe="")
+        + "&provider=eq.pollinations&verification_status=eq.pending"
+        + "&provider_account_id=is.null")
+    try:
+        raw = _supabase_request("PATCH", path,
+            body={"provider_account_id": subject, "verification_status": "verified",
+                  "verification_evidence": "owner_v2_configured_subject_sk_userinfo_v1",
+                  "verified_at": datetime.now(tz=timezone.utc).isoformat()},
+            prefer="return=representation")
+        updated = json.loads(raw) if raw else []
+    except (RuntimeError, ValueError, TypeError):
+        raise HTTPException(503, "Owner binding persistence unavailable.") from None
+    if (not isinstance(updated, list) or len(updated) != 1
+            or updated[0].get("provider_account_id") != subject
+            or updated[0].get("verification_status") != "verified"):
+        raise HTTPException(409, "Owner binding changed; review before retry.")
+
+
 def _record_id(value: str) -> str:
     from uuid import UUID
     try:
@@ -782,7 +825,14 @@ def pollinations_reverify(payload: ReverificationRequest,
     owner_id = _owner(authorization)
     record_id = _record_id(payload.credential_record_id)
     session = _existing_pollinations_session(record_id, owner_id)
-    result = verify_identity(session.access_token, session.expires_at, _expected_subject(owner_id))
+    expected = _expected_subject(owner_id)
+    if expected is None:
+        expected = _trusted_owner_subject(owner_id)
+        result = verify_identity(session.access_token, session.expires_at, expected)
+        if expected and result["provider_ownership_verified"]:
+            _persist_trusted_owner_binding(owner_id, expected)
+    else:
+        result = verify_identity(session.access_token, session.expires_at, expected)
     # Failed evidence never promotes or preserves a stale verified status.
     try:
         raw = _supabase_request("POST", "rpc/pollinations_reverify", body={
