@@ -12,7 +12,15 @@
 
 **Closed initiatives:** Owner Identity V2 (P0 development scope) and Pollinations OAuth / BYOP development cycle.
 
-**Next focus:** Dead Code & Unused Components Audit — STRICT READ-ONLY. This is a proposed next focus, not authorization to delete code or execute changes.
+**Next focus (owner-approved 2026-10-31):** Post-Sprint Cleanup Audit — Dead Code, Duplicate Systems & PR Reconciliation — **STRICT READ-ONLY**. Approval covers inspection and classification only, not code changes, PR closure, merges, or deletions.
+
+### Post-Sprint Cleanup Audit — Approved Scope (2026-10-31)
+
+- Inspect potential dead code and unused functions, modules, routes, Flutter widgets, services, adapters and dependencies; confirm runtime references, dynamic imports, CI/build use and security implications before recommending removal.
+- Identify duplicate implementations and legacy components potentially superseded by merged Owner Identity V2, Pollinations OAuth/BYOP and other completed work; preserve compatibility and fail-closed execution controls.
+- Reconcile **all currently open PRs** against current `main`, merged equivalents and owner decisions. Classify each as **CLOSE CANDIDATE**, **KEEP**, **MERGE CANDIDATE**, or **ARCHIVE CANDIDATE**, with exact evidence and rationale. A merged equivalent does not by itself justify closing a PR without checking unique changes.
+- Produce a concise, prioritized evidence-based cleanup recommendation with file/PR references, risk, dependencies and uncertainty. Do not treat a static no-reference search as sufficient proof of dead code.
+- **Execution boundary:** read-only discovery only. Do not close PRs, delete branches, modify/remove code, commit cleanup patches, merge candidate PRs, deploy or run live/billable providers under this audit authorization. Subsequent cleanup actions require separately approved execution scope.
 
 ## Closure Decision and Evidence Boundary — 2026-10-31
 
