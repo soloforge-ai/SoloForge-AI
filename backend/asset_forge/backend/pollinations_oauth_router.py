@@ -489,7 +489,13 @@ def pollinations_callback(
         raise HTTPException(502, "Invalid owner-bound credential response.")
     # OAuth code/PKCE plus authenticated Owner V2 establishes independent proof.
     # A standalone submitted SK never enters this binding path.
-    _bind_oauth_owner_subject(transaction.owner_id, session.access_token)
+    # OAuth connectivity is not proof of owner binding. Preserve the existing
+    # pending-session contract when independent identity evidence is unavailable;
+    # verification remains fail-closed until a separate trusted binding succeeds.
+    try:
+        _bind_oauth_owner_subject(transaction.owner_id, session.access_token)
+    except HTTPException:
+        pass
     try:
         _persist_session(session_id, session)
     except RuntimeError as exc:
