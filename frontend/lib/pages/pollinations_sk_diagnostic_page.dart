@@ -47,9 +47,11 @@ class _PollinationsSkDiagnosticPageState extends State<PollinationsSkDiagnosticP
           decoded['spending_authorized'] != false) {
         throw const FormatException('Unexpected diagnostic response.');
       }
-      if (mounted) setState(() {
-        _result = '$comparison — ${decoded['reason'] ?? 'Comparison only; not proof of ownership'}';
-      });
+      if (mounted) {
+        setState(() {
+          _result = '$comparison — ${decoded['reason'] ?? 'Comparison only; not proof of ownership'}';
+        });
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _error = e is FormatException ? e.message : 'Unable to complete check. Please retry later.');
