@@ -89,7 +89,7 @@ def test_dedicated_explicit_enablement_runs_only_fake_loops(monkeypatch):
     class ImmediateStop:
         def set(self): pass
         async def wait(self): await asyncio.sleep(0)
-    monkeypatch.setattr(worker, "WORKERS", tuple((str(i), fake_worker) for i in range(6)))
+    monkeypatch.setattr(worker, "WORKERS", tuple((str(i), fake_worker) for i in range(5)))
     monkeypatch.setattr(worker.asyncio, "Event", ImmediateStop)
     async def run():
         monkeypatch.setattr(asyncio.get_running_loop(), "add_signal_handler", lambda *a: None)
