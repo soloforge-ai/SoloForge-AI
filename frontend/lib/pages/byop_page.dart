@@ -35,6 +35,7 @@ class _ByopPageState extends State<ByopPage> {
   String? _consentCredential;
   String? _execution;
   String? _notice;
+  Map<String, dynamic>? _identityDiscovery;
   Map<String, dynamic>? _job;
   Map<String, dynamic>? _credential;
   Map<String, dynamic> _readiness = {};
@@ -110,7 +111,7 @@ class _ByopPageState extends State<ByopPage> {
     if (value == _service.provider) return;
     _service.provider = value;
     setState(() {
-      _credential = null; _cfCredentialId = null; _job = null; _image = null;
+      _credential = null; _identityDiscovery = null; _cfCredentialId = null; _job = null; _image = null;
       _consent = null; _consentCredential = null; _execution = null; _quotedMaximum = null;
       _confirmed = false; _attempted = false; _displayed = false; _key.clear(); _jobId.clear();
     });
@@ -201,6 +202,16 @@ class _ByopPageState extends State<ByopPage> {
             }
             _key.clear(); await _connectApplication();
           }), child: const Text('Connect as pending')),
+          if (!_cloudflare && !widget.member) ...[
+            OutlinedButton(onPressed: _busy || _credential?['credential_id'] == null ? null : () => _run(() async {
+              final result = await _service.connections.discoverByopIdentity(_principal!);
+              if (mounted) setState(() => _identityDiscovery = result);
+            }), child: const Text('Inspect SK identity (read-only)')),
+            if (_identityDiscovery != null) Text(
+              'Provider identity: ${_identityDiscovery!['identity_discovered'] == true ? 'DISCOVERED' : 'UNAVAILABLE'}'
+              '\\nReason: ${_identityDiscovery!['reason']}'
+              '\\nOwner binding: UNVERIFIED — no spending permission'),
+          ],
           if (!_cloudflare) OutlinedButton(onPressed: _busy ? null : () => _run(() async {
             await _service.connections.verifyByopCredential(_principal!); await _connectApplication();
           }), child: const Text('Verify credential ownership')),
