@@ -494,8 +494,11 @@ def pollinations_callback(
     # verification remains fail-closed until a separate trusted binding succeeds.
     try:
         _bind_oauth_owner_subject(transaction.owner_id, session.access_token)
-    except HTTPException:
-        pass
+    except HTTPException as exc:
+        # Provider outages may leave OAuth connected but unverified. An owner
+        # account conflict must never be silently treated as a successful login.
+        if exc.status_code != 503:
+            raise
     try:
         _persist_session(session_id, session)
     except RuntimeError as exc:
